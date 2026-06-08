@@ -8,6 +8,7 @@ const LOGO_MED = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAChCAIAAABm
 const USERS = [
   { id: 1, name: "Mario Rodríguez", role: "admin", user: "mario", pass: "admin123", sucursal: "Central", puesto: "Director" },
   { id: 2, name: "Dra. Laura Vega", role: "psicologa", user: "laura", pass: "psico123", sucursal: "Central", puesto: "Psicóloga" },
+  { id: 9, name: "Patricia Ramírez", role: "rh", user: "patricia", pass: "rh123", sucursal: "Central", puesto: "Administrativo RH" },
   { id: 3, name: "Ana García", role: "empleado", user: "ana", pass: "emp123", sucursal: "Norte", puesto: "Asistente Dental", antiguedad: "2 años", telefono: "555-1001" },
   { id: 4, name: "Carlos Pérez", role: "empleado", user: "carlos", pass: "emp123", sucursal: "Sur", puesto: "Dentista", antiguedad: "4 años", telefono: "555-1002" },
   { id: 5, name: "Sofía Martínez", role: "empleado", user: "sofia", pass: "emp123", sucursal: "Norte", puesto: "Recepcionista", antiguedad: "1 año", telefono: "555-1003" },
@@ -541,6 +542,22 @@ const Sidebar = ({ user, active, setActive, onLogout }) => {
       { key: "empleados", icon: "👥", label: "Empleados" },
       { key: "mensajes", icon: "💬", label: "Mensajes" },
     ],
+    psicologa: [
+      { key: "dashboard", icon: "📊", label: "Dashboard" },
+      { key: "ai", icon: "🤖", label: "AI Engine", badge: "NEW" },
+      { key: "seguimiento", icon: "🎯", label: "Seguimiento" },
+      { key: "empleados", icon: "👥", label: "Empleados" },
+      { key: "mensajes", icon: "💬", label: "Mensajes" },
+    ],
+    rh: [
+      { key: "dashboard", icon: "📊", label: "Dashboard RH" },
+      { key: "vacaciones", icon: "🏖️", label: "Vacaciones" },
+      { key: "permisos", icon: "📝", label: "Permisos" },
+      { key: "incapacidades", icon: "🏥", label: "Incapacidades" },
+      { key: "descuentos", icon: "💸", label: "Descuentos" },
+      { key: "calendario", icon: "📅", label: "Calendario" },
+      { key: "reportesrh", icon: "📈", label: "Reportes RH" },
+    ],
     empleado: [
       { key: "inicio", icon: "🏠", label: "Inicio" },
       { key: "encuesta", icon: "📝", label: "Mi Encuesta" },
@@ -575,6 +592,58 @@ const Sidebar = ({ user, active, setActive, onLogout }) => {
 };
 
 // ─── ADMIN DASHBOARD ──────────────────────────────────────────────────────────
+const HRDashboard = ({ users }) => {
+  const empleados = users.filter(u => u.role === "empleado");
+
+  const stats = [
+    { label: "Empleados activos", value: empleados.length, icon: "👥" },
+    { label: "Vacaciones pendientes", value: 3, icon: "🏖️" },
+    { label: "Permisos pendientes", value: 2, icon: "📝" },
+    { label: "Incapacidades activas", value: 1, icon: "🏥" },
+    { label: "Retardos registrados", value: 4, icon: "⏰" },
+    { label: "Descuentos activos", value: 2, icon: "💸" },
+  ];
+
+  return (
+    <div>
+      <h1 style={{ margin: "0 0 6px", fontSize: 28, color: "#004D40" }}>
+        Dashboard RH
+      </h1>
+      <p style={{ margin: "0 0 24px", color: "#64748b" }}>
+        Gestión administrativa de vacaciones, permisos, incidencias y calendario laboral.
+      </p>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+        gap: 14,
+        marginBottom: 22
+      }}>
+        {stats.map((s, i) => (
+          <Card key={i}>
+            <div style={{ fontSize: 24 }}>{s.icon}</div>
+            <div style={{ fontSize: 30, fontWeight: 800, color: "#00897B", marginTop: 8 }}>
+              {s.value}
+            </div>
+            <div style={{ color: "#0f172a", fontWeight: 700 }}>
+              {s.label}
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      <Card>
+        <h3 style={{ marginTop: 0, color: "#004D40" }}>📌 Pendientes RH</h3>
+        <div style={{ display: "grid", gap: 10 }}>
+          <div>🏖️ Ana García solicitó vacaciones del 15 al 19 de julio.</div>
+          <div>📝 Carlos Pérez solicitó permiso por consulta médica.</div>
+          <div>🏥 Sofía Martínez registró incapacidad pendiente de documento.</div>
+          <div>⏰ Luis Torres acumula 2 retardos este mes.</div>
+        </div>
+      </Card>
+    </div>
+  );
+};
 const AdminDashboard = ({ encuestas, mensajes }) => {
   const empleados = USERS.filter(u => u.role === "empleado");
   const semanaEnc = encuestas.filter(e => e.semana === semanaActual);
@@ -879,6 +948,15 @@ export default function App() {
       if (active==="seguimiento") return <PsicologaSeguimiento encuestas={encuestas} notas={notas} onUpdateNota={addNota}/>;
       if (active==="empleados") return <EmpleadosList encuestas={encuestas} notas={notas} role="psicologa"/>;
       if (active==="mensajes") return <Mensajes user={user} mensajes={mensajes} onSend={sendMensaje}/>;
+    }
+        if (user.role==="rh") {
+      if (active==="dashboard") return <HRDashboard users={USERS} />;
+      if (active==="vacaciones") return <div style={{ color:"#9ca3af", padding:40, textAlign:"center" }}>Módulo de vacaciones en construcción</div>;
+      if (active==="permisos") return <div style={{ color:"#9ca3af", padding:40, textAlign:"center" }}>Módulo de permisos en construcción</div>;
+      if (active==="incapacidades") return <div style={{ color:"#9ca3af", padding:40, textAlign:"center" }}>Módulo de incapacidades en construcción</div>;
+      if (active==="descuentos") return <div style={{ color:"#9ca3af", padding:40, textAlign:"center" }}>Módulo de descuentos en construcción</div>;
+      if (active==="calendario") return <div style={{ color:"#9ca3af", padding:40, textAlign:"center" }}>Calendario laboral en construcción</div>;
+      if (active==="reportesrh") return <div style={{ color:"#9ca3af", padding:40, textAlign:"center" }}>Reportes RH en construcción</div>;
     }
     if (user.role==="empleado") {
       if (active==="inicio") return <InicioEmpleado user={user} encuestas={encuestas} mensajes={userMensajes} setActive={setActive}/>;
