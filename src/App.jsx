@@ -6,15 +6,15 @@ const LOGO_MED = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAChCAIAAABm
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
 const USERS = [
-  { id: 1, name: "Mario Rodríguez", role: "admin", user: "mario", pass: "admin123", sucursal: "Central", puesto: "Director" },
-  { id: 2, name: "Dra. Laura Vega", role: "psicologa", user: "laura", pass: "psico123", sucursal: "Central", puesto: "Psicóloga" },
-  { id: 9, name: "Patricia Ramírez", role: "rh", user: "patricia", pass: "rh123", sucursal: "Central", puesto: "Administrativo RH" },
-  { id: 3, name: "Ana García", role: "empleado", user: "ana", pass: "emp123", sucursal: "Norte", puesto: "Asistente Dental", antiguedad: "2 años", telefono: "555-1001" },
-  { id: 4, name: "Carlos Pérez", role: "empleado", user: "carlos", pass: "emp123", sucursal: "Sur", puesto: "Dentista", antiguedad: "4 años", telefono: "555-1002" },
-  { id: 5, name: "Sofía Martínez", role: "empleado", user: "sofia", pass: "emp123", sucursal: "Norte", puesto: "Recepcionista", antiguedad: "1 año", telefono: "555-1003" },
-  { id: 6, name: "Luis Torres", role: "empleado", user: "luis", pass: "emp123", sucursal: "Centro", puesto: "Asistente Dental", antiguedad: "3 años", telefono: "555-1004" },
-  { id: 7, name: "María López", role: "empleado", user: "maria", pass: "emp123", sucursal: "Sur", puesto: "Dentista", antiguedad: "5 años", telefono: "555-1005" },
-  { id: 8, name: "Roberto Díaz", role: "empleado", user: "roberto", pass: "emp123", sucursal: "Centro", puesto: "Laboratorista", antiguedad: "6 meses", telefono: "555-1006" },
+  { id: 1, name: "Mario Rodríguez", role: "admin", user: "mario", pass: "admin123", sucursal: "Central", puesto: "Director", fechaNacimiento: "1985-04-12", fechaIngreso: "2020-01-15" },
+{ id: 2, name: "Dra. Laura Vega", role: "psicologa", user: "laura", pass: "psico123", sucursal: "Central", puesto: "Psicóloga", fechaNacimiento: "1990-09-22", fechaIngreso: "2021-03-10" },
+{ id: 9, name: "Patricia Ramírez", role: "rh", user: "patricia", pass: "rh123", sucursal: "Central", puesto: "Administrativo RH", fechaNacimiento: "1988-06-18", fechaIngreso: "2022-02-01" },
+{ id: 3, name: "Ana García", role: "empleado", user: "ana", pass: "emp123", sucursal: "Norte", puesto: "Asistente Dental", antiguedad: "2 años", telefono: "555-1001", fechaNacimiento: "1998-06-15", fechaIngreso: "2023-06-20" },
+{ id: 4, name: "Carlos Pérez", role: "empleado", user: "carlos", pass: "emp123", sucursal: "Sur", puesto: "Dentista", antiguedad: "4 años", telefono: "555-1002", fechaNacimiento: "1992-07-04", fechaIngreso: "2021-07-10" },
+{ id: 5, name: "Sofía Martínez", role: "empleado", user: "sofia", pass: "emp123", sucursal: "Norte", puesto: "Recepcionista", antiguedad: "1 año", telefono: "555-1003", fechaNacimiento: "1999-06-12", fechaIngreso: "2024-06-25" },
+{ id: 6, name: "Luis Torres", role: "empleado", user: "luis", pass: "emp123", sucursal: "Centro", puesto: "Asistente Dental", antiguedad: "3 años", telefono: "555-1004", fechaNacimiento: "1996-08-08", fechaIngreso: "2022-06-14" },
+{ id: 7, name: "María López", role: "empleado", user: "maria", pass: "emp123", sucursal: "Sur", puesto: "Dentista", antiguedad: "5 años", telefono: "555-1005", fechaNacimiento: "1991-06-09", fechaIngreso: "2020-06-11" },
+{ id: 8, name: "Roberto Díaz", role: "empleado", user: "roberto", pass: "emp123", sucursal: "Centro", puesto: "Laboratorista", antiguedad: "6 meses", telefono: "555-1006", fechaNacimiento: "2000-06-21", fechaIngreso: "2025-01-10" }
 ];
 const SUCURSALES = ["Norte", "Sur", "Centro", "Central"];
 const VACACIONES_INIT = [
@@ -1570,6 +1570,7 @@ const Sidebar = ({ user, active, setActive, onLogout }) => {
       { key: "empleados", icon: "👥", label: "Empleados" },
       { key: "expedientes", icon: "📁", label: "Expedientes" },
       { key: "reconocimientos", icon: "🏅", label: "Reconocimientos" },
+      { key: "eventospersonal", icon: "🎂", label: "Cumpleaños y Aniversarios" },
       { key: "encuestas", icon: "📋", label: "Encuestas" },
       { key: "mensajes", icon: "💬", label: "Mensajes" },
       { key: "reportes", icon: "📈", label: "Reportes" },
@@ -1592,6 +1593,7 @@ const Sidebar = ({ user, active, setActive, onLogout }) => {
       { key: "incapacidades", icon: "🏥", label: "Incapacidades" },
       { key: "descuentos", icon: "💸", label: "Descuentos" },
       { key: "calendario", icon: "📅", label: "Calendario" },
+      { key: "eventospersonal", icon: "🎂", label: "Cumpleaños y Aniversarios" },
       { key: "reconocimientos", icon: "🏅", label: "Reconocimientos" },
       { key: "reportesrh", icon: "📈", label: "Reportes RH" },
     ],
@@ -3335,6 +3337,198 @@ const semaforoColor = pulseStatus.color;
     </div>
   );
 };
+const EventosPersonal = ({ users }) => {
+  const empleados = users.filter(u => ["empleado", "rh", "psicologa", "admin"].includes(u.role));
+
+  const today = new Date();
+  const currentYear = today.getFullYear();
+
+  const daysUntil = (dateString) => {
+    if (!dateString) return 999;
+
+    const original = new Date(dateString);
+    let next = new Date(currentYear, original.getMonth(), original.getDate());
+
+    if (next < new Date(today.getFullYear(), today.getMonth(), today.getDate())) {
+      next = new Date(currentYear + 1, original.getMonth(), original.getDate());
+    }
+
+    const diff = next - new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "Sin fecha";
+    return new Date(dateString).toLocaleDateString("es-MX", {
+      day: "2-digit",
+      month: "long"
+    });
+  };
+
+  const yearsSince = (dateString) => {
+    if (!dateString) return 0;
+    const date = new Date(dateString);
+    return currentYear - date.getFullYear();
+  };
+
+  const eventos = [
+    ...empleados.map(u => ({
+      id: `cumple-${u.id}`,
+      tipo: "Cumpleaños",
+      icon: "🎂",
+      empleado: u.name,
+      puesto: u.puesto,
+      sucursal: u.sucursal,
+      fechaBase: u.fechaNacimiento,
+      fechaTexto: formatDate(u.fechaNacimiento),
+      dias: daysUntil(u.fechaNacimiento),
+      detalle: "Cumpleaños del colaborador"
+    })),
+    ...empleados.map(u => ({
+      id: `aniv-${u.id}`,
+      tipo: "Aniversario laboral",
+      icon: "🎉",
+      empleado: u.name,
+      puesto: u.puesto,
+      sucursal: u.sucursal,
+      fechaBase: u.fechaIngreso,
+      fechaTexto: formatDate(u.fechaIngreso),
+      dias: daysUntil(u.fechaIngreso),
+      detalle: `${yearsSince(u.fechaIngreso)} año(s) en McDental`
+    }))
+  ]
+    .filter(e => e.dias <= 30)
+    .sort((a, b) => a.dias - b.dias);
+
+  const hoy = eventos.filter(e => e.dias === 0).length;
+  const proximos3 = eventos.filter(e => e.dias > 0 && e.dias <= 3).length;
+  const proximos7 = eventos.filter(e => e.dias > 0 && e.dias <= 7).length;
+
+  const badgeStyle = (dias) => ({
+    display: "inline-block",
+    padding: "5px 10px",
+    borderRadius: 999,
+    fontSize: 12,
+    fontWeight: 900,
+    background:
+      dias === 0 ? "#fee2e2" :
+      dias <= 3 ? "#ffedd5" :
+      dias <= 7 ? "#fef3c7" :
+      "#dcfce7",
+    color:
+      dias === 0 ? "#991b1b" :
+      dias <= 3 ? "#c2410c" :
+      dias <= 7 ? "#92400e" :
+      "#166534"
+  });
+
+  const textoDias = (dias) => {
+    if (dias === 0) return "Hoy";
+    if (dias === 1) return "Mañana";
+    return `En ${dias} días`;
+  };
+
+  return (
+    <div>
+      <h1 style={{ margin: "0 0 6px", fontSize: 28, color: "#004D40" }}>
+        Cumpleaños y Aniversarios
+      </h1>
+      <p style={{ margin: "0 0 24px", color: "#64748b" }}>
+        Recordatorios automáticos de cumpleaños y aniversarios laborales del equipo.
+      </p>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+        gap: 14,
+        marginBottom: 22
+      }}>
+        <Card>
+          <div style={{ fontSize: 24 }}>🎂</div>
+          <div style={{ fontSize: 30, fontWeight: 900, color: "#ef4444" }}>
+            {hoy}
+          </div>
+          <div style={{ fontWeight: 800 }}>Eventos hoy</div>
+        </Card>
+
+        <Card>
+          <div style={{ fontSize: 24 }}>⏰</div>
+          <div style={{ fontSize: 30, fontWeight: 900, color: "#f97316" }}>
+            {proximos3}
+          </div>
+          <div style={{ fontWeight: 800 }}>Próximos 3 días</div>
+        </Card>
+
+        <Card>
+          <div style={{ fontSize: 24 }}>📅</div>
+          <div style={{ fontSize: 30, fontWeight: 900, color: "#f59e0b" }}>
+            {proximos7}
+          </div>
+          <div style={{ fontWeight: 800 }}>Próximos 7 días</div>
+        </Card>
+
+        <Card>
+          <div style={{ fontSize: 24 }}>🎉</div>
+          <div style={{ fontSize: 30, fontWeight: 900, color: "#00897B" }}>
+            {eventos.length}
+          </div>
+          <div style={{ fontWeight: 800 }}>Próximos 30 días</div>
+        </Card>
+      </div>
+
+      <Card>
+        <h3 style={{ marginTop: 0, color: "#004D40" }}>
+          🎁 Agenda de celebraciones
+        </h3>
+
+        {eventos.length === 0 ? (
+          <p style={{ color: "#64748b" }}>
+            No hay cumpleaños ni aniversarios próximos en los siguientes 30 días.
+          </p>
+        ) : (
+          <div style={{ display: "grid", gap: 12 }}>
+            {eventos.map(e => (
+              <div
+                key={e.id}
+                style={{
+                  padding: 16,
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 14,
+                  background: "#f8fafc",
+                  display: "grid",
+                  gridTemplateColumns: "1fr auto",
+                  gap: 12,
+                  alignItems: "center"
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 900, color: "#0f172a", fontSize: 17 }}>
+                    {e.icon} {e.empleado}
+                  </div>
+                  <div style={{ color: "#64748b", fontSize: 13 }}>
+                    {e.sucursal} · {e.puesto}
+                  </div>
+                  <div style={{ color: "#334155", marginTop: 6 }}>
+                    <b>{e.tipo}</b> · {e.fechaTexto}
+                  </div>
+                  <div style={{ color: "#64748b", fontSize: 13 }}>
+                    {e.detalle}
+                  </div>
+                </div>
+
+                <div style={{ textAlign: "right" }}>
+                  <span style={badgeStyle(e.dias)}>
+                    {textoDias(e.dias)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+};
 const AdminDashboard = ({ encuestas, mensajes }) => {
   const empleados = USERS.filter(u => u.role === "empleado");
 const semanaEnc = encuestas.filter(e => e.semana === semanaActual);
@@ -3732,6 +3926,7 @@ const addReconocimiento = (reconocimiento) => {
       if (active==="empleados") return <EmpleadosList encuestas={encuestas} notas={notas} role="admin"/>;
       if (active==="expedientes") return <ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} incapacidades={incapacidades} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} />;
       if (active==="reconocimientos") return <ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />;
+      if (active==="eventospersonal") return <EventosPersonal users={USERS} />;
       if (active==="mensajes") return <Mensajes user={user} mensajes={mensajes} onSend={sendMensaje}/>;
       if (active==="reportes") return <Reportes/>;
       if (active==="confidenciales") return <ReportesConfidencialesPanel reportes={reportesConfidenciales} />;
@@ -3764,6 +3959,7 @@ const addReconocimiento = (reconocimiento) => {
       if (active==="incapacidades") return <IncapacidadesRH incapacidades={incapacidades} onUpdateEstado={updateIncapacidadEstado} />;
       if (active==="descuentos") return <DescuentosRH descuentos={descuentos} onUpdateEstado={updateDescuentoEstado} />;
       if (active==="calendario") return <CalendarioRH vacaciones={vacaciones} permisos={permisos} incapacidades={incapacidades} eventosExtra={calendarioExtra} />;
+      if (active==="eventospersonal") return <EventosPersonal users={USERS} />;
       if (active==="reconocimientos") return <ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />;
       if (active==="reportesrh") return <ReportesRH vacaciones={vacaciones} permisos={permisos} incapacidades={incapacidades} descuentos={descuentos} />;
     }
