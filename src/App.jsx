@@ -415,6 +415,115 @@ const getPulseStatus = (score) => {
     nivel: "intervencion"
   };
 };
+const analyzeEmployeeAI = (empleado, encuestas, permisos = [], incapacidades = [], descuentos = [], reconocimientos = [], reportesConfidenciales = []) => {
+  const encuestasEmpleado = encuestas.filter(e => e.empleadoId === empleado.id);
+  const permisosEmpleado = permisos.filter(p => p.empleadoId === empleado.id);
+  const incapacidadesEmpleado = incapacidades.filter(i => i.empleadoId === empleado.id);
+  const descuentosEmpleado = descuentos.filter(d => d.empleadoId === empleado.id);
+  const reconocimientosEmpleado = reconocimientos.filter(r => r.empleadoId === empleado.id);
+  const reportesEmpleado = reportesConfidenciales.filter(r => r.empleadoId === empleado.id);
+
+  const pulse = calcPulseScore(empleado.id, encuestas).score;
+  const status = getPulseStatus(pulse);
+
+  const ultimas = encuestasEmpleado.slice(-3);
+  const primera = ultimas[0]?.score ?? pulse;
+  const ultima = ultimas[ultimas.length - 1]?.score ?? pulse;
+  const cambio = ultima - primera;
+
+  const faltasAdministrativas =
+    permisosEmpleado.length + incapacidadesEmpleado.length + descuentosEmpleado.length;
+
+  const riesgos = [];
+
+  if (pulse < 50) {
+    riesgos.push({
+      tipo: "Intervención inmediata",
+      nivel: "Crítica",
+      detalle: "Pulse Score menor a 50. Requiere intervención prioritaria."
+    });
+  } else if (pulse < 60) {
+    riesgos.push({
+      tipo: "Riesgo emocional",
+      nivel: "Alta",
+      detalle: "Pulse Score en zona de riesgo."
+    });
+  } else if (pulse < 70) {
+    riesgos.push({
+      tipo: "Atención preventiva",
+      nivel: "Media",
+      detalle: "Pulse Score en zona de atención."
+    });
+  }
+
+  if (cambio <= -10) {
+    riesgos.push({
+      tipo: "Cambio de comportamiento",
+      nivel: "Alta",
+      detalle: `Disminución de ${Math.abs(cambio)} puntos en sus últimas mediciones.`
+    });
+  } else if (cambio <= -5) {
+    riesgos.push({
+      tipo: "Tendencia negativa",
+      nivel: "Media",
+      detalle: `Baja moderada de ${Math.abs(cambio)} puntos.`
+    });
+  }
+
+  if (permisosEmpleado.length >= 2 || incapacidadesEmpleado.length >= 2) {
+    riesgos.push({
+      tipo: "Riesgo de ausentismo",
+      nivel: "Media",
+      detalle: "Presenta varios permisos o incapacidades registradas."
+    });
+  }
+
+  if (descuentosEmpleado.some(d => d.estado === "activo" || d.estado === "pendiente")) {
+    riesgos.push({
+      tipo: "Posible presión financiera/administrativa",
+      nivel: "Baja",
+      detalle: "Tiene descuentos administrativos activos o pendientes."
+    });
+  }
+
+  if (reportesEmpleado.some(r => r.urgencia === "Alta" || r.urgencia === "Crítica")) {
+    riesgos.push({
+      tipo: "Reporte confidencial prioritario",
+      nivel: "Alta",
+      detalle: "Existe un reporte confidencial de urgencia alta o crítica."
+    });
+  }
+
+  if (reconocimientosEmpleado.length === 0 && pulse < 70) {
+    riesgos.push({
+      tipo: "Desconexión organizacional",
+      nivel: "Media",
+      detalle: "No tiene reconocimientos registrados y su score requiere atención."
+    });
+  }
+
+  const prioridad =
+    riesgos.some(r => r.nivel === "Crítica") ? "Crítica" :
+    riesgos.some(r => r.nivel === "Alta") ? "Alta" :
+    riesgos.some(r => r.nivel === "Media") ? "Media" :
+    "Baja";
+
+  const recomendacion =
+    prioridad === "Crítica" ? "Agendar intervención inmediata con psicóloga y seguimiento directivo." :
+    prioridad === "Alta" ? "Programar conversación individual y revisar expediente integral." :
+    prioridad === "Media" ? "Monitorear semanalmente y aplicar intervención preventiva." :
+    "Mantener seguimiento regular y reforzar reconocimiento positivo.";
+
+  return {
+    empleado,
+    pulse,
+    status,
+    cambio,
+    prioridad,
+    riesgos,
+    recomendacion
+  };
+};
 const calcRiesgos = (empId, encuestas) => {
   const enc = encuestas.filter(e => e.empleadoId === empId).sort((a, b) => b.semana.localeCompare(a.semana));
   if (!enc.length) return { renuncia: 10, burnout: 10, emocional: 10, conflicto: 10 };
@@ -543,7 +652,7 @@ const RiskBar = ({ label, value, color }) => (
 );
 
 // ─── AI ENGINE PANEL ──────────────────────────────────────────────────────────
-const AIEngine = ({ encuestas, mensajes, notas, userRole }) => {
+const AIEngine = ({ encuestas, mensajes, notas, userRole, permisos = [], incapacidades = [], descuentos = [], reconocimientos = [], reportesConfidenciales = [] }) => {
   const [tab, setTab] = useState("resumen");
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -553,7 +662,24 @@ const AIEngine = ({ encuestas, mensajes, notas, userRole }) => {
   const [chatLoading, setChatLoading] = useState(false);
 
   const empleados = USERS.filter(u => u.role === "empleado");
+const analisisIA = empleados.map(emp =>
+  analyzeEmployeeAI(
+    emp,
+    encuestas,
+    permisos,
+    incapacidades,
+    descuentos,
+    reconocimientos,
+    reportesConfidenciales
+  )
+);
 
+const prioridadCritica = analisisIA.filter(a => a.prioridad === "Crítica").length;
+const prioridadAlta = analisisIA.filter(a => a.prioridad === "Alta").length;
+const prioridadMedia = analisisIA.filter(a => a.prioridad === "Media").length;
+const cambiosComportamiento = analisisIA.filter(a =>
+  a.riesgos.some(r => r.tipo === "Cambio de comportamiento" || r.tipo === "Tendencia negativa")
+).length;
   const buildContexto = () => {
     const semanaEnc = encuestas.filter(e => e.semana === semanaActual);
     const resumen = empleados.map(emp => {
@@ -642,7 +768,44 @@ const AIEngine = ({ encuestas, mensajes, notas, userRole }) => {
         </div>
         <div style={{ marginLeft: "auto", background: "linear-gradient(135deg,#004D40,#0891b2)", color: "#fff", padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700 }}>✨ ACTIVO</div>
       </div>
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+        gap: 12,
+        margin: "18px 0"
+      }}>
+        <Card>
+          <div style={{ fontSize: 24 }}>🚨</div>
+          <div style={{ fontSize: 30, fontWeight: 900, color: "#b91c1c" }}>
+            {prioridadCritica}
+          </div>
+          <div style={{ fontWeight: 800 }}>Prioridad crítica</div>
+        </Card>
 
+        <Card>
+          <div style={{ fontSize: 24 }}>🔴</div>
+          <div style={{ fontSize: 30, fontWeight: 900, color: "#ef4444" }}>
+            {prioridadAlta}
+          </div>
+          <div style={{ fontWeight: 800 }}>Prioridad alta</div>
+        </Card>
+
+        <Card>
+          <div style={{ fontSize: 24 }}>🟠</div>
+          <div style={{ fontSize: 30, fontWeight: 900, color: "#f97316" }}>
+            {prioridadMedia}
+          </div>
+          <div style={{ fontWeight: 800 }}>Prioridad media</div>
+        </Card>
+
+        <Card>
+          <div style={{ fontSize: 24 }}>📉</div>
+          <div style={{ fontSize: 30, fontWeight: 900, color: "#7c3aed" }}>
+            {cambiosComportamiento}
+          </div>
+          <div style={{ fontWeight: 800 }}>Cambios detectados</div>
+        </Card>
+      </div>
       {/* Pulse Scores resumen */}
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
         {USERS.filter(u=>u.role==="empleado").map(emp => {
@@ -674,23 +837,95 @@ const AIEngine = ({ encuestas, mensajes, notas, userRole }) => {
       </div>
 
       {/* Resumen Semanal */}
-      {tab === "resumen" && (
-        <Card>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-            <div><div style={{ fontWeight: 700, fontSize: 15, color: "#004D40" }}>📋 Resumen Ejecutivo Semanal</div><div style={{ fontSize: 12, color: "#6b7280" }}>Generado por IA · Semana {semanaActual}</div></div>
-            <button onClick={generarResumen} disabled={loading} style={{ padding: "10px 20px", background: "linear-gradient(135deg,#006D5B,#0891b2)", color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-              {loading ? "Analizando..." : "✨ Generar con IA"}
-            </button>
-          </div>
-          {(output || loading) ? <AIChatBubble mensaje={output} loading={loading} /> : (
-            <div style={{ textAlign: "center", padding: "32px 0", color: "#9ca3af" }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>🤖</div>
-              <div style={{ fontSize: 14 }}>Presiona "Generar con IA" para obtener el análisis semanal completo</div>
-            </div>
-          )}
-        </Card>
-      )}
+     {tab === "resumen" && (
+  <Card style={{ marginTop: 16 }}>
+    <h3 style={{ marginTop: 0, color: "#004D40" }}>
+      🧠 Análisis local por reglas
+    </h3>
 
+    <div style={{ display: "grid", gap: 12 }}>
+      {analisisIA
+        .slice()
+        .sort((a, b) => {
+          const orden = { "Crítica": 0, "Alta": 1, "Media": 2, "Baja": 3 };
+          return orden[a.prioridad] - orden[b.prioridad];
+        })
+        .map(a => (
+          <div
+            key={a.empleado.id}
+            style={{
+              padding: 14,
+              border: "1px solid #e5e7eb",
+              borderRadius: 14,
+              background:
+                a.prioridad === "Crítica" ? "#fef2f2" :
+                a.prioridad === "Alta" ? "#fff7ed" :
+                a.prioridad === "Media" ? "#fffbeb" :
+                "#f8fafc"
+            }}
+          >
+            <div style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 12,
+              alignItems: "center",
+              marginBottom: 8
+            }}>
+              <div>
+                <div style={{ fontWeight: 900, color: "#0f172a" }}>
+                  {a.empleado.name}
+                </div>
+                <div style={{ color: "#64748b", fontSize: 13 }}>
+                  {a.empleado.sucursal} · {a.empleado.puesto}
+                </div>
+              </div>
+
+              <div style={{
+                padding: "6px 10px",
+                borderRadius: 999,
+                fontWeight: 900,
+                fontSize: 13,
+                background:
+                  a.prioridad === "Crítica" ? "#fee2e2" :
+                  a.prioridad === "Alta" ? "#ffedd5" :
+                  a.prioridad === "Media" ? "#fef3c7" :
+                  "#dcfce7",
+                color:
+                  a.prioridad === "Crítica" ? "#991b1b" :
+                  a.prioridad === "Alta" ? "#c2410c" :
+                  a.prioridad === "Media" ? "#92400e" :
+                  "#166534"
+              }}>
+                {a.prioridad}
+              </div>
+            </div>
+
+            <div style={{ color: "#334155", marginBottom: 8 }}>
+              <b>Pulse Score:</b> {a.pulse} · {a.status.label} · Semáforo {a.status.semaforo}
+            </div>
+
+            {a.riesgos.length > 0 ? (
+              <div style={{ display: "grid", gap: 6, marginBottom: 8 }}>
+                {a.riesgos.map((r, idx) => (
+                  <div key={idx} style={{ color: "#475569", fontSize: 13 }}>
+                    ⚠️ <b>{r.tipo}</b> — {r.detalle}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ color: "#64748b", fontSize: 13, marginBottom: 8 }}>
+                Sin riesgos relevantes detectados.
+              </div>
+            )}
+
+            <div style={{ color: "#004D40", fontWeight: 800 }}>
+              Recomendación: {a.recomendacion}
+            </div>
+          </div>
+        ))}
+    </div>
+  </Card>
+)}
       {/* Alertas */}
       {tab === "alertas" && (
         <Card>
@@ -3014,7 +3249,17 @@ const addReconocimiento = (reconocimiento) => {
   const renderView = () => {
     if (user.role==="admin") {
       if (active==="dashboard") return <AdminDashboard encuestas={encuestas} mensajes={mensajes}/>;
-      if (active==="ai") return <AIEngine encuestas={encuestas} mensajes={mensajes} notas={notas} userRole="admin"/>;
+      if (active==="ai") return <AIEngine
+  encuestas={encuestas}
+  mensajes={mensajes}
+  notas={notas}
+  userRole="admin"
+  permisos={permisos}
+  incapacidades={incapacidades}
+  descuentos={descuentos}
+  reconocimientos={reconocimientos}
+  reportesConfidenciales={reportesConfidenciales}
+/>;
       if (active==="empleados") return <EmpleadosList encuestas={encuestas} notas={notas} role="admin"/>;
       if (active==="expedientes") return <ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} incapacidades={incapacidades} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} />;
       if (active==="reconocimientos") return <ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />;
@@ -3026,7 +3271,17 @@ const addReconocimiento = (reconocimiento) => {
     }
     if (user.role==="psicologa") {
       if (active==="dashboard") return <AdminDashboard encuestas={encuestas} mensajes={mensajes}/>;
-      if (active==="ai") return <AIEngine encuestas={encuestas} mensajes={mensajes} notas={notas} userRole="psicologa"/>;
+      if (active==="ai") return <AIEngine
+  encuestas={encuestas}
+  mensajes={mensajes}
+  notas={notas}
+  userRole="psicologa"
+  permisos={permisos}
+  incapacidades={incapacidades}
+  descuentos={descuentos}
+  reconocimientos={reconocimientos}
+  reportesConfidenciales={reportesConfidenciales}
+/>;
       if (active==="seguimiento") return <PsicologaSeguimiento encuestas={encuestas} notas={notas} onUpdateNota={addNota}/>;
       if (active==="confidenciales") return <ReportesConfidencialesPanel reportes={reportesConfidenciales} />;
       if (active==="empleados") return <EmpleadosList encuestas={encuestas} notas={notas} role="psicologa"/>;
