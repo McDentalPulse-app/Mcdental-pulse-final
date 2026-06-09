@@ -1197,37 +1197,148 @@ const cambiosComportamiento = analisisIA.filter(a =>
   </Card>
 )}
 
-      {/* Copiloto Chat */}
-      {tab === "copiloto" && (
-        <Card style={{ display: "flex", flexDirection: "column", height: 500, padding: 0, overflow: "hidden" }}>
-          <div style={{ padding: "16px 20px", borderBottom: "1px solid #f3f4f6", background: "linear-gradient(135deg,#f0fdf4,#e0f2fe)" }}>
-            <div style={{ fontWeight: 700, fontSize: 15, color: "#004D40" }}>🤖 Copiloto IA — {userRole === "psicologa" ? "Asistente Clínico" : "Asistente Ejecutivo"}</div>
-            <div style={{ fontSize: 12, color: "#6b7280" }}>Hazme preguntas sobre empleados, sucursales o tendencias</div>
-          </div>
-          <div style={{ flex: 1, overflowY: "auto", padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
-            {chatHistory.length === 0 && (
-              <div style={{ textAlign: "center", padding: "24px 0" }}>
-                <div style={{ fontSize: 36, marginBottom: 12 }}>🤖</div>
-                <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>Ejemplos de preguntas:</div>
-                {["¿Quién tiene mayor riesgo de renuncia?", "Resume el estado de la sucursal Norte", "¿Qué empleados necesitan atención urgente?", "¿Hay signos de conflicto en alguna sucursal?"].map(q => (
-                  <button key={q} onClick={() => setChatInput(q)} style={{ display: "block", margin: "6px auto", padding: "8px 16px", background: "#f0fdf4", color: "#006D5B", border: "1px solid #bbf7d0", borderRadius: 20, fontSize: 12, cursor: "pointer", maxWidth: 340 }}>{q}</button>
-                ))}
+      {/* Copiloto */}
+{tab === "copiloto" && (
+  <Card>
+    <h3 style={{ marginTop: 0, color: "#004D40" }}>
+      🤖 Copiloto de Bienestar Organizacional
+    </h3>
+    <p style={{ color: "#64748b", marginTop: 0 }}>
+      Recomendaciones automáticas para priorizar seguimiento humano, psicológico y organizacional.
+    </p>
+
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+      gap: 14,
+      marginBottom: 18
+    }}>
+      <Card>
+        <div style={{ fontSize: 24 }}>🚨</div>
+        <div style={{ fontSize: 26, fontWeight: 900, color: "#b91c1c" }}>
+          {analisisIA.filter(a => a.prioridad === "Crítica").length}
+        </div>
+        <div style={{ fontWeight: 800 }}>Casos urgentes</div>
+      </Card>
+
+      <Card>
+        <div style={{ fontSize: 24 }}>🔴</div>
+        <div style={{ fontSize: 26, fontWeight: 900, color: "#ef4444" }}>
+          {analisisIA.filter(a => a.prioridad === "Alta").length}
+        </div>
+        <div style={{ fontWeight: 800 }}>Casos de alta prioridad</div>
+      </Card>
+
+      <Card>
+        <div style={{ fontSize: 24 }}>📋</div>
+        <div style={{ fontSize: 26, fontWeight: 900, color: "#00897B" }}>
+          {analisisIA.filter(a => a.riesgos.length > 0).length}
+        </div>
+        <div style={{ fontWeight: 800 }}>Casos con señales</div>
+      </Card>
+    </div>
+
+    <div style={{ display: "grid", gap: 14 }}>
+      <div style={{
+        padding: 16,
+        borderRadius: 14,
+        background: "#ecfeff",
+        border: "1px solid #bae6fd"
+      }}>
+        <h4 style={{ margin: "0 0 10px", color: "#004D40" }}>
+          🎯 Prioridad de atención esta semana
+        </h4>
+
+        {analisisIA
+          .slice()
+          .sort((a, b) => {
+            const orden = { "Crítica": 0, "Alta": 1, "Media": 2, "Baja": 3 };
+            return orden[a.prioridad] - orden[b.prioridad];
+          })
+          .slice(0, 3)
+          .map((a, idx) => (
+            <div
+              key={a.empleado.id}
+              style={{
+                padding: "10px 0",
+                borderBottom: idx < 2 ? "1px solid #bae6fd" : "none"
+              }}
+            >
+              <div style={{ fontWeight: 900, color: "#0f172a" }}>
+                {idx + 1}. {a.empleado.name} — Prioridad {a.prioridad}
               </div>
-            )}
-            {chatHistory.map((m, i) => (
-              m.role === "user"
-                ? <div key={i} style={{ display: "flex", justifyContent: "flex-end" }}><div style={{ background: "#006D5B", color: "#fff", borderRadius: "12px 12px 4px 12px", padding: "10px 14px", fontSize: 13, maxWidth: "70%" }}>{m.text}</div></div>
-                : <AIChatBubble key={i} mensaje={m.text} loading={false} />
-            ))}
-            {chatLoading && <AIChatBubble mensaje="" loading={true} />}
-          </div>
-          <div style={{ padding: "12px 20px", borderTop: "1px solid #f3f4f6", display: "flex", gap: 10 }}>
-            <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === "Enter" && sendChat()}
-              placeholder="Pregunta al copiloto IA..." style={{ flex: 1, padding: "10px 14px", borderRadius: 20, border: "1.5px solid #e5e7eb", fontSize: 13, outline: "none" }} />
-            <button onClick={sendChat} disabled={chatLoading} style={{ padding: "10px 18px", background: "linear-gradient(135deg,#006D5B,#0891b2)", color: "#fff", border: "none", borderRadius: 20, fontWeight: 700, cursor: "pointer", fontSize: 13 }}>Enviar</button>
-          </div>
-        </Card>
-      )}
+              <div style={{ color: "#475569", fontSize: 13 }}>
+                {a.empleado.sucursal} · {a.empleado.puesto} · Pulse Score {a.pulse}
+              </div>
+              <div style={{ color: "#004D40", fontWeight: 800, marginTop: 4 }}>
+                {a.recomendacion}
+              </div>
+            </div>
+          ))}
+      </div>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+        gap: 14
+      }}>
+        <div style={{
+          padding: 16,
+          borderRadius: 14,
+          background: "#f8fafc",
+          border: "1px solid #e5e7eb"
+        }}>
+          <h4 style={{ margin: "0 0 10px", color: "#004D40" }}>
+            💬 Preguntas sugeridas para seguimiento
+          </h4>
+
+          <ul style={{ color: "#334155", lineHeight: 1.8, margin: 0, paddingLeft: 20 }}>
+            <li>¿Cómo te has sentido emocionalmente durante las últimas semanas?</li>
+            <li>¿Hay alguna situación laboral o personal que esté afectando tu desempeño?</li>
+            <li>¿Sientes apoyo suficiente de tu equipo y supervisor?</li>
+            <li>¿Qué cambio ayudaría a mejorar tu bienestar en la sucursal?</li>
+            <li>¿Hay algo que prefieras comunicar de forma confidencial?</li>
+          </ul>
+        </div>
+
+        <div style={{
+          padding: 16,
+          borderRadius: 14,
+          background: "#f8fafc",
+          border: "1px solid #e5e7eb"
+        }}>
+          <h4 style={{ margin: "0 0 10px", color: "#004D40" }}>
+            🛠️ Acciones recomendadas
+          </h4>
+
+          <ul style={{ color: "#334155", lineHeight: 1.8, margin: 0, paddingLeft: 20 }}>
+            <li>Revisar primero los casos críticos y altos.</li>
+            <li>Consultar expediente integral antes de hablar con el colaborador.</li>
+            <li>Registrar nota privada después de cada seguimiento.</li>
+            <li>Dar reconocimiento positivo a empleados con mejora o estabilidad.</li>
+            <li>Escalar a dirección solo los casos con riesgo alto sostenido.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div style={{
+        padding: 16,
+        borderRadius: 14,
+        background: "#fff7ed",
+        border: "1px solid #fed7aa"
+      }}>
+        <h4 style={{ margin: "0 0 10px", color: "#9a3412" }}>
+          ⚠️ Nota del Copiloto
+        </h4>
+        <p style={{ color: "#7c2d12", lineHeight: 1.7, margin: 0 }}>
+          Este análisis no sustituye el criterio humano ni profesional. Su función es priorizar señales,
+          organizar información y sugerir acciones preventivas para que la psicóloga, RH o dirección
+          tomen mejores decisiones.
+        </p>
+      </div>
+    </div>
+  </Card>
+)}
 
       {/* Expedientes IA */}
       {tab === "expedientes" && (
