@@ -228,6 +228,36 @@ const CALENDARIO_EXTRA_INIT = [
     estado: "programado"
   }
 ];
+const REPORTES_CONFIDENCIALES_INIT = [
+  {
+    id: 1,
+    empleadoId: 3,
+    empleado: "Ana García",
+    sucursal: "Norte",
+    puesto: "Asistente Dental",
+    fecha: "2025-06-16",
+    tipo: "Conflictos internos",
+    urgencia: "Media",
+    descripcion: "Reporta tensión recurrente con un compañero durante el cierre de turno.",
+    evidencias: "Sin evidencia adjunta",
+    estado: "nuevo",
+    visiblePara: ["admin", "psicologa"]
+  },
+  {
+    id: 2,
+    empleadoId: 6,
+    empleado: "Luis Torres",
+    sucursal: "Centro",
+    puesto: "Asistente Dental",
+    fecha: "2025-06-15",
+    tipo: "Maltrato",
+    urgencia: "Alta",
+    descripcion: "Señala trato inadecuado durante una jornada con alta carga operativa.",
+    evidencias: "Pendiente de revisión",
+    estado: "en seguimiento",
+    visiblePara: ["admin", "psicologa"]
+  }
+];
 const ENCUESTA_PREGUNTAS = [
   { id: 1, texto: "¿Cómo describes tu estado emocional esta semana?", tipo: "escala", area: "Emocional" },
   { id: 2, texto: "¿Qué tan estresado/a te has sentido en el trabajo?", tipo: "escala", area: "Estrés" },
@@ -744,19 +774,14 @@ const Sidebar = ({ user, active, setActive, onLogout }) => {
       { key: "encuestas", icon: "📋", label: "Encuestas" },
       { key: "mensajes", icon: "💬", label: "Mensajes" },
       { key: "reportes", icon: "📈", label: "Reportes" },
+      { key: "confidenciales", icon: "🔒", label: "Reportes Confidenciales" },
       { key: "config", icon: "⚙️", label: "Config" },
     ],
     psicologa: [
       { key: "dashboard", icon: "📊", label: "Dashboard" },
       { key: "ai", icon: "🤖", label: "AI Engine", badge: "NEW" },
       { key: "seguimiento", icon: "🎯", label: "Seguimiento" },
-      { key: "empleados", icon: "👥", label: "Empleados" },
-      { key: "mensajes", icon: "💬", label: "Mensajes" },
-    ],
-    psicologa: [
-      { key: "dashboard", icon: "📊", label: "Dashboard" },
-      { key: "ai", icon: "🤖", label: "AI Engine", badge: "NEW" },
-      { key: "seguimiento", icon: "🎯", label: "Seguimiento" },
+      { key: "confidenciales", icon: "🔒", label: "Reportes Confidenciales" },
       { key: "empleados", icon: "👥", label: "Empleados" },
       { key: "mensajes", icon: "💬", label: "Mensajes" },
     ],
@@ -773,6 +798,7 @@ const Sidebar = ({ user, active, setActive, onLogout }) => {
       { key: "inicio", icon: "🏠", label: "Inicio" },
       { key: "encuesta", icon: "📝", label: "Mi Encuesta" },
       { key: "historial", icon: "📅", label: "Historial" },
+      { key: "reporteconfidencial", icon: "🔒", label: "Reporte Confidencial" },
       { key: "mensajes", icon: "💬", label: "Mensajes" },
     ],
   };
@@ -1717,6 +1743,311 @@ const ReportesRH = ({ vacaciones, permisos, incapacidades, descuentos }) => {
     </div>
   );
 };
+const ReporteConfidencialEmpleado = ({ user, onSubmit }) => {
+  const [tipo, setTipo] = useState("Conflictos internos");
+  const [urgencia, setUrgencia] = useState("Media");
+  const [descripcion, setDescripcion] = useState("");
+  const [evidencias, setEvidencias] = useState("");
+  const [enviado, setEnviado] = useState(false);
+
+  const tipos = [
+    "Acoso laboral",
+    "Acoso sexual",
+    "Robo",
+    "Fraude",
+    "Maltrato",
+    "Violencia",
+    "Mala práctica clínica",
+    "Consumo de sustancias",
+    "Conflictos internos",
+    "Otros"
+  ];
+
+  const enviar = () => {
+    if (!descripcion.trim()) {
+      alert("Por favor escribe una descripción del reporte.");
+      return;
+    }
+
+    onSubmit({
+      empleadoId: user.id,
+      empleado: user.name,
+      sucursal: user.sucursal,
+      puesto: user.puesto,
+      tipo,
+      urgencia,
+      descripcion,
+      evidencias: evidencias.trim() || "Sin evidencia adjunta"
+    });
+
+    setDescripcion("");
+    setEvidencias("");
+    setTipo("Conflictos internos");
+    setUrgencia("Media");
+    setEnviado(true);
+  };
+
+  return (
+    <div>
+      <h1 style={{ margin: "0 0 6px", fontSize: 28, color: "#004D40" }}>
+        Reporte Confidencial
+      </h1>
+      <p style={{ margin: "0 0 24px", color: "#64748b" }}>
+        Este espacio permite reportar situaciones sensibles. La información será visible únicamente para Psicóloga y Admin Principal.
+      </p>
+
+      {enviado ? (
+        <Card>
+          <h3 style={{ color: "#004D40", marginTop: 0 }}>✅ Reporte enviado</h3>
+          <p style={{ color: "#334155" }}>
+            Tu reporte fue registrado de forma confidencial para seguimiento.
+          </p>
+          <button
+            onClick={() => setEnviado(false)}
+            style={{
+              border: "none",
+              background: "#00897B",
+              color: "white",
+              padding: "10px 14px",
+              borderRadius: 10,
+              fontWeight: 800,
+              cursor: "pointer"
+            }}
+          >
+            Crear otro reporte
+          </button>
+        </Card>
+      ) : (
+        <Card>
+          <h3 style={{ marginTop: 0, color: "#004D40" }}>🔒 Nuevo reporte</h3>
+
+          <div style={{ display: "grid", gap: 14 }}>
+            <label style={{ fontWeight: 800, color: "#0f172a" }}>
+              Tipo de reporte
+              <select
+                value={tipo}
+                onChange={(e) => setTipo(e.target.value)}
+                style={{
+                  width: "100%",
+                  marginTop: 6,
+                  padding: 12,
+                  borderRadius: 10,
+                  border: "1px solid #cbd5e1"
+                }}
+              >
+                {tipos.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </label>
+
+            <label style={{ fontWeight: 800, color: "#0f172a" }}>
+              Nivel de urgencia
+              <select
+                value={urgencia}
+                onChange={(e) => setUrgencia(e.target.value)}
+                style={{
+                  width: "100%",
+                  marginTop: 6,
+                  padding: 12,
+                  borderRadius: 10,
+                  border: "1px solid #cbd5e1"
+                }}
+              >
+                <option>Baja</option>
+                <option>Media</option>
+                <option>Alta</option>
+                <option>Crítica</option>
+              </select>
+            </label>
+
+            <label style={{ fontWeight: 800, color: "#0f172a" }}>
+              Descripción
+              <textarea
+                value={descripcion}
+                onChange={(e) => setDescripcion(e.target.value)}
+                placeholder="Describe lo ocurrido con el mayor detalle posible..."
+                rows={5}
+                style={{
+                  width: "100%",
+                  marginTop: 6,
+                  padding: 12,
+                  borderRadius: 10,
+                  border: "1px solid #cbd5e1",
+                  resize: "vertical"
+                }}
+              />
+            </label>
+
+            <label style={{ fontWeight: 800, color: "#0f172a" }}>
+              Evidencias o notas adicionales
+              <textarea
+                value={evidencias}
+                onChange={(e) => setEvidencias(e.target.value)}
+                placeholder="Puedes indicar si tienes evidencias, fechas, personas involucradas o contexto adicional..."
+                rows={3}
+                style={{
+                  width: "100%",
+                  marginTop: 6,
+                  padding: 12,
+                  borderRadius: 10,
+                  border: "1px solid #cbd5e1",
+                  resize: "vertical"
+                }}
+              />
+            </label>
+
+            <button
+              onClick={enviar}
+              style={{
+                border: "none",
+                background: "#004D40",
+                color: "white",
+                padding: "12px 16px",
+                borderRadius: 10,
+                fontWeight: 900,
+                cursor: "pointer"
+              }}
+            >
+              Enviar reporte confidencial
+            </button>
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+};
+const ReportesConfidencialesPanel = ({ reportes }) => {
+  const nuevos = reportes.filter(r => r.estado === "nuevo").length;
+  const seguimiento = reportes.filter(r => r.estado === "en seguimiento").length;
+  const altas = reportes.filter(r => r.urgencia === "Alta" || r.urgencia === "Crítica").length;
+
+  const urgenciaStyle = (urgencia) => ({
+    display: "inline-block",
+    padding: "4px 10px",
+    borderRadius: 999,
+    fontSize: 12,
+    fontWeight: 800,
+    background:
+      urgencia === "Crítica" ? "#fee2e2" :
+      urgencia === "Alta" ? "#ffedd5" :
+      urgencia === "Media" ? "#fef3c7" :
+      "#dcfce7",
+    color:
+      urgencia === "Crítica" ? "#991b1b" :
+      urgencia === "Alta" ? "#c2410c" :
+      urgencia === "Media" ? "#92400e" :
+      "#166534"
+  });
+
+  const estadoStyle = (estado) => ({
+    display: "inline-block",
+    padding: "4px 10px",
+    borderRadius: 999,
+    fontSize: 12,
+    fontWeight: 800,
+    background:
+      estado === "nuevo" ? "#dbeafe" :
+      estado === "en seguimiento" ? "#fef3c7" :
+      "#dcfce7",
+    color:
+      estado === "nuevo" ? "#1e40af" :
+      estado === "en seguimiento" ? "#92400e" :
+      "#166534"
+  });
+
+  return (
+    <div>
+      <h1 style={{ margin: "0 0 6px", fontSize: 28, color: "#004D40" }}>
+        Reportes Confidenciales
+      </h1>
+      <p style={{ margin: "0 0 24px", color: "#64748b" }}>
+        Bandeja confidencial visible únicamente para Psicóloga y Admin Principal.
+      </p>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+        gap: 14,
+        marginBottom: 22
+      }}>
+        <Card>
+          <div style={{ fontSize: 24 }}>🔒</div>
+          <div style={{ fontSize: 30, fontWeight: 800, color: "#00897B" }}>{reportes.length}</div>
+          <div style={{ fontWeight: 700 }}>Reportes totales</div>
+        </Card>
+
+        <Card>
+          <div style={{ fontSize: 24 }}>🆕</div>
+          <div style={{ fontSize: 30, fontWeight: 800, color: "#2563eb" }}>{nuevos}</div>
+          <div style={{ fontWeight: 700 }}>Nuevos</div>
+        </Card>
+
+        <Card>
+          <div style={{ fontSize: 24 }}>🎯</div>
+          <div style={{ fontSize: 30, fontWeight: 800, color: "#f59e0b" }}>{seguimiento}</div>
+          <div style={{ fontWeight: 700 }}>En seguimiento</div>
+        </Card>
+
+        <Card>
+          <div style={{ fontSize: 24 }}>🚨</div>
+          <div style={{ fontSize: 30, fontWeight: 800, color: "#ef4444" }}>{altas}</div>
+          <div style={{ fontWeight: 700 }}>Alta prioridad</div>
+        </Card>
+      </div>
+
+      <Card>
+        <h3 style={{ marginTop: 0, color: "#004D40" }}>📋 Bandeja de reportes</h3>
+
+        <div style={{ display: "grid", gap: 14 }}>
+          {reportes.map(r => (
+            <div
+              key={r.id}
+              style={{
+                padding: 16,
+                border: "1px solid #e5e7eb",
+                borderRadius: 14,
+                background: "#f8fafc"
+              }}
+            >
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 12,
+                alignItems: "flex-start",
+                marginBottom: 10
+              }}>
+                <div>
+                  <div style={{ fontWeight: 900, color: "#0f172a", fontSize: 17 }}>
+                    {r.empleado}
+                  </div>
+                  <div style={{ color: "#64748b", fontSize: 13 }}>
+                    {r.sucursal} · {r.puesto} · {r.fecha}
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                  <span style={urgenciaStyle(r.urgencia)}>{r.urgencia}</span>
+                  <span style={estadoStyle(r.estado)}>{r.estado}</span>
+                </div>
+              </div>
+
+              <div style={{ color: "#004D40", fontWeight: 900, marginBottom: 6 }}>
+                🔒 {r.tipo}
+              </div>
+
+              <div style={{ color: "#334155", lineHeight: 1.6, marginBottom: 8 }}>
+                {r.descripcion}
+              </div>
+
+              <div style={{ color: "#64748b", fontSize: 13 }}>
+                <b>Evidencias:</b> {r.evidencias}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+};
 const AdminDashboard = ({ encuestas, mensajes }) => {
   const empleados = USERS.filter(u => u.role === "empleado");
   const semanaEnc = encuestas.filter(e => e.semana === semanaActual);
@@ -2003,6 +2334,7 @@ export default function App() {
   const [incapacidades, setIncapacidades] = useState(INCAPACIDADES_INIT);
   const [descuentos, setDescuentos] = useState(DESCUENTOS_INIT);
   const [calendarioExtra] = useState(CALENDARIO_EXTRA_INIT);
+  const [reportesConfidenciales, setReportesConfidenciales] = useState(REPORTES_CONFIDENCIALES_INIT);
   const handleLogin = (u) => { setUser(u); setActive(u.role==="empleado"?"inicio":"dashboard"); };
   const addEncuesta = (enc) => setEncuestas(prev => [...prev, { ...enc, id: prev.length+1 }]);
   const sendMensaje = (msg) => setMensajes(prev => [...prev, { ...msg, id: prev.length+1 }]);
@@ -2036,6 +2368,18 @@ const updateDescuentoEstado = (id, estado) => {
     )
   );
 };
+const addReporteConfidencial = (reporte) => {
+  setReportesConfidenciales(prev => [
+    ...prev,
+    {
+      ...reporte,
+      id: prev.length + 1,
+      fecha: new Date().toISOString().slice(0, 10),
+      estado: "nuevo",
+      visiblePara: ["admin", "psicologa"]
+    }
+  ]);
+};
   const psicologaId = USERS.find(u => u.role==="psicologa")?.id;
   const userMensajes = user.role==="empleado" ? mensajes.filter(m=>m.de===user.id||m.para===user.id) : mensajes;
   const renderView = () => {
@@ -2045,6 +2389,7 @@ const updateDescuentoEstado = (id, estado) => {
       if (active==="empleados") return <EmpleadosList encuestas={encuestas} notas={notas} role="admin"/>;
       if (active==="mensajes") return <Mensajes user={user} mensajes={mensajes} onSend={sendMensaje}/>;
       if (active==="reportes") return <Reportes/>;
+      if (active==="confidenciales") return <ReportesConfidencialesPanel reportes={reportesConfidenciales} />;
       if (active==="config") return <Config/>;
       if (active==="encuestas") return (<div><h2 style={{ margin:"0 0 20px",fontSize:22,fontWeight:800,color:"#004D40" }}>📋 Gestión de Encuestas</h2><Card><div style={{ fontWeight:700,fontSize:14,color:"#004D40",marginBottom:12 }}>Encuesta activa: {semanaActual}</div><div style={{ fontSize:13,color:"#6b7280",marginBottom:16 }}>{ENCUESTA_PREGUNTAS.length} preguntas · {new Set(encuestas.filter(e=>e.semana===semanaActual).map(e=>e.empleadoId)).size} respuestas</div>{ENCUESTA_PREGUNTAS.map((p,i)=>(<div key={p.id} style={{ padding:"10px 0",borderBottom:"1px solid #f3f4f6",fontSize:13 }}><span style={{ color:"#006D5B",fontWeight:700,marginRight:8 }}>{i+1}.</span><span style={{ color:"#374151" }}>{p.texto}</span><span style={{ color:"#9ca3af",marginLeft:8,fontSize:11 }}>({p.tipo})</span></div>))}<button style={{ marginTop:16,padding:"10px 20px",background:"#006D5B",color:"#fff",border:"none",borderRadius:10,fontWeight:700,cursor:"pointer" }}>+ Crear encuesta</button></Card></div>);
     }
@@ -2052,6 +2397,7 @@ const updateDescuentoEstado = (id, estado) => {
       if (active==="dashboard") return <AdminDashboard encuestas={encuestas} mensajes={mensajes}/>;
       if (active==="ai") return <AIEngine encuestas={encuestas} mensajes={mensajes} notas={notas} userRole="psicologa"/>;
       if (active==="seguimiento") return <PsicologaSeguimiento encuestas={encuestas} notas={notas} onUpdateNota={addNota}/>;
+      if (active==="confidenciales") return <ReportesConfidencialesPanel reportes={reportesConfidenciales} />;
       if (active==="empleados") return <EmpleadosList encuestas={encuestas} notas={notas} role="psicologa"/>;
       if (active==="mensajes") return <Mensajes user={user} mensajes={mensajes} onSend={sendMensaje}/>;
     }
@@ -2068,6 +2414,7 @@ const updateDescuentoEstado = (id, estado) => {
       if (active==="inicio") return <InicioEmpleado user={user} encuestas={encuestas} mensajes={userMensajes} setActive={setActive}/>;
       if (active==="encuesta") return <EncuestaEmpleado user={user} encuestas={encuestas} onSubmit={addEncuesta}/>;
       if (active==="historial") return <EmpleadosList encuestas={encuestas} notas={[]} role="empleado"/>;
+      if (active==="reporteconfidencial") return <ReporteConfidencialEmpleado user={user} onSubmit={addReporteConfidencial} />;
       if (active==="mensajes") return <Mensajes user={user} mensajes={userMensajes} onSend={(msg)=>sendMensaje({...msg,para:psicologaId})}/>;
     }
     return <div style={{ color:"#9ca3af",padding:40,textAlign:"center" }}>Vista en construcción</div>;
