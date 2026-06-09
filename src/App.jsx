@@ -1340,59 +1340,197 @@ const cambiosComportamiento = analisisIA.filter(a =>
   </Card>
 )}
 
-      {/* Expedientes IA */}
-      {tab === "expedientes" && (
-        <div style={{ display: "grid", gridTemplateColumns: selectedEmp ? "240px 1fr" : "1fr", gap: 16 }}>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 13, color: "#004D40", marginBottom: 12 }}>Selecciona un empleado</div>
-            {USERS.filter(u=>u.role==="empleado").map(emp => {
-              const ps = calcPulseScore(emp.id, encuestas);
-              return (
-                <div key={emp.id} onClick={() => analizarEmpleado(emp)} style={{ padding: "12px 14px", borderRadius: 12, cursor: "pointer", marginBottom: 8, background: selectedEmp?.id === emp.id ? "#f0fdf4" : "#fff", border: `1.5px solid ${selectedEmp?.id === emp.id ? "#006D5B" : "#f3f4f6"}`, display: "flex", alignItems: "center", gap: 10 }}>
-                  <Avatar name={emp.name} size={32} color={ps.color} />
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{emp.name}</div>
-                    <div style={{ fontSize: 11, color: "#6b7280" }}>{emp.sucursal}</div>
-                  </div>
-                  <div style={{ marginLeft: "auto", fontSize: 16, fontWeight: 800, color: ps.color }}>{ps.score}</div>
+ {/* Expedientes IA */}
+{tab === "expedientes" && (
+  <Card>
+    <h3 style={{ marginTop: 0, color: "#004D40" }}>
+      📁 Expedientes IA
+    </h3>
+    <p style={{ color: "#64748b", marginTop: 0 }}>
+      Resumen inteligente por colaborador para acelerar la revisión de casos y expedientes integrales.
+    </p>
+
+    <div style={{ display: "grid", gap: 14 }}>
+      {analisisIA
+        .slice()
+        .sort((a, b) => {
+          const orden = { "Crítica": 0, "Alta": 1, "Media": 2, "Baja": 3 };
+          return orden[a.prioridad] - orden[b.prioridad];
+        })
+        .map(a => (
+          <div
+            key={a.empleado.id}
+            style={{
+              padding: 16,
+              borderRadius: 14,
+              border: "1px solid #e5e7eb",
+              background:
+                a.prioridad === "Crítica" ? "#fef2f2" :
+                a.prioridad === "Alta" ? "#fff7ed" :
+                a.prioridad === "Media" ? "#fffbeb" :
+                "#f8fafc"
+            }}
+          >
+            <div style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 12,
+              alignItems: "flex-start",
+              marginBottom: 12
+            }}>
+              <div>
+                <div style={{ fontWeight: 900, color: "#0f172a", fontSize: 18 }}>
+                  {a.empleado.name}
                 </div>
-              );
-            })}
-          </div>
-          {selectedEmp && (
-            <Card>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-                <Avatar name={selectedEmp.name} size={44} color={calcPulseScore(selectedEmp.id, encuestas).color} />
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: 16, color: "#004D40" }}>{selectedEmp.name}</div>
-                  <div style={{ fontSize: 12, color: "#6b7280" }}>{selectedEmp.sucursal} · {selectedEmp.puesto}</div>
-                </div>
-                <div style={{ marginLeft: "auto" }}>
-                  {(() => { const ps = calcPulseScore(selectedEmp.id, encuestas); return <PulseScoreBadge score={ps.score} nivel={ps.nivel} color={ps.color} tendencia={ps.tendencia} size="lg" />; })()}
+                <div style={{ color: "#64748b", fontSize: 13 }}>
+                  {a.empleado.sucursal} · {a.empleado.puesto}
                 </div>
               </div>
-              <div style={{ marginBottom: 16 }}>
-                {(() => { const r = calcRiesgos(selectedEmp.id, encuestas); return (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <RiskBar label="Riesgo Renuncia" value={r.renuncia} color={r.renuncia>60?"#ef4444":r.renuncia>30?"#f97316":"#22c55e"} />
-                    <RiskBar label="Riesgo Burnout" value={r.burnout} color={r.burnout>60?"#ef4444":r.burnout>30?"#f97316":"#22c55e"} />
-                    <RiskBar label="Riesgo Emocional" value={r.emocional} color={r.emocional>60?"#ef4444":r.emocional>30?"#f97316":"#22c55e"} />
-                    <RiskBar label="Riesgo Conflicto" value={r.conflicto} color={r.conflicto>60?"#ef4444":r.conflicto>30?"#f97316":"#22c55e"} />
-                  </div>
-                );})()}
+
+              <div style={{
+                padding: "6px 10px",
+                borderRadius: 999,
+                fontWeight: 900,
+                fontSize: 13,
+                background:
+                  a.prioridad === "Crítica" ? "#fee2e2" :
+                  a.prioridad === "Alta" ? "#ffedd5" :
+                  a.prioridad === "Media" ? "#fef3c7" :
+                  "#dcfce7",
+                color:
+                  a.prioridad === "Crítica" ? "#991b1b" :
+                  a.prioridad === "Alta" ? "#c2410c" :
+                  a.prioridad === "Media" ? "#92400e" :
+                  "#166534"
+              }}>
+                Prioridad {a.prioridad}
               </div>
-              <div style={{ fontWeight: 700, fontSize: 13, color: "#004D40", marginBottom: 10 }}>🤖 Análisis IA del Expediente</div>
-              {(output || loading) ? <AIChatBubble mensaje={output} loading={loading} /> : (
-                <div style={{ textAlign: "center", padding: "20px 0", color: "#9ca3af", fontSize: 13 }}>Cargando análisis...</div>
+            </div>
+
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: 10,
+              marginBottom: 12
+            }}>
+              <div style={{
+                padding: 12,
+                borderRadius: 12,
+                background: "white",
+                border: "1px solid #e5e7eb",
+                textAlign: "center"
+              }}>
+                <div style={{ color: "#64748b", fontSize: 12, fontWeight: 800 }}>
+                  Pulse Score™
+                </div>
+                <div style={{ fontSize: 26, fontWeight: 900, color: a.status.color }}>
+                  {a.pulse}
+                </div>
+                <div style={{ color: "#334155", fontSize: 13 }}>
+                  {a.status.label}
+                </div>
+              </div>
+
+              <div style={{
+                padding: 12,
+                borderRadius: 12,
+                background: "white",
+                border: "1px solid #e5e7eb",
+                textAlign: "center"
+              }}>
+                <div style={{ color: "#64748b", fontSize: 12, fontWeight: 800 }}>
+                  Semáforo
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: a.status.color }}>
+                  {a.status.semaforo}
+                </div>
+                <div style={{ color: "#334155", fontSize: 13 }}>
+                  Estado actual
+                </div>
+              </div>
+
+              <div style={{
+                padding: 12,
+                borderRadius: 12,
+                background: "white",
+                border: "1px solid #e5e7eb",
+                textAlign: "center"
+              }}>
+                <div style={{ color: "#64748b", fontSize: 12, fontWeight: 800 }}>
+                  Señales detectadas
+                </div>
+                <div style={{ fontSize: 26, fontWeight: 900, color: "#00897B" }}>
+                  {a.riesgos.length}
+                </div>
+                <div style={{ color: "#334155", fontSize: 13 }}>
+                  Riesgos / alertas
+                </div>
+              </div>
+            </div>
+
+            <div style={{
+              padding: 12,
+              borderRadius: 12,
+              background: "white",
+              border: "1px solid #e5e7eb",
+              marginBottom: 12
+            }}>
+              <div style={{ fontWeight: 900, color: "#004D40", marginBottom: 8 }}>
+                🧠 Resumen IA del expediente
+              </div>
+
+              <div style={{ color: "#334155", lineHeight: 1.7 }}>
+                {a.empleado.name} se encuentra en estado <b>{a.status.label}</b> con semáforo{" "}
+                <b>{a.status.semaforo}</b> y prioridad <b>{a.prioridad}</b>.
+                {a.riesgos.length > 0
+                  ? ` El motor detectó ${a.riesgos.length} señal(es) que requieren seguimiento.`
+                  : " No se detectan señales críticas en este momento."}
+              </div>
+            </div>
+
+            <div style={{
+              padding: 12,
+              borderRadius: 12,
+              background: "#f8fafc",
+              border: "1px solid #e5e7eb",
+              marginBottom: 12
+            }}>
+              <div style={{ fontWeight: 900, color: "#004D40", marginBottom: 8 }}>
+                ⚠️ Riesgos principales
+              </div>
+
+              {a.riesgos.length > 0 ? (
+                <div style={{ display: "grid", gap: 6 }}>
+                  {a.riesgos.map((r, idx) => (
+                    <div key={idx} style={{ color: "#475569", fontSize: 13 }}>
+                      • <b>{r.tipo}</b> ({r.nivel}): {r.detalle}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ color: "#64748b", fontSize: 13 }}>
+                  Sin riesgos relevantes detectados.
+                </div>
               )}
-            </Card>
-          )}
-        </div>
-      )}
+            </div>
+
+            <div style={{
+              padding: 12,
+              borderRadius: 12,
+              background: "#ecfeff",
+              color: "#004D40",
+              fontWeight: 900
+            }}>
+              Recomendación IA: {a.recomendacion}
+            </div>
+          </div>
+        ))}
+    </div>
+  </Card>
+)}
     </div>
   );
 };
-
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
 const Login = ({ onLogin }) => {
   const [u, setU] = useState(""); const [p, setP] = useState(""); const [err, setErr] = useState("");
