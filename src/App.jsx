@@ -926,20 +926,123 @@ const cambiosComportamiento = analisisIA.filter(a =>
     </div>
   </Card>
 )}
-      {/* Alertas */}
-      {tab === "alertas" && (
-        <Card>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-            <div><div style={{ fontWeight: 700, fontSize: 15, color: "#004D40" }}>🚨 Alertas Automáticas IA</div><div style={{ fontSize: 12, color: "#6b7280" }}>Niveles: Informativo · Atención · Riesgo · Prioridad Alta</div></div>
-            <button onClick={generarAlertas} disabled={loading} style={{ padding: "10px 20px", background: "linear-gradient(135deg,#ef4444,#f97316)", color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-              {loading ? "Analizando..." : "🚨 Generar Alertas"}
-            </button>
+    {/* Alertas */}
+{tab === "alertas" && (
+  <Card>
+    <h3 style={{ marginTop: 0, color: "#004D40" }}>
+      🚨 Alertas IA
+    </h3>
+    <p style={{ color: "#64748b", marginTop: 0 }}>
+      Alertas generadas automáticamente por el motor local de reglas.
+    </p>
+
+    <div style={{ display: "grid", gap: 12 }}>
+      {analisisIA
+        .filter(a => a.riesgos.length > 0)
+        .slice()
+        .sort((a, b) => {
+          const orden = { "Crítica": 0, "Alta": 1, "Media": 2, "Baja": 3 };
+          return orden[a.prioridad] - orden[b.prioridad];
+        })
+        .map(a => (
+          <div
+            key={a.empleado.id}
+            style={{
+              padding: 16,
+              borderRadius: 14,
+              border: "1px solid #e5e7eb",
+              background:
+                a.prioridad === "Crítica" ? "#fef2f2" :
+                a.prioridad === "Alta" ? "#fff7ed" :
+                a.prioridad === "Media" ? "#fffbeb" :
+                "#f8fafc"
+            }}
+          >
+            <div style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 12,
+              alignItems: "flex-start",
+              marginBottom: 10
+            }}>
+              <div>
+                <div style={{ fontWeight: 900, color: "#0f172a", fontSize: 17 }}>
+                  {a.empleado.name}
+                </div>
+                <div style={{ color: "#64748b", fontSize: 13 }}>
+                  {a.empleado.sucursal} · {a.empleado.puesto}
+                </div>
+              </div>
+
+              <div style={{
+                padding: "6px 10px",
+                borderRadius: 999,
+                fontWeight: 900,
+                fontSize: 13,
+                background:
+                  a.prioridad === "Crítica" ? "#fee2e2" :
+                  a.prioridad === "Alta" ? "#ffedd5" :
+                  a.prioridad === "Media" ? "#fef3c7" :
+                  "#dcfce7",
+                color:
+                  a.prioridad === "Crítica" ? "#991b1b" :
+                  a.prioridad === "Alta" ? "#c2410c" :
+                  a.prioridad === "Media" ? "#92400e" :
+                  "#166534"
+              }}>
+                {a.prioridad}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 10, color: "#334155" }}>
+              <b>Pulse Score:</b> {a.pulse} · {a.status.label} · Semáforo {a.status.semaforo}
+            </div>
+
+            <div style={{ display: "grid", gap: 8 }}>
+              {a.riesgos.map((r, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    padding: 10,
+                    borderRadius: 10,
+                    background: "#fff",
+                    border: "1px solid #e5e7eb"
+                  }}
+                >
+                  <div style={{ fontWeight: 900, color: "#0f172a" }}>
+                    ⚠️ {r.tipo}
+                  </div>
+                  <div style={{ color: "#64748b", fontSize: 13 }}>
+                    Nivel: {r.nivel}
+                  </div>
+                  <div style={{ color: "#334155", marginTop: 4 }}>
+                    {r.detalle}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{
+              marginTop: 12,
+              padding: 12,
+              borderRadius: 12,
+              background: "#ecfeff",
+              color: "#004D40",
+              fontWeight: 900
+            }}>
+              Acción sugerida: {a.recomendacion}
+            </div>
           </div>
-          {(output || loading) ? <AIChatBubble mensaje={output} loading={loading} /> : (
-            <div style={{ textAlign: "center", padding: "32px 0", color: "#9ca3af" }}><div style={{ fontSize: 40, marginBottom: 12 }}>🚨</div><div style={{ fontSize: 14 }}>Genera alertas automáticas basadas en los datos actuales</div></div>
-          )}
-        </Card>
+        ))}
+
+      {analisisIA.filter(a => a.riesgos.length > 0).length === 0 && (
+        <div style={{ color: "#64748b", textAlign: "center", padding: 30 }}>
+          No hay alertas activas por el momento.
+        </div>
       )}
+    </div>
+  </Card>
+)}
 
       {/* Predicciones */}
       {tab === "prediccion" && (
