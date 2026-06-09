@@ -108,6 +108,53 @@ const PERMISOS_INIT = [
     observaciones: "Autorizado por RH."
   }
 ];
+const INCAPACIDADES_INIT = [
+  {
+    id: 1,
+    empleadoId: 5,
+    empleado: "Sofía Martínez",
+    sucursal: "Norte",
+    puesto: "Recepcionista",
+    fechaRegistro: "2025-06-14",
+    inicio: "2025-06-14",
+    fin: "2025-06-17",
+    dias: 4,
+    tipo: "Enfermedad general",
+    documento: "Pendiente",
+    estado: "pendiente",
+    observaciones: "Empleado indicó que enviará comprobante médico."
+  },
+  {
+    id: 2,
+    empleadoId: 7,
+    empleado: "María López",
+    sucursal: "Sur",
+    puesto: "Dentista",
+    fechaRegistro: "2025-06-08",
+    inicio: "2025-06-08",
+    fin: "2025-06-10",
+    dias: 3,
+    tipo: "Incapacidad médica",
+    documento: "Recibido",
+    estado: "validada",
+    observaciones: "Documento revisado por RH."
+  },
+  {
+    id: 3,
+    empleadoId: 8,
+    empleado: "Roberto Díaz",
+    sucursal: "Centro",
+    puesto: "Laboratorista",
+    fechaRegistro: "2025-06-12",
+    inicio: "2025-06-12",
+    fin: "2025-06-12",
+    dias: 1,
+    tipo: "Consulta médica",
+    documento: "No requerido",
+    estado: "registrada",
+    observaciones: "Ausencia registrada por indicación médica."
+  }
+];
 const ENCUESTA_PREGUNTAS = [
   { id: 1, texto: "¿Cómo describes tu estado emocional esta semana?", tipo: "escala", area: "Emocional" },
   { id: 2, texto: "¿Qué tan estresado/a te has sentido en el trabajo?", tipo: "escala", area: "Estrés" },
@@ -1001,6 +1048,143 @@ const PermisosRH = ({ permisos, onUpdateEstado }) => {
     </div>
   );
 };
+const IncapacidadesRH = ({ incapacidades, onUpdateEstado }) => {
+  const pendientes = incapacidades.filter(i => i.estado === "pendiente").length;
+  const validadas = incapacidades.filter(i => i.estado === "validada").length;
+  const registradas = incapacidades.filter(i => i.estado === "registrada").length;
+
+  const badgeStyle = (estado) => ({
+    display: "inline-block",
+    padding: "4px 10px",
+    borderRadius: 999,
+    fontSize: 12,
+    fontWeight: 700,
+    background:
+      estado === "validada" ? "#dcfce7" :
+      estado === "registrada" ? "#dbeafe" :
+      "#fef3c7",
+    color:
+      estado === "validada" ? "#166534" :
+      estado === "registrada" ? "#1e40af" :
+      "#92400e"
+  });
+
+  return (
+    <div>
+      <h1 style={{ margin: "0 0 6px", fontSize: 28, color: "#004D40" }}>
+        Incapacidades
+      </h1>
+      <p style={{ margin: "0 0 24px", color: "#64748b" }}>
+        Registro, validación y seguimiento de incapacidades del personal.
+      </p>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+        gap: 14,
+        marginBottom: 22
+      }}>
+        <Card>
+          <div style={{ fontSize: 24 }}>⏳</div>
+          <div style={{ fontSize: 30, fontWeight: 800, color: "#f59e0b" }}>{pendientes}</div>
+          <div style={{ fontWeight: 700 }}>Pendientes</div>
+        </Card>
+        <Card>
+          <div style={{ fontSize: 24 }}>✅</div>
+          <div style={{ fontSize: 30, fontWeight: 800, color: "#22c55e" }}>{validadas}</div>
+          <div style={{ fontWeight: 700 }}>Validadas</div>
+        </Card>
+        <Card>
+          <div style={{ fontSize: 24 }}>📌</div>
+          <div style={{ fontSize: 30, fontWeight: 800, color: "#2563eb" }}>{registradas}</div>
+          <div style={{ fontWeight: 700 }}>Registradas</div>
+        </Card>
+      </div>
+
+      <Card>
+        <h3 style={{ marginTop: 0, color: "#004D40" }}>🏥 Registro de incapacidades</h3>
+
+        <div style={{ display: "grid", gap: 12 }}>
+          {incapacidades.map(i => (
+            <div
+              key={i.id}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1.4fr 1fr 1fr auto",
+                gap: 12,
+                alignItems: "center",
+                padding: "14px 0",
+                borderBottom: "1px solid #e5e7eb"
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: 800, color: "#0f172a" }}>{i.empleado}</div>
+                <div style={{ color: "#64748b", fontSize: 13 }}>
+                  {i.sucursal} · {i.puesto}
+                </div>
+                <div style={{ color: "#334155", fontSize: 13, marginTop: 4 }}>
+                  {i.tipo}
+                </div>
+                <div style={{ color: "#94a3b8", fontSize: 12 }}>
+                  Observaciones: {i.observaciones}
+                </div>
+              </div>
+
+              <div style={{ color: "#334155", fontSize: 14 }}>
+                {i.inicio} al {i.fin}
+                <div style={{ color: "#64748b", fontSize: 12 }}>{i.dias} días</div>
+                <div style={{ color: "#94a3b8", fontSize: 12 }}>
+                  Documento: {i.documento}
+                </div>
+              </div>
+
+              <div>
+                <span style={badgeStyle(i.estado)}>{i.estado}</span>
+              </div>
+
+              <div style={{ display: "flex", gap: 8 }}>
+                {i.estado === "pendiente" ? (
+                  <>
+                    <button
+                      onClick={() => onUpdateEstado(i.id, "validada")}
+                      style={{
+                        border: "none",
+                        background: "#00897B",
+                        color: "white",
+                        padding: "8px 10px",
+                        borderRadius: 8,
+                        fontWeight: 700,
+                        cursor: "pointer"
+                      }}
+                    >
+                      Validar
+                    </button>
+                    <button
+                      onClick={() => onUpdateEstado(i.id, "registrada")}
+                      style={{
+                        border: "none",
+                        background: "#2563eb",
+                        color: "white",
+                        padding: "8px 10px",
+                        borderRadius: 8,
+                        fontWeight: 700,
+                        cursor: "pointer"
+                      }}
+                    >
+                      Registrar
+                    </button>
+                  </>
+                ) : (
+                  <span style={{ color: "#94a3b8", fontSize: 13 }}>Sin acciones</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+};
 const AdminDashboard = ({ encuestas, mensajes }) => {
   const empleados = USERS.filter(u => u.role === "empleado");
   const semanaEnc = encuestas.filter(e => e.semana === semanaActual);
@@ -1284,6 +1468,7 @@ export default function App() {
   const [notas, setNotas] = useState(NOTAS_INIT);
   const [vacaciones, setVacaciones] = useState(VACACIONES_INIT);
   const [permisos, setPermisos] = useState(PERMISOS_INIT);
+  const [incapacidades, setIncapacidades] = useState(INCAPACIDADES_INIT);
   const handleLogin = (u) => { setUser(u); setActive(u.role==="empleado"?"inicio":"dashboard"); };
   const addEncuesta = (enc) => setEncuestas(prev => [...prev, { ...enc, id: prev.length+1 }]);
   const sendMensaje = (msg) => setMensajes(prev => [...prev, { ...msg, id: prev.length+1 }]);
@@ -1300,6 +1485,13 @@ const updatePermisoEstado = (id, estado) => {
   setPermisos(prev =>
     prev.map(p =>
       p.id === id ? { ...p, estado } : p
+    )
+  );
+};
+const updateIncapacidadEstado = (id, estado) => {
+  setIncapacidades(prev =>
+    prev.map(i =>
+      i.id === id ? { ...i, estado } : i
     )
   );
 };
@@ -1326,7 +1518,7 @@ const updatePermisoEstado = (id, estado) => {
       if (active==="dashboard") return <HRDashboard users={USERS} />;
       if (active==="vacaciones") return <VacacionesRH vacaciones={vacaciones} onUpdateEstado={updateVacacionEstado} />;
       if (active==="permisos") return <PermisosRH permisos={permisos} onUpdateEstado={updatePermisoEstado} />;
-      if (active==="incapacidades") return <div style={{ color:"#9ca3af", padding:40, textAlign:"center" }}>Módulo de incapacidades en construcción</div>;
+      if (active==="incapacidades") return <IncapacidadesRH incapacidades={incapacidades} onUpdateEstado={updateIncapacidadEstado} />;
       if (active==="descuentos") return <div style={{ color:"#9ca3af", padding:40, textAlign:"center" }}>Módulo de descuentos en construcción</div>;
       if (active==="calendario") return <div style={{ color:"#9ca3af", padding:40, textAlign:"center" }}>Calendario laboral en construcción</div>;
       if (active==="reportesrh") return <div style={{ color:"#9ca3af", padding:40, textAlign:"center" }}>Reportes RH en construcción</div>;
