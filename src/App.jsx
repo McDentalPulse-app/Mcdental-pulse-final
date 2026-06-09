@@ -258,6 +258,41 @@ const REPORTES_CONFIDENCIALES_INIT = [
     visiblePara: ["admin", "psicologa"]
   }
 ];
+const RECONOCIMIENTOS_INIT = [
+  {
+    id: 1,
+    empleadoId: 3,
+    empleado: "Ana García",
+    sucursal: "Norte",
+    puesto: "Asistente Dental",
+    fecha: "2025-06-10",
+    categoria: "Excelente actitud",
+    otorgadoPor: "Patricia Ramírez",
+    comentario: "Mostró excelente disposición durante una jornada de alta demanda."
+  },
+  {
+    id: 2,
+    empleadoId: 4,
+    empleado: "Carlos Pérez",
+    sucursal: "Sur",
+    puesto: "Dentista",
+    fecha: "2025-06-08",
+    categoria: "Atención al paciente",
+    otorgadoPor: "Mario Rodríguez",
+    comentario: "Recibió comentarios positivos por su trato profesional con pacientes."
+  },
+  {
+    id: 3,
+    empleadoId: 6,
+    empleado: "Luis Torres",
+    sucursal: "Centro",
+    puesto: "Asistente Dental",
+    fecha: "2025-06-12",
+    categoria: "Trabajo en equipo",
+    otorgadoPor: "Dra. Laura Vega",
+    comentario: "Apoyó a sus compañeros para cerrar actividades pendientes."
+  }
+];
 const ENCUESTA_PREGUNTAS = [
   { id: 1, texto: "¿Cómo describes tu estado emocional esta semana?", tipo: "escala", area: "Emocional" },
   { id: 2, texto: "¿Qué tan estresado/a te has sentido en el trabajo?", tipo: "escala", area: "Estrés" },
@@ -771,6 +806,7 @@ const Sidebar = ({ user, active, setActive, onLogout }) => {
       { key: "dashboard", icon: "📊", label: "Dashboard" },
       { key: "ai", icon: "🤖", label: "AI Engine", badge: "NEW" },
       { key: "empleados", icon: "👥", label: "Empleados" },
+      { key: "reconocimientos", icon: "🏅", label: "Reconocimientos" },
       { key: "encuestas", icon: "📋", label: "Encuestas" },
       { key: "mensajes", icon: "💬", label: "Mensajes" },
       { key: "reportes", icon: "📈", label: "Reportes" },
@@ -792,12 +828,14 @@ const Sidebar = ({ user, active, setActive, onLogout }) => {
       { key: "incapacidades", icon: "🏥", label: "Incapacidades" },
       { key: "descuentos", icon: "💸", label: "Descuentos" },
       { key: "calendario", icon: "📅", label: "Calendario" },
+      { key: "reconocimientos", icon: "🏅", label: "Reconocimientos" },
       { key: "reportesrh", icon: "📈", label: "Reportes RH" },
     ],
     empleado: [
       { key: "inicio", icon: "🏠", label: "Inicio" },
       { key: "encuesta", icon: "📝", label: "Mi Encuesta" },
       { key: "historial", icon: "📅", label: "Historial" },
+      { key: "reconocimientos", icon: "🏅", label: "Reconocimientos" },
       { key: "reporteconfidencial", icon: "🔒", label: "Reporte Confidencial" },
       { key: "mensajes", icon: "💬", label: "Mensajes" },
     ],
@@ -1915,6 +1953,256 @@ const ReporteConfidencialEmpleado = ({ user, onSubmit }) => {
     </div>
   );
 };
+const ReconocimientosEmpleado = ({ user, reconocimientos }) => {
+  const misReconocimientos = reconocimientos.filter(r => r.empleadoId === user.id);
+
+  return (
+    <div>
+      <h1 style={{ margin: "0 0 6px", fontSize: 28, color: "#004D40" }}>
+        Mis Reconocimientos
+      </h1>
+      <p style={{ margin: "0 0 24px", color: "#64748b" }}>
+        Historial de reconocimientos recibidos dentro de McDental.
+      </p>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+        gap: 14,
+        marginBottom: 22
+      }}>
+        <Card>
+          <div style={{ fontSize: 24 }}>🏅</div>
+          <div style={{ fontSize: 30, fontWeight: 800, color: "#00897B" }}>
+            {misReconocimientos.length}
+          </div>
+          <div style={{ fontWeight: 700 }}>Reconocimientos recibidos</div>
+        </Card>
+      </div>
+
+      <Card>
+        <h3 style={{ marginTop: 0, color: "#004D40" }}>🏅 Historial</h3>
+
+        {misReconocimientos.length === 0 ? (
+          <p style={{ color: "#64748b" }}>Aún no tienes reconocimientos registrados.</p>
+        ) : (
+          <div style={{ display: "grid", gap: 12 }}>
+            {misReconocimientos.map(r => (
+              <div
+                key={r.id}
+                style={{
+                  padding: 16,
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 14,
+                  background: "#f8fafc"
+                }}
+              >
+                <div style={{ fontSize: 18, fontWeight: 900, color: "#004D40" }}>
+                  🏅 {r.categoria}
+                </div>
+                <div style={{ color: "#64748b", fontSize: 13, margin: "4px 0 10px" }}>
+                  {r.fecha} · Otorgado por {r.otorgadoPor}
+                </div>
+                <div style={{ color: "#334155", lineHeight: 1.6 }}>
+                  {r.comentario}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+};
+const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) => {
+  const empleados = users.filter(u => u.role === "empleado");
+  const [empleadoId, setEmpleadoId] = useState(empleados[0]?.id || "");
+  const [categoria, setCategoria] = useState("Excelente actitud");
+  const [comentario, setComentario] = useState("");
+
+  const categorias = [
+    "Excelente actitud",
+    "Liderazgo",
+    "Trabajo en equipo",
+    "Innovación",
+    "Atención al paciente",
+    "Puntualidad",
+    "Valores McDental"
+  ];
+
+  const otorgar = () => {
+    const empleado = empleados.find(e => e.id === Number(empleadoId));
+    if (!empleado) {
+      alert("Selecciona un empleado.");
+      return;
+    }
+
+    if (!comentario.trim()) {
+      alert("Escribe un comentario para el reconocimiento.");
+      return;
+    }
+
+    onAdd({
+      empleadoId: empleado.id,
+      empleado: empleado.name,
+      sucursal: empleado.sucursal,
+      puesto: empleado.puesto,
+      categoria,
+      otorgadoPor: currentUser.name,
+      comentario
+    });
+
+    setCategoria("Excelente actitud");
+    setComentario("");
+    alert("Reconocimiento otorgado.");
+  };
+
+  return (
+    <div>
+      <h1 style={{ margin: "0 0 6px", fontSize: 28, color: "#004D40" }}>
+        Reconocimientos
+      </h1>
+      <p style={{ margin: "0 0 24px", color: "#64748b" }}>
+        Otorga y consulta reconocimientos al personal por desempeño, actitud y valores McDental.
+      </p>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+        gap: 14,
+        marginBottom: 22
+      }}>
+        <Card>
+          <div style={{ fontSize: 24 }}>🏅</div>
+          <div style={{ fontSize: 30, fontWeight: 800, color: "#00897B" }}>
+            {reconocimientos.length}
+          </div>
+          <div style={{ fontWeight: 700 }}>Reconocimientos totales</div>
+        </Card>
+
+        <Card>
+          <div style={{ fontSize: 24 }}>👥</div>
+          <div style={{ fontSize: 30, fontWeight: 800, color: "#2563eb" }}>
+            {new Set(reconocimientos.map(r => r.empleadoId)).size}
+          </div>
+          <div style={{ fontWeight: 700 }}>Empleados reconocidos</div>
+        </Card>
+      </div>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+        gap: 16
+      }}>
+        <Card>
+          <h3 style={{ marginTop: 0, color: "#004D40" }}>➕ Otorgar reconocimiento</h3>
+
+          <div style={{ display: "grid", gap: 14 }}>
+            <label style={{ fontWeight: 800, color: "#0f172a" }}>
+              Empleado
+              <select
+                value={empleadoId}
+                onChange={(e) => setEmpleadoId(e.target.value)}
+                style={{
+                  width: "100%",
+                  marginTop: 6,
+                  padding: 12,
+                  borderRadius: 10,
+                  border: "1px solid #cbd5e1"
+                }}
+              >
+                {empleados.map(e => (
+                  <option key={e.id} value={e.id}>
+                    {e.name} · {e.sucursal} · {e.puesto}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label style={{ fontWeight: 800, color: "#0f172a" }}>
+              Categoría
+              <select
+                value={categoria}
+                onChange={(e) => setCategoria(e.target.value)}
+                style={{
+                  width: "100%",
+                  marginTop: 6,
+                  padding: 12,
+                  borderRadius: 10,
+                  border: "1px solid #cbd5e1"
+                }}
+              >
+                {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </label>
+
+            <label style={{ fontWeight: 800, color: "#0f172a" }}>
+              Comentario
+              <textarea
+                value={comentario}
+                onChange={(e) => setComentario(e.target.value)}
+                placeholder="Describe el motivo del reconocimiento..."
+                rows={4}
+                style={{
+                  width: "100%",
+                  marginTop: 6,
+                  padding: 12,
+                  borderRadius: 10,
+                  border: "1px solid #cbd5e1",
+                  resize: "vertical"
+                }}
+              />
+            </label>
+
+            <button
+              onClick={otorgar}
+              style={{
+                border: "none",
+                background: "#00897B",
+                color: "white",
+                padding: "12px 16px",
+                borderRadius: 10,
+                fontWeight: 900,
+                cursor: "pointer"
+              }}
+            >
+              Otorgar reconocimiento
+            </button>
+          </div>
+        </Card>
+
+        <Card>
+          <h3 style={{ marginTop: 0, color: "#004D40" }}>📋 Historial reciente</h3>
+
+          <div style={{ display: "grid", gap: 12 }}>
+            {reconocimientos.slice().reverse().map(r => (
+              <div
+                key={r.id}
+                style={{
+                  padding: 14,
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 12,
+                  background: "#f8fafc"
+                }}
+              >
+                <div style={{ fontWeight: 900, color: "#0f172a" }}>{r.empleado}</div>
+                <div style={{ color: "#004D40", fontWeight: 800 }}>
+                  🏅 {r.categoria}
+                </div>
+                <div style={{ color: "#64748b", fontSize: 13 }}>
+                  {r.fecha} · {r.sucursal} · Otorgado por {r.otorgadoPor}
+                </div>
+                <div style={{ color: "#334155", marginTop: 6 }}>
+                  {r.comentario}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+};
 const ReportesConfidencialesPanel = ({ reportes }) => {
   const nuevos = reportes.filter(r => r.estado === "nuevo").length;
   const seguimiento = reportes.filter(r => r.estado === "en seguimiento").length;
@@ -2335,6 +2623,7 @@ export default function App() {
   const [descuentos, setDescuentos] = useState(DESCUENTOS_INIT);
   const [calendarioExtra] = useState(CALENDARIO_EXTRA_INIT);
   const [reportesConfidenciales, setReportesConfidenciales] = useState(REPORTES_CONFIDENCIALES_INIT);
+  const [reconocimientos, setReconocimientos] = useState(RECONOCIMIENTOS_INIT);
   const handleLogin = (u) => { setUser(u); setActive(u.role==="empleado"?"inicio":"dashboard"); };
   const addEncuesta = (enc) => setEncuestas(prev => [...prev, { ...enc, id: prev.length+1 }]);
   const sendMensaje = (msg) => setMensajes(prev => [...prev, { ...msg, id: prev.length+1 }]);
@@ -2380,6 +2669,16 @@ const addReporteConfidencial = (reporte) => {
     }
   ]);
 };
+const addReconocimiento = (reconocimiento) => {
+  setReconocimientos(prev => [
+    ...prev,
+    {
+      ...reconocimiento,
+      id: prev.length + 1,
+      fecha: new Date().toISOString().slice(0, 10)
+    }
+  ]);
+};
   const psicologaId = USERS.find(u => u.role==="psicologa")?.id;
   const userMensajes = user.role==="empleado" ? mensajes.filter(m=>m.de===user.id||m.para===user.id) : mensajes;
   const renderView = () => {
@@ -2387,6 +2686,7 @@ const addReporteConfidencial = (reporte) => {
       if (active==="dashboard") return <AdminDashboard encuestas={encuestas} mensajes={mensajes}/>;
       if (active==="ai") return <AIEngine encuestas={encuestas} mensajes={mensajes} notas={notas} userRole="admin"/>;
       if (active==="empleados") return <EmpleadosList encuestas={encuestas} notas={notas} role="admin"/>;
+      if (active==="reconocimientos") return <ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />;
       if (active==="mensajes") return <Mensajes user={user} mensajes={mensajes} onSend={sendMensaje}/>;
       if (active==="reportes") return <Reportes/>;
       if (active==="confidenciales") return <ReportesConfidencialesPanel reportes={reportesConfidenciales} />;
@@ -2408,12 +2708,14 @@ const addReporteConfidencial = (reporte) => {
       if (active==="incapacidades") return <IncapacidadesRH incapacidades={incapacidades} onUpdateEstado={updateIncapacidadEstado} />;
       if (active==="descuentos") return <DescuentosRH descuentos={descuentos} onUpdateEstado={updateDescuentoEstado} />;
       if (active==="calendario") return <CalendarioRH vacaciones={vacaciones} permisos={permisos} incapacidades={incapacidades} eventosExtra={calendarioExtra} />;
+      if (active==="reconocimientos") return <ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />;
       if (active==="reportesrh") return <ReportesRH vacaciones={vacaciones} permisos={permisos} incapacidades={incapacidades} descuentos={descuentos} />;
     }
     if (user.role==="empleado") {
       if (active==="inicio") return <InicioEmpleado user={user} encuestas={encuestas} mensajes={userMensajes} setActive={setActive}/>;
       if (active==="encuesta") return <EncuestaEmpleado user={user} encuestas={encuestas} onSubmit={addEncuesta}/>;
       if (active==="historial") return <EmpleadosList encuestas={encuestas} notas={[]} role="empleado"/>;
+      if (active==="reconocimientos") return <ReconocimientosEmpleado user={user} reconocimientos={reconocimientos} />;
       if (active==="reporteconfidencial") return <ReporteConfidencialEmpleado user={user} onSubmit={addReporteConfidencial} />;
       if (active==="mensajes") return <Mensajes user={user} mensajes={userMensajes} onSend={(msg)=>sendMensaje({...msg,para:psicologaId})}/>;
     }
