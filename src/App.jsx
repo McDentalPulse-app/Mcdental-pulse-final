@@ -4099,9 +4099,79 @@ const InicioEmpleado = ({ user, encuestas, mensajes, setActive }) => {
   );
 };
 
-const Reportes = () => (
-  <div><h2 style={{ margin:"0 0 20px",fontSize:22,fontWeight:800,color:"#004D40" }}>📈 Reportes</h2><Card style={{ textAlign:"center",padding:48 }}><div style={{ fontSize:48,marginBottom:16 }}>📊</div><div style={{ fontSize:16,fontWeight:700,color:"#004D40",marginBottom:8 }}>Exportar Reportes</div><p style={{ color:"#6b7280",fontSize:13,maxWidth:400,margin:"0 auto 24px" }}>Reportes de bienestar por sucursal, empleado, semana o mes.</p><div style={{ display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap" }}>{["📄 Reporte Semanal PDF","📊 Reporte Mensual Excel","🏢 Por Sucursal PDF","👥 Empleados CSV"].map(r=>(<button key={r} style={{ padding:"10px 20px",background:"#f0fdf4",color:"#006D5B",border:"1.5px solid #bbf7d0",borderRadius:10,fontWeight:600,fontSize:13,cursor:"pointer" }}>{r}</button>))}</div></Card></div>
-);
+const Reportes = () => {
+  const generarReporte = (tipo) => {
+    alert(`${tipo} generado correctamente en modo demo. Cuando conectemos Firebase, aquí se descargará el archivo real.`);
+  };
+
+  const btnStyle = {
+    background: "#ecfdf5",
+    color: "#00796B",
+    border: "1px solid #86efac",
+    padding: "12px 18px",
+    borderRadius: 10,
+    fontWeight: 800,
+    cursor: "pointer"
+  };
+
+  return (
+    <div>
+      <h2 style={{ margin: "0 0 20px", fontSize: 22, fontWeight: 800, color: "#004D40", textAlign: "center" }}>
+        📈 Reportes
+      </h2>
+
+      <Card style={{ textAlign: "center", padding: 48 }}>
+        <div style={{ fontSize: 48, marginBottom: 12 }}>📊</div>
+
+        <h3 style={{ margin: "0 0 10px", color: "#004D40" }}>
+          Exportar Reportes
+        </h3>
+
+        <p style={{ color: "#64748b", marginBottom: 0 }}>
+          Reportes de bienestar por sucursal, empleado, semana o mes.
+        </p>
+
+        <div style={{
+          margin: "16px auto 22px",
+          maxWidth: 620,
+          padding: 14,
+          borderRadius: 14,
+          background: "#f8fafc",
+          border: "1px solid #e5e7eb",
+          color: "#64748b",
+          fontSize: 13,
+          lineHeight: 1.6
+        }}>
+          Los reportes se generarán con datos consolidados de encuestas, Pulse Score, semáforos,
+          sucursales y participación. En esta versión local funcionan como simulación.
+        </div>
+
+        <div style={{
+          display: "flex",
+          gap: 12,
+          flexWrap: "wrap",
+          justifyContent: "center"
+        }}>
+          <button onClick={() => generarReporte("Reporte semanal PDF")} style={btnStyle}>
+            📄 Reporte Semanal PDF
+          </button>
+
+          <button onClick={() => generarReporte("Reporte mensual Excel")} style={btnStyle}>
+            📊 Reporte Mensual Excel
+          </button>
+
+          <button onClick={() => generarReporte("Reporte por sucursal PDF")} style={btnStyle}>
+            🏢 Por Sucursal PDF
+          </button>
+
+          <button onClick={() => generarReporte("Empleados CSV")} style={btnStyle}>
+            👥 Empleados CSV
+          </button>
+        </div>
+      </Card>
+    </div>
+  );
+};
 const Config = () => (
   <div><h2 style={{ margin:"0 0 20px",fontSize:22,fontWeight:800,color:"#004D40" }}>⚙️ Configuración</h2><Card><div style={{ fontWeight:700,fontSize:14,color:"#004D40",marginBottom:16 }}>Umbrales del Semáforo</div><div style={{ display:"flex",gap:16,flexWrap:"wrap" }}>{[{label:"🟢 Verde (≥)",val:70,color:"#22c55e"},{label:"🟡 Amarillo (≥)",val:45,color:"#f59e0b"},{label:"🔴 Rojo (<)",val:45,color:"#ef4444"}].map(c=>(<div key={c.label} style={{ flex:1,minWidth:160 }}><label style={{ fontSize:13,fontWeight:600,color:"#374151",display:"block",marginBottom:6 }}>{c.label}</label><input type="number" defaultValue={c.val} style={{ width:"100%",padding:"8px 12px",borderRadius:8,border:`1.5px solid ${c.color}`,fontSize:14,boxSizing:"border-box",outline:"none" }}/></div>))}</div><button style={{ marginTop:16,padding:"10px 24px",background:"#006D5B",color:"#fff",border:"none",borderRadius:10,fontWeight:700,cursor:"pointer" }}>Guardar</button></Card></div>
 );
