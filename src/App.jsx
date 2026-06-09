@@ -356,7 +356,65 @@ const calcPulseScore = (empId, encuestas) => {
   const tendencia = ultDos.length < 2 ? "→" : ultDos[0].score > ultDos[1].score ? "↑" : ultDos[0].score < ultDos[1].score ? "↓" : "→";
   return { score: pulse, nivel, color, tendencia };
 };
+const getPulseStatus = (score) => {
+  if (score >= 90) {
+    return {
+      label: "Excelente",
+      semaforo: "Verde",
+      color: "#22c55e",
+      bg: "#dcfce7",
+      nivel: "excelente"
+    };
+  }
 
+  if (score >= 80) {
+    return {
+      label: "Muy Bueno",
+      semaforo: "Verde",
+      color: "#16a34a",
+      bg: "#dcfce7",
+      nivel: "muy_bueno"
+    };
+  }
+
+  if (score >= 70) {
+    return {
+      label: "Estable",
+      semaforo: "Amarillo",
+      color: "#f59e0b",
+      bg: "#fef3c7",
+      nivel: "estable"
+    };
+  }
+
+  if (score >= 60) {
+    return {
+      label: "Atención",
+      semaforo: "Naranja",
+      color: "#f97316",
+      bg: "#ffedd5",
+      nivel: "atencion"
+    };
+  }
+
+  if (score >= 50) {
+    return {
+      label: "Riesgo",
+      semaforo: "Rojo",
+      color: "#ef4444",
+      bg: "#fee2e2",
+      nivel: "riesgo"
+    };
+  }
+
+  return {
+    label: "Intervención inmediata",
+    semaforo: "Rojo",
+    color: "#b91c1c",
+    bg: "#fee2e2",
+    nivel: "intervencion"
+  };
+};
 const calcRiesgos = (empId, encuestas) => {
   const enc = encuestas.filter(e => e.empleadoId === empId).sort((a, b) => b.semana.localeCompare(a.semana));
   if (!enc.length) return { renuncia: 10, burnout: 10, emocional: 10, conflicto: 10 };
@@ -2377,15 +2435,9 @@ const ExpedienteIntegral = ({
     ? encuestasEmpleado[encuestasEmpleado.length - 1].score
     : calcPulseScore(empleado.id, encuestas).score;
 
-  const semaforo = ultimoScore >= 80 ? "Verde" :
-    ultimoScore >= 70 ? "Amarillo" :
-    ultimoScore >= 60 ? "Naranja" :
-    "Rojo";
-
-  const semaforoColor = semaforo === "Verde" ? "#22c55e" :
-    semaforo === "Amarillo" ? "#f59e0b" :
-    semaforo === "Naranja" ? "#f97316" :
-    "#ef4444";
+ const pulseStatus = getPulseStatus(ultimoScore);
+const semaforo = pulseStatus.semaforo;
+const semaforoColor = pulseStatus.color;
 
   const puedeVerConfidencial = currentUser.role === "admin" || currentUser.role === "psicologa";
 
@@ -2442,6 +2494,10 @@ const ExpedienteIntegral = ({
             {ultimoScore}
           </div>
           <div style={{ fontWeight: 700 }}>Pulse Score™</div>
+          <div style={{ fontWeight: 700 }}>Pulse Score™</div>
+<div style={{ color: pulseStatus.color, fontWeight: 800, fontSize: 13 }}>
+  {pulseStatus.label}
+</div>
         </Card>
 
         <Card>
@@ -2577,14 +2633,45 @@ const ExpedienteIntegral = ({
 };
 const AdminDashboard = ({ encuestas, mensajes }) => {
   const empleados = USERS.filter(u => u.role === "empleado");
-  const semanaEnc = encuestas.filter(e => e.semana === semanaActual);
-  const contestaron = new Set(semanaEnc.map(e => e.empleadoId)).size;
-  const verdes = semanaEnc.filter(e => e.semaforo === "verde").length;
-  const amarillos = semanaEnc.filter(e => e.semaforo === "amarillo").length;
-  const rojos = semanaEnc.filter(e => e.semaforo === "rojo").length;
-  const tendencia = ["W10","W11","W12","W13","W14"].map(w => ({ label: w, v: Math.round(encuestas.filter(e=>e.semana===`2025-${w}`).reduce((s,e)=>s+e.score,0)/Math.max(1,encuestas.filter(e=>e.semana===`2025-${w}`).length)) }));
-  const porSucursal = SUCURSALES.map(s => { const emps = empleados.filter(e=>e.sucursal===s).map(e=>e.id); const enc = semanaEnc.filter(e=>emps.includes(e.empleadoId)); return { label: s, value: enc.length ? Math.round(enc.reduce((a,e)=>a+e.score,0)/enc.length) : 0 }; });
-  const avgPulse = Math.round(USERS.filter(u=>u.role==="empleado").reduce((s,emp)=>s+calcPulseScore(emp.id,encuestas).score,0)/empleados.length);
+const semanaEnc = encuestas.filter(e => e.semana === semanaActual);
+const contestaron = new Set(semanaEnc.map(e => e.empleadoId)).size;
+
+const pulsePorEmpleado = empleados.map(emp => {
+  const score = calcPulseScore(emp.id, encuestas).score;
+  return {
+    empleado: emp,
+    score,
+    status: getPulseStatus(score)
+  };
+});
+
+const verdes = pulsePorEmpleado.filter(e => e.status.semaforo === "Verde").length;
+const amarillos = pulsePorEmpleado.filter(e => e.status.semaforo === "Amarillo").length;
+const naranjas = pulsePorEmpleado.filter(e => e.status.semaforo === "Naranja").length;
+const rojos = pulsePorEmpleado.filter(e => e.status.semaforo === "Rojo").length;
+
+const tendencia = ["W10","W11","W12","W13","W14"].map(w => ({
+  label: w,
+  v: Math.round(
+    encuestas.filter(e=>e.semana===`2025-${w}`).reduce((s,e)=>s+e.score,0) /
+    Math.max(1, encuestas.filter(e=>e.semana===`2025-${w}`).length)
+  )
+}));
+
+const porSucursal = SUCURSALES.map(s => {
+  const emps = empleados.filter(e=>e.sucursal===s).map(e=>e.id);
+  const enc = semanaEnc.filter(e=>emps.includes(e.empleadoId));
+  return {
+    label: s,
+    v: Math.round(enc.reduce((sum,e)=>sum+e.score,0)/Math.max(1,enc.length))
+  };
+});
+
+const avgPulse = Math.round(
+  pulsePorEmpleado.reduce((s,e)=>s+e.score,0) / Math.max(1, pulsePorEmpleado.length)
+);
+
+const avgPulseStatus = getPulseStatus(avgPulse);
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
@@ -2593,13 +2680,17 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
       </div>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 24 }}>
         <KPI icon="👥" label="Empleados" value={empleados.length} color="#006D5B" />
-        <KPI icon="✅" label="Contestaron" value={contestaron} sub={`de ${empleados.length}`} color="#0891b2" />
-        <KPI icon="🟢" label="Estables" value={verdes} color="#22c55e" />
-        <KPI icon="🟡" label="Atención" value={amarillos} color="#f59e0b" />
-        <KPI icon="🔴" label="Foco Rojo" value={rojos} color="#ef4444" />
+<KPI icon="✅" label="Contestaron" value={contestaron} sub={`de ${empleados.length}`} color="#0891b2" />
+<KPI icon="🟢" label="Verde" value={verdes} color="#22c55e" />
+<KPI icon="🟡" label="Amarillo" value={amarillos} color="#f59e0b" />
+<KPI icon="🟠" label="Naranja" value={naranjas} color="#f97316" />
+<KPI icon="🔴" label="Rojo" value={rojos} color="#ef4444" />
         <Card style={{ flex: 1, minWidth: 130, background: "linear-gradient(135deg,#004D40,#0891b2)" }}>
           <div style={{ fontSize: 11, color: "#a7f3d0", fontWeight: 700, marginBottom: 4 }}>PULSE SCORE™</div>
           <div style={{ fontSize: 30, fontWeight: 900, color: "#fff" }}>{avgPulse}</div>
+          <div style={{ fontSize: 12, color: "#d1fae5", marginTop: 4 }}>
+  {avgPulseStatus.label} · Semáforo {avgPulseStatus.semaforo}
+</div>
           <div style={{ fontSize: 11, color: "#a7f3d0" }}>Promedio org.</div>
         </Card>
       </div>
