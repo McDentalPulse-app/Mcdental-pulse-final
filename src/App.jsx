@@ -1551,7 +1551,7 @@ const Login = ({ onLogin }) => {
         <div style={{ marginTop: 24, borderTop: "1px solid #f3f4f6", paddingTop: 16 }}>
           <div style={{ fontSize: 11, color: "#9ca3af", textAlign: "center", marginBottom: 10 }}>ACCESO RÁPIDO DEMO</div>
           <div style={{ display: "flex", gap: 8 }}>
-            {[{ label: "Admin", u: "mario" }, { label: "Psicóloga", u: "laura" }, { label: "Empleado", u: "ana" }].map(d => (
+            {[{ label: "Admin", u: "mario" },{ label: "Psicóloga", u: "laura" },{ label: "RH", u: "patricia" },{ label: "Empleado", u: "ana" }].map(d => (
               <button key={d.u} onClick={() => demo(d.u)} style={{ flex: 1, padding: "8px 4px", background: "#f0fdf4", color: "#006D5B", border: "1.5px solid #bbf7d0", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{d.label}</button>
             ))}
           </div>
@@ -4603,18 +4603,16 @@ const addReconocimiento = (reconocimiento) => {
   const userMensajes = user.role==="empleado" ? mensajes.filter(m=>m.de===user.id||m.para===user.id) : mensajes;
   const renderView = () => {
     if (user.role==="admin") {
+      if (active === "mensajes" && !["empleado", "psicologa"].includes(user.role)) {
+  return (
+    <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>
+      <h2 style={{ color: "#004D40" }}>Acceso restringido</h2>
+      <p>Este canal es privado y solo está disponible para empleados y psicóloga.</p>
+    </div>
+  );
+}
       if (active==="dashboard") return <AdminDashboard encuestas={encuestas} mensajes={mensajes}/>;
-      if (active==="ai") return <AIEngine
-  encuestas={encuestas}
-  mensajes={mensajes}
-  notas={notas}
-  userRole="admin"
-  permisos={permisos}
-  incapacidades={incapacidades}
-  descuentos={descuentos}
-  reconocimientos={reconocimientos}
-  reportesConfidenciales={reportesConfidenciales}
-/>;
+      if (active==="ai") return <AIEngine encuestas={encuestas}mensajes={mensajes}notas={notas}userRole="admin"permisos={permisos} incapacidades={incapacidades} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>;
       if (active==="empleados") return <EmpleadosList encuestas={encuestas} notas={notas} role="admin"/>;
       if (active==="expedientes") return <ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} incapacidades={incapacidades} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} />;
       if (active==="reconocimientos") return <ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />;
@@ -4626,17 +4624,7 @@ const addReconocimiento = (reconocimiento) => {
     }
     if (user.role==="psicologa") {
       if (active==="dashboard") return <AdminDashboard encuestas={encuestas} mensajes={mensajes}/>;
-      if (active==="ai") return <AIEngine
-  encuestas={encuestas}
-  mensajes={mensajes}
-  notas={notas}
-  userRole="psicologa"
-  permisos={permisos}
-  incapacidades={incapacidades}
-  descuentos={descuentos}
-  reconocimientos={reconocimientos}
-  reportesConfidenciales={reportesConfidenciales}
-/>;
+      if (active==="ai") return <AIEngine encuestas={encuestas} mensajes={mensajes} notas={notas} userRole="psicologa" permisos={permisos} incapacidades={incapacidades} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>;
       if (active==="seguimiento") return <PsicologaSeguimiento encuestas={encuestas} notas={notas} onUpdateNota={addNota}/>;
       if (active==="confidenciales") return <ReportesConfidencialesPanel reportes={reportesConfidenciales} />;
       if (active==="empleados") return <EmpleadosList encuestas={encuestas} notas={notas} role="psicologa"/>;
