@@ -1044,41 +1044,158 @@ const cambiosComportamiento = analisisIA.filter(a =>
   </Card>
 )}
 
-      {/* Predicciones */}
-      {tab === "prediccion" && (
-        <div>
-          <Card style={{ marginBottom: 16 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <div><div style={{ fontWeight: 700, fontSize: 15, color: "#004D40" }}>🔮 Predicciones Organizacionales</div><div style={{ fontSize: 12, color: "#6b7280" }}>Estimaciones a 30, 60 y 90 días</div></div>
-              <button onClick={generarPrediccion} disabled={loading} style={{ padding: "10px 20px", background: "linear-gradient(135deg,#7c3aed,#ec4899)", color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-                {loading ? "Calculando..." : "🔮 Calcular Predicciones"}
-              </button>
-            </div>
-            {(output || loading) ? <AIChatBubble mensaje={output} loading={loading} /> : (
-              <div style={{ textAlign: "center", padding: "32px 0", color: "#9ca3af" }}><div style={{ fontSize: 40, marginBottom: 12 }}>🔮</div><div style={{ fontSize: 14 }}>Predice riesgos de renuncia, burnout y ausentismo</div></div>
-            )}
-          </Card>
-          {/* Barras de riesgo calculadas */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 14 }}>
-            {USERS.filter(u=>u.role==="empleado").map(emp => {
-              const r = calcRiesgos(emp.id, encuestas);
-              const ps = calcPulseScore(emp.id, encuestas);
-              return (
-                <Card key={emp.id}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-                    <Avatar name={emp.name} size={32} color={ps.color} />
-                    <div><div style={{ fontWeight: 700, fontSize: 13 }}>{emp.name}</div><PulseScoreBadge score={ps.score} nivel={ps.nivel} color={ps.color} tendencia={ps.tendencia} size="sm" /></div>
+     {/* Predicciones */}
+{tab === "prediccion" && (
+  <Card>
+    <h3 style={{ marginTop: 0, color: "#004D40" }}>
+      🔮 Predicciones IA
+    </h3>
+    <p style={{ color: "#64748b", marginTop: 0 }}>
+      Predicciones generadas localmente a partir de Pulse Score, tendencias, incidencias y señales administrativas.
+    </p>
+
+    <div style={{ display: "grid", gap: 12 }}>
+      {analisisIA
+        .slice()
+        .sort((a, b) => {
+          const orden = { "Crítica": 0, "Alta": 1, "Media": 2, "Baja": 3 };
+          return orden[a.prioridad] - orden[b.prioridad];
+        })
+        .map(a => {
+          const tieneAusentismo = a.riesgos.some(r => r.tipo === "Riesgo de ausentismo");
+          const tieneCambio = a.riesgos.some(r => r.tipo === "Cambio de comportamiento" || r.tipo === "Tendencia negativa");
+          const tieneEmocional = a.riesgos.some(r => r.tipo === "Riesgo emocional" || r.tipo === "Intervención inmediata" || r.tipo === "Atención preventiva");
+          const tieneDesconexion = a.riesgos.some(r => r.tipo === "Desconexión organizacional");
+          const tieneFinanciero = a.riesgos.some(r => r.tipo === "Posible presión financiera/administrativa");
+
+          const predicciones = [
+            {
+              nombre: "Riesgo emocional",
+              valor: tieneEmocional ? "Elevado" : a.pulse < 75 ? "Moderado" : "Bajo",
+              detalle: tieneEmocional
+                ? "El Pulse Score y las señales recientes sugieren necesidad de seguimiento emocional."
+                : "No se observan señales críticas, mantener monitoreo semanal."
+            },
+            {
+              nombre: "Riesgo de ausentismo",
+              valor: tieneAusentismo ? "Elevado" : "Bajo",
+              detalle: tieneAusentismo
+                ? "Presenta permisos o incapacidades recurrentes."
+                : "No hay patrón relevante de ausentismo en los datos actuales."
+            },
+            {
+              nombre: "Cambio de comportamiento",
+              valor: tieneCambio ? "Detectado" : "Sin cambio fuerte",
+              detalle: tieneCambio
+                ? "La tendencia reciente muestra disminución relevante del score."
+                : "No se detectan caídas significativas recientes."
+            },
+            {
+              nombre: "Desconexión organizacional",
+              valor: tieneDesconexion ? "Posible" : "Baja",
+              detalle: tieneDesconexion
+                ? "Bajo score y ausencia de reconocimientos sugieren posible desconexión."
+                : "No hay señales fuertes de desconexión con la información actual."
+            },
+            {
+              nombre: "Presión administrativa",
+              valor: tieneFinanciero ? "Presente" : "Baja",
+              detalle: tieneFinanciero
+                ? "Tiene descuentos administrativos activos o pendientes."
+                : "No se observan señales administrativas relevantes."
+            }
+          ];
+
+          return (
+            <div
+              key={a.empleado.id}
+              style={{
+                padding: 16,
+                borderRadius: 14,
+                border: "1px solid #e5e7eb",
+                background: "#f8fafc"
+              }}
+            >
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 12,
+                alignItems: "flex-start",
+                marginBottom: 12
+              }}>
+                <div>
+                  <div style={{ fontWeight: 900, color: "#0f172a", fontSize: 17 }}>
+                    {a.empleado.name}
                   </div>
-                  <RiskBar label="Riesgo Renuncia" value={r.renuncia} color={r.renuncia > 60 ? "#ef4444" : r.renuncia > 30 ? "#f97316" : "#22c55e"} />
-                  <RiskBar label="Riesgo Burnout" value={r.burnout} color={r.burnout > 60 ? "#ef4444" : r.burnout > 30 ? "#f97316" : "#22c55e"} />
-                  <RiskBar label="Riesgo Emocional" value={r.emocional} color={r.emocional > 60 ? "#ef4444" : r.emocional > 30 ? "#f97316" : "#22c55e"} />
-                  <RiskBar label="Riesgo Conflicto" value={r.conflicto} color={r.conflicto > 60 ? "#ef4444" : r.conflicto > 30 ? "#f97316" : "#22c55e"} />
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      )}
+                  <div style={{ color: "#64748b", fontSize: 13 }}>
+                    {a.empleado.sucursal} · {a.empleado.puesto}
+                  </div>
+                </div>
+
+                <div style={{
+                  padding: "6px 10px",
+                  borderRadius: 999,
+                  fontWeight: 900,
+                  fontSize: 13,
+                  background:
+                    a.prioridad === "Crítica" ? "#fee2e2" :
+                    a.prioridad === "Alta" ? "#ffedd5" :
+                    a.prioridad === "Media" ? "#fef3c7" :
+                    "#dcfce7",
+                  color:
+                    a.prioridad === "Crítica" ? "#991b1b" :
+                    a.prioridad === "Alta" ? "#c2410c" :
+                    a.prioridad === "Media" ? "#92400e" :
+                    "#166534"
+                }}>
+                  Prioridad {a.prioridad}
+                </div>
+              </div>
+
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                gap: 10
+              }}>
+                {predicciones.map(p => (
+                  <div
+                    key={p.nombre}
+                    style={{
+                      padding: 12,
+                      borderRadius: 12,
+                      background: "white",
+                      border: "1px solid #e5e7eb"
+                    }}
+                  >
+                    <div style={{ fontWeight: 900, color: "#004D40", marginBottom: 4 }}>
+                      {p.nombre}
+                    </div>
+                    <div style={{ fontWeight: 900, color: "#0f172a", marginBottom: 6 }}>
+                      {p.valor}
+                    </div>
+                    <div style={{ color: "#64748b", fontSize: 13, lineHeight: 1.5 }}>
+                      {p.detalle}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{
+                marginTop: 12,
+                padding: 12,
+                borderRadius: 12,
+                background: "#ecfeff",
+                color: "#004D40",
+                fontWeight: 900
+              }}>
+                Predicción general: {a.recomendacion}
+              </div>
+            </div>
+          );
+        })}
+    </div>
+  </Card>
+)}
 
       {/* Copiloto Chat */}
       {tab === "copiloto" && (
