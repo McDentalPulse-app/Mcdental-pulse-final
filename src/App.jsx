@@ -806,6 +806,7 @@ const Sidebar = ({ user, active, setActive, onLogout }) => {
       { key: "dashboard", icon: "📊", label: "Dashboard" },
       { key: "ai", icon: "🤖", label: "AI Engine", badge: "NEW" },
       { key: "empleados", icon: "👥", label: "Empleados" },
+      { key: "expedientes", icon: "📁", label: "Expedientes" },
       { key: "reconocimientos", icon: "🏅", label: "Reconocimientos" },
       { key: "encuestas", icon: "📋", label: "Encuestas" },
       { key: "mensajes", icon: "💬", label: "Mensajes" },
@@ -819,6 +820,7 @@ const Sidebar = ({ user, active, setActive, onLogout }) => {
       { key: "seguimiento", icon: "🎯", label: "Seguimiento" },
       { key: "confidenciales", icon: "🔒", label: "Reportes Confidenciales" },
       { key: "empleados", icon: "👥", label: "Empleados" },
+      { key: "expedientes", icon: "📁", label: "Expedientes" },
       { key: "mensajes", icon: "💬", label: "Mensajes" },
     ],
     rh: [
@@ -2336,6 +2338,243 @@ const ReportesConfidencialesPanel = ({ reportes }) => {
     </div>
   );
 };
+const ExpedienteIntegral = ({
+  users,
+  encuestas,
+  mensajes,
+  notas,
+  vacaciones,
+  permisos,
+  incapacidades,
+  descuentos,
+  reconocimientos,
+  reportesConfidenciales,
+  currentUser
+}) => {
+  const empleados = users.filter(u => u.role === "empleado");
+  const [empleadoId, setEmpleadoId] = useState(empleados[0]?.id || "");
+  const empleado = empleados.find(e => e.id === Number(empleadoId)) || empleados[0];
+
+  if (!empleado) {
+    return (
+      <div style={{ color: "#64748b", padding: 40 }}>
+        No hay empleados registrados.
+      </div>
+    );
+  }
+
+  const encuestasEmpleado = encuestas.filter(e => e.empleadoId === empleado.id);
+  const mensajesEmpleado = mensajes.filter(m => m.de === empleado.id || m.para === empleado.id);
+  const notasEmpleado = notas.filter(n => n.empleadoId === empleado.id);
+  const vacacionesEmpleado = vacaciones.filter(v => v.empleadoId === empleado.id);
+  const permisosEmpleado = permisos.filter(p => p.empleadoId === empleado.id);
+  const incapacidadesEmpleado = incapacidades.filter(i => i.empleadoId === empleado.id);
+  const descuentosEmpleado = descuentos.filter(d => d.empleadoId === empleado.id);
+  const reconocimientosEmpleado = reconocimientos.filter(r => r.empleadoId === empleado.id);
+  const reportesEmpleado = reportesConfidenciales.filter(r => r.empleadoId === empleado.id);
+
+  const ultimoScore = encuestasEmpleado.length
+    ? encuestasEmpleado[encuestasEmpleado.length - 1].score
+    : calcPulseScore(empleado.id, encuestas).score;
+
+  const semaforo = ultimoScore >= 80 ? "Verde" :
+    ultimoScore >= 70 ? "Amarillo" :
+    ultimoScore >= 60 ? "Naranja" :
+    "Rojo";
+
+  const semaforoColor = semaforo === "Verde" ? "#22c55e" :
+    semaforo === "Amarillo" ? "#f59e0b" :
+    semaforo === "Naranja" ? "#f97316" :
+    "#ef4444";
+
+  const puedeVerConfidencial = currentUser.role === "admin" || currentUser.role === "psicologa";
+
+  return (
+    <div>
+      <h1 style={{ margin: "0 0 6px", fontSize: 28, color: "#004D40" }}>
+        Expediente Integral
+      </h1>
+      <p style={{ margin: "0 0 24px", color: "#64748b" }}>
+        Vista consolidada del colaborador: bienestar, administración, comunicación y reconocimientos.
+      </p>
+
+      <Card>
+        <label style={{ fontWeight: 800, color: "#0f172a" }}>
+          Seleccionar empleado
+          <select
+            value={empleado.id}
+            onChange={(e) => setEmpleadoId(e.target.value)}
+            style={{
+              width: "100%",
+              marginTop: 6,
+              padding: 12,
+              borderRadius: 10,
+              border: "1px solid #cbd5e1"
+            }}
+          >
+            {empleados.map(e => (
+              <option key={e.id} value={e.id}>
+                {e.name} · {e.sucursal} · {e.puesto}
+              </option>
+            ))}
+          </select>
+        </label>
+      </Card>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+        gap: 14,
+        margin: "18px 0 22px"
+      }}>
+        <Card>
+          <div style={{ fontSize: 24 }}>👤</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: "#004D40" }}>
+            {empleado.name}
+          </div>
+          <div style={{ color: "#64748b" }}>{empleado.puesto}</div>
+          <div style={{ color: "#64748b" }}>{empleado.sucursal}</div>
+        </Card>
+
+        <Card>
+          <div style={{ fontSize: 24 }}>💓</div>
+          <div style={{ fontSize: 30, fontWeight: 900, color: "#00897B" }}>
+            {ultimoScore}
+          </div>
+          <div style={{ fontWeight: 700 }}>Pulse Score™</div>
+        </Card>
+
+        <Card>
+          <div style={{ fontSize: 24 }}>🚦</div>
+          <div style={{ fontSize: 24, fontWeight: 900, color: semaforoColor }}>
+            {semaforo}
+          </div>
+          <div style={{ fontWeight: 700 }}>Semáforo actual</div>
+        </Card>
+
+        <Card>
+          <div style={{ fontSize: 24 }}>🏅</div>
+          <div style={{ fontSize: 30, fontWeight: 900, color: "#2563eb" }}>
+            {reconocimientosEmpleado.length}
+          </div>
+          <div style={{ fontWeight: 700 }}>Reconocimientos</div>
+        </Card>
+      </div>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
+        gap: 16
+      }}>
+        <Card>
+          <h3 style={{ marginTop: 0, color: "#004D40" }}>📌 Datos generales</h3>
+          <div style={{ color: "#334155", lineHeight: 1.8 }}>
+            <div><b>Nombre:</b> {empleado.name}</div>
+            <div><b>Puesto:</b> {empleado.puesto}</div>
+            <div><b>Sucursal:</b> {empleado.sucursal}</div>
+            <div><b>Antigüedad:</b> {empleado.antiguedad || "No registrada"}</div>
+            <div><b>Teléfono:</b> {empleado.telefono || "No registrado"}</div>
+            <div><b>Estatus:</b> Activo</div>
+          </div>
+        </Card>
+
+        <Card>
+          <h3 style={{ marginTop: 0, color: "#004D40" }}>💓 Bienestar</h3>
+          <div style={{ color: "#334155", lineHeight: 1.8 }}>
+            <div><b>Encuestas registradas:</b> {encuestasEmpleado.length}</div>
+            <div><b>Score actual:</b> {ultimoScore}</div>
+            <div><b>Semáforo:</b> <span style={{ color: semaforoColor, fontWeight: 900 }}>{semaforo}</span></div>
+            <div><b>Notas psicológicas:</b> {notasEmpleado.length}</div>
+          </div>
+        </Card>
+
+        <Card>
+          <h3 style={{ marginTop: 0, color: "#004D40" }}>🏖️ Vacaciones</h3>
+          {vacacionesEmpleado.length === 0 ? (
+            <p style={{ color: "#64748b" }}>Sin vacaciones registradas.</p>
+          ) : vacacionesEmpleado.map(v => (
+            <div key={v.id} style={{ padding: "10px 0", borderBottom: "1px solid #e5e7eb" }}>
+              <b>{v.inicio} al {v.fin}</b>
+              <div style={{ color: "#64748b", fontSize: 13 }}>{v.dias} días · {v.estado}</div>
+            </div>
+          ))}
+        </Card>
+
+        <Card>
+          <h3 style={{ marginTop: 0, color: "#004D40" }}>📝 Permisos</h3>
+          {permisosEmpleado.length === 0 ? (
+            <p style={{ color: "#64748b" }}>Sin permisos registrados.</p>
+          ) : permisosEmpleado.map(p => (
+            <div key={p.id} style={{ padding: "10px 0", borderBottom: "1px solid #e5e7eb" }}>
+              <b>{p.tipo}</b>
+              <div style={{ color: "#64748b", fontSize: 13 }}>{p.fecha} · {p.hora} · {p.estado}</div>
+            </div>
+          ))}
+        </Card>
+
+        <Card>
+          <h3 style={{ marginTop: 0, color: "#004D40" }}>🏥 Incapacidades</h3>
+          {incapacidadesEmpleado.length === 0 ? (
+            <p style={{ color: "#64748b" }}>Sin incapacidades registradas.</p>
+          ) : incapacidadesEmpleado.map(i => (
+            <div key={i.id} style={{ padding: "10px 0", borderBottom: "1px solid #e5e7eb" }}>
+              <b>{i.tipo}</b>
+              <div style={{ color: "#64748b", fontSize: 13 }}>{i.inicio} al {i.fin} · {i.estado}</div>
+            </div>
+          ))}
+        </Card>
+
+        <Card>
+          <h3 style={{ marginTop: 0, color: "#004D40" }}>💸 Descuentos</h3>
+          {descuentosEmpleado.length === 0 ? (
+            <p style={{ color: "#64748b" }}>Sin descuentos registrados.</p>
+          ) : descuentosEmpleado.map(d => (
+            <div key={d.id} style={{ padding: "10px 0", borderBottom: "1px solid #e5e7eb" }}>
+              <b>{d.tipo}</b>
+              <div style={{ color: "#64748b", fontSize: 13 }}>${d.monto} · {d.estado}</div>
+            </div>
+          ))}
+        </Card>
+
+        <Card>
+          <h3 style={{ marginTop: 0, color: "#004D40" }}>🏅 Reconocimientos</h3>
+          {reconocimientosEmpleado.length === 0 ? (
+            <p style={{ color: "#64748b" }}>Sin reconocimientos registrados.</p>
+          ) : reconocimientosEmpleado.map(r => (
+            <div key={r.id} style={{ padding: "10px 0", borderBottom: "1px solid #e5e7eb" }}>
+              <b>{r.categoria}</b>
+              <div style={{ color: "#64748b", fontSize: 13 }}>{r.fecha} · {r.otorgadoPor}</div>
+              <div style={{ color: "#334155", fontSize: 13 }}>{r.comentario}</div>
+            </div>
+          ))}
+        </Card>
+
+        <Card>
+          <h3 style={{ marginTop: 0, color: "#004D40" }}>💬 Comunicación</h3>
+          <div style={{ color: "#334155", lineHeight: 1.8 }}>
+            <div><b>Mensajes relacionados:</b> {mensajesEmpleado.length}</div>
+            <div><b>Último contacto:</b> {mensajesEmpleado.length ? "Registrado" : "Sin mensajes"}</div>
+          </div>
+        </Card>
+
+        {puedeVerConfidencial && (
+          <Card>
+            <h3 style={{ marginTop: 0, color: "#004D40" }}>🔒 Reportes confidenciales</h3>
+            {reportesEmpleado.length === 0 ? (
+              <p style={{ color: "#64748b" }}>Sin reportes confidenciales registrados.</p>
+            ) : reportesEmpleado.map(r => (
+              <div key={r.id} style={{ padding: "10px 0", borderBottom: "1px solid #e5e7eb" }}>
+                <b>{r.tipo}</b>
+                <div style={{ color: "#64748b", fontSize: 13 }}>{r.fecha} · Urgencia {r.urgencia} · {r.estado}</div>
+                <div style={{ color: "#334155", fontSize: 13 }}>{r.descripcion}</div>
+              </div>
+            ))}
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+};
 const AdminDashboard = ({ encuestas, mensajes }) => {
   const empleados = USERS.filter(u => u.role === "empleado");
   const semanaEnc = encuestas.filter(e => e.semana === semanaActual);
@@ -2686,6 +2925,7 @@ const addReconocimiento = (reconocimiento) => {
       if (active==="dashboard") return <AdminDashboard encuestas={encuestas} mensajes={mensajes}/>;
       if (active==="ai") return <AIEngine encuestas={encuestas} mensajes={mensajes} notas={notas} userRole="admin"/>;
       if (active==="empleados") return <EmpleadosList encuestas={encuestas} notas={notas} role="admin"/>;
+      if (active==="expedientes") return <ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} incapacidades={incapacidades} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} />;
       if (active==="reconocimientos") return <ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />;
       if (active==="mensajes") return <Mensajes user={user} mensajes={mensajes} onSend={sendMensaje}/>;
       if (active==="reportes") return <Reportes/>;
@@ -2699,6 +2939,7 @@ const addReconocimiento = (reconocimiento) => {
       if (active==="seguimiento") return <PsicologaSeguimiento encuestas={encuestas} notas={notas} onUpdateNota={addNota}/>;
       if (active==="confidenciales") return <ReportesConfidencialesPanel reportes={reportesConfidenciales} />;
       if (active==="empleados") return <EmpleadosList encuestas={encuestas} notas={notas} role="psicologa"/>;
+      if (active==="expedientes") return <ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} incapacidades={incapacidades} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} />;
       if (active==="mensajes") return <Mensajes user={user} mensajes={mensajes} onSend={sendMensaje}/>;
     }
          if (user.role==="rh") {
