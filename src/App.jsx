@@ -17,6 +17,50 @@ const USERS = [
   { id: 8, name: "Roberto Díaz", role: "empleado", user: "roberto", pass: "emp123", sucursal: "Centro", puesto: "Laboratorista", antiguedad: "6 meses", telefono: "555-1006" },
 ];
 const SUCURSALES = ["Norte", "Sur", "Centro", "Central"];
+const VACACIONES_INIT = [
+  {
+    id: 1,
+    empleadoId: 3,
+    empleado: "Ana García",
+    sucursal: "Norte",
+    puesto: "Asistente Dental",
+    fechaSolicitud: "2025-06-10",
+    inicio: "2025-07-15",
+    fin: "2025-07-19",
+    dias: 5,
+    estado: "pendiente",
+    motivo: "Vacaciones familiares",
+    responsable: "Patricia Ramírez"
+  },
+  {
+    id: 2,
+    empleadoId: 4,
+    empleado: "Carlos Pérez",
+    sucursal: "Sur",
+    puesto: "Dentista",
+    fechaSolicitud: "2025-06-12",
+    inicio: "2025-07-22",
+    fin: "2025-07-24",
+    dias: 3,
+    estado: "pendiente",
+    motivo: "Descanso programado",
+    responsable: "Patricia Ramírez"
+  },
+  {
+    id: 3,
+    empleadoId: 5,
+    empleado: "Sofía Martínez",
+    sucursal: "Norte",
+    puesto: "Recepcionista",
+    fechaSolicitud: "2025-06-01",
+    inicio: "2025-06-20",
+    fin: "2025-06-21",
+    dias: 2,
+    estado: "aprobada",
+    motivo: "Asunto personal",
+    responsable: "Patricia Ramírez"
+  }
+];
 const ENCUESTA_PREGUNTAS = [
   { id: 1, texto: "¿Cómo describes tu estado emocional esta semana?", tipo: "escala", area: "Emocional" },
   { id: 2, texto: "¿Qué tan estresado/a te has sentido en el trabajo?", tipo: "escala", area: "Estrés" },
@@ -644,6 +688,137 @@ const HRDashboard = ({ users }) => {
     </div>
   );
 };
+const VacacionesRH = ({ vacaciones, onUpdateEstado }) => {
+  const pendientes = vacaciones.filter(v => v.estado === "pendiente").length;
+  const aprobadas = vacaciones.filter(v => v.estado === "aprobada").length;
+  const rechazadas = vacaciones.filter(v => v.estado === "rechazada").length;
+
+  const badgeStyle = (estado) => ({
+    display: "inline-block",
+    padding: "4px 10px",
+    borderRadius: 999,
+    fontSize: 12,
+    fontWeight: 700,
+    background:
+      estado === "aprobada" ? "#dcfce7" :
+      estado === "rechazada" ? "#fee2e2" :
+      "#fef3c7",
+    color:
+      estado === "aprobada" ? "#166534" :
+      estado === "rechazada" ? "#991b1b" :
+      "#92400e"
+  });
+
+  return (
+    <div>
+      <h1 style={{ margin: "0 0 6px", fontSize: 28, color: "#004D40" }}>
+        Vacaciones
+      </h1>
+      <p style={{ margin: "0 0 24px", color: "#64748b" }}>
+        Gestión de solicitudes, aprobación y seguimiento de vacaciones del personal.
+      </p>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+        gap: 14,
+        marginBottom: 22
+      }}>
+        <Card>
+          <div style={{ fontSize: 24 }}>⏳</div>
+          <div style={{ fontSize: 30, fontWeight: 800, color: "#f59e0b" }}>{pendientes}</div>
+          <div style={{ fontWeight: 700 }}>Pendientes</div>
+        </Card>
+        <Card>
+          <div style={{ fontSize: 24 }}>✅</div>
+          <div style={{ fontSize: 30, fontWeight: 800, color: "#22c55e" }}>{aprobadas}</div>
+          <div style={{ fontWeight: 700 }}>Aprobadas</div>
+        </Card>
+        <Card>
+          <div style={{ fontSize: 24 }}>❌</div>
+          <div style={{ fontSize: 30, fontWeight: 800, color: "#ef4444" }}>{rechazadas}</div>
+          <div style={{ fontWeight: 700 }}>Rechazadas</div>
+        </Card>
+      </div>
+
+      <Card>
+        <h3 style={{ marginTop: 0, color: "#004D40" }}>🏖️ Solicitudes de vacaciones</h3>
+
+        <div style={{ display: "grid", gap: 12 }}>
+          {vacaciones.map(v => (
+            <div
+              key={v.id}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1.5fr 1fr 1fr auto",
+                gap: 12,
+                alignItems: "center",
+                padding: "14px 0",
+                borderBottom: "1px solid #e5e7eb"
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: 800, color: "#0f172a" }}>{v.empleado}</div>
+                <div style={{ color: "#64748b", fontSize: 13 }}>
+                  {v.sucursal} · {v.puesto}
+                </div>
+                <div style={{ color: "#94a3b8", fontSize: 12 }}>
+                  Motivo: {v.motivo}
+                </div>
+              </div>
+
+              <div style={{ color: "#334155", fontSize: 14 }}>
+                {v.inicio} al {v.fin}
+                <div style={{ color: "#64748b", fontSize: 12 }}>{v.dias} días</div>
+              </div>
+
+              <div>
+                <span style={badgeStyle(v.estado)}>{v.estado}</span>
+              </div>
+
+              <div style={{ display: "flex", gap: 8 }}>
+                {v.estado === "pendiente" ? (
+                  <>
+                    <button
+                      onClick={() => onUpdateEstado(v.id, "aprobada")}
+                      style={{
+                        border: "none",
+                        background: "#00897B",
+                        color: "white",
+                        padding: "8px 10px",
+                        borderRadius: 8,
+                        fontWeight: 700,
+                        cursor: "pointer"
+                      }}
+                    >
+                      Aprobar
+                    </button>
+                    <button
+                      onClick={() => onUpdateEstado(v.id, "rechazada")}
+                      style={{
+                        border: "none",
+                        background: "#ef4444",
+                        color: "white",
+                        padding: "8px 10px",
+                        borderRadius: 8,
+                        fontWeight: 700,
+                        cursor: "pointer"
+                      }}
+                    >
+                      Rechazar
+                    </button>
+                  </>
+                ) : (
+                  <span style={{ color: "#94a3b8", fontSize: 13 }}>Sin acciones</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+};
 const AdminDashboard = ({ encuestas, mensajes }) => {
   const empleados = USERS.filter(u => u.role === "empleado");
   const semanaEnc = encuestas.filter(e => e.semana === semanaActual);
@@ -925,11 +1100,19 @@ export default function App() {
   const [encuestas, setEncuestas] = useState(() => generateEncuestas());
   const [mensajes, setMensajes] = useState(MENSAJES_INIT);
   const [notas, setNotas] = useState(NOTAS_INIT);
+  const [vacaciones, setVacaciones] = useState(VACACIONES_INIT);
   const handleLogin = (u) => { setUser(u); setActive(u.role==="empleado"?"inicio":"dashboard"); };
   const addEncuesta = (enc) => setEncuestas(prev => [...prev, { ...enc, id: prev.length+1 }]);
   const sendMensaje = (msg) => setMensajes(prev => [...prev, { ...msg, id: prev.length+1 }]);
   const addNota = (nota) => setNotas(prev => { const exists=prev.findIndex(n=>n.empleadoId===nota.empleadoId); if (exists>=0){const u=[...prev];u[exists]={...nota,id:u[exists].id};return u;} return [...prev,{...nota,id:prev.length+1}]; });
   if (!user) return <Login onLogin={handleLogin} />;
+  const updateVacacionEstado = (id, estado) => {
+  setVacaciones(prev =>
+    prev.map(v =>
+      v.id === id ? { ...v, estado } : v
+    )
+  );
+};
   const psicologaId = USERS.find(u => u.role==="psicologa")?.id;
   const userMensajes = user.role==="empleado" ? mensajes.filter(m=>m.de===user.id||m.para===user.id) : mensajes;
   const renderView = () => {
@@ -951,8 +1134,7 @@ export default function App() {
     }
         if (user.role==="rh") {
       if (active==="dashboard") return <HRDashboard users={USERS} />;
-      if (active==="vacaciones") return <div style={{ color:"#9ca3af", padding:40, textAlign:"center" }}>Módulo de vacaciones en construcción</div>;
-      if (active==="permisos") return <div style={{ color:"#9ca3af", padding:40, textAlign:"center" }}>Módulo de permisos en construcción</div>;
+      if (active==="vacaciones") return <VacacionesRH vacaciones={vacaciones} onUpdateEstado={updateVacacionEstado} />;      if (active==="permisos") return <div style={{ color:"#9ca3af", padding:40, textAlign:"center" }}>Módulo de permisos en construcción</div>;
       if (active==="incapacidades") return <div style={{ color:"#9ca3af", padding:40, textAlign:"center" }}>Módulo de incapacidades en construcción</div>;
       if (active==="descuentos") return <div style={{ color:"#9ca3af", padding:40, textAlign:"center" }}>Módulo de descuentos en construcción</div>;
       if (active==="calendario") return <div style={{ color:"#9ca3af", padding:40, textAlign:"center" }}>Calendario laboral en construcción</div>;
