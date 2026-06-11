@@ -337,7 +337,7 @@ const NOTAS_INIT = [
   { id: 1, empleadoId: 4, texto: "Carlos presenta signos de agotamiento emocional y bajo compromiso. Requiere sesión urgente.", fecha: "2025-03-22", psicologa: "Dra. Laura Vega" },
   { id: 2, empleadoId: 6, texto: "Luis reporta alta carga de trabajo. Monitorear próximas semanas.", fecha: "2025-03-23", psicologa: "Dra. Laura Vega" },
 ];
-const semanaActual = "2025-W14";
+const semanaActual = "2025-W15";
 
 // ─── PULSE SCORE ENGINE ───────────────────────────────────────────────────────
 const calcPulseScore = (empId, encuestas) => {
@@ -2551,12 +2551,17 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
   const [enviada, setEnviada] = useState(false);
 
   const preguntas = [
-    { id: "emocional", area: "Bienestar", texto: "¿Cómo te has sentido emocionalmente esta semana?" },
-    { id: "estres", area: "Estrés", texto: "¿Qué nivel de estrés has sentido esta semana?" },
-    { id: "motivacion", area: "Motivación", texto: "¿Qué tan motivado/a te has sentido en tu trabajo?" },
-    { id: "ambiente", area: "Ambiente", texto: "¿Cómo percibes el ambiente laboral esta semana?" },
-    { id: "carga", area: "Carga laboral", texto: "¿Qué tan manejable ha sido tu carga de trabajo?" }
-  ];
+  { id: "p1", area: "Estado emocional", texto: "¿Cómo describes tu estado emocional esta semana?" },
+  { id: "p2", area: "Estrés", texto: "¿Qué tan estresado/a te has sentido en el trabajo?" },
+  { id: "p3", area: "Satisfacción", texto: "¿Qué tan satisfecho/a estás con tu trabajo actualmente?" },
+  { id: "p4", area: "Compañeros", texto: "¿Cómo es tu relación con tus compañeros esta semana?" },
+  { id: "p5", area: "Jefe directo", texto: "¿Cómo es tu relación con tu jefe directo?" },
+  { id: "p6", area: "Carga laboral", texto: "¿Sientes que tu carga de trabajo es manejable?" },
+  { id: "p7", area: "Situación personal", texto: "¿Tienes algún problema personal que esté afectando tu trabajo?" },
+  { id: "p8", area: "Motivación", texto: "¿Qué tan motivado/a te sientes para venir a trabajar?" },
+  { id: "p9", area: "Renuncia", texto: "¿Has pensado en renunciar durante esta semana?" },
+  { id: "p10", area: "Comentario abierto", texto: "¿Quieres compartir algo más con el equipo de bienestar?" }
+];
 
   const setR = (id, val) => {
     setRespuestas((prev) => ({
@@ -5501,6 +5506,16 @@ const permisosFirebase = snapshotPermisos.docs.map((doc) => ({
 if (permisosFirebase.length > 0) {
   setPermisos(permisosFirebase);
 }
+const snapshotEncuestas = await getDocs(collection(db, "encuestas"));
+
+const encuestasFirebase = snapshotEncuestas.docs.map((doc) => ({
+  firebaseId: doc.id,
+  ...doc.data()
+}));
+
+if (encuestasFirebase.length > 0) {
+  setEncuestas(encuestasFirebase);
+}
       console.log("Datos cargados desde Firebase");
     } catch (error) {
       console.error("Error cargando reportes confidenciales:", error);
@@ -5511,7 +5526,33 @@ if (permisosFirebase.length > 0) {
 }, []);
   const [reconocimientos, setReconocimientos] = useState(RECONOCIMIENTOS_INIT);
   const handleLogin = (u) => { setUser(u); setActive(u.role==="empleado"?"inicio":"dashboard"); };
-  const addEncuesta = (enc) => setEncuestas(prev => [...prev, { ...enc, id: prev.length+1 }]);
+  const addEncuesta = async (enc) => {
+  const nuevaEncuesta = {
+    ...enc,
+    id: Date.now(),
+    createdAt: serverTimestamp()
+  };
+
+  setEncuestas(prev => [
+    ...prev,
+    nuevaEncuesta
+  ]);
+
+  try {
+    const docRef = await addDoc(collection(db, "encuestas"), nuevaEncuesta);
+
+    setEncuestas(prev =>
+      prev.map(e =>
+        e.id === nuevaEncuesta.id ? { ...e, firebaseId: docRef.id } : e
+      )
+    );
+
+    console.log("Encuesta guardada en Firebase");
+  } catch (error) {
+    console.error("Error guardando encuesta:", error);
+    alert("La encuesta se guardó en la app, pero no se pudo guardar en Firebase.");
+  }
+};
   const sendMensaje = (msg) => setMensajes(prev => [...prev, { ...msg, id: prev.length+1 }]);
   const addNota = (empleadoId, texto) => {
   if (!texto.trim()) return;
