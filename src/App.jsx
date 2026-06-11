@@ -5536,6 +5536,16 @@ const mensajesFirebase = snapshotMensajes.docs.map((doc) => ({
 if (mensajesFirebase.length > 0) {
   setMensajes(mensajesFirebase);
 }
+const snapshotNotas = await getDocs(collection(db, "notasPsicologicas"));
+
+const notasFirebase = snapshotNotas.docs.map((doc) => ({
+  firebaseId: doc.id,
+  ...doc.data()
+}));
+
+if (notasFirebase.length > 0) {
+  setNotas(notasFirebase);
+}
       console.log("Datos cargados desde Firebase");
     } catch (error) {
       console.error("Error cargando reportes confidenciales:", error);
@@ -5601,19 +5611,37 @@ if (mensajesFirebase.length > 0) {
     alert("El mensaje se guardó en la app, pero no se pudo guardar en Firebase.");
   }
 };
-  const addNota = (empleadoId, texto) => {
+  const addNota = async (empleadoId, texto) => {
   if (!texto.trim()) return;
+
+  const nuevaNota = {
+    id: Date.now(),
+    empleadoId,
+    texto,
+    fecha: new Date().toISOString().slice(0, 10),
+    autor: user?.name || "Dra. Laura Vega",
+    createdAt: serverTimestamp()
+  };
 
   setNotas(prev => [
     ...prev,
-    {
-      id: prev.length + 1,
-      empleadoId,
-      texto,
-      fecha: new Date().toISOString().slice(0, 10),
-      autor: user?.name || "Dra. Laura Vega"
-    }
+    nuevaNota
   ]);
+
+  try {
+    const docRef = await addDoc(collection(db, "notasPsicologicas"), nuevaNota);
+
+    setNotas(prev =>
+      prev.map(n =>
+        n.id === nuevaNota.id ? { ...n, firebaseId: docRef.id } : n
+      )
+    );
+
+    console.log("Nota psicológica guardada en Firebase");
+  } catch (error) {
+    console.error("Error guardando nota psicológica:", error);
+    alert("La nota se guardó en la app, pero no se pudo guardar en Firebase.");
+  }
 };
   if (!user) return <Login onLogin={handleLogin} />;
   const updateVacacionEstado = async (id, estado, comentarioRH = "") => {
