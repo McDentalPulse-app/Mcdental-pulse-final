@@ -5309,6 +5309,16 @@ const notasFirebase = snapshotNotas.docs.map((doc) => ({
 if (notasFirebase.length > 0) {
   setNotas(notasFirebase);
 }
+const snapshotDescuentos = await getDocs(collection(db, "descuentos"));
+
+const descuentosFirebase = snapshotDescuentos.docs.map((doc) => ({
+  firebaseId: doc.id,
+  ...doc.data()
+}));
+
+if (descuentosFirebase.length > 0) {
+  setDescuentos(descuentosFirebase);
+}
       console.log("Datos cargados desde Firebase");
     } catch (error) {
       console.error("Error cargando reportes confidenciales:", error);
@@ -5589,12 +5599,50 @@ const addSolicitudEmpleadoRH = async (solicitud) => {
   }
 };
 
-const updateDescuentoEstado = (id, estado) => {
+const updateDescuentoEstado = async (id, estado) => {
+  const descuentoAntes = descuentos.find(d => d.id === id);
+
+  const descuentoActualizado = {
+    ...descuentoAntes,
+    estado,
+    updatedAt: serverTimestamp()
+  };
+
   setDescuentos(prev =>
     prev.map(d =>
       d.id === id ? { ...d, estado } : d
     )
   );
+
+  try {
+    let firebaseId = descuentoAntes?.firebaseId;
+
+    if (firebaseId) {
+      await updateDoc(doc(db, "descuentos", firebaseId), {
+        estado,
+        updatedAt: serverTimestamp()
+      });
+
+      console.log("Descuento actualizado en Firebase");
+      return;
+    }
+
+    const docRef = await addDoc(collection(db, "descuentos"), {
+      ...descuentoActualizado,
+      createdAt: serverTimestamp()
+    });
+
+    setDescuentos(prev =>
+      prev.map(d =>
+        d.id === id ? { ...d, estado, firebaseId: docRef.id } : d
+      )
+    );
+
+    console.log("Descuento creado y actualizado en Firebase");
+  } catch (error) {
+    console.error("Error actualizando descuento en Firebase:", error);
+    alert("El descuento se actualizó en la app, pero no se pudo guardar en Firebase.");
+  }
 };
 const addReporteConfidencial = async (reporte) => {
   const nuevoReporte = {
