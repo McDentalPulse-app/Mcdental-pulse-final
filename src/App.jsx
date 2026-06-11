@@ -2539,6 +2539,141 @@ const ReportesRH = ({ vacaciones, permisos, incapacidades, descuentos }) => {
     </div>
   );
 };
+// ─── ENCUESTA EMPLEADO ────────────────────────────────────────────────────────
+const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
+  const yaContesto = encuestas.some(
+    (e) => e.empleadoId === user.id && e.semana === semanaActual
+  );
+
+  const [respuestas, setRespuestas] = useState({});
+  const [enviada, setEnviada] = useState(false);
+
+  const preguntas = [
+    { id: "emocional", area: "Bienestar", texto: "¿Cómo te has sentido emocionalmente esta semana?" },
+    { id: "estres", area: "Estrés", texto: "¿Qué nivel de estrés has sentido esta semana?" },
+    { id: "motivacion", area: "Motivación", texto: "¿Qué tan motivado/a te has sentido en tu trabajo?" },
+    { id: "ambiente", area: "Ambiente", texto: "¿Cómo percibes el ambiente laboral esta semana?" },
+    { id: "carga", area: "Carga laboral", texto: "¿Qué tan manejable ha sido tu carga de trabajo?" }
+  ];
+
+  const setR = (id, val) => {
+    setRespuestas((prev) => ({
+      ...prev,
+      [id]: val
+    }));
+  };
+
+  const allAnswered = preguntas.every(
+    (p) => respuestas[p.id] !== undefined && respuestas[p.id] !== ""
+  );
+
+  const handleSubmit = () => {
+    const suma = preguntas.reduce((acc, p) => {
+      return acc + Number(respuestas[p.id] || 0);
+    }, 0);
+
+    const score = Math.round((suma / (preguntas.length * 10)) * 100);
+
+    const semaforo =
+      score >= 80 ? "verde" :
+      score >= 60 ? "amarillo" :
+      "rojo";
+
+    onSubmit({
+      empleadoId: user.id,
+      semana: semanaActual,
+      respuestas,
+      score,
+      semaforo,
+      fecha: new Date().toISOString().slice(0, 10)
+    });
+
+    setEnviada(true);
+  };
+
+  if (yaContesto || enviada) {
+    return (
+      <Card style={{ maxWidth: 560, margin: "0 auto", textAlign: "center", padding: 40 }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
+
+        <h3 style={{ color: "#004D40", margin: "0 0 8px" }}>
+          ¡Encuesta completada!
+        </h3>
+
+        <p style={{ color: "#6b7280", fontSize: 13 }}>
+          Tu encuesta fue registrada para {semanaActual}.
+        </p>
+      </Card>
+    );
+  }
+
+  return (
+    <div style={{ maxWidth: 720, margin: "0 auto" }}>
+      <div style={{ marginBottom: 24, textAlign: "center" }}>
+        <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: "#004D40" }}>
+          📝 Mi Encuesta
+        </h2>
+
+        <p style={{ margin: "6px 0 0", color: "#6b7280", fontSize: 13 }}>
+          Semana {semanaActual} · Tus respuestas son confidenciales.
+        </p>
+      </div>
+
+      {preguntas.map((p, idx) => (
+        <Card key={p.id} style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 12, color: "#006D5B", fontWeight: 800, marginBottom: 6 }}>
+            {p.area}
+          </div>
+
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#111827", marginBottom: 14 }}>
+            {idx + 1}. {p.texto}
+          </div>
+
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {[1,2,3,4,5,6,7,8,9,10].map((num) => (
+              <button
+                key={num}
+                type="button"
+                onClick={() => setR(p.id, num)}
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 10,
+                  border: respuestas[p.id] === num ? "2px solid #006D5B" : "1px solid #d1d5db",
+                  background: respuestas[p.id] === num ? "#E6FFFA" : "#ffffff",
+                  color: "#004D40",
+                  fontWeight: 800,
+                  cursor: "pointer"
+                }}
+              >
+                {num}
+              </button>
+            ))}
+          </div>
+        </Card>
+      ))}
+
+      <button
+        type="button"
+        disabled={!allAnswered}
+        onClick={handleSubmit}
+        style={{
+          width: "100%",
+          marginTop: 8,
+          border: "none",
+          borderRadius: 12,
+          padding: "14px 18px",
+          background: allAnswered ? "#006D5B" : "#9ca3af",
+          color: "white",
+          fontWeight: 800,
+          cursor: allAnswered ? "pointer" : "not-allowed"
+        }}
+      >
+        Enviar encuesta semanal
+      </button>
+    </div>
+  );
+};
 const HistorialEmpleado = ({ user, encuestas }) => {
   const historial = encuestas
     .filter(e => e.empleadoId === user.id)
@@ -3825,191 +3960,567 @@ const avgPulseStatus = getPulseStatus(avgPulse);
 };
 
 // ─── EMPLEADOS LIST ───────────────────────────────────────────────────────────
-const EmpleadosList = ({ encuestas, notas, role }) => {
+const EmpleadosList = ({
+  encuestas,
+  notas,
+  role,
+  vacaciones = [],
+  permisos = [],
+  incapacidades = [],
+  descuentos = [],
+  reconocimientos = [],
+  reportesConfidenciales = []
+}) => {
   const [filtroSucursal, setFiltroSucursal] = useState("Todas");
   const [filtroSemaforo, setFiltroSemaforo] = useState("Todos");
   const [busqueda, setBusqueda] = useState("");
   const [selected, setSelected] = useState(null);
+
   const empleados = USERS.filter(u => u.role === "empleado");
-  const getUltimoSemaforo = (empId) => { const enc=encuestas.filter(e=>e.empleadoId===empId).sort((a,b)=>b.semana.localeCompare(a.semana)); return enc[0]?.semaforo||"verde"; };
+
+  const getUltimoSemaforo = (empId) => {
+    const enc = encuestas
+      .filter(e => e.empleadoId === empId)
+      .sort((a, b) => b.semana.localeCompare(a.semana));
+
+    return enc[0]?.semaforo || "verde";
+  };
+
   const filtered = empleados.filter(e => {
-  const texto = busqueda.toLowerCase();
+    const texto = busqueda.toLowerCase();
 
-  const coincideBusqueda =
-    e.name.toLowerCase().includes(texto) ||
-    e.puesto.toLowerCase().includes(texto) ||
-    e.sucursal.toLowerCase().includes(texto);
+    const coincideBusqueda =
+      e.name.toLowerCase().includes(texto) ||
+      e.puesto.toLowerCase().includes(texto) ||
+      e.sucursal.toLowerCase().includes(texto);
 
-  const coincideSucursal =
-    filtroSucursal === "Todas" || e.sucursal === filtroSucursal;
+    const coincideSucursal =
+      filtroSucursal === "Todas" || e.sucursal === filtroSucursal;
 
-  const coincideSemaforo =
-    filtroSemaforo === "Todos" || getUltimoSemaforo(e.id) === filtroSemaforo;
+    const coincideSemaforo =
+      filtroSemaforo === "Todos" || getUltimoSemaforo(e.id) === filtroSemaforo;
 
-  return coincideBusqueda && coincideSucursal && coincideSemaforo;
-});
+    return coincideBusqueda && coincideSucursal && coincideSemaforo;
+  });
+
   if (selected) {
-    const encEmp=encuestas.filter(e=>e.empleadoId===selected.id).sort((a,b)=>a.semana.localeCompare(b.semana));
-    const notasEmp=notas.filter(n=>n.empleadoId===selected.id);
-    const sem=getUltimoSemaforo(selected.id);
-    const ps=calcPulseScore(selected.id,encuestas);
-    const trend=encEmp.map(e=>({label:e.semana.replace("2025-",""),v:e.score}));
-    const riesgos=calcRiesgos(selected.id,encuestas);
+    const encEmp = encuestas
+      .filter(e => e.empleadoId === selected.id)
+      .sort((a, b) => a.semana.localeCompare(b.semana));
+
+    const notasEmp = notas.filter(n => n.empleadoId === selected.id);
+    const vacacionesEmp = vacaciones.filter(v => v.empleadoId === selected.id);
+    const permisosEmp = permisos.filter(p => p.empleadoId === selected.id);
+    const incapacidadesEmp = incapacidades.filter(i => i.empleadoId === selected.id);
+    const descuentosEmp = descuentos.filter(d => d.empleadoId === selected.id);
+    const reconocimientosEmp = reconocimientos.filter(r => r.empleadoId === selected.id);
+    const reportesEmp = reportesConfidenciales.filter(r => r.empleadoId === selected.id);
+
+    const sem = getUltimoSemaforo(selected.id);
+    const ps = calcPulseScore(selected.id, encuestas);
+    const trend = encEmp.map(e => ({
+      label: e.semana.replace("2025-", ""),
+      v: e.score
+    }));
+    const riesgos = calcRiesgos(selected.id, encuestas);
+
     return (
       <div>
-        <button onClick={()=>setSelected(null)} style={{ background:"none",border:"none",color:"#006D5B",fontSize:14,cursor:"pointer",fontWeight:600,marginBottom:16 }}>← Volver</button>
-        <div style={{ display:"flex",gap:16,alignItems:"flex-start",flexWrap:"wrap" }}>
-          <Card style={{ flex:2,minWidth:280 }}>
-            <div style={{ display:"flex",gap:16,alignItems:"center",marginBottom:20 }}>
-              <Avatar name={selected.name} size={56} color="#006D5B" />
-              <div><div style={{ fontSize:20,fontWeight:800,color:"#004D40" }}>{selected.name}</div><div style={{ fontSize:13,color:"#6b7280" }}>{selected.puesto} · {selected.sucursal}</div><div style={{ marginTop:6,display:"flex",gap:8 }}><Badge tipo={sem}/><PulseScoreBadge score={ps.score} nivel={ps.nivel} color={ps.color} tendencia={ps.tendencia} size="sm"/></div></div>
+        <button
+          onClick={() => setSelected(null)}
+          style={{
+            background: "none",
+            border: "none",
+            color: "#006D5B",
+            fontSize: 14,
+            cursor: "pointer",
+            fontWeight: 700,
+            marginBottom: 18
+          }}
+        >
+          ← Volver a empleados
+        </button>
+
+        <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
+          <Card style={{ flex: 2, minWidth: 280 }}>
+            <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 20 }}>
+              <Avatar name={selected.name} size={56} color={semaforoColor[sem]} />
+
+              <div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: "#004D40" }}>
+                  {selected.name}
+                </div>
+
+                <div style={{ fontSize: 13, color: "#6b7280" }}>
+                  {selected.puesto} · {selected.sucursal}
+                </div>
+
+                <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <Badge tipo={sem} />
+                  <PulseScoreBadge
+                    score={ps.score}
+                    nivel={ps.nivel}
+                    color={ps.color}
+                    tendencia={ps.tendencia}
+                    size="sm"
+                  />
+                </div>
+              </div>
             </div>
-            <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,fontSize:13,marginBottom:16 }}>
-              <div><span style={{color:"#9ca3af"}}>Antigüedad:</span> {selected.antiguedad}</div>
-              <div><span style={{color:"#9ca3af"}}>Contacto:</span> {selected.telefono}</div>
+
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 10,
+              fontSize: 13,
+              marginBottom: 16
+            }}>
+              <div><span style={{ color: "#9ca3af" }}>Nombre:</span> {selected.name}</div>
+              <div><span style={{ color: "#9ca3af" }}>Puesto:</span> {selected.puesto}</div>
+              <div><span style={{ color: "#9ca3af" }}>Sucursal:</span> {selected.sucursal}</div>
+              <div><span style={{ color: "#9ca3af" }}>Rol:</span> {selected.role}</div>
+              <div><span style={{ color: "#9ca3af" }}>Antigüedad:</span> {selected.antiguedad || "No registrada"}</div>
+              <div><span style={{ color: "#9ca3af" }}>Contacto:</span> {selected.telefono || "No registrado"}</div>
+              <div><span style={{ color: "#9ca3af" }}>ID empleado:</span> {selected.id}</div>
+              <div><span style={{ color: "#9ca3af" }}>Estado:</span> Activo</div>
             </div>
-            <RiskBar label="Riesgo Renuncia" value={riesgos.renuncia} color={riesgos.renuncia>60?"#ef4444":riesgos.renuncia>30?"#f97316":"#22c55e"} />
-            <RiskBar label="Riesgo Burnout" value={riesgos.burnout} color={riesgos.burnout>60?"#ef4444":riesgos.burnout>30?"#f97316":"#22c55e"} />
+
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3,1fr)",
+              gap: 10,
+              marginBottom: 16
+            }}>
+              <div style={{ background: "#f9fafb", padding: 12, borderRadius: 12 }}>
+                <div style={{ fontSize: 11, color: "#9ca3af" }}>Promedio</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: "#004D40" }}>
+                  {encEmp.length
+                    ? Math.round(encEmp.reduce((a, e) => a + e.score, 0) / encEmp.length)
+                    : 0}
+                </div>
+              </div>
+
+              <div style={{ background: "#f9fafb", padding: 12, borderRadius: 12 }}>
+                <div style={{ fontSize: 11, color: "#9ca3af" }}>Encuestas</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: "#004D40" }}>
+                  {encEmp.length}
+                </div>
+              </div>
+
+              <div style={{ background: "#f9fafb", padding: 12, borderRadius: 12 }}>
+                <div style={{ fontSize: 11, color: "#9ca3af" }}>Notas</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: "#004D40" }}>
+                  {notasEmp.length}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
+              Evolución Pulse
+            </div>
+
+            {trend.length > 1 ? (
+              <LineChart data={trend} color={ps.color} />
+            ) : (
+              <div style={{ color: "#9ca3af", fontSize: 13 }}>
+                Sin suficientes datos para graficar.
+              </div>
+            )}
           </Card>
-          <Card style={{ flex:1,minWidth:200 }}><div style={{ fontWeight:700,fontSize:13,color:"#004D40",marginBottom:12 }}>📈 Evolución</div>{trend.length>1?<LineChart data={trend} color="#006D5B" height={100}/>:<div style={{color:"#9ca3af",fontSize:12}}>Sin datos</div>}</Card>
+
+          <Card style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 14 }}>
+              Riesgos IA
+            </div>
+
+            <RiskBar
+              label="Riesgo Renuncia"
+              value={riesgos.renuncia}
+              color={riesgos.renuncia > 60 ? "#ef4444" : riesgos.renuncia > 30 ? "#f97316" : "#22c55e"}
+            />
+
+            <RiskBar
+              label="Riesgo Burnout"
+              value={riesgos.burnout}
+              color={riesgos.burnout > 60 ? "#ef4444" : riesgos.burnout > 30 ? "#f97316" : "#22c55e"}
+            />
+
+            <RiskBar
+              label="Riesgo Emocional"
+              value={riesgos.emocional}
+              color={riesgos.emocional > 60 ? "#ef4444" : riesgos.emocional > 30 ? "#f97316" : "#22c55e"}
+            />
+          </Card>
         </div>
-        <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginTop:16 }}>
-          <Card><div style={{ fontWeight:700,fontSize:13,color:"#004D40",marginBottom:12 }}>📋 Historial</div>{encEmp.length===0?<div style={{color:"#9ca3af",fontSize:13}}>Sin encuestas</div>:encEmp.slice().reverse().map(e=>(<div key={e.id} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"1px solid #f3f4f6",fontSize:13 }}><div>{e.semana}</div><Badge tipo={e.semaforo}/><div style={{fontWeight:700,color:"#006D5B"}}>{e.score}pts</div></div>))}</Card>
-          {role!=="empleado"&&<Card><div style={{ fontWeight:700,fontSize:13,color:"#004D40",marginBottom:12 }}>📝 Notas</div>{notasEmp.length===0?<div style={{color:"#9ca3af",fontSize:13}}>Sin notas</div>:notasEmp.map(n=>(<div key={n.id} style={{ background:"#fef3c7",borderRadius:8,padding:"10px 12px",marginBottom:8 }}><div style={{fontSize:12,color:"#92400e",marginBottom:4}}>{n.fecha}</div><div style={{fontSize:13,color:"#374151"}}>{n.texto}</div></div>))}</Card>}
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
+          <Card>
+            <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
+              Historial de encuestas
+            </div>
+
+            {encEmp.length === 0 ? (
+              <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin encuestas registradas</div>
+            ) : (
+              encEmp.map(e => (
+                <div
+                  key={e.id}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "8px 0",
+                    borderBottom: "1px solid #f3f4f6",
+                    fontSize: 13
+                  }}
+                >
+                  <span>{e.semana}</span>
+                  <Badge tipo={e.semaforo} />
+                  <span style={{ fontWeight: 800 }}>{e.score}</span>
+                </div>
+              ))
+            )}
+          </Card>
+
+          {role === "psicologa" && (
+            <Card>
+              <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
+                Notas psicológicas
+              </div>
+
+              {notasEmp.length === 0 ? (
+                <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin notas registradas</div>
+              ) : (
+                notasEmp.map(n => (
+                  <div
+                    key={n.id}
+                    style={{
+                      padding: "8px 0",
+                      borderBottom: "1px solid #f3f4f6",
+                      fontSize: 13
+                    }}
+                  >
+                    <div style={{ color: "#374151" }}>{n.texto}</div>
+                    <div style={{ color: "#9ca3af", fontSize: 11 }}>{n.fecha}</div>
+                  </div>
+                ))
+              )}
+            </Card>
+          )}
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
+          <Card>
+            <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
+              Vacaciones
+            </div>
+
+            {vacacionesEmp.length === 0 ? (
+              <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin vacaciones registradas</div>
+            ) : (
+              vacacionesEmp.map(v => (
+                <div
+                  key={v.id}
+                  style={{
+                    padding: "8px 0",
+                    borderBottom: "1px solid #f3f4f6",
+                    fontSize: 13
+                  }}
+                >
+                  <strong>{v.estado}</strong> · {v.fechaInicio || v.inicio || v.desde} al {v.fechaFin || v.fin || v.hasta}
+                  <br />
+                  <span style={{ color: "#64748b" }}>
+                    {v.dias} días · {v.motivo}
+                  </span>
+                  {v.comentarioRH && (
+                    <>
+                      <br />
+                      <span style={{ color: "#64748b" }}>
+                        Comentario RH: {v.comentarioRH}
+                      </span>
+                    </>
+                  )}
+                </div>
+              ))
+            )}
+          </Card>
+
+          <Card>
+            <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
+              Permisos
+            </div>
+
+            {permisosEmp.length === 0 ? (
+              <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin permisos registrados</div>
+            ) : (
+              permisosEmp.map(p => (
+                <div
+                  key={p.id}
+                  style={{
+                    padding: "8px 0",
+                    borderBottom: "1px solid #f3f4f6",
+                    fontSize: 13
+                  }}
+                >
+                  <strong>{p.estado}</strong> · {p.fecha || p.fechaInicio} {p.hora || ""}
+                  <br />
+                  <span style={{ color: "#64748b" }}>
+                    {p.motivo}
+                  </span>
+                  {p.comentarioRH && (
+                    <>
+                      <br />
+                      <span style={{ color: "#64748b" }}>
+                        Comentario RH: {p.comentarioRH}
+                      </span>
+                    </>
+                  )}
+                </div>
+              ))
+            )}
+          </Card>
+
+          <Card>
+            <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
+              Incapacidades
+            </div>
+
+            {incapacidadesEmp.length === 0 ? (
+              <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin incapacidades</div>
+            ) : (
+              incapacidadesEmp.map(i => (
+                <div
+                  key={i.id}
+                  style={{
+                    padding: "8px 0",
+                    borderBottom: "1px solid #f3f4f6",
+                    fontSize: 13
+                  }}
+                >
+                  <strong>{i.estado}</strong> · {i.fechaInicio || i.fecha} {i.fechaFin ? `al ${i.fechaFin}` : ""}
+                  <br />
+                  <span style={{ color: "#64748b" }}>
+                    {i.motivo || i.tipo}
+                  </span>
+                </div>
+              ))
+            )}
+          </Card>
+
+          <Card>
+            <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
+              Descuentos
+            </div>
+
+            {descuentosEmp.length === 0 ? (
+              <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin descuentos</div>
+            ) : (
+              descuentosEmp.map(d => (
+                <div
+                  key={d.id}
+                  style={{
+                    padding: "8px 0",
+                    borderBottom: "1px solid #f3f4f6",
+                    fontSize: 13
+                  }}
+                >
+                  <strong>{d.estado}</strong> · {d.concepto || d.motivo}
+                  <br />
+                  <span style={{ color: "#64748b" }}>
+                    {d.monto ? `$${d.monto}` : ""}
+                  </span>
+                </div>
+              ))
+            )}
+          </Card>
+
+          <Card>
+            <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
+              Reconocimientos
+            </div>
+
+            {reconocimientosEmp.length === 0 ? (
+              <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin reconocimientos</div>
+            ) : (
+              reconocimientosEmp.map(r => (
+                <div
+                  key={r.id}
+                  style={{
+                    padding: "8px 0",
+                    borderBottom: "1px solid #f3f4f6",
+                    fontSize: 13
+                  }}
+                >
+                  <strong>{r.titulo || r.tipo}</strong>
+                  <br />
+                  <span style={{ color: "#64748b" }}>
+                    {r.descripcion || r.motivo}
+                  </span>
+                </div>
+              ))
+            )}
+          </Card>
+
+          {role !== "rh" && (
+            <Card>
+              <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
+                Reportes confidenciales
+              </div>
+
+              {reportesEmp.length === 0 ? (
+                <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin reportes confidenciales</div>
+              ) : (
+                reportesEmp.map(r => (
+                  <div
+                    key={r.id}
+                    style={{
+                      padding: "8px 0",
+                      borderBottom: "1px solid #f3f4f6",
+                      fontSize: 13
+                    }}
+                  >
+                    <strong>{r.fecha || "Reporte"}</strong>
+                    <br />
+                    <span style={{ color: "#64748b" }}>
+                      {r.resumen || r.texto || r.motivo || r.descripcion}
+                    </span>
+                  </div>
+                ))
+              )}
+            </Card>
+          )}
         </div>
       </div>
     );
   }
+
   return (
     <div>
-      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20 }}>
-        <h2 style={{ margin:0,fontSize:22,fontWeight:800,color:"#004D40" }}>Empleados</h2>
-        {role==="admin"&&<button style={{ background:"#006D5B",color:"#fff",border:"none",borderRadius:10,padding:"10px 20px",fontWeight:700,cursor:"pointer" }}>+ Nuevo</button>}
-      </div>
-      <div style={{
-  display: "grid",
-  gridTemplateColumns: "1.8fr 0.8fr 0.8fr",
-  gap: 10,
-  marginBottom: 14,
-  alignItems: "center"
-}}>
-  <input
-    placeholder="🔍 Buscar por nombre, puesto o sucursal..."
-    value={busqueda}
-    onChange={e => setBusqueda(e.target.value)}
-    style={{
-      width: "100%",
-      padding: "13px 14px",
-      borderRadius: 10,
-      border: "1px solid #cbd5e1",
-      background: "#ffffff",
-      color: "#0f172a",
-      fontSize: 14,
-      fontWeight: 600,
-      outline: "none",
-      boxShadow: "0 1px 2px rgba(15,23,42,0.06)"
-    }}
-  />
+      <h2 style={{ margin: "0 0 20px", fontSize: 22, fontWeight: 800, color: "#004D40" }}>
+        Empleados
+      </h2>
 
-  <select
-    value={filtroSucursal}
-    onChange={e => setFiltroSucursal(e.target.value)}
-    style={{
-      width: "100%",
-      padding: "13px 12px",
-      borderRadius: 10,
-      border: "1px solid #cbd5e1",
-      background: "#ffffff",
-      color: "#0f172a",
-      fontSize: 14,
-      fontWeight: 700,
-      outline: "none"
-    }}
-  >
-    <option value="Todas">Todas las sucursales</option>
-    {SUCURSALES.map(s => (
-      <option key={s} value={s}>{s}</option>
-    ))}
-  </select>
+      <Card style={{ marginBottom: 18 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1.8fr 0.8fr 0.8fr",
+            gap: 12,
+            alignItems: "center"
+          }}
+        >
+          <input
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="🔍 Buscar por nombre, puesto o sucursal..."
+            style={{
+              width: "100%",
+              padding: "11px 12px",
+              borderRadius: 12,
+              border: "1px solid #d1d5db",
+              outline: "none",
+              background: "white",
+              color: "#111827"
+            }}
+          />
 
-  <select
-    value={filtroSemaforo}
-    onChange={e => setFiltroSemaforo(e.target.value)}
-    style={{
-      width: "100%",
-      padding: "13px 12px",
-      borderRadius: 10,
-      border: "1px solid #cbd5e1",
-      background: "#ffffff",
-      color: "#0f172a",
-      fontSize: 14,
-      fontWeight: 700,
-      outline: "none"
-    }}
-  >
-    <option value="Todos">Todos los semáforos</option>
-    <option value="verde">Verde</option>
-    <option value="amarillo">Amarillo</option>
-    <option value="rojo">Rojo</option>
-  </select>
-</div>
+          <select
+            value={filtroSucursal}
+            onChange={(e) => setFiltroSucursal(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "11px 12px",
+              borderRadius: 12,
+              border: "1px solid #d1d5db",
+              background: "white",
+              color: "#111827",
+              fontWeight: 700
+            }}
+          >
+            <option value="Todas">Todas las sucursales</option>
+            {[...new Set(empleados.map(e => e.sucursal))].map(s => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
 
-<div style={{
-  marginBottom: 14,
-  color: "#64748b",
-  fontSize: 13,
-  fontWeight: 700
-}}>
-  Mostrando {filtered.length} de {empleados.length} empleados
-</div>
-      <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14 }}>
+          <select
+            value={filtroSemaforo}
+            onChange={(e) => setFiltroSemaforo(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "11px 12px",
+              borderRadius: 12,
+              border: "1px solid #d1d5db",
+              background: "white",
+              color: "#111827",
+              fontWeight: 700
+            }}
+          >
+            <option value="Todos">Todos los semáforos</option>
+            <option value="verde">Verde</option>
+            <option value="amarillo">Amarillo</option>
+            <option value="rojo">Rojo</option>
+          </select>
+        </div>
+
+        <div style={{ marginTop: 12, color: "#64748b", fontSize: 13, textAlign: "center" }}>
+          Mostrando {filtered.length} de {empleados.length} empleados
+        </div>
+      </Card>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 16 }}>
         {filtered.map(emp => {
-          const sem=getUltimoSemaforo(emp.id); const ps=calcPulseScore(emp.id,encuestas); const contestoEsta=encuestas.some(e=>e.empleadoId===emp.id&&e.semana===semanaActual);
+          const sem = getUltimoSemaforo(emp.id);
+          const ps = calcPulseScore(emp.id, encuestas);
+          const contestoEsta = encuestas.some(e => e.empleadoId === emp.id && e.semana === semanaActual);
+
           return (
-            <Card key={emp.id} style={{ cursor:"pointer" }} onClick={()=>setSelected(emp)}>
-              <div style={{ display:"flex",gap:12,alignItems:"center",marginBottom:10 }}>
-                <Avatar name={emp.name} size={40} color={semaforoColor[sem]} />
-                <div style={{ flex:1 }}><div style={{ fontWeight:700,fontSize:14,color:"#111827" }}>{emp.name}</div><div style={{ fontSize:12,color:"#6b7280" }}>{emp.puesto}</div></div>
-                <Badge tipo={sem} />
-              </div>
-              <div style={{ marginBottom:8 }}><PulseScoreBadge score={ps.score} nivel={ps.nivel} color={ps.color} tendencia={ps.tendencia} size="sm" /></div>
-              <div style={{ display:"flex",justifyContent:"space-between",fontSize:12,color:"#6b7280" }}><span>🏢 {emp.sucursal}</span><span>{contestoEsta?"✅ Contestó":"⏳ Pendiente"}</span></div>
-            </Card>
+            <div
+              key={emp.id}
+              onClick={() => setSelected(emp)}
+              style={{ cursor: "pointer" }}
+            >
+              <Card>
+                <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 10 }}>
+                  <Avatar name={emp.name} size={40} color={semaforoColor[sem]} />
+
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 800, fontSize: 14, color: "#111827" }}>
+                      {emp.name}
+                    </div>
+
+                    <div style={{ fontSize: 12, color: "#6b7280" }}>
+                      {emp.puesto}
+                    </div>
+                  </div>
+
+                  <Badge tipo={sem} />
+                </div>
+
+                <div style={{ marginBottom: 8 }}>
+                  <PulseScoreBadge
+                    score={ps.score}
+                    nivel={ps.nivel}
+                    color={ps.color}
+                    tendencia={ps.tendencia}
+                    size="sm"
+                  />
+                </div>
+
+                <div style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontSize: 12,
+                  color: "#6b7280"
+                }}>
+                  <span>{emp.sucursal}</span>
+                  <span>{contestoEsta ? "✓ Contestó" : "Pendiente"}</span>
+                </div>
+              </Card>
+            </div>
           );
         })}
       </div>
-    </div>
-  );
-};
-
-// ─── ENCUESTA EMPLEADO ────────────────────────────────────────────────────────
-const EncuestaEmpleado = ({ user, encuestas, onSubmit }) => {
-  const yaContesto = encuestas.some(e => e.empleadoId === user.id && e.semana === semanaActual);
-  const [respuestas, setRespuestas] = useState({});
-  const [enviada, setEnviada] = useState(false);
-  const setR = (id, val) => setRespuestas(p => ({ ...p, [id]: val }));
-  const handleSubmit = () => {
-    const score = Math.round(((respuestas[1]||5) + (10-(respuestas[2]||5)) + (respuestas[3]||5) + (respuestas[8]||5)) / 40 * 100);
-    const semaforo = score>=70?"verde":score>=45?"amarillo":"rojo";
-    onSubmit({ empleadoId:user.id, semana:semanaActual, respuestas, score, semaforo, fecha:new Date().toISOString().slice(0,10) });
-    setEnviada(true);
-  };
-  if (yaContesto||enviada) return (<Card style={{ maxWidth:500,margin:"0 auto",textAlign:"center",padding:40 }}><div style={{ fontSize:48,marginBottom:16 }}>✅</div><h3 style={{ color:"#004D40",margin:"0 0 8px" }}>¡Encuesta completada!</h3><p style={{ color:"#6b7280",fontSize:13 }}>Tu encuesta fue registrada para {semanaActual}.</p></Card>);
-  const allAnswered = ENCUESTA_PREGUNTAS.every(p => respuestas[p.id]!==undefined && respuestas[p.id]!=="");
-  return (
-    <div style={{ maxWidth:600,margin:"0 auto" }}>
-      <div style={{ marginBottom:24 }}><h2 style={{ margin:0,fontSize:22,fontWeight:800,color:"#004D40" }}>📝 Encuesta Semanal</h2><p style={{ margin:"4px 0 0",color:"#6b7280",fontSize:13 }}>Semana {semanaActual} · Tus respuestas son confidenciales</p></div>
-      {ENCUESTA_PREGUNTAS.map((p,idx) => (
-        <Card key={p.id} style={{ marginBottom:12 }}>
-          <div style={{ fontSize:12,color:"#006D5B",fontWeight:700,marginBottom:4 }}>{p.area}</div>
-          <div style={{ fontSize:14,fontWeight:600,color:"#111827",marginBottom:12 }}>{idx+1}. {p.texto}</div>
-          {p.tipo==="escala"&&(<div><div style={{ display:"flex",justifyContent:"space-between",fontSize:11,color:"#9ca3af",marginBottom:6 }}><span>Muy bajo (1)</span><span>Muy alto (10)</span></div><div style={{ display:"flex",gap:6 }}>{[1,2,3,4,5,6,7,8,9,10].map(n=>(<button key={n} onClick={()=>setR(p.id,n)} style={{ flex:1,padding:"8px 0",borderRadius:8,border:"1.5px solid",borderColor:respuestas[p.id]===n?"#006D5B":"#e5e7eb",background:respuestas[p.id]===n?"#006D5B":"#fff",color:respuestas[p.id]===n?"#fff":"#374151",fontWeight:700,fontSize:13,cursor:"pointer" }}>{n}</button>))}</div></div>)}
-          {p.tipo==="sino"&&(<div style={{ display:"flex",gap:10 }}>{["Sí","No"].map(o=>(<button key={o} onClick={()=>setR(p.id,o)} style={{ flex:1,padding:"10px",borderRadius:8,border:"1.5px solid",borderColor:respuestas[p.id]===o?"#006D5B":"#e5e7eb",background:respuestas[p.id]===o?"#006D5B":"#fff",color:respuestas[p.id]===o?"#fff":"#374151",fontWeight:600,fontSize:14,cursor:"pointer" }}>{o}</button>))}</div>)}
-          {p.tipo==="opcion"&&(<div style={{ display:"flex",gap:10,flexWrap:"wrap" }}>{p.opciones.map(o=>(<button key={o} onClick={()=>setR(p.id,o)} style={{ padding:"8px 16px",borderRadius:8,border:"1.5px solid",borderColor:respuestas[p.id]===o?"#006D5B":"#e5e7eb",background:respuestas[p.id]===o?"#006D5B":"#fff",color:respuestas[p.id]===o?"#fff":"#374151",fontWeight:600,fontSize:13,cursor:"pointer" }}>{o}</button>))}</div>)}
-          {p.tipo==="abierta"&&(<textarea value={respuestas[p.id]||""} onChange={e=>setR(p.id,e.target.value)} placeholder="Escribe aquí..." rows={3} style={{ width:"100%",padding:"10px 12px",borderRadius:8,border:"1.5px solid #e5e7eb",fontSize:13,resize:"vertical",boxSizing:"border-box",outline:"none" }} />)}
-        </Card>
-      ))}
-      <button onClick={handleSubmit} disabled={!allAnswered} style={{ width:"100%",padding:"14px",background:allAnswered?"#006D5B":"#d1d5db",color:"#fff",border:"none",borderRadius:12,fontSize:16,fontWeight:700,cursor:allAnswered?"pointer":"not-allowed",marginTop:8 }}>{allAnswered?"✓ Enviar Encuesta":"Responde todas las preguntas para continuar"}</button>
     </div>
   );
 };
@@ -5109,7 +5620,16 @@ const addReconocimiento = (reconocimiento) => {
 }
       if (active==="dashboard") return <AdminDashboard encuestas={encuestas} mensajes={mensajes}/>;
       if (active==="ai") return <AIEngine encuestas={encuestas}mensajes={mensajes}notas={notas}userRole="admin"permisos={permisos} incapacidades={incapacidades} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>;
-      if (active==="empleados") return <EmpleadosList encuestas={encuestas} notas={notas} role="admin"/>;
+      if (active==="empleados") return (<EmpleadosList encuestas={encuestas} notas={notas}
+    role="admin"
+    vacaciones={vacaciones}
+    permisos={permisos}
+    incapacidades={incapacidades}
+    descuentos={descuentos}
+    reconocimientos={reconocimientos}
+    reportesConfidenciales={reportesConfidenciales}
+  />
+);
       if (active==="expedientes") return <ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} incapacidades={incapacidades} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} />;
       if (active==="reconocimientos") return <ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />;
       if (active==="eventospersonal") return <EventosPersonal users={USERS} />;
@@ -5123,7 +5643,19 @@ const addReconocimiento = (reconocimiento) => {
       if (active==="ai") return <AIEngine encuestas={encuestas} mensajes={mensajes} notas={notas} userRole="psicologa" permisos={permisos} incapacidades={incapacidades} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>;
       if (active==="seguimiento") return <PsicologaSeguimiento encuestas={encuestas} notas={notas} onUpdateNota={addNota}/>;
       if (active==="confidenciales") return <ReportesConfidencialesPanel reportes={reportesConfidenciales} />;
-      if (active==="empleados") return <EmpleadosList encuestas={encuestas} notas={notas} role="psicologa"/>;
+      if (active==="empleados") return (
+  <EmpleadosList
+    encuestas={encuestas}
+    notas={notas}
+    role="psicologa"
+    vacaciones={vacaciones}
+    permisos={permisos}
+    incapacidades={incapacidades}
+    descuentos={descuentos}
+    reconocimientos={reconocimientos}
+    reportesConfidenciales={reportesConfidenciales}
+  />
+);
       if (active==="expedientes") return <ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} incapacidades={incapacidades} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} />;
       if (active==="mensajes") return <Mensajes user={user} mensajes={mensajes} onSend={sendMensaje}/>;
     }
@@ -5143,6 +5675,8 @@ const addReconocimiento = (reconocimiento) => {
       if (active==="encuesta") return <EncuestaEmpleado user={user} encuestas={encuestas} onSubmit={addEncuesta}/>;
       if (active==="historial") return <HistorialEmpleado user={user} encuestas={encuestas} />;
       if (active==="permisosempleado") return ( <PermisosEmpleado user={user} vacaciones={vacaciones} permisos={permisos} onEnviarSolicitudEmpleado={addSolicitudEmpleadoRH}/>);
+      if (active==="reconocimientos") return <ReconocimientosEmpleado user={user} reconocimientos={reconocimientos} />;
+      if (active==="reporteconfidencial") return <ReporteConfidencialEmpleado user={user} onSubmit={addReporteConfidencial} />;
       if (active==="mensajes") return <Mensajes user={user} mensajes={userMensajes} onSend={(msg)=>sendMensaje({...msg,para:psicologaId})}/>;
     }
     return <div style={{ color:"#9ca3af",padding:40,textAlign:"center" }}>Vista en construcción</div>;
