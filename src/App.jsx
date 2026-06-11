@@ -5516,6 +5516,16 @@ const encuestasFirebase = snapshotEncuestas.docs.map((doc) => ({
 if (encuestasFirebase.length > 0) {
   setEncuestas(encuestasFirebase);
 }
+const snapshotReconocimientos = await getDocs(collection(db, "reconocimientos"));
+
+const reconocimientosFirebase = snapshotReconocimientos.docs.map((doc) => ({
+  firebaseId: doc.id,
+  ...doc.data()
+}));
+
+if (reconocimientosFirebase.length > 0) {
+  setReconocimientos(reconocimientosFirebase);
+}
       console.log("Datos cargados desde Firebase");
     } catch (error) {
       console.error("Error cargando reportes confidenciales:", error);
@@ -5787,15 +5797,33 @@ const addReporteConfidencial = async (reporte) => {
     alert("El reporte se guardó en la app, pero no se pudo guardar en Firebase.");
   }
 };
-const addReconocimiento = (reconocimiento) => {
+const addReconocimiento = async (reconocimiento) => {
+  const nuevoReconocimiento = {
+    ...reconocimiento,
+    id: Date.now(),
+    fecha: new Date().toISOString().slice(0, 10),
+    createdAt: serverTimestamp()
+  };
+
   setReconocimientos(prev => [
     ...prev,
-    {
-      ...reconocimiento,
-      id: prev.length + 1,
-      fecha: new Date().toISOString().slice(0, 10)
-    }
+    nuevoReconocimiento
   ]);
+
+  try {
+    const docRef = await addDoc(collection(db, "reconocimientos"), nuevoReconocimiento);
+
+    setReconocimientos(prev =>
+      prev.map(r =>
+        r.id === nuevoReconocimiento.id ? { ...r, firebaseId: docRef.id } : r
+      )
+    );
+
+    console.log("Reconocimiento guardado en Firebase");
+  } catch (error) {
+    console.error("Error guardando reconocimiento:", error);
+    alert("El reconocimiento se guardó en la app, pero no se pudo guardar en Firebase.");
+  }
 };
   const psicologaId = USERS.find(u => u.role==="psicologa")?.id;
   const userMensajes = user.role==="empleado" ? mensajes.filter(m=>m.de===user.id||m.para===user.id) : mensajes;
