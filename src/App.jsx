@@ -111,53 +111,7 @@ const PERMISOS_INIT = [
     observaciones: "Autorizado por RH."
   }
 ];
-const INCAPACIDADES_INIT = [
-  {
-    id: 1,
-    empleadoId: 5,
-    empleado: "Sofía Martínez",
-    sucursal: "Norte",
-    puesto: "Recepcionista",
-    fechaRegistro: "2025-06-14",
-    inicio: "2025-06-14",
-    fin: "2025-06-17",
-    dias: 4,
-    tipo: "Enfermedad general",
-    documento: "Pendiente",
-    estado: "pendiente",
-    observaciones: "Empleado indicó que enviará comprobante médico."
-  },
-  {
-    id: 2,
-    empleadoId: 7,
-    empleado: "María López",
-    sucursal: "Sur",
-    puesto: "Dentista",
-    fechaRegistro: "2025-06-08",
-    inicio: "2025-06-08",
-    fin: "2025-06-10",
-    dias: 3,
-    tipo: "Incapacidad médica",
-    documento: "Recibido",
-    estado: "validada",
-    observaciones: "Documento revisado por RH."
-  },
-  {
-    id: 3,
-    empleadoId: 8,
-    empleado: "Roberto Díaz",
-    sucursal: "Centro",
-    puesto: "Laboratorista",
-    fechaRegistro: "2025-06-12",
-    inicio: "2025-06-12",
-    fin: "2025-06-12",
-    dias: 1,
-    tipo: "Consulta médica",
-    documento: "No requerido",
-    estado: "registrada",
-    observaciones: "Ausencia registrada por indicación médica."
-  }
-];
+
 const DESCUENTOS_INIT = [
   {
     id: 1,
@@ -392,10 +346,9 @@ const getPulseStatus = (score) => {
     nivel: "rojo"
   };
 };
-const analyzeEmployeeAI = (empleado, encuestas, permisos = [], incapacidades = [], descuentos = [], reconocimientos = [], reportesConfidenciales = []) => {
+const analyzeEmployeeAI = (empleado, encuestas, permisos = [], descuentos = [], reconocimientos = [], reportesConfidenciales = []) => {
   const encuestasEmpleado = encuestas.filter(e => e.empleadoId === empleado.id);
   const permisosEmpleado = permisos.filter(p => p.empleadoId === empleado.id);
-  const incapacidadesEmpleado = incapacidades.filter(i => i.empleadoId === empleado.id);
   const descuentosEmpleado = descuentos.filter(d => d.empleadoId === empleado.id);
   const reconocimientosEmpleado = reconocimientos.filter(r => r.empleadoId === empleado.id);
   const reportesEmpleado = reportesConfidenciales.filter(r => r.empleadoId === empleado.id);
@@ -409,7 +362,7 @@ const analyzeEmployeeAI = (empleado, encuestas, permisos = [], incapacidades = [
   const cambio = ultima - primera;
 
   const faltasAdministrativas =
-    permisosEmpleado.length + incapacidadesEmpleado.length + descuentosEmpleado.length;
+  permisosEmpleado.length + descuentosEmpleado.length;
 
   const riesgos = [];
 
@@ -447,13 +400,13 @@ const analyzeEmployeeAI = (empleado, encuestas, permisos = [], incapacidades = [
     });
   }
 
-  if (permisosEmpleado.length >= 2 || incapacidadesEmpleado.length >= 2) {
-    riesgos.push({
-      tipo: "Riesgo de ausentismo",
-      nivel: "Media",
-      detalle: "Presenta varios permisos o incapacidades registradas."
-    });
-  }
+  if (permisosEmpleado.length >= 2) {
+  riesgos.push({
+    tipo: "Riesgo de ausentismo",
+    nivel: "Media",
+    detalle: "Presenta varios permisos registrados."
+  });
+}
 
   if (descuentosEmpleado.some(d => d.estado === "activo" || d.estado === "pendiente")) {
     riesgos.push({
@@ -629,7 +582,7 @@ const RiskBar = ({ label, value, color }) => (
 );
 
 // ─── AI ENGINE PANEL ──────────────────────────────────────────────────────────
-const AIEngine = ({ encuestas, mensajes, notas, userRole, permisos = [], incapacidades = [], descuentos = [], reconocimientos = [], reportesConfidenciales = [] }) => {
+const AIEngine = ({ encuestas, mensajes, notas, userRole, permisos = [], descuentos = [], reconocimientos = [], reportesConfidenciales = [] }) => {
   const [tab, setTab] = useState("resumen");
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -644,7 +597,6 @@ const analisisIA = empleados.map(emp =>
     emp,
     encuestas,
     permisos,
-    incapacidades,
     descuentos,
     reconocimientos,
     reportesConfidenciales
@@ -1057,7 +1009,7 @@ const cambiosComportamiento = analisisIA.filter(a =>
               nombre: "Riesgo de ausentismo",
               valor: tieneAusentismo ? "Elevado" : "Bajo",
               detalle: tieneAusentismo
-                ? "Presenta permisos o incapacidades recurrentes."
+                ? "Presenta permisos recurrentes."
                 : "No hay patrón relevante de ausentismo en los datos actuales."
             },
             {
@@ -1566,7 +1518,6 @@ const Sidebar = ({ user, active, setActive, onLogout }) => {
       { key: "dashboard", icon: "📊", label: "Dashboard RH" },
       { key: "vacaciones", icon: "🏖️", label: "Vacaciones" },
       { key: "permisos", icon: "📝", label: "Permisos" },
-      { key: "incapacidades", icon: "🏥", label: "Incapacidades" },
       { key: "descuentos", icon: "💸", label: "Descuentos" },
       { key: "calendario", icon: "📅", label: "Calendario" },
       { key: "eventospersonal", icon: "🎂", label: "Cumpleaños y Aniversarios" },
@@ -1617,7 +1568,6 @@ const HRDashboard = ({ users }) => {
     { label: "Empleados activos", value: empleados.length, icon: "👥" },
     { label: "Vacaciones pendientes", value: 3, icon: "🏖️" },
     { label: "Permisos pendientes", value: 2, icon: "📝" },
-    { label: "Incapacidades activas", value: 1, icon: "🏥" },
     { label: "Retardos registrados", value: 4, icon: "⏰" },
     { label: "Descuentos activos", value: 2, icon: "💸" },
   ];
@@ -1628,7 +1578,7 @@ const HRDashboard = ({ users }) => {
         Dashboard RH
       </h1>
       <p style={{ margin: "0 0 24px", color: "#64748b" }}>
-        Gestión administrativa de vacaciones, permisos, incidencias y calendario laboral.
+        Gestión administrativa de vacaciones, permisos, descuentos y calendario laboral.
       </p>
 
       <div style={{
@@ -1655,7 +1605,7 @@ const HRDashboard = ({ users }) => {
         <div style={{ display: "grid", gap: 10 }}>
           <div>🏖️ Ana García solicitó vacaciones del 15 al 19 de julio.</div>
           <div>📝 Carlos Pérez solicitó permiso por consulta médica.</div>
-          <div>🏥 Sofía Martínez registró incapacidad pendiente de documento.</div>
+          <div>💸 Luis Torres tiene descuento pendiente de revisión.</div>
           <div>⏰ Luis Torres acumula 2 retardos este mes.</div>
         </div>
       </Card>
@@ -1945,143 +1895,7 @@ const PermisosRH = ({ permisos, onUpdateEstado }) => {
     </div>
   );
 };
-const IncapacidadesRH = ({ incapacidades, onUpdateEstado }) => {
-  const pendientes = incapacidades.filter(i => i.estado === "pendiente").length;
-  const validadas = incapacidades.filter(i => i.estado === "validada").length;
-  const registradas = incapacidades.filter(i => i.estado === "registrada").length;
 
-  const badgeStyle = (estado) => ({
-    display: "inline-block",
-    padding: "4px 10px",
-    borderRadius: 999,
-    fontSize: 12,
-    fontWeight: 700,
-    background:
-      estado === "validada" ? "#dcfce7" :
-      estado === "registrada" ? "#dbeafe" :
-      "#fef3c7",
-    color:
-      estado === "validada" ? "#166534" :
-      estado === "registrada" ? "#1e40af" :
-      "#92400e"
-  });
-
-  return (
-    <div>
-      <h1 style={{ margin: "0 0 6px", fontSize: 28, color: "#004D40" }}>
-        Incapacidades
-      </h1>
-      <p style={{ margin: "0 0 24px", color: "#64748b" }}>
-        Registro, validación y seguimiento de incapacidades del personal.
-      </p>
-
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-        gap: 14,
-        marginBottom: 22
-      }}>
-        <Card>
-          <div style={{ fontSize: 24 }}>⏳</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#f59e0b" }}>{pendientes}</div>
-          <div style={{ fontWeight: 700 }}>Pendientes</div>
-        </Card>
-        <Card>
-          <div style={{ fontSize: 24 }}>✅</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#22c55e" }}>{validadas}</div>
-          <div style={{ fontWeight: 700 }}>Validadas</div>
-        </Card>
-        <Card>
-          <div style={{ fontSize: 24 }}>📌</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#2563eb" }}>{registradas}</div>
-          <div style={{ fontWeight: 700 }}>Registradas</div>
-        </Card>
-      </div>
-
-      <Card>
-        <h3 style={{ marginTop: 0, color: "#004D40" }}>🏥 Registro de incapacidades</h3>
-
-        <div style={{ display: "grid", gap: 12 }}>
-          {incapacidades.map(i => (
-            <div
-              key={i.id}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1.4fr 1fr 1fr auto",
-                gap: 12,
-                alignItems: "center",
-                padding: "14px 0",
-                borderBottom: "1px solid #e5e7eb"
-              }}
-            >
-              <div>
-                <div style={{ fontWeight: 800, color: "#0f172a" }}>{i.empleado}</div>
-                <div style={{ color: "#64748b", fontSize: 13 }}>
-                  {i.sucursal} · {i.puesto}
-                </div>
-                <div style={{ color: "#334155", fontSize: 13, marginTop: 4 }}>
-                  {i.tipo}
-                </div>
-                <div style={{ color: "#94a3b8", fontSize: 12 }}>
-                  Observaciones: {i.observaciones}
-                </div>
-              </div>
-
-              <div style={{ color: "#334155", fontSize: 14 }}>
-                {i.inicio} al {i.fin}
-                <div style={{ color: "#64748b", fontSize: 12 }}>{i.dias} días</div>
-                <div style={{ color: "#94a3b8", fontSize: 12 }}>
-                  Documento: {i.documento}
-                </div>
-              </div>
-
-              <div>
-                <span style={badgeStyle(i.estado)}>{i.estado}</span>
-              </div>
-
-              <div style={{ display: "flex", gap: 8 }}>
-                {i.estado === "pendiente" ? (
-                  <>
-                    <button
-                      onClick={() => onUpdateEstado(i.id, "validada")}
-                      style={{
-                        border: "none",
-                        background: "#00897B",
-                        color: "white",
-                        padding: "8px 10px",
-                        borderRadius: 8,
-                        fontWeight: 700,
-                        cursor: "pointer"
-                      }}
-                    >
-                      Validar
-                    </button>
-                    <button
-                      onClick={() => onUpdateEstado(i.id, "registrada")}
-                      style={{
-                        border: "none",
-                        background: "#2563eb",
-                        color: "white",
-                        padding: "8px 10px",
-                        borderRadius: 8,
-                        fontWeight: 700,
-                        cursor: "pointer"
-                      }}
-                    >
-                      Registrar
-                    </button>
-                  </>
-                ) : (
-                  <span style={{ color: "#94a3b8", fontSize: 13 }}>Sin acciones</span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
-    </div>
-  );
-};
 const DescuentosRH = ({ descuentos, onUpdateEstado }) => {
   const pendientes = descuentos.filter(d => d.estado === "pendiente").length;
   const activos = descuentos.filter(d => d.estado === "activo").length;
@@ -2235,7 +2049,7 @@ const DescuentosRH = ({ descuentos, onUpdateEstado }) => {
     </div>
   );
 };
-const CalendarioRH = ({ vacaciones, permisos, incapacidades, eventosExtra }) => {
+const CalendarioRH = ({ vacaciones, permisos, eventosExtra }) => {
   const eventos = [
     ...vacaciones.map(v => ({
       id: `vac-${v.id}`,
@@ -2258,17 +2072,6 @@ const CalendarioRH = ({ vacaciones, permisos, incapacidades, eventosExtra }) => 
       estado: p.estado,
       icon: "📝"
     })),
-    ...incapacidades.map(i => ({
-      id: `inc-${i.id}`,
-      fecha: i.inicio,
-      fechaFin: i.fin,
-      tipo: "Incapacidad",
-      titulo: `${i.empleado} - ${i.tipo}`,
-      detalle: `${i.dias} días · ${i.estado}`,
-      sucursal: i.sucursal,
-      estado: i.estado,
-      icon: "🏥"
-    })),
     ...eventosExtra.map(e => ({
       id: `extra-${e.id}`,
       fecha: e.fecha,
@@ -2284,7 +2087,6 @@ const CalendarioRH = ({ vacaciones, permisos, incapacidades, eventosExtra }) => 
   const resumen = {
     vacaciones: eventos.filter(e => e.tipo === "Vacaciones").length,
     permisos: eventos.filter(e => e.tipo === "Permiso").length,
-    incapacidades: eventos.filter(e => e.tipo === "Incapacidad").length,
     extra: eventos.filter(e => ["Festivo", "Asueto", "Evento"].includes(e.tipo)).length
   };
 
@@ -2296,14 +2098,12 @@ const CalendarioRH = ({ vacaciones, permisos, incapacidades, eventosExtra }) => 
     fontWeight: 700,
     background:
       tipo === "Vacaciones" ? "#ecfeff" :
-      tipo === "Permiso" ? "#fef3c7" :
-      tipo === "Incapacidad" ? "#ede9fe" :
-      "#dcfce7",
+tipo === "Permiso" ? "#fef3c7" :
+"#fdcfe7",
     color:
-      tipo === "Vacaciones" ? "#0e7490" :
-      tipo === "Permiso" ? "#92400e" :
-      tipo === "Incapacidad" ? "#5b21b6" :
-      "#166534"
+  tipo === "Vacaciones" ? "#0e7490" :
+  tipo === "Permiso" ? "#92400e" :
+  "#166534"
   });
 
   return (
@@ -2312,7 +2112,7 @@ const CalendarioRH = ({ vacaciones, permisos, incapacidades, eventosExtra }) => 
         Calendario General
       </h1>
       <p style={{ margin: "0 0 24px", color: "#64748b" }}>
-        Vista general de vacaciones, permisos, incapacidades, festivos y asuetos.
+        Vista general de vacaciones, permisos, festivos y asuetos.
       </p>
 
       <div style={{
@@ -2330,11 +2130,6 @@ const CalendarioRH = ({ vacaciones, permisos, incapacidades, eventosExtra }) => 
           <div style={{ fontSize: 24 }}>📝</div>
           <div style={{ fontSize: 30, fontWeight: 800, color: "#f59e0b" }}>{resumen.permisos}</div>
           <div style={{ fontWeight: 700 }}>Permisos</div>
-        </Card>
-        <Card>
-          <div style={{ fontSize: 24 }}>🏥</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#7c3aed" }}>{resumen.incapacidades}</div>
-          <div style={{ fontWeight: 700 }}>Incapacidades</div>
         </Card>
         <Card>
           <div style={{ fontSize: 24 }}>🎉</div>
@@ -2385,14 +2180,14 @@ const CalendarioRH = ({ vacaciones, permisos, incapacidades, eventosExtra }) => 
     </div>
   );
 };
-const ReportesRH = ({ vacaciones, permisos, incapacidades, descuentos }) => {
+const ReportesRH = ({ vacaciones, permisos, descuentos }) => {
   const totalDescuentosActivos = descuentos
     .filter(d => d.estado !== "pagado" && d.estado !== "cancelado")
     .reduce((sum, d) => sum + d.monto, 0);
 
   const movimientosPorEmpleado = {};
 
-  [...vacaciones, ...permisos, ...incapacidades, ...descuentos].forEach(item => {
+  [...vacaciones, ...permisos, ...descuentos].forEach(item => {
     if (!movimientosPorEmpleado[item.empleado]) {
       movimientosPorEmpleado[item.empleado] = {
         empleado: item.empleado,
@@ -2417,7 +2212,6 @@ const ReportesRH = ({ vacaciones, permisos, incapacidades, descuentos }) => {
     sucursal,
     vacaciones: vacaciones.filter(v => v.sucursal === sucursal).length,
     permisos: permisos.filter(p => p.sucursal === sucursal).length,
-    incapacidades: incapacidades.filter(i => i.sucursal === sucursal).length,
     descuentos: descuentos.filter(d => d.sucursal === sucursal).length
   }));
 
@@ -2427,7 +2221,7 @@ const ReportesRH = ({ vacaciones, permisos, incapacidades, descuentos }) => {
         Reportes RH
       </h1>
       <p style={{ margin: "0 0 24px", color: "#64748b" }}>
-        Resumen administrativo de vacaciones, permisos, incapacidades y descuentos.
+        Resumen administrativo de vacaciones, permisos y descuentos.
       </p>
 
       <div style={{
@@ -2446,12 +2240,6 @@ const ReportesRH = ({ vacaciones, permisos, incapacidades, descuentos }) => {
           <div style={{ fontSize: 24 }}>📝</div>
           <div style={{ fontSize: 30, fontWeight: 800, color: "#f59e0b" }}>{permisos.length}</div>
           <div style={{ fontWeight: 700 }}>Permisos</div>
-        </Card>
-
-        <Card>
-          <div style={{ fontSize: 24 }}>🏥</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#7c3aed" }}>{incapacidades.length}</div>
-          <div style={{ fontWeight: 700 }}>Incapacidades</div>
         </Card>
 
         <Card>
@@ -2480,7 +2268,7 @@ const ReportesRH = ({ vacaciones, permisos, incapacidades, descuentos }) => {
                   {s.sucursal}
                 </div>
                 <div style={{ color: "#64748b", fontSize: 13 }}>
-                  🏖️ {s.vacaciones} vacaciones · 📝 {s.permisos} permisos · 🏥 {s.incapacidades} incapacidades · 💸 {s.descuentos} descuentos
+                  🏖️ {s.vacaciones} vacaciones · 📝 {s.permisos} permisos · 💸 {s.descuentos} descuentos
                 </div>
               </div>
             ))}
@@ -2526,7 +2314,7 @@ const ReportesRH = ({ vacaciones, permisos, incapacidades, descuentos }) => {
           <div style={{ color: "#334155", lineHeight: 1.7 }}>
             <p>
               RH tiene registrados {vacaciones.length} movimientos de vacaciones,
-              {` ${permisos.length}`} permisos, {` ${incapacidades.length}`} incapacidades
+              {` ${permisos.length}`} permisos
               y {` ${descuentos.length}`} descuentos administrativos.
             </p>
             <p>
@@ -3383,7 +3171,6 @@ const ExpedienteIntegral = ({
   notas,
   vacaciones,
   permisos,
-  incapacidades,
   descuentos,
   reconocimientos,
   reportesConfidenciales,
@@ -3415,7 +3202,6 @@ const empleado =
   const notasEmpleado = notas.filter(n => n.empleadoId === empleado.id);
   const vacacionesEmpleado = vacaciones.filter(v => v.empleadoId === empleado.id);
   const permisosEmpleado = permisos.filter(p => p.empleadoId === empleado.id);
-  const incapacidadesEmpleado = incapacidades.filter(i => i.empleadoId === empleado.id);
   const descuentosEmpleado = descuentos.filter(d => d.empleadoId === empleado.id);
   const reconocimientosEmpleado = reconocimientos.filter(r => r.empleadoId === empleado.id);
   const reportesEmpleado = reportesConfidenciales.filter(r => r.empleadoId === empleado.id);
@@ -3625,18 +3411,6 @@ const semaforoColor = pulseStatus.color;
             <div key={p.id} style={{ padding: "10px 0", borderBottom: "1px solid #e5e7eb" }}>
               <b>{p.tipo}</b>
               <div style={{ color: "#64748b", fontSize: 13 }}>{p.fecha} · {p.hora} · {p.estado}</div>
-            </div>
-          ))}
-        </Card>
-
-        <Card>
-          <h3 style={{ marginTop: 0, color: "#004D40" }}>🏥 Incapacidades</h3>
-          {incapacidadesEmpleado.length === 0 ? (
-            <p style={{ color: "#64748b" }}>Sin incapacidades registradas.</p>
-          ) : incapacidadesEmpleado.map(i => (
-            <div key={i.id} style={{ padding: "10px 0", borderBottom: "1px solid #e5e7eb" }}>
-              <b>{i.tipo}</b>
-              <div style={{ color: "#64748b", fontSize: 13 }}>{i.inicio} al {i.fin} · {i.estado}</div>
             </div>
           ))}
         </Card>
@@ -3973,7 +3747,6 @@ const EmpleadosList = ({
   role,
   vacaciones = [],
   permisos = [],
-  incapacidades = [],
   descuentos = [],
   reconocimientos = [],
   reportesConfidenciales = []
@@ -4018,9 +3791,12 @@ const EmpleadosList = ({
     const notasEmp = notas.filter(n => n.empleadoId === selected.id);
     const vacacionesEmp = vacaciones.filter(v => v.empleadoId === selected.id);
     const permisosEmp = permisos.filter(p => p.empleadoId === selected.id);
-    const incapacidadesEmp = incapacidades.filter(i => i.empleadoId === selected.id);
     const descuentosEmp = descuentos.filter(d => d.empleadoId === selected.id);
-    const reconocimientosEmp = reconocimientos.filter(r => r.empleadoId === selected.id);
+    const reconocimientosEmp = reconocimientos.filter(r =>
+  Number(r.empleadoId) === Number(selected.id) ||
+  r.empleado === selected.name ||
+  r.nombre === selected.name
+);
     const reportesEmp = reportesConfidenciales.filter(r => r.empleadoId === selected.id);
 
     const sem = getUltimoSemaforo(selected.id);
@@ -4289,33 +4065,6 @@ const EmpleadosList = ({
 
           <Card>
             <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
-              Incapacidades
-            </div>
-
-            {incapacidadesEmp.length === 0 ? (
-              <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin incapacidades</div>
-            ) : (
-              incapacidadesEmp.map(i => (
-                <div
-                  key={i.id}
-                  style={{
-                    padding: "8px 0",
-                    borderBottom: "1px solid #f3f4f6",
-                    fontSize: 13
-                  }}
-                >
-                  <strong>{i.estado}</strong> · {i.fechaInicio || i.fecha} {i.fechaFin ? `al ${i.fechaFin}` : ""}
-                  <br />
-                  <span style={{ color: "#64748b" }}>
-                    {i.motivo || i.tipo}
-                  </span>
-                </div>
-              ))
-            )}
-          </Card>
-
-          <Card>
-            <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
               Descuentos
             </div>
 
@@ -4358,11 +4107,27 @@ const EmpleadosList = ({
                     fontSize: 13
                   }}
                 >
-                  <strong>{r.titulo || r.tipo}</strong>
-                  <br />
-                  <span style={{ color: "#64748b" }}>
-                    {r.descripcion || r.motivo}
-                  </span>
+                  <strong>{r.titulo || r.tipo || r.categoria}</strong>
+<br />
+<span style={{ color: "#64748b" }}>
+  {r.descripcion || r.motivo || r.comentario}
+</span>
+{r.otorgadoPor && (
+  <>
+    <br />
+    <span style={{ color: "#9ca3af", fontSize: 12 }}>
+      Otorgado por: {r.otorgadoPor}
+    </span>
+  </>
+)}
+{r.fecha && (
+  <>
+    <br />
+    <span style={{ color: "#9ca3af", fontSize: 12 }}>
+      Fecha: {r.fecha}
+    </span>
+  </>
+)}
                 </div>
               ))
             )}
@@ -4531,7 +4296,6 @@ const EmpleadosList = ({
     </div>
   );
 };
-
 // ─── MENSAJES ─────────────────────────────────────────────────────────────────
 const Mensajes = ({ user, mensajes, onSend }) => {
   const [selectedId, setSelectedId] = useState(null);
@@ -5246,7 +5010,7 @@ const Config = () => {
   const roles = [
     { nombre: "Admin", acceso: "Acceso total al sistema, reportes y configuración." },
     { nombre: "Psicóloga", acceso: "Acceso a bienestar, seguimiento, reportes confidenciales y mensajes privados." },
-    { nombre: "RH", acceso: "Acceso a vacaciones, permisos, incapacidades, descuentos, calendario y reportes RH." },
+    { nombre: "RH", acceso: "Acceso a vacaciones, permisos, descuentos, calendario y reportes RH." },
     { nombre: "Empleado", acceso: "Acceso a encuesta, historial, reconocimientos, reporte confidencial y mensajes con psicóloga." }
   ];
 
@@ -5468,7 +5232,6 @@ export default function App() {
     [id]: comentario
   }));
 };
-  const [incapacidades, setIncapacidades] = useState(INCAPACIDADES_INIT);
   const [descuentos, setDescuentos] = useState(DESCUENTOS_INIT);
   const [calendarioExtra] = useState(CALENDARIO_EXTRA_INIT);
   const [reportesConfidenciales, setReportesConfidenciales] = useState(REPORTES_CONFIDENCIALES_INIT);
@@ -5825,13 +5588,7 @@ const addSolicitudEmpleadoRH = async (solicitud) => {
     }
   }
 };
-const updateIncapacidadEstado = (id, estado) => {
-  setIncapacidades(prev =>
-    prev.map(i =>
-      i.id === id ? { ...i, estado } : i
-    )
-  );
-};
+
 const updateDescuentoEstado = (id, estado) => {
   setDescuentos(prev =>
     prev.map(d =>
@@ -5903,18 +5660,17 @@ const addReconocimiento = async (reconocimiento) => {
   );
 }
       if (active==="dashboard") return <AdminDashboard encuestas={encuestas} mensajes={mensajes}/>;
-      if (active==="ai") return <AIEngine encuestas={encuestas}mensajes={mensajes}notas={notas}userRole="admin"permisos={permisos} incapacidades={incapacidades} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>;
+      if (active==="ai") return <AIEngine encuestas={encuestas}mensajes={mensajes}notas={notas}userRole="admin"permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>;
       if (active==="empleados") return (<EmpleadosList encuestas={encuestas} notas={notas}
     role="admin"
     vacaciones={vacaciones}
     permisos={permisos}
-    incapacidades={incapacidades}
     descuentos={descuentos}
     reconocimientos={reconocimientos}
     reportesConfidenciales={reportesConfidenciales}
   />
 );
-      if (active==="expedientes") return <ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} incapacidades={incapacidades} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} />;
+      if (active==="expedientes") return <ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} />;
       if (active==="reconocimientos") return <ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />;
       if (active==="eventospersonal") return <EventosPersonal users={USERS} />;
       if (active==="reportes") return <Reportes/>;
@@ -5924,7 +5680,7 @@ const addReconocimiento = async (reconocimiento) => {
     }
     if (user.role==="psicologa") {
       if (active==="dashboard") return <AdminDashboard encuestas={encuestas} mensajes={mensajes}/>;
-      if (active==="ai") return <AIEngine encuestas={encuestas} mensajes={mensajes} notas={notas} userRole="psicologa" permisos={permisos} incapacidades={incapacidades} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>;
+      if (active==="ai") return <AIEngine encuestas={encuestas} mensajes={mensajes} notas={notas} userRole="psicologa" permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>;
       if (active==="seguimiento") return <PsicologaSeguimiento encuestas={encuestas} notas={notas} onUpdateNota={addNota}/>;
       if (active==="confidenciales") return <ReportesConfidencialesPanel reportes={reportesConfidenciales} />;
       if (active==="empleados") return (
@@ -5934,25 +5690,23 @@ const addReconocimiento = async (reconocimiento) => {
     role="psicologa"
     vacaciones={vacaciones}
     permisos={permisos}
-    incapacidades={incapacidades}
     descuentos={descuentos}
     reconocimientos={reconocimientos}
     reportesConfidenciales={reportesConfidenciales}
   />
 );
-      if (active==="expedientes") return <ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} incapacidades={incapacidades} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} />;
+      if (active==="expedientes") return <ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} />;
       if (active==="mensajes") return <Mensajes user={user} mensajes={mensajes} onSend={sendMensaje}/>;
     }
          if (user.role==="rh") {
       if (active==="dashboard") return <HRDashboard users={USERS} />;
       if (active==="vacaciones") return <VacacionesRH vacaciones={vacaciones} onUpdateEstado={updateVacacionEstado} />;
       if (active==="permisos") return <PermisosRH permisos={permisos} onUpdateEstado={updatePermisoEstado} />;
-      if (active==="incapacidades") return <IncapacidadesRH incapacidades={incapacidades} onUpdateEstado={updateIncapacidadEstado} />;
       if (active==="descuentos") return <DescuentosRH descuentos={descuentos} onUpdateEstado={updateDescuentoEstado} />;
-      if (active==="calendario") return <CalendarioRH vacaciones={vacaciones} permisos={permisos} incapacidades={incapacidades} eventosExtra={calendarioExtra} />;
+      if (active==="calendario") return <CalendarioRH vacaciones={vacaciones} permisos={permisos} eventosExtra={calendarioExtra} />;
       if (active==="eventospersonal") return <EventosPersonal users={USERS} />;
       if (active==="reconocimientos") return <ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />;
-      if (active==="reportesrh") return <ReportesRH vacaciones={vacaciones} permisos={permisos} incapacidades={incapacidades} descuentos={descuentos} />;
+      if (active==="reportesrh") return <ReportesRH vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} />;
     }
     if (user.role==="empleado") {
       if (active==="inicio") return <InicioEmpleado user={user} encuestas={encuestas} mensajes={userMensajes} setActive={setActive}/>;
