@@ -5526,6 +5526,16 @@ const reconocimientosFirebase = snapshotReconocimientos.docs.map((doc) => ({
 if (reconocimientosFirebase.length > 0) {
   setReconocimientos(reconocimientosFirebase);
 }
+const snapshotMensajes = await getDocs(collection(db, "mensajes"));
+
+const mensajesFirebase = snapshotMensajes.docs.map((doc) => ({
+  firebaseId: doc.id,
+  ...doc.data()
+}));
+
+if (mensajesFirebase.length > 0) {
+  setMensajes(mensajesFirebase);
+}
       console.log("Datos cargados desde Firebase");
     } catch (error) {
       console.error("Error cargando reportes confidenciales:", error);
@@ -5563,7 +5573,34 @@ if (reconocimientosFirebase.length > 0) {
     alert("La encuesta se guardó en la app, pero no se pudo guardar en Firebase.");
   }
 };
-  const sendMensaje = (msg) => setMensajes(prev => [...prev, { ...msg, id: prev.length+1 }]);
+  const sendMensaje = async (msg) => {
+  const nuevoMensaje = {
+    ...msg,
+    id: Date.now(),
+    fecha: new Date().toISOString().slice(0, 10),
+    createdAt: serverTimestamp()
+  };
+
+  setMensajes(prev => [
+    ...prev,
+    nuevoMensaje
+  ]);
+
+  try {
+    const docRef = await addDoc(collection(db, "mensajes"), nuevoMensaje);
+
+    setMensajes(prev =>
+      prev.map(m =>
+        m.id === nuevoMensaje.id ? { ...m, firebaseId: docRef.id } : m
+      )
+    );
+
+    console.log("Mensaje guardado en Firebase");
+  } catch (error) {
+    console.error("Error guardando mensaje:", error);
+    alert("El mensaje se guardó en la app, pero no se pudo guardar en Firebase.");
+  }
+};
   const addNota = (empleadoId, texto) => {
   if (!texto.trim()) return;
 
