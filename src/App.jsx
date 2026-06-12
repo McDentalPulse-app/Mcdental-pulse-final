@@ -20,236 +20,13 @@ const USERS = [
 { id: 8, name: "Roberto Díaz", role: "empleado", user: "roberto", pass: "emp123", sucursal: "Centro", puesto: "Laboratorista", antiguedad: "6 meses", telefono: "555-1006", fechaNacimiento: "2000-06-21", fechaIngreso: "2025-01-10" }
 ];
 const SUCURSALES = ["Norte", "Sur", "Centro", "Central"];
-const VACACIONES_INIT = [
-  {
-    id: 1,
-    empleadoId: 3,
-    empleado: "Ana García",
-    sucursal: "Norte",
-    puesto: "Asistente Dental",
-    fechaSolicitud: "2025-06-10",
-    inicio: "2025-07-15",
-    fin: "2025-07-19",
-    dias: 5,
-    estado: "pendiente",
-    motivo: "Vacaciones familiares",
-    responsable: "Patricia Ramírez"
-  },
-  {
-    id: 2,
-    empleadoId: 4,
-    empleado: "Carlos Pérez",
-    sucursal: "Sur",
-    puesto: "Dentista",
-    fechaSolicitud: "2025-06-12",
-    inicio: "2025-07-22",
-    fin: "2025-07-24",
-    dias: 3,
-    estado: "pendiente",
-    motivo: "Descanso programado",
-    responsable: "Patricia Ramírez"
-  },
-  {
-    id: 3,
-    empleadoId: 5,
-    empleado: "Sofía Martínez",
-    sucursal: "Norte",
-    puesto: "Recepcionista",
-    fechaSolicitud: "2025-06-01",
-    inicio: "2025-06-20",
-    fin: "2025-06-21",
-    dias: 2,
-    estado: "aprobada",
-    motivo: "Asunto personal",
-    responsable: "Patricia Ramírez"
-  }
-];
-const PERMISOS_INIT = [
-  {
-    id: 1,
-    empleadoId: 4,
-    empleado: "Carlos Pérez",
-    sucursal: "Sur",
-    puesto: "Dentista",
-    fechaSolicitud: "2025-06-13",
-    fecha: "2025-06-18",
-    hora: "09:30",
-    tipo: "Consulta médica",
-    motivo: "Cita médica programada",
-    estado: "pendiente",
-    responsable: "Patricia Ramírez",
-    observaciones: "Solicita llegar 2 horas después."
-  },
-  {
-    id: 2,
-    empleadoId: 6,
-    empleado: "Luis Torres",
-    sucursal: "Centro",
-    puesto: "Asistente Dental",
-    fechaSolicitud: "2025-06-11",
-    fecha: "2025-06-14",
-    hora: "08:15",
-    tipo: "Llegada tarde",
-    motivo: "Trámite personal",
-    estado: "pendiente",
-    responsable: "Patricia Ramírez",
-    observaciones: "Avisó con anticipación."
-  },
-  {
-    id: 3,
-    empleadoId: 5,
-    empleado: "Sofía Martínez",
-    sucursal: "Norte",
-    puesto: "Recepcionista",
-    fechaSolicitud: "2025-06-05",
-    fecha: "2025-06-07",
-    hora: "16:00",
-    tipo: "Salida anticipada",
-    motivo: "Emergencia familiar",
-    estado: "aprobado",
-    responsable: "Patricia Ramírez",
-    observaciones: "Autorizado por RH."
-  }
-];
+const VACACIONES_INIT = [];
+const PERMISOS_INIT = [];
 
-const DESCUENTOS_INIT = [
-  {
-    id: 1,
-    empleadoId: 6,
-    empleado: "Luis Torres",
-    sucursal: "Centro",
-    puesto: "Asistente Dental",
-    fecha: "2025-06-15",
-    tipo: "Uniforme",
-    monto: 450,
-    estado: "pendiente",
-    motivo: "Reposición de uniforme",
-    responsable: "Patricia Ramírez",
-    observaciones: "Descuento programado para la siguiente nómina."
-  },
-  {
-    id: 2,
-    empleadoId: 8,
-    empleado: "Roberto Díaz",
-    sucursal: "Centro",
-    puesto: "Laboratorista",
-    fecha: "2025-06-12",
-    tipo: "Herramienta",
-    monto: 750,
-    estado: "activo",
-    motivo: "Reposición de instrumental dañado",
-    responsable: "Patricia Ramírez",
-    observaciones: "Pendiente de autorización final."
-  },
-  {
-    id: 3,
-    empleadoId: 4,
-    empleado: "Carlos Pérez",
-    sucursal: "Sur",
-    puesto: "Dentista",
-    fecha: "2025-06-05",
-    tipo: "Adelanto",
-    monto: 1200,
-    estado: "pagado",
-    motivo: "Adelanto de nómina",
-    responsable: "Patricia Ramírez",
-    observaciones: "Descuento liquidado."
-  }
-];
-const CALENDARIO_EXTRA_INIT = [
-  {
-    id: 1,
-    tipo: "Festivo",
-    titulo: "Día festivo oficial",
-    fecha: "2025-09-16",
-    sucursal: "Todas",
-    area: "General",
-    estado: "programado"
-  },
-  {
-    id: 2,
-    tipo: "Asueto",
-    titulo: "Asueto interno McDental",
-    fecha: "2025-12-24",
-    sucursal: "Todas",
-    area: "General",
-    estado: "programado"
-  },
-  {
-    id: 3,
-    tipo: "Evento",
-    titulo: "Capacitación general",
-    fecha: "2025-07-05",
-    sucursal: "Central",
-    area: "Administración",
-    estado: "programado"
-  }
-];
-const REPORTES_CONFIDENCIALES_INIT = [
-  {
-    id: 1,
-    empleadoId: 3,
-    empleado: "Ana García",
-    sucursal: "Norte",
-    puesto: "Asistente Dental",
-    fecha: "2025-06-16",
-    tipo: "Conflictos internos",
-    urgencia: "Media",
-    descripcion: "Reporta tensión recurrente con un compañero durante el cierre de turno.",
-    evidencias: "Sin evidencia adjunta",
-    estado: "nuevo",
-    visiblePara: ["admin", "psicologa"]
-  },
-  {
-    id: 2,
-    empleadoId: 6,
-    empleado: "Luis Torres",
-    sucursal: "Centro",
-    puesto: "Asistente Dental",
-    fecha: "2025-06-15",
-    tipo: "Maltrato",
-    urgencia: "Alta",
-    descripcion: "Señala trato inadecuado durante una jornada con alta carga operativa.",
-    evidencias: "Pendiente de revisión",
-    estado: "en seguimiento",
-    visiblePara: ["admin", "psicologa"]
-  }
-];
-const RECONOCIMIENTOS_INIT = [
-  {
-    id: 1,
-    empleadoId: 3,
-    empleado: "Ana García",
-    sucursal: "Norte",
-    puesto: "Asistente Dental",
-    fecha: "2025-06-10",
-    categoria: "Excelente actitud",
-    otorgadoPor: "Patricia Ramírez",
-    comentario: "Mostró excelente disposición durante una jornada de alta demanda."
-  },
-  {
-    id: 2,
-    empleadoId: 4,
-    empleado: "Carlos Pérez",
-    sucursal: "Sur",
-    puesto: "Dentista",
-    fecha: "2025-06-08",
-    categoria: "Atención al paciente",
-    otorgadoPor: "Mario Rodríguez",
-    comentario: "Recibió comentarios positivos por su trato profesional con pacientes."
-  },
-  {
-    id: 3,
-    empleadoId: 6,
-    empleado: "Luis Torres",
-    sucursal: "Centro",
-    puesto: "Asistente Dental",
-    fecha: "2025-06-12",
-    categoria: "Trabajo en equipo",
-    otorgadoPor: "Dra. Laura Vega",
-    comentario: "Apoyó a sus compañeros para cerrar actividades pendientes."
-  }
-];
+const DESCUENTOS_INIT = [];
+const CALENDARIO_EXTRA_INIT = [];
+const REPORTES_CONFIDENCIALES_INIT = [];
+const RECONOCIMIENTOS_INIT = [];
 const ENCUESTA_PREGUNTAS = [
   { id: 1, texto: "¿Cómo describes tu estado emocional esta semana?", tipo: "escala", area: "Emocional" },
   { id: 2, texto: "¿Qué tan estresado/a te has sentido en el trabajo?", tipo: "escala", area: "Estrés" },
@@ -281,16 +58,8 @@ const generateEncuestas = () => {
   });
   return results;
 };
-const MENSAJES_INIT = [
-  { id: 1, de: 3, para: 2, texto: "Hola doctora, quisiera hablar sobre algo que me ha preocupado esta semana.", fecha: "2025-03-20 09:15", leido: true },
-  { id: 2, de: 2, para: 3, texto: "Claro Ana, cuéntame. Estoy aquí para escucharte.", fecha: "2025-03-20 10:30", leido: true },
-  { id: 3, de: 4, para: 2, texto: "Dra. Vega, he estado pensando seriamente en renunciar. No me siento bien en el trabajo.", fecha: "2025-03-22 14:00", leido: false },
-  { id: 4, de: 6, para: 2, texto: "Esta semana fue muy pesada, creo que necesito apoyo con la carga de trabajo.", fecha: "2025-03-23 08:45", leido: false },
-];
-const NOTAS_INIT = [
-  { id: 1, empleadoId: 4, texto: "Carlos presenta signos de agotamiento emocional y bajo compromiso. Requiere sesión urgente.", fecha: "2025-03-22", psicologa: "Dra. Laura Vega" },
-  { id: 2, empleadoId: 6, texto: "Luis reporta alta carga de trabajo. Monitorear próximas semanas.", fecha: "2025-03-23", psicologa: "Dra. Laura Vega" },
-];
+const MENSAJES_INIT = [];
+const NOTAS_INIT = [];
 const semanaActual = "2025-W15";
 
 // ─── PULSE SCORE ENGINE ───────────────────────────────────────────────────────
@@ -5220,7 +4989,7 @@ const Config = () => {
 export default function App() {
   const [user, setUser] = useState(null);
   const [active, setActive] = useState("");
-  const [encuestas, setEncuestas] = useState(() => generateEncuestas());
+  const [encuestas, setEncuestas] = useState([]);
   const [mensajes, setMensajes] = useState(MENSAJES_INIT);
   const [notas, setNotas] = useState(NOTAS_INIT);
   const [vacaciones, setVacaciones] = useState(VACACIONES_INIT);
