@@ -20,9 +20,25 @@ const USERS = [
 { id: 8, name: "Roberto Díaz", role: "empleado", user: "roberto", pass: "emp123", sucursal: "Centro", puesto: "Laboratorista", antiguedad: "6 meses", telefono: "555-1006", fechaNacimiento: "2000-06-21", fechaIngreso: "2025-01-10" },
 { id: 10,name: "SANDRA LETICIA GALVAN",role: "empleado",user: "sandra galvan",pass: "emp123",sucursal: "McDental Palmas",puesto: "Recepcionista",fechaNacimiento: "",fechaIngreso: ""},
 { id: 11,name: "ALEXIS YAMIL LOPEZ",role: "empleado",user: "alexis lopez",pass: "emp123",sucursal: "McDental Palmas",puesto: "Doctor",fechaNacimiento: "",fechaIngreso: ""},
-{ id: 12,name: "VALERIA TERESA ALCARAZ GARCÍA",role: "empleado",user: "valeria alcaraz",pass: "emp123",sucursal: "McDental Palmas",puesto: "Doctora",fechaNacimiento: "",fechaIngreso: ""}
+{ id: 12,name: "VALERIA TERESA ALCARAZ GARCÍA",role: "empleado",user: "valeria alcaraz",pass: "emp123",sucursal: "McDental Palmas",puesto: "Doctora",fechaNacimiento: "",fechaIngreso: ""},
+{ id: 13, name: "ANGELO ARTURO IZUGAR VICENCIO", role: "empleado", user: "angelo izugar", pass: "emp123", sucursal: "McDental Madero", puesto: "Doctor", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 14, name: "ANDREA ALDANA MEDINA", role: "empleado", user: "andrea aldana", pass: "emp123", sucursal: "McDental Madero", puesto: "Recepcionista", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 15, name: "DANNA ESMERALDA SANTOS MARTINEZ", role: "empleado", user: "danna santos", pass: "emp123", sucursal: "McDental Madero", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 16, name: "ANAIS GISSEL RODRIGUEZ PEREZ", role: "empleado", user: "anais rodriguez", pass: "emp123", sucursal: "McDental Tampico", puesto: "Doctora/Encargada", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 17, name: "MARIA CONCEPCION ANDRADE GARCIA", role: "empleado", user: "maria andrade", pass: "emp123", sucursal: "McDental Tampico", puesto: "Doctora/Especialista", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 18, name: "SAN JUANA MARIBEL HERNANDEZ DE LEON", role: "empleado", user: "san hernandez", pass: "emp123", sucursal: "McDental Tampico", puesto: "Limpieza", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 19, name: "SHEILA KARINE GONZALEZ", role: "empleado", user: "sheila gonzalez", pass: "emp123", sucursal: "McDental Tampico", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 20, name: "BRENDA FERNANDA OLVERA DIAZ", role: "empleado", user: "brenda olvera", pass: "emp123", sucursal: "McDental Tampico", puesto: "Recepcionista", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 21, name: "AYLIN VILLAGRANA", role: "empleado", user: "aylin villagrana", pass: "emp123", sucursal: "McDental Tampico", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 22, name: "WENDY ALONSO", role: "empleado", user: "wendy alonso", pass: "emp123", sucursal: "McDental Tampico", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 23, name: "MARIA GUADALUPE TRETO MAYA", role: "empleado", user: "maria treto", pass: "emp123", sucursal: "McDental Tampico Obregon", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 24, name: "LUZ ESMERALDA GOMEZ NETRO", role: "empleado", user: "luz gomez", pass: "emp123", sucursal: "McDental Tampico Obregon", puesto: "Recepcionista", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 25, name: "CYNTIA ELIZABETH CASTELLANOS MUÑOS", role: "empleado", user: "cyntia castellanos", pass: "emp123", sucursal: "Popular Tampico", puesto: "Doctora/Encargada", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 26, name: "SUGEY RUBI ALVARADO ESCOBAR", role: "empleado", user: "sugey alvarado", pass: "emp123", sucursal: "Popular Tampico", puesto: "Recepcionista", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 27, name: "KAREN SANTIAGO MARTINEZ", role: "empleado", user: "karen santiago", pass: "emp123", sucursal: "Popular Tampico", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 28, name: "PERLA IDESVI CRUZ INOCENCIO", role: "empleado", user: "perla cruz", pass: "emp123", sucursal: "Popular Tampico", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" }
 ];
-const SUCURSALES = ["Norte", "Sur", "Centro", "Central", "McDental Palmas"];
+const SUCURSALES = ["Norte","Sur","Centro","Central","McDental Palmas","McDental Madero","McDental Tampico","McDental Tampico Obregon","Popular Tampico"];
 const VACACIONES_INIT = [];
 const PERMISOS_INIT = [];
 
