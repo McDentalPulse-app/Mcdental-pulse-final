@@ -17,9 +17,12 @@ const USERS = [
 { id: 5, name: "Sofía Martínez", role: "empleado", user: "sofia", pass: "emp123", sucursal: "Norte", puesto: "Recepcionista", antiguedad: "1 año", telefono: "555-1003", fechaNacimiento: "1999-06-12", fechaIngreso: "2024-06-25" },
 { id: 6, name: "Luis Torres", role: "empleado", user: "luis", pass: "emp123", sucursal: "Centro", puesto: "Asistente Dental", antiguedad: "3 años", telefono: "555-1004", fechaNacimiento: "1996-08-08", fechaIngreso: "2022-06-14" },
 { id: 7, name: "María López", role: "empleado", user: "maria", pass: "emp123", sucursal: "Sur", puesto: "Dentista", antiguedad: "5 años", telefono: "555-1005", fechaNacimiento: "1991-06-09", fechaIngreso: "2020-06-11" },
-{ id: 8, name: "Roberto Díaz", role: "empleado", user: "roberto", pass: "emp123", sucursal: "Centro", puesto: "Laboratorista", antiguedad: "6 meses", telefono: "555-1006", fechaNacimiento: "2000-06-21", fechaIngreso: "2025-01-10" }
+{ id: 8, name: "Roberto Díaz", role: "empleado", user: "roberto", pass: "emp123", sucursal: "Centro", puesto: "Laboratorista", antiguedad: "6 meses", telefono: "555-1006", fechaNacimiento: "2000-06-21", fechaIngreso: "2025-01-10" },
+{ id: 10,name: "SANDRA LETICIA GALVAN",role: "empleado",user: "sandra galvan",pass: "emp123",sucursal: "McDental Palmas",puesto: "Recepcionista",fechaNacimiento: "",fechaIngreso: ""},
+{ id: 11,name: "ALEXIS YAMIL LOPEZ",role: "empleado",user: "alexis lopez",pass: "emp123",sucursal: "McDental Palmas",puesto: "Doctor",fechaNacimiento: "",fechaIngreso: ""},
+{ id: 12,name: "VALERIA TERESA ALCARAZ GARCÍA",role: "empleado",user: "valeria alcaraz",pass: "emp123",sucursal: "McDental Palmas",puesto: "Doctora",fechaNacimiento: "",fechaIngreso: ""}
 ];
-const SUCURSALES = ["Norte", "Sur", "Centro", "Central"];
+const SUCURSALES = ["Norte", "Sur", "Centro", "Central", "McDental Palmas"];
 const VACACIONES_INIT = [];
 const PERMISOS_INIT = [];
 
@@ -3637,7 +3640,6 @@ const EmpleadosList = ({
               <div><span style={{ color: "#9ca3af" }}>Nombre:</span> {selected.name}</div>
               <div><span style={{ color: "#9ca3af" }}>Puesto:</span> {selected.puesto}</div>
               <div><span style={{ color: "#9ca3af" }}>Sucursal:</span> {selected.sucursal}</div>
-              <div><span style={{ color: "#9ca3af" }}>Rol:</span> {selected.role}</div>
               <div><span style={{ color: "#9ca3af" }}>Antigüedad:</span> {calcularAntiguedad(selected.fechaIngreso)}</div>
               <div><span style={{ color: "#9ca3af" }}>ID empleado:</span> {selected.id}</div>
               <div><span style={{ color: "#9ca3af" }}>Estado:</span> Activo</div>
