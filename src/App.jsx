@@ -36,9 +36,25 @@ const USERS = [
 { id: 25, name: "CYNTIA ELIZABETH CASTELLANOS MUÑOS", role: "empleado", user: "cyntia castellanos", pass: "emp123", sucursal: "Popular Tampico", puesto: "Doctora/Encargada", fechaNacimiento: "", fechaIngreso: "" },
 { id: 26, name: "SUGEY RUBI ALVARADO ESCOBAR", role: "empleado", user: "sugey alvarado", pass: "emp123", sucursal: "Popular Tampico", puesto: "Recepcionista", fechaNacimiento: "", fechaIngreso: "" },
 { id: 27, name: "KAREN SANTIAGO MARTINEZ", role: "empleado", user: "karen santiago", pass: "emp123", sucursal: "Popular Tampico", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
-{ id: 28, name: "PERLA IDESVI CRUZ INOCENCIO", role: "empleado", user: "perla cruz", pass: "emp123", sucursal: "Popular Tampico", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" }
+{ id: 28, name: "PERLA IDESVI CRUZ INOCENCIO", role: "empleado", user: "perla cruz", pass: "emp123", sucursal: "Popular Tampico", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 29, name: "HANIA TORRES PEÑA", role: "empleado", user: "hania torres", pass: "emp123", sucursal: "McDental Tuxpan", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 30, name: "ARIADNA LISELI VILLEGAS", role: "empleado", user: "ariadna villegas", pass: "emp123", sucursal: "McDental Tuxpan", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 31, name: "XOCHILTH VERONICA DEL TORO DE LA CRUZ", role: "empleado", user: "xochilth del toro", pass: "emp123", sucursal: "McDental Tuxpan", puesto: "Recepcionista", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 32, name: "SANDRA RUBI CERVANTES MORALES", role: "empleado", user: "sandra cervantes", pass: "emp123", sucursal: "McDental Tuxpan", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 33, name: "JESSICA CERECEDO CRUZ", role: "empleado", user: "jessica cerecedo", pass: "emp123", sucursal: "Popular Tuxpan", puesto: "Recepcionista", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 34, name: "ARIEL ISAI GONZALEZ AGUILAR", role: "empleado", user: "ariel gonzalez", pass: "emp123", sucursal: "Popular Tuxpan", puesto: "Doctor", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 35, name: "ALEJANDRA RALIS DE LOS SANTOS", role: "empleado", user: "alejandra ralis", pass: "emp123", sucursal: "McDental Poza Rica", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 36, name: "MARIA DEL ROSARIO LOZANO ARADILLAS", role: "empleado", user: "maria lozano", pass: "emp123", sucursal: "McDental Poza Rica", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 37, name: "MARIA ISABEL COLLINS ATZIN", role: "empleado", user: "maria collins", pass: "emp123", sucursal: "McDental Poza Rica", puesto: "Recepcionista", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 38, name: "NINIBE ARENAS TOLENTINO", role: "empleado", user: "ninibe arenas", pass: "emp123", sucursal: "Popular Poza Rica", puesto: "Doctora/Especialista", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 39, name: "YAMILETH REYES MAR", role: "empleado", user: "yamileth reyes", pass: "emp123", sucursal: "Popular Poza Rica", puesto: "Recepcionista", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 40, name: "BRENDA SANTES SANTIAGO", role: "empleado", user: "brenda santes", pass: "emp123", sucursal: "Popular Poza Rica", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 41, name: "REBECA CORTEZ PEREZ", role: "empleado", user: "rebeca cortez", pass: "emp123", sucursal: "Popular Poza Rica", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 42, name: "PAOLA DELGADO GARCÍA", role: "empleado", user: "paola delgado", pass: "emp123", sucursal: "McDental Valles", puesto: "Recepcionista", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 43, name: "CLARA CRISTINA MARISCAL DELGADO", role: "empleado", user: "clara mariscal", pass: "emp123", sucursal: "McDental Valles", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 44, name: "ARTURO DANIEL ACEVEDO DAVALOS", role: "empleado", user: "arturo acevedo", pass: "emp123", sucursal: "McDental Valles", puesto: "Doctor", fechaNacimiento: "", fechaIngreso: "" }
 ];
-const SUCURSALES = ["Norte","Sur","Centro","Central","McDental Palmas","McDental Madero","McDental Tampico","McDental Tampico Obregon","Popular Tampico"];
+const SUCURSALES = ["Norte","Sur","Centro","Central","McDental Palmas","McDental Madero","McDental Tampico","McDental Tampico Obregon","Popular Tampico","McDental Tuxpan","Popular Tuxpan","McDental Poza Rica","Popular Poza Rica","McDental Valles"];
 const VACACIONES_INIT = [];
 const PERMISOS_INIT = [];
 
