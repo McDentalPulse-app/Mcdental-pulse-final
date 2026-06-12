@@ -39,28 +39,35 @@ const ENCUESTA_PREGUNTAS = [
   { id: 9, texto: "¿Has pensado en renunciar durante esta semana?", tipo: "opcion", opciones: ["No", "Algo", "Sí, seriamente"], area: "Riesgo" },
   { id: 10, texto: "¿Quieres compartir algo más con el equipo de bienestar?", tipo: "abierta", area: "Comentarios" },
 ];
-const generateEncuestas = () => {
-  const semanas = ["2025-W10", "2025-W11", "2025-W12", "2025-W13", "2025-W14"];
-  const results = [];
-  USERS.filter(u => u.role === "empleado").forEach(emp => {
-    semanas.forEach((sem, si) => {
-      if (Math.random() > 0.15) {
-        const emocional = Math.min(10, Math.max(1, Math.floor(Math.random() * 5) + 4 + (emp.id === 4 ? -3 : 0)));
-        const estres = Math.min(10, Math.max(1, Math.floor(Math.random() * 5) + 3 + (emp.id === 6 ? 3 : 0)));
-        const satisfaccion = Math.min(10, Math.max(1, Math.floor(Math.random() * 4) + 5));
-        const motivacion = Math.min(10, Math.max(1, Math.floor(Math.random() * 4) + 5 + (emp.id === 4 ? -3 : 0)));
-        const riesgoRenuncia = emp.id === 4 ? "Sí, seriamente" : ["No", "No", "No", "Algo"][Math.floor(Math.random() * 4)];
-        const score = Math.round(((emocional + (10 - estres) + satisfaccion + motivacion) / 40) * 100);
-        const semaforo = score >= 70 ? "verde" : score >= 45 ? "amarillo" : "rojo";
-        results.push({ id: results.length + 1, empleadoId: emp.id, semana: sem, respuestas: { emocional, estres, satisfaccion, motivacion, riesgoRenuncia, cargaManejable: estres < 7, problemasPersonales: Math.random() > 0.8, comentario: "" }, score, semaforo, fecha: `2025-03-${10 + si * 7}` });
-      }
-    });
-  });
-  return results;
-};
+
 const MENSAJES_INIT = [];
 const NOTAS_INIT = [];
 const semanaActual = "2025-W15";
+
+const calcularAntiguedad = (fechaIngreso) => {
+  if (!fechaIngreso) return "Sin fecha de ingreso";
+
+  const inicio = new Date(fechaIngreso);
+  const hoy = new Date();
+
+  let años = hoy.getFullYear() - inicio.getFullYear();
+  let meses = hoy.getMonth() - inicio.getMonth();
+
+  if (hoy.getDate() < inicio.getDate()) {
+    meses--;
+  }
+
+  if (meses < 0) {
+    años--;
+    meses += 12;
+  }
+
+  if (años <= 0 && meses <= 0) return "Menos de 1 mes";
+  if (años <= 0) return `${meses} ${meses === 1 ? "mes" : "meses"}`;
+  if (meses <= 0) return `${años} ${años === 1 ? "año" : "años"}`;
+
+  return `${años} ${años === 1 ? "año" : "años"} y ${meses} ${meses === 1 ? "mes" : "meses"}`;
+};
 
 // ─── PULSE SCORE ENGINE ───────────────────────────────────────────────────────
 const calcPulseScore = (empId, encuestas) => {
@@ -399,7 +406,7 @@ const cambiosComportamiento = analisisIA.filter(a =>
     const riesgos = calcRiesgos(emp.id, encuestas);
     const notasEmp = notas.filter(n => n.empleadoId === emp.id);
     const msgsEmp = mensajes.filter(m => m.de === emp.id || m.para === emp.id).slice(-6);
-    return `EXPEDIENTE: ${emp.name} | ${emp.sucursal} | ${emp.puesto} | Antigüedad: ${emp.antiguedad}\nPulse Score: ${pulse.score} (${pulse.nivel}) | Tendencia: ${pulse.tendencia}\nRiesgos: Renuncia ${riesgos.renuncia}%, Burnout ${riesgos.burnout}%, Emocional ${riesgos.emocional}%\nEncuestas (${enc.length} semanas): ${enc.slice(0,5).map(e=>`${e.semana}: emocional=${e.respuestas.emocional}, estres=${e.respuestas.estres}, mot=${e.respuestas.motivacion}, score=${e.score}`).join(" | ")}\nNotas psicóloga: ${notasEmp.map(n=>n.texto).join(" | ") || "Ninguna"}\nMensajes: ${msgsEmp.map(m=>{const u=USERS.find(x=>x.id===m.de);return `${u?.name}: "${m.texto.slice(0,60)}"`;}).join(" | ") || "Ninguno"}`;
+    return `EXPEDIENTE: ${emp.name} | ${emp.sucursal} | ${emp.puesto} | Antigüedad: ${calcularAntiguedad(emp.fechaIngreso)}Tendencia: ${pulse.tendencia}\nRiesgos: Renuncia ${riesgos.renuncia}%, Burnout ${riesgos.burnout}%, Emocional ${riesgos.emocional}%\nEncuestas (${enc.length} semanas): ${enc.slice(0,5).map(e=>`${e.semana}: emocional=${e.respuestas.emocional}, estres=${e.respuestas.estres}, mot=${e.respuestas.motivacion}, score=${e.score}`).join(" | ")}\nNotas psicóloga: ${notasEmp.map(n=>n.texto).join(" | ") || "Ninguna"}\nMensajes: ${msgsEmp.map(m=>{const u=USERS.find(x=>x.id===m.de);return `${u?.name}: "${m.texto.slice(0,60)}"`;}).join(" | ") || "Ninguno"}`;
   };
 
   const generarResumen = async () => {
@@ -3631,8 +3638,7 @@ const EmpleadosList = ({
               <div><span style={{ color: "#9ca3af" }}>Puesto:</span> {selected.puesto}</div>
               <div><span style={{ color: "#9ca3af" }}>Sucursal:</span> {selected.sucursal}</div>
               <div><span style={{ color: "#9ca3af" }}>Rol:</span> {selected.role}</div>
-              <div><span style={{ color: "#9ca3af" }}>Antigüedad:</span> {selected.antiguedad || "No registrada"}</div>
-              <div><span style={{ color: "#9ca3af" }}>Contacto:</span> {selected.telefono || "No registrado"}</div>
+              <div><span style={{ color: "#9ca3af" }}>Antigüedad:</span> {calcularAntiguedad(selected.fechaIngreso)}</div>
               <div><span style={{ color: "#9ca3af" }}>ID empleado:</span> {selected.id}</div>
               <div><span style={{ color: "#9ca3af" }}>Estado:</span> Activo</div>
             </div>
