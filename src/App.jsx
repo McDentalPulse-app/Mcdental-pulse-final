@@ -70,9 +70,32 @@ const USERS = [
 { id: 59, name: "JOSECARLO TREJO", role: "empleado", user: "josecarlo trejo", pass: "emp123", sucursal: "McDental Reynosa", puesto: "Doctor", fechaNacimiento: "", fechaIngreso: "" },
 { id: 60, name: "HIDALID PEREZ ORTIZ", role: "empleado", user: "hidalid perez", pass: "emp123", sucursal: "McDental Pachuca", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
 { id: 61, name: "MARTHA ORTIZ MARTINEZ", role: "empleado", user: "martha ortiz", pass: "emp123", sucursal: "McDental Pachuca", puesto: "Recepcionista", fechaNacimiento: "", fechaIngreso: "" },
-{ id: 62, name: "MELISA TAVERA GOMEZ", role: "empleado", user: "melisa tavera", pass: "emp123", sucursal: "McDental Pachuca", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" }
+{ id: 62, name: "MELISA TAVERA GOMEZ", role: "empleado", user: "melisa tavera", pass: "emp123", sucursal: "McDental Pachuca", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 63, name: "YARALMA GUADALUPE FELIZ BURRUEL", role: "empleado", user: "yaralma feliz", pass: "emp123", sucursal: "McDental Hermosillo", puesto: "Recepcionista", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 64, name: "JORGE ENRIQUE VALLEDOR ALVAREZ", role: "empleado", user: "jorge valledor", pass: "emp123", sucursal: "McDental Hermosillo", puesto: "Doctor", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 65, name: "DANIA LIMÓN", role: "empleado", user: "dania limon", pass: "emp123", sucursal: "McDental Hermosillo", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 66, name: "ROBERTO CARLOS ESPARZA", role: "empleado", user: "roberto esparza", pass: "emp123", sucursal: "McDental Hermosillo", puesto: "Doctor", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 67, name: "ANA GABRIELA DE LA OHILARIO", role: "empleado", user: "ana ohilario", pass: "emp123", sucursal: "McDental Villahermosa", puesto: "Recepcionista", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 68, name: "DARVIN MENDEZ LOPEZ", role: "empleado", user: "darvin mendez", pass: "emp123", sucursal: "McDental Villahermosa", puesto: "Doctor", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 69, name: "KEVIN ALEXIS HOPÓLITO GARCÍA", role: "empleado", user: "kevin hopolito", pass: "emp123", sucursal: "McDental Villahermosa", puesto: "Doctor", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 70, name: "LETICIA HERNANDEZ HERNANDEZ", role: "empleado", user: "leticia hernandez", pass: "emp123", sucursal: "McDental Huejutla", puesto: "Recepcionista", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 71, name: "DANIELA RODRIGUEZ HERNANDEZ", role: "empleado", user: "daniela rodriguez", pass: "emp123", sucursal: "McDental Huejutla", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 72, name: "VICTOR EDUARDO RIVERA FLORES", role: "empleado", user: "victor rivera", pass: "emp123", sucursal: "McDental Altamira", puesto: "Doctor", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 73, name: "MICHEL BASURCO MENDOZA", role: "empleado", user: "michel basurco", pass: "emp123", sucursal: "McDental Altamira", puesto: "Recepcionista", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 74, name: "GLORIA IVONE GARCIA CRUZ", role: "empleado", user: "gloria garcia", pass: "emp123", sucursal: "McDental Ebano", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 75, name: "DULCE GUADALUPE DEL ANGEL TREJO", role: "empleado", user: "dulce del angel", pass: "emp123", sucursal: "McDental Ebano", puesto: "Recepcionista", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 76, name: "MONICA HERNDANDEZ MARTINEZ", role: "empleado", user: "monica herndandez", pass: "emp123", sucursal: "McDental Ebano", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 77, name: "ANA MARLEN RODRIGUEZ FLORES", role: "empleado", user: "ana rodriguez", pass: "emp123", sucursal: "Popular Reynosa", puesto: "Recepcionista", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 78, name: "CYNTHIA IDALIA VILLAREAL PÉREZ", role: "empleado", user: "cynthia villareal", pass: "emp123", sucursal: "Popular Reynosa", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 79, name: "ROSARIO ORNELAS", role: "empleado", user: "rosario ornelas", pass: "emp123", sucursal: "Popular Reynosa", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 80, name: "MARIA DEL ROSARIO LOPEZ MEDINA", role: "empleado", user: "maria lopez", pass: "emp123", sucursal: "McDental Mante", puesto: "Recepcionista", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 81, name: "NANCY ESTEFANIA ARENAS HERNANDEZ", role: "empleado", user: "nancy arenas", pass: "emp123", sucursal: "McDental Leon", puesto: "Recepcionista", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 82, name: "SEAN DAVID FLORES URIBE", role: "empleado", user: "sean flores", pass: "emp123", sucursal: "McDental Leon", puesto: "Doctor", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 83, name: "MIREYA HERNANDEZ FLORES", role: "empleado", user: "mireya hernandez", pass: "emp123", sucursal: "Martinez De La Torre", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 84, name: "FABIOLA BELEN MARIANO", role: "empleado", user: "fabiola mariano", pass: "emp123", sucursal: "Martinez De La Torre", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 85, name: "ALIA MARICRUZ LOPEZ GUZMAN", role: "empleado", user: "alia lopez", pass: "emp123", sucursal: "Martinez De La Torre", puesto: "Recepcionista", fechaNacimiento: "", fechaIngreso: "" }
 ];
-const SUCURSALES = ["Norte", "Sur", "Centro", "Central", "McDental Palmas", "McDental Madero", "McDental Tampico", "McDental Tampico Obregon", "Popular Tampico", "McDental Tuxpan", "Popular Tuxpan", "McDental Poza Rica", "Popular Poza Rica", "McDental Valles", "McDental Irapuato", "Popular Irapuato", "McDental Victoria", "McDental Reynosa", "McDental Pachuca"];
+const SUCURSALES = ["Norte","Sur","Centro","Central","McDental Palmas","McDental Madero","McDental Tampico","McDental Tampico Obregon","Popular Tampico","McDental Tuxpan","Popular Tuxpan","McDental Poza Rica","Popular Poza Rica","McDental Valles","McDental Irapuato","Popular Irapuato","McDental Victoria","McDental Reynosa","McDental Pachuca","McDental Hermosillo","McDental Villahermosa","McDental Huejutla","McDental Altamira","McDental Ebano","Popular Reynosa","McDental Mante","McDental Leon","Martinez De La Torre"];
 const VACACIONES_INIT = [];
 const PERMISOS_INIT = [];
 
