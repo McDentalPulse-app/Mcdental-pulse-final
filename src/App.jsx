@@ -1369,7 +1369,6 @@ const Sidebar = ({ user, active, setActive, onLogout }) => {
     rh: [
       { key: "dashboard", icon: "📊", label: "Dashboard RH" },
       { key: "vacaciones", icon: "🏖️", label: "Vacaciones" },
-      { key: "permisos", icon: "📝", label: "Permisos" },
       { key: "descuentos", icon: "💸", label: "Descuentos" },
       { key: "calendario", icon: "📅", label: "Calendario" },
       { key: "eventospersonal", icon: "🎂", label: "Cumpleaños y Aniversarios" },
@@ -1380,7 +1379,7 @@ const Sidebar = ({ user, active, setActive, onLogout }) => {
       { key: "inicio", icon: "🏠", label: "Inicio" },
       { key: "encuesta", icon: "📝", label: "Mi Encuesta" },
       { key: "historial", icon: "▦", label: "Historial" },
-      { key: "permisosempleado", icon: "🕒", label: "Permisos" },
+      { key: "permisosempleado", icon: "🏖️", label: "Vacaciones" },
       { key: "reconocimientos", icon: "🏅", label: "Reconocimientos" },
       { key: "reporteconfidencial", icon: "🔒", label: "Reporte Confidencial" },
       { key: "mensajes", icon: "💬", label: "Mensajes" },
@@ -1419,7 +1418,6 @@ const HRDashboard = ({ users }) => {
   const stats = [
     { label: "Empleados activos", value: empleados.length, icon: "👥" },
     { label: "Vacaciones pendientes", value: 3, icon: "🏖️" },
-    { label: "Permisos pendientes", value: 2, icon: "📝" },
     { label: "Retardos registrados", value: 4, icon: "⏰" },
     { label: "Descuentos activos", value: 2, icon: "💸" },
   ];
@@ -1430,7 +1428,7 @@ const HRDashboard = ({ users }) => {
         Dashboard RH
       </h1>
       <p style={{ margin: "0 0 24px", color: "#64748b" }}>
-        Gestión administrativa de vacaciones, permisos, descuentos y calendario laboral.
+        Gestión administrativa de vacaciones, descuentos y calendario laboral.
       </p>
 
       <div style={{
@@ -1456,7 +1454,6 @@ const HRDashboard = ({ users }) => {
         <h3 style={{ marginTop: 0, color: "#004D40" }}>📌 Pendientes RH</h3>
         <div style={{ display: "grid", gap: 10 }}>
           <div>🏖️ Ana García solicitó vacaciones del 15 al 19 de julio.</div>
-          <div>📝 Carlos Pérez solicitó permiso por consulta médica.</div>
           <div>💸 Luis Torres tiene descuento pendiente de revisión.</div>
           <div>⏰ Luis Torres acumula 2 retardos este mes.</div>
         </div>
@@ -1748,7 +1745,8 @@ const PermisosRH = ({ permisos, onUpdateEstado }) => {
   );
 };
 
-const DescuentosRH = ({ descuentos, onUpdateEstado }) => {
+const DescuentosRH = ({ descuentos, empleados, user, onUpdateEstado, onAddDescuento }) => {
+    const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const pendientes = descuentos.filter(d => d.estado === "pendiente").length;
   const activos = descuentos.filter(d => d.estado === "activo").length;
   const pagados = descuentos.filter(d => d.estado === "pagado").length;
@@ -1788,6 +1786,82 @@ const DescuentosRH = ({ descuentos, onUpdateEstado }) => {
       <p style={{ margin: "0 0 24px", color: "#64748b" }}>
         Registro y seguimiento de descuentos administrativos del personal.
       </p>
+
+      <button
+  onClick={() => setMostrarFormulario(!mostrarFormulario)}
+  style={{
+    marginBottom: 15,
+    padding: "10px 16px",
+    borderRadius: 8,
+    border: "none",
+    background: "#006D5B",
+    color: "white",
+    fontWeight: 700,
+    cursor: "pointer"
+  }}
+>
+  {mostrarFormulario ? "Cancelar" : "+ Agregar descuento"}
+</button>
+{mostrarFormulario && (
+  <Card>
+    <h3 style={{ marginTop: 0, color: "#004D40" }}>Agregar descuento</h3>
+
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+
+        const form = e.target;
+        const empleadoId = Number(form.empleadoId.value);
+        const empleadoSeleccionado = empleados.find(emp => emp.id === empleadoId);
+
+        if (!empleadoSeleccionado) {
+          alert("Selecciona un empleado.");
+          return;
+        }
+
+        const nuevoDescuento = {
+          empleadoId: empleadoSeleccionado.id,
+          empleado: empleadoSeleccionado.name,
+          sucursal: empleadoSeleccionado.sucursal || "Sin sucursal",
+          puesto: empleadoSeleccionado.puesto || empleadoSeleccionado.categoria || "Empleado",
+          tipo: form.tipo.value,
+          motivo: form.motivo.value,
+          observaciones: form.observaciones.value,
+          fecha: form.fecha.value,
+          monto: Number(form.monto.value),
+          responsable: user?.name || "RH"
+        };
+
+        onAddDescuento(nuevoDescuento);
+
+        alert("Descuento agregado correctamente.");
+        form.reset();
+        setMostrarFormulario(false);
+      }}
+    >
+      <select name="empleadoId" required>
+        <option value="">Selecciona empleado</option>
+        {empleados
+          .filter(emp => emp.role === "empleado")
+          .map(emp => (
+            <option key={emp.id} value={emp.id}>
+              {emp.name} - {emp.sucursal}
+            </option>
+          ))}
+      </select>
+
+      <input name="tipo" placeholder="Tipo de descuento" required />
+      <input name="motivo" placeholder="Motivo" required />
+      <input name="observaciones" placeholder="Observaciones" />
+      <input name="fecha" type="date" required />
+      <input name="monto" type="number" placeholder="Monto" required />
+
+      <button type="submit">
+        Guardar descuento
+      </button>
+    </form>
+  </Card>
+)}
 
       <div style={{
         display: "grid",
@@ -5494,6 +5568,34 @@ const updateDescuentoEstado = async (id, estado) => {
     alert("El descuento se actualizó en la app, pero no se pudo guardar en Firebase.");
   }
 };
+const addDescuento = async (descuento) => {
+  const nuevoDescuento = {
+    ...descuento,
+    id: Date.now(),
+    estado: "activo",
+    createdAt: serverTimestamp()
+  };
+
+  setDescuentos(prev => [
+    nuevoDescuento,
+    ...prev
+  ]);
+
+  try {
+    const docRef = await addDoc(collection(db, "descuentos"), nuevoDescuento);
+
+    setDescuentos(prev =>
+      prev.map(d =>
+        d.id === nuevoDescuento.id ? { ...d, firebaseId: docRef.id } : d
+      )
+    );
+
+    console.log("Descuento guardado en Firebase");
+  } catch (error) {
+    console.error("Error guardando descuento en Firebase:", error);
+    alert("El descuento se agregó en la app, pero no se pudo guardar en Firebase.");
+  }
+};
 const addReporteConfidencial = async (reporte) => {
   const nuevoReporte = {
     ...reporte,
@@ -5599,8 +5701,7 @@ const addReconocimiento = async (reconocimiento) => {
          if (user.role==="rh") {
       if (active==="dashboard") return <HRDashboard users={USERS} />;
       if (active==="vacaciones") return <VacacionesRH vacaciones={vacaciones} onUpdateEstado={updateVacacionEstado} />;
-      if (active==="permisos") return <PermisosRH permisos={permisos} onUpdateEstado={updatePermisoEstado} />;
-      if (active==="descuentos") return <DescuentosRH descuentos={descuentos} onUpdateEstado={updateDescuentoEstado} />;
+      if (active==="descuentos") return <DescuentosRH descuentos={descuentos} empleados={USERS} user={user} onUpdateEstado={updateDescuentoEstado} onAddDescuento={addDescuento} />;
       if (active==="calendario") return <CalendarioRH vacaciones={vacaciones} permisos={permisos} eventosExtra={calendarioExtra} />;
       if (active==="eventospersonal") return <EventosPersonal users={USERS} />;
       if (active==="reconocimientos") return <ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />;

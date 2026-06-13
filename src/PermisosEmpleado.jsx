@@ -6,7 +6,7 @@ export default function PermisosEmpleado({
   permisos = [],
   onEnviarSolicitudEmpleado
 }) {
-  const [tipoSeleccionado, setTipoSeleccionado] = useState("");
+  const [tipoSeleccionado, setTipoSeleccionado] = useState("Vacaciones");
   const [fechaInicioPreview, setFechaInicioPreview] = useState("");
   const [fechaFinPreview, setFechaFinPreview] = useState("");
   const [diasPreview, setDiasPreview] = useState(0);
@@ -27,23 +27,17 @@ export default function PermisosEmpleado({
   };
 
   const solicitudesEmpleado = [
-    ...vacaciones
-      .filter((v) => v.empleadoId === user?.id)
-      .map((v) => ({
-        ...v,
-        tipo: "Vacaciones"
-      })),
-    ...permisos
-      .filter((p) => p.empleadoId === user?.id)
-      .map((p) => ({
-        ...p,
-        tipo: "Permisos"
-      }))
-  ].sort((a, b) => Number(b.id) - Number(a.id));
+  ...vacaciones
+    .filter((v) => v.empleadoId === user?.id)
+    .map((v) => ({
+      ...v,
+      tipo: "Vacaciones"
+    }))
+].sort((a, b) => Number(b.id) - Number(a.id));
 
   return (
     <div style={{ padding: 20, textAlign: "center" }}>
-      <h2>Permisos - {user?.name || "Empleado"}</h2>
+      <h2>Vacaciones - {user?.name || "Empleado"}</h2>
 
       <form
         onSubmit={(e) => {
@@ -67,11 +61,6 @@ export default function PermisosEmpleado({
 
           if (tipo === "Vacaciones" && !fechaFin) {
             alert("Selecciona la fecha de fin");
-            return;
-          }
-
-          if (tipo === "Permisos" && !form.hora.value) {
-            alert("Selecciona la hora para el permiso");
             return;
           }
 
@@ -109,7 +98,7 @@ export default function PermisosEmpleado({
             fin: fechaFin,
             desde: fechaInicio,
             hasta: fechaFin,
-            hora: tipo === "Permisos" ? form.hora.value : "",
+            hora: "",
             dias: tipo === "Vacaciones" ? dias : "",
             motivo: form.motivo.value,
             comentario: form.comentario.value,
@@ -124,27 +113,13 @@ export default function PermisosEmpleado({
           alert("Solicitud enviada correctamente a RH.");
 
           form.reset();
-          setTipoSeleccionado("");
+          setTipoSeleccionado("Vacaciones");
           setFechaInicioPreview("");
           setFechaFinPreview("");
           setDiasPreview(0);
         }}
       >
-        <select
-          name="tipo"
-          required
-          value={tipoSeleccionado}
-          onChange={(e) => {
-            setTipoSeleccionado(e.target.value);
-            setFechaInicioPreview("");
-            setFechaFinPreview("");
-            setDiasPreview(0);
-          }}
-        >
-          <option value="">Tipo de permiso</option>
-          <option value="Vacaciones">Vacaciones</option>
-          <option value="Permisos">Permisos</option>
-        </select>
+        <input type="hidden" name="tipo" value="Vacaciones" />
 
         <input
           name="fechaInicio"
@@ -169,10 +144,6 @@ export default function PermisosEmpleado({
           />
         )}
 
-        {tipoSeleccionado === "Permisos" && (
-          <input name="hora" type="time" />
-        )}
-
         <input name="motivo" placeholder="Motivo" required />
 
         <input name="comentario" placeholder="Comentario opcional" />
@@ -183,10 +154,10 @@ export default function PermisosEmpleado({
           </div>
         )}
 
-        <button type="submit">Enviar Permiso</button>
+        <button type="submit">Enviar Solicitud </button>
       </form>
 
-      <h3>Permisos enviados:</h3>
+      <h3>Solicitudes enviadas:</h3>
 
       <ul>
         {solicitudesEmpleado.map((p) => (
