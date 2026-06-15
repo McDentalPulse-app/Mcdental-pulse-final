@@ -5122,6 +5122,88 @@ const descargarEmpleadosCSV = () => {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 };
+const descargarReporteMensualExcel = () => {
+  const empleados = users.filter((u) => u.role === "empleado");
+  const mesActual = new Date().toISOString().slice(0, 7);
+
+  const limpiarCSV = (valor) => {
+    const texto = String(valor ?? "").replace(/"/g, '""');
+    return `"${texto}"`;
+  };
+
+  const encuestasDelMes = encuestas.filter((e) =>
+    String(e.fecha || "").startsWith(mesActual)
+  );
+
+  const getEncuestasEmpleado = (empleadoId) => {
+    return encuestasDelMes
+      .filter((e) => e.empleadoId === empleadoId && Number.isFinite(Number(e.score)))
+      .sort((a, b) => String(b.semana || "").localeCompare(String(a.semana || "")));
+  };
+
+  const filas = empleados.map((emp) => {
+    const encEmpleado = getEncuestasEmpleado(emp.id);
+    const ultima = encEmpleado[0];
+
+    const promedio = encEmpleado.length
+      ? Math.round(
+          encEmpleado.reduce((sum, e) => sum + Number(e.score), 0) /
+            encEmpleado.length
+        )
+      : "Sin datos";
+
+    return {
+      nombre: emp.name || "",
+      sucursal: emp.sucursal || "",
+      puesto: emp.puesto || "",
+      encuestasContestadas: encEmpleado.length,
+      ultimaSemana: ultima?.semana || "Sin datos",
+      scorePromedioMes: promedio,
+      scoreActual: Number.isFinite(Number(ultima?.score)) ? Number(ultima.score) : "Sin datos",
+      semaforo: ultima?.semaforo || "Sin datos"
+    };
+  });
+
+  const encabezados = [
+    "Nombre",
+    "Sucursal",
+    "Puesto",
+    "Encuestas contestadas",
+    "Ultima semana",
+    "Score promedio mes",
+    "Score actual",
+    "Semaforo"
+  ];
+
+  const contenido = [
+    encabezados.join(","),
+    ...filas.map((fila) =>
+      [
+        fila.nombre,
+        fila.sucursal,
+        fila.puesto,
+        fila.encuestasContestadas,
+        fila.ultimaSemana,
+        fila.scorePromedioMes,
+        fila.scoreActual,
+        fila.semaforo
+      ].map(limpiarCSV).join(",")
+    )
+  ].join("\n");
+
+  const blob = new Blob(["\uFEFF" + contenido], {
+    type: "text/csv;charset=utf-8;"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `reporte_mensual_mcdental_${mesActual}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
   const btnStyle = {
     background: "#ecfdf5",
     color: "#00796B",
@@ -5174,9 +5256,9 @@ const descargarEmpleadosCSV = () => {
             📄 Reporte Semanal PDF
           </button>
 
-          <button onClick={() => generarReporte("Reporte mensual Excel")} style={btnStyle}>
-            📊 Reporte Mensual Excel
-          </button>
+          <button onClick={descargarReporteMensualExcel} style={btnStyle}>
+  📊 Reporte Mensual Excel
+</button>
 
           <button onClick={() => generarReporte("Reporte por sucursal PDF")} style={btnStyle}>
             🏢 Por Sucursal PDF
