@@ -2894,10 +2894,11 @@ const ReconocimientosEmpleado = ({ user, reconocimientos }) => {
   );
 };
 const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) => {
-  const empleados = users.filter(u => u.role === "empleado");
-  const [empleadoId, setEmpleadoId] = useState(empleados[0]?.id || "");
-  const [categoria, setCategoria] = useState("Excelente actitud");
-  const [comentario, setComentario] = useState("");
+  const empleados = users.filter((u) => u.role === "empleado");
+const [empleadoId, setEmpleadoId] = useState(empleados[0]?.id || "");
+const [categoria, setCategoria] = useState("Excelente actitud");
+const [comentario, setComentario] = useState("");
+const [diplomaArchivo, setDiplomaArchivo] = useState(null);
 
   const categorias = [
     "Excelente actitud",
@@ -2920,6 +2921,13 @@ const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) 
       alert("Escribe un comentario para el reconocimiento.");
       return;
     }
+    if (diplomaArchivo) {
+  const continuar = window.confirm(
+    "El diploma no se subirá todavía porque Firebase Storage no está activo.\n\n¿Deseas otorgar el reconocimiento sin diploma?"
+  );
+
+  if (!continuar) return;
+}
 
     onAdd({
       empleadoId: empleado.id,
@@ -2932,8 +2940,9 @@ const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) 
     });
 
     setCategoria("Excelente actitud");
-    setComentario("");
-    alert("Reconocimiento otorgado.");
+setComentario("");
+setDiplomaArchivo(null);
+alert("Reconocimiento otorgado.");
   };
 
   return (
@@ -3031,8 +3040,29 @@ const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) 
                   resize: "vertical"
                 }}
               />
-            </label>
+              </label>
+              <div style={{ marginTop: 12, textAlign: "left" }}>
+  <label style={{ display: "block", fontWeight: 800, color: "#004D40", marginBottom: 6 }}>
+    Diploma del reconocimiento
+  </label>
 
+  <input
+    type="file"
+    accept=".pdf,image/*"
+    onChange={(e) => setDiplomaArchivo(e.target.files?.[0] || null)}
+    style={{ width: "100%" }}
+  />
+
+  {diplomaArchivo && (
+    <div style={{ marginTop: 6, fontSize: 12, color: "#64748b" }}>
+      Archivo seleccionado: {diplomaArchivo.name}
+    </div>
+  )}
+
+  <div style={{ marginTop: 6, fontSize: 12, color: "#f59e0b", fontWeight: 700 }}>
+    La subida real del diploma quedará activa cuando Firebase Storage esté habilitado.
+  </div>
+</div>
             <button
               onClick={otorgar}
               style={{
@@ -5402,8 +5432,8 @@ const descargarReporteSemanalExcel = () => {
           fontSize: 13,
           lineHeight: 1.6
         }}>
-          Los reportes se generarán con datos consolidados de encuestas, Pulse Score, semáforos,
-          sucursales y participación. En esta versión local funcionan como simulación.
+          Los reportes se descargan con los datos actuales del sistema: encuestas, Pulse Score,
+semáforos, sucursales y participación.
         </div>
 {mostrarSelectorSucursal && (
   <div style={{ marginBottom: 16 }}>
@@ -5457,7 +5487,7 @@ const descargarReporteSemanalExcel = () => {
 </button>
 
           <button onClick={descargarEmpleadosCSV} style={btnStyle}>
-  👥 Empleados CSV
+  👥 Empleados Excel
 </button>
         </div>
       </Card>
