@@ -3060,7 +3060,7 @@ alert("Reconocimiento otorgado.");
   )}
 
   <div style={{ marginTop: 6, fontSize: 12, color: "#f59e0b", fontWeight: 700 }}>
-    La subida real del diploma quedará activa cuando Firebase Storage esté habilitado.
+    Adjunto preparado. La carga del diploma se activará cuando Firebase Storage esté habilitado.
   </div>
 </div>
             <button
