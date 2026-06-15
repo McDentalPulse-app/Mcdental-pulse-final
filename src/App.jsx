@@ -5053,6 +5053,19 @@ const Reportes = ({ users = [], encuestas = [] }) => {
   const generarReporte = (tipo) => {
     alert(`${tipo} generado correctamente en modo demo. Cuando conectemos Firebase, aquí se descargará el archivo real.`);
   };
+  const [sucursalReporte, setSucursalReporte] = useState("Todas");
+  const [mostrarSelectorSucursal, setMostrarSelectorSucursal] = useState(false);
+  const sucursalesReporte = [
+  "Todas",
+  ...Array.from(
+    new Set(
+      users
+        .filter((u) => u.role === "empleado")
+        .map((u) => u.sucursal)
+        .filter(Boolean)
+    )
+  ).sort()
+];
 const descargarEmpleadosCSV = () => {
   const empleados = users.filter((u) => u.role === "empleado");
 
@@ -5204,6 +5217,7 @@ const descargarReporteMensualExcel = () => {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 };
+
   const btnStyle = {
     background: "#ecfdf5",
     color: "#00796B",
@@ -5213,7 +5227,153 @@ const descargarReporteMensualExcel = () => {
     fontWeight: 800,
     cursor: "pointer"
   };
+const descargarReporteSucursalExcel = () => {
+  const empleados = users
+    .filter((u) => u.role === "empleado")
+    .filter((u) => sucursalReporte === "Todas" || u.sucursal === sucursalReporte);
 
+  const limpiarCSV = (valor) => {
+    const texto = String(valor ?? "").replace(/"/g, '""');
+    return `"${texto}"`;
+  };
+
+  const getUltimaEncuesta = (empleadoId) => {
+    return encuestas
+      .filter((e) => e.empleadoId === empleadoId && Number.isFinite(Number(e.score)))
+      .sort((a, b) => String(b.semana || "").localeCompare(String(a.semana || "")))[0];
+  };
+
+  const filas = empleados.map((emp) => {
+    const ultima = getUltimaEncuesta(emp.id);
+
+    return {
+      nombre: emp.name || "",
+      sucursal: emp.sucursal || "",
+      puesto: emp.puesto || "",
+      ultimaSemana: ultima?.semana || "Sin datos",
+      scoreActual: Number.isFinite(Number(ultima?.score)) ? Number(ultima.score) : "Sin datos",
+      semaforo: ultima?.semaforo || "Sin datos"
+    };
+  });
+
+  const encabezados = [
+    "Nombre",
+    "Sucursal",
+    "Puesto",
+    "Ultima semana",
+    "Score actual",
+    "Semaforo"
+  ];
+
+  const contenido = [
+    encabezados.join(","),
+    ...filas.map((fila) =>
+      [
+        fila.nombre,
+        fila.sucursal,
+        fila.puesto,
+        fila.ultimaSemana,
+        fila.scoreActual,
+        fila.semaforo
+      ].map(limpiarCSV).join(",")
+    )
+  ].join("\n");
+
+  const blob = new Blob(["\uFEFF" + contenido], {
+    type: "text/csv;charset=utf-8;"
+  });
+
+  const nombreSucursal =
+    sucursalReporte === "Todas"
+      ? "todas_las_sucursales"
+      : sucursalReporte.toLowerCase().replace(/\s+/g, "_");
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `reporte_sucursal_${nombreSucursal}_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+const descargarReporteSemanalExcel = () => {
+  const empleados = users.filter((u) => u.role === "empleado");
+
+  const limpiarCSV = (valor) => {
+    const texto = String(valor ?? "").replace(/"/g, '""');
+    return `"${texto}"`;
+  };
+
+  const encuestasSemana = encuestas.filter(
+    (e) => e.semana === semanaActual && Number.isFinite(Number(e.score))
+  );
+
+  const getEmpleado = (empleadoId) => {
+    return empleados.find((emp) => emp.id === empleadoId);
+  };
+
+  const filas = encuestasSemana.map((encuesta) => {
+    const emp = getEmpleado(encuesta.empleadoId);
+
+    return {
+      nombre: emp?.name || "Empleado no encontrado",
+      sucursal: emp?.sucursal || "Sin sucursal",
+      puesto: emp?.puesto || "Sin puesto",
+      semana: encuesta.semana || "",
+      fecha: encuesta.fecha || "",
+      score: encuesta.score,
+      semaforo: encuesta.semaforo || "Sin datos",
+      riesgoRenuncia: encuesta.respuestas?.[9] || encuesta.respuestas?.p9 || "",
+      problemaPersonal: encuesta.respuestas?.[7] || encuesta.respuestas?.p7 || "",
+      comentario: encuesta.respuestas?.[10] || encuesta.respuestas?.p10 || ""
+    };
+  });
+
+  const encabezados = [
+    "Nombre",
+    "Sucursal",
+    "Puesto",
+    "Semana",
+    "Fecha",
+    "Score",
+    "Semaforo",
+    "Riesgo renuncia",
+    "Problema personal",
+    "Comentario"
+  ];
+
+  const contenido = [
+    encabezados.join(","),
+    ...filas.map((fila) =>
+      [
+        fila.nombre,
+        fila.sucursal,
+        fila.puesto,
+        fila.semana,
+        fila.fecha,
+        fila.score,
+        fila.semaforo,
+        fila.riesgoRenuncia,
+        fila.problemaPersonal,
+        fila.comentario
+      ].map(limpiarCSV).join(",")
+    )
+  ].join("\n");
+
+  const blob = new Blob(["\uFEFF" + contenido], {
+    type: "text/csv;charset=utf-8;"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `reporte_semanal_mcdental_${semanaActual}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
   return (
     <div>
       <h2 style={{ margin: "0 0 20px", fontSize: 22, fontWeight: 800, color: "#004D40", textAlign: "center" }}>
@@ -5245,24 +5405,56 @@ const descargarReporteMensualExcel = () => {
           Los reportes se generarán con datos consolidados de encuestas, Pulse Score, semáforos,
           sucursales y participación. En esta versión local funcionan como simulación.
         </div>
+{mostrarSelectorSucursal && (
+  <div style={{ marginBottom: 16 }}>
+    <label style={{ display: "block", fontWeight: 800, color: "#004D40", marginBottom: 8 }}>
+      Selecciona la sucursal
+    </label>
 
+    <select
+      value={sucursalReporte}
+      onChange={(e) => setSucursalReporte(e.target.value)}
+      style={{
+        padding: "10px 12px",
+        borderRadius: 10,
+        border: "1px solid #86efac",
+        minWidth: 260,
+        fontWeight: 700,
+        color: "#004D40",
+        marginBottom: 10
+      }}
+    >
+      {sucursalesReporte.map((sucursal) => (
+        <option key={sucursal} value={sucursal}>
+          {sucursal}
+        </option>
+      ))}
+    </select>
+
+    <div>
+      <button onClick={descargarReporteSucursalExcel} style={btnStyle}>
+        Descargar reporte de sucursal
+      </button>
+    </div>
+  </div>
+)}
         <div style={{
           display: "flex",
           gap: 12,
           flexWrap: "wrap",
           justifyContent: "center"
         }}>
-          <button onClick={() => generarReporte("Reporte semanal PDF")} style={btnStyle}>
-            📄 Reporte Semanal PDF
-          </button>
+          <button onClick={descargarReporteSemanalExcel} style={btnStyle}>
+  📄 Reporte Semanal Excel
+</button>
 
           <button onClick={descargarReporteMensualExcel} style={btnStyle}>
   📊 Reporte Mensual Excel
 </button>
 
-          <button onClick={() => generarReporte("Reporte por sucursal PDF")} style={btnStyle}>
-            🏢 Por Sucursal PDF
-          </button>
+          <button onClick={() => setMostrarSelectorSucursal(!mostrarSelectorSucursal)} style={btnStyle}>
+  🏢 Por Sucursal Excel
+</button>
 
           <button onClick={descargarEmpleadosCSV} style={btnStyle}>
   👥 Empleados CSV
