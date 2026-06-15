@@ -2265,18 +2265,7 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
   const [respuestas, setRespuestas] = useState({});
   const [enviada, setEnviada] = useState(false);
 
-  const preguntas = [
-  { id: "p1", area: "Estado emocional", texto: "¿Cómo describes tu estado emocional esta semana?" },
-  { id: "p2", area: "Estrés", texto: "¿Qué tan estresado/a te has sentido en el trabajo?" },
-  { id: "p3", area: "Satisfacción", texto: "¿Qué tan satisfecho/a estás con tu trabajo actualmente?" },
-  { id: "p4", area: "Compañeros", texto: "¿Cómo es tu relación con tus compañeros esta semana?" },
-  { id: "p5", area: "Jefe directo", texto: "¿Cómo es tu relación con tu jefe directo?" },
-  { id: "p6", area: "Carga laboral", texto: "¿Sientes que tu carga de trabajo es manejable?" },
-  { id: "p7", area: "Situación personal", texto: "¿Tienes algún problema personal que esté afectando tu trabajo?" },
-  { id: "p8", area: "Motivación", texto: "¿Qué tan motivado/a te sientes para venir a trabajar?" },
-  { id: "p9", area: "Renuncia", texto: "¿Has pensado en renunciar durante esta semana?" },
-  { id: "p10", area: "Comentario abierto", texto: "¿Quieres compartir algo más con el equipo de bienestar?" }
-];
+  const preguntas = ENCUESTA_PREGUNTAS;
 
   const setR = (id, val) => {
     setRespuestas((prev) => ({
@@ -2351,27 +2340,91 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
             {idx + 1}. {p.texto}
           </div>
 
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {[1,2,3,4,5,6,7,8,9,10].map((num) => (
-              <button
-                key={num}
-                type="button"
-                onClick={() => setR(p.id, num)}
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 10,
-                  border: respuestas[p.id] === num ? "2px solid #006D5B" : "1px solid #d1d5db",
-                  background: respuestas[p.id] === num ? "#E6FFFA" : "#ffffff",
-                  color: "#004D40",
-                  fontWeight: 800,
-                  cursor: "pointer"
-                }}
-              >
-                {num}
-              </button>
-            ))}
-          </div>
+          {p.tipo === "escala" && (
+  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+    {[1,2,3,4,5,6,7,8,9,10].map((num) => (
+      <button
+        key={num}
+        type="button"
+        onClick={() => setR(p.id, num)}
+        style={{
+          width: 38,
+          height: 38,
+          borderRadius: 10,
+          border: respuestas[p.id] === num ? "2px solid #006D5B" : "1px solid #d1d5db",
+          background: respuestas[p.id] === num ? "#E6FFFA" : "#ffffff",
+          color: "#004D40",
+          fontWeight: 800,
+          cursor: "pointer"
+        }}
+      >
+        {num}
+      </button>
+    ))}
+  </div>
+)}
+
+{p.tipo === "sino" && (
+  <div style={{ display: "flex", gap: 8 }}>
+    {["Sí", "No"].map((opcion) => (
+      <button
+        key={opcion}
+        type="button"
+        onClick={() => setR(p.id, opcion)}
+        style={{
+          padding: "10px 18px",
+          borderRadius: 10,
+          border: respuestas[p.id] === opcion ? "2px solid #006D5B" : "1px solid #d1d5db",
+          background: respuestas[p.id] === opcion ? "#E6FFFA" : "#ffffff",
+          color: "#004D40",
+          fontWeight: 800,
+          cursor: "pointer"
+        }}
+      >
+        {opcion}
+      </button>
+    ))}
+  </div>
+)}
+
+{p.tipo === "opcion" && (
+  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+    {p.opciones.map((opcion) => (
+      <button
+        key={opcion}
+        type="button"
+        onClick={() => setR(p.id, opcion)}
+        style={{
+          padding: "10px 14px",
+          borderRadius: 10,
+          border: respuestas[p.id] === opcion ? "2px solid #006D5B" : "1px solid #d1d5db",
+          background: respuestas[p.id] === opcion ? "#E6FFFA" : "#ffffff",
+          color: "#004D40",
+          fontWeight: 800,
+          cursor: "pointer"
+        }}
+      >
+        {opcion}
+      </button>
+    ))}
+  </div>
+)}
+
+{p.tipo === "abierta" && (
+  <textarea
+    placeholder="Escribe tu comentario..."
+    value={respuestas[p.id] || ""}
+    onChange={(e) => setR(p.id, e.target.value)}
+    style={{
+      width: "100%",
+      minHeight: 90,
+      padding: 12,
+      borderRadius: 10,
+      border: "1px solid #d1d5db",
+      resize: "vertical"
+    }}
+  />
+)}
         </Card>
       ))}
 
