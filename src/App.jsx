@@ -148,27 +148,87 @@ const calcularAntiguedad = (fechaIngreso) => {
 
 // ─── PULSE SCORE ENGINE ───────────────────────────────────────────────────────
 const calcPulseScore = (empId, encuestas) => {
-  const enc = encuestas.filter(e => e.empleadoId === empId);
-  if (!enc.length) return { score: 50, nivel: "Atención", color: "#f59e0b", tendencia: "→" };
-  const recientes = enc.sort((a, b) => b.semana.localeCompare(a.semana)).slice(0, 3);
-  const avgScore = Math.round(recientes.reduce((s, e) => s + e.score, 0) / recientes.length);
-  const participacion = Math.min(100, Math.round((enc.length / 5) * 100));
-  const riesgoRenuncia = recientes.some(e => e.respuestas?.riesgoRenuncia === "Sí, seriamente") ? -15 : recientes.some(e => e.respuestas?.riesgoRenuncia === "Algo") ? -5 : 0;
-  const problemasPersonales = recientes.some(e => e.respuestas?.problemasPersonales) ? -5 : 0;
-  const pulse = Math.max(0, Math.min(100, Math.round(avgScore * 0.6 + participacion * 0.3 + 10 + riesgoRenuncia + problemasPersonales)));
-  let nivel = "Rojo"; 
-let color = "#ef4444";
+  const enc = encuestas
+    .filter((e) => e.empleadoId === empId)
+    .filter((e) => Number.isFinite(Number(e.score)));
 
-if (pulse >= 80) { 
-  nivel = "Verde"; 
-  color = "#22c55e"; 
-} else if (pulse >= 60) { 
-  nivel = "Amarillo"; 
-  color = "#f59e0b"; 
-}
-  const ultDos = enc.sort((a,b)=>b.semana.localeCompare(a.semana)).slice(0,2);
-  const tendencia = ultDos.length < 2 ? "→" : ultDos[0].score > ultDos[1].score ? "↑" : ultDos[0].score < ultDos[1].score ? "↓" : "→";
-  return { score: pulse, nivel, color, tendencia };
+  if (!enc.length) {
+    return {
+      score: null,
+      nivel: "Sin datos",
+      color: "#94a3b8",
+      tendencia: "→",
+      sinDatos: true
+    };
+  }
+
+  const recientes = [...enc]
+    .sort((a, b) => b.semana.localeCompare(a.semana))
+    .slice(0, 3);
+
+  const avgScore = Math.round(
+    recientes.reduce((s, e) => s + Number(e.score), 0) / recientes.length
+  );
+
+  const participacion = Math.min(100, Math.round((enc.length / 5) * 100));
+
+  const riesgoRenuncia = recientes.some(
+    (e) =>
+      e.respuestas?.[9] === "Sí, seriamente" ||
+      e.respuestas?.p9 === "Sí, seriamente"
+  )
+    ? -15
+    : recientes.some(
+        (e) => e.respuestas?.[9] === "Algo" || e.respuestas?.p9 === "Algo"
+      )
+    ? -5
+    : 0;
+
+  const problemasPersonales = recientes.some(
+    (e) => e.respuestas?.[7] === "Sí" || e.respuestas?.p7 === "Sí"
+  )
+    ? -5
+    : 0;
+
+  const pulse = Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(
+        avgScore * 0.7 +
+          participacion * 0.2 +
+          10 +
+          riesgoRenuncia +
+          problemasPersonales
+      )
+    )
+  );
+
+  let nivel = "Rojo";
+  let color = "#ef4444";
+
+  if (pulse >= 80) {
+    nivel = "Verde";
+    color = "#22c55e";
+  } else if (pulse >= 60) {
+    nivel = "Amarillo";
+    color = "#f59e0b";
+  }
+
+  const ultDos = [...enc]
+    .sort((a, b) => b.semana.localeCompare(a.semana))
+    .slice(0, 2);
+
+  const tendencia =
+    ultDos.length < 2
+      ? "→"
+      : Number(ultDos[0].score) > Number(ultDos[1].score)
+      ? "↑"
+      : Number(ultDos[0].score) < Number(ultDos[1].score)
+      ? "↓"
+      : "→";
+
+  return { score: pulse, nivel, color, tendencia, sinDatos: false };
 };
 const getPulseStatus = (score) => {
   if (score >= 80) {
@@ -2279,11 +2339,22 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
   );
 
   const handleSubmit = () => {
-    const suma = preguntas.reduce((acc, p) => {
-      return acc + Number(respuestas[p.id] || 0);
-    }, 0);
+    const preguntasConScore = preguntas.filter((p) => p.tipo === "escala");
 
-    const score = Math.round((suma / (preguntas.length * 10)) * 100);
+const valoresNumericos = preguntasConScore
+  .map((p) => Number(respuestas[p.id]))
+  .filter((valor) => Number.isFinite(valor));
+
+if (valoresNumericos.length !== preguntasConScore.length) {
+  alert("Faltan respuestas numéricas para calcular el Pulse Score.");
+  return;
+}
+
+const score = Math.round(
+  (valoresNumericos.reduce((acc, valor) => acc + valor, 0) /
+    (valoresNumericos.length * 10)) *
+    100
+);
 
     const semaforo =
       score >= 80 ? "verde" :
@@ -2552,7 +2623,7 @@ const HistorialEmpleado = ({ user, encuestas }) => {
 
                   <div style={{ textAlign: "right" }}>
                     <div style={{ fontSize: 24, fontWeight: 900, color: status.color }}>
-                      {e.score} pts
+                     {Number.isFinite(Number(e.score)) ? Number(e.score) : 50} pts
                     </div>
                     <span style={{
                       display: "inline-block",
@@ -3685,40 +3756,74 @@ const semanaEnc = encuestas.filter(e => e.semana === semanaActual);
 const contestaron = new Set(semanaEnc.map(e => e.empleadoId)).size;
 
 const pulsePorEmpleado = empleados.map(emp => {
-  const score = calcPulseScore(emp.id, encuestas).score;
+  const pulse = calcPulseScore(emp.id, encuestas);
+
   return {
     empleado: emp,
-    score,
-    status: getPulseStatus(score)
+    score: pulse.score,
+    sinDatos: pulse.sinDatos,
+    pulse,
+    status: pulse.sinDatos
+      ? {
+          label: "Sin datos",
+          semaforo: "Sin datos",
+          color: "#94a3b8",
+          bg: "#f1f5f9"
+        }
+      : getPulseStatus(pulse.score)
   };
 });
 
-const verdes = pulsePorEmpleado.filter(e => e.status.semaforo === "Verde").length;
-const amarillos = pulsePorEmpleado.filter(e => e.status.semaforo === "Amarillo").length;
-const rojos = pulsePorEmpleado.filter(e => e.status.semaforo === "Rojo").length;
+const empleadosConDatos = pulsePorEmpleado.filter(
+  e => !e.sinDatos && Number.isFinite(Number(e.score))
+);
 
-const tendencia = ["W10","W11","W12","W13","W14"].map(w => ({
-  label: w,
-  v: Math.round(
-    encuestas.filter(e=>e.semana===`2025-${w}`).reduce((s,e)=>s+e.score,0) /
-    Math.max(1, encuestas.filter(e=>e.semana===`2025-${w}`).length)
-  )
-}));
+const verdes = empleadosConDatos.filter(e => e.status.semaforo === "Verde").length;
+const amarillos = empleadosConDatos.filter(e => e.status.semaforo === "Amarillo").length;
+const rojos = empleadosConDatos.filter(e => e.status.semaforo === "Rojo").length;
+
+const tendencia = ["W10","W11","W12","W13","W14"].map(w => {
+  const encValidas = encuestas.filter(
+    e => e.semana === `2025-${w}` && Number.isFinite(Number(e.score))
+  );
+
+  return {
+    label: w,
+    v: encValidas.length
+      ? Math.round(encValidas.reduce((s,e)=>s+Number(e.score),0) / encValidas.length)
+      : 0
+  };
+});
 
 const porSucursal = SUCURSALES.map(s => {
   const emps = empleados.filter(e=>e.sucursal===s).map(e=>e.id);
-  const enc = semanaEnc.filter(e=>emps.includes(e.empleadoId));
+  const encValidas = semanaEnc.filter(
+    e => emps.includes(e.empleadoId) && Number.isFinite(Number(e.score))
+  );
+
   return {
     label: s,
-    v: Math.round(enc.reduce((sum,e)=>sum+e.score,0)/Math.max(1,enc.length))
+    v: encValidas.length
+      ? Math.round(encValidas.reduce((sum,e)=>sum+Number(e.score),0) / encValidas.length)
+      : 0
   };
 });
 
-const avgPulse = Math.round(
-  pulsePorEmpleado.reduce((s,e)=>s+e.score,0) / Math.max(1, pulsePorEmpleado.length)
-);
+const avgPulse = empleadosConDatos.length
+  ? Math.round(
+      empleadosConDatos.reduce((s,e)=>s+Number(e.score),0) /
+      empleadosConDatos.length
+    )
+  : null;
 
-const avgPulseStatus = getPulseStatus(avgPulse);
+const avgPulseStatus = avgPulse === null
+  ? {
+      label: "Sin datos",
+      semaforo: "Sin datos",
+      color: "#94a3b8",
+      bg: "#f1f5f9"
+    }
+  : getPulseStatus(avgPulse);
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
@@ -3746,16 +3851,16 @@ const avgPulseStatus = getPulseStatus(avgPulse);
       </div>
       <Card>
         <div style={{ fontWeight: 700, fontSize: 14, color: "#004D40", marginBottom: 16 }}>🔴 Empleados en Foco Rojo</div>
-        {semanaEnc.filter(e=>e.semaforo==="rojo").length===0 ? <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin empleados en foco rojo esta semana ✅</div> :
-          semanaEnc.filter(e=>e.semaforo==="rojo").map(e => { const emp=USERS.find(u=>u.id===e.empleadoId); const ps=calcPulseScore(emp.id,encuestas); return (
-            <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid #f3f4f6" }}>
-              <Avatar name={emp.name} size={36} color="#ef4444" />
-              <div style={{ flex: 1 }}><div style={{ fontWeight: 600, fontSize: 14 }}>{emp.name}</div><div style={{ fontSize: 12, color: "#6b7280" }}>{emp.sucursal} · {emp.puesto}</div></div>
-              <Badge tipo="rojo" />
-              <PulseScoreBadge score={ps.score} nivel={ps.nivel} color={ps.color} tendencia={ps.tendencia} size="sm" />
-            </div>
-          );})
-        }
+        {empleadosConDatos.filter(e=>e.status.semaforo==="Rojo").length===0 ? <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin empleados en foco rojo esta semana ✅</div> :
+  empleadosConDatos.filter(e=>e.status.semaforo==="Rojo").map(e => { const emp=e.empleado; const ps=e.pulse; return (
+    <div key={emp.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid #f3f4f6" }}>
+      <Avatar name={emp.name} size={36} color="#ef4444" />
+      <div style={{ flex: 1 }}><div style={{ fontWeight: 600, fontSize: 14 }}>{emp.name}</div><div style={{ fontSize: 12, color: "#6b7280" }}>{emp.sucursal} · {emp.puesto}</div></div>
+      <Badge tipo="rojo" />
+      <PulseScoreBadge score={ps.score} nivel={ps.nivel} color={ps.color} tendencia={ps.tendencia} size="sm" />
+    </div>
+  );})
+}
       </Card>
     </div>
   );
@@ -4847,7 +4952,7 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
                       </div>
 
                       <div style={{ textAlign: "right" }}>
-                        <div style={{ fontWeight: 900, color: s.color }}>{e.score} pts</div>
+                        {Number.isFinite(Number(e.score)) ? Number(e.score) : 50} pts
                         <div style={{ fontSize: 12, color: s.color, fontWeight: 800 }}>
                           {s.label}
                         </div>
@@ -4939,7 +5044,7 @@ const InicioEmpleado = ({ user, encuestas, mensajes, setActive }) => {
           <button onClick={()=>setActive("mensajes")} style={{ marginTop:12,padding:"8px 16px",background:"#006D5B",color:"#fff",border:"none",borderRadius:8,fontWeight:600,fontSize:12,cursor:"pointer" }}>Hablar con psicóloga</button>
         </Card>
       </div>
-      <Card><div style={{ fontWeight:700,fontSize:14,color:"#004D40",marginBottom:12 }}>📅 Mi historial reciente</div>{mis.length===0?<div style={{ color:"#9ca3af",fontSize:13 }}>Aún no tienes encuestas.</div>:mis.sort((a,b)=>b.semana.localeCompare(a.semana)).slice(0,5).map(e=>(<div key={e.id} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid #f3f4f6",fontSize:13 }}><div style={{ color:"#374151" }}>📋 {e.semana}</div><Badge tipo={e.semaforo}/><div style={{ fontWeight:700,color:"#006D5B" }}>{e.score} pts</div></div>))}</Card>
+      <Card><div style={{ fontWeight:700,fontSize:14,color:"#004D40",marginBottom:12 }}>📅 Mi historial reciente</div>{mis.length===0?<div style={{ color:"#9ca3af",fontSize:13 }}>Aún no tienes encuestas.</div>:mis.sort((a,b)=>b.semana.localeCompare(a.semana)).slice(0,5).map(e=>(<div key={e.id} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid #f3f4f6",fontSize:13 }}><div style={{ color:"#374151" }}>📋 {e.semana}</div><Badge tipo={Number.isFinite(Number(e.score)) ? e.semaforo : "amarillo"}/><div style={{ fontWeight:700,color:"#006D5B" }}>{Number.isFinite(Number(e.score)) ? Number(e.score) : 50} pts</div></div>))}</Card>
     </div>
   );
 };
