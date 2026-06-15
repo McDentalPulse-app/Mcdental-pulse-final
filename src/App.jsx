@@ -5049,11 +5049,79 @@ const InicioEmpleado = ({ user, encuestas, mensajes, setActive }) => {
   );
 };
 
-const Reportes = () => {
+const Reportes = ({ users = [], encuestas = [] }) => {
   const generarReporte = (tipo) => {
     alert(`${tipo} generado correctamente en modo demo. Cuando conectemos Firebase, aquí se descargará el archivo real.`);
   };
+const descargarEmpleadosCSV = () => {
+  const empleados = users.filter((u) => u.role === "empleado");
 
+  const limpiarCSV = (valor) => {
+    const texto = String(valor ?? "").replace(/"/g, '""');
+    return `"${texto}"`;
+  };
+
+  const getUltimaEncuesta = (empleadoId) => {
+    return encuestas
+      .filter((e) => e.empleadoId === empleadoId && Number.isFinite(Number(e.score)))
+      .sort((a, b) => String(b.semana || "").localeCompare(String(a.semana || "")))[0];
+  };
+
+  const filas = empleados.map((emp) => {
+    const ultima = getUltimaEncuesta(emp.id);
+
+    return {
+      nombre: emp.name || "",
+      sucursal: emp.sucursal || "",
+      puesto: emp.puesto || "",
+      usuario: emp.user || "",
+      estatus: "Activo",
+      semana: ultima?.semana || "Sin datos",
+      score: Number.isFinite(Number(ultima?.score)) ? Number(ultima.score) : "Sin datos",
+      semaforo: ultima?.semaforo || "Sin datos"
+    };
+  });
+
+  const encabezados = [
+    "Nombre",
+    "Sucursal",
+    "Puesto",
+    "Usuario",
+    "Estatus",
+    "Semana",
+    "Score",
+    "Semaforo"
+  ];
+
+  const contenido = [
+    encabezados.join(","),
+    ...filas.map((fila) =>
+      [
+        fila.nombre,
+        fila.sucursal,
+        fila.puesto,
+        fila.usuario,
+        fila.estatus,
+        fila.semana,
+        fila.score,
+        fila.semaforo
+      ].map(limpiarCSV).join(",")
+    )
+  ].join("\n");
+
+  const blob = new Blob(["\uFEFF" + contenido], {
+    type: "text/csv;charset=utf-8;"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `empleados_mcdental_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
   const btnStyle = {
     background: "#ecfdf5",
     color: "#00796B",
@@ -5114,9 +5182,9 @@ const Reportes = () => {
             🏢 Por Sucursal PDF
           </button>
 
-          <button onClick={() => generarReporte("Empleados CSV")} style={btnStyle}>
-            👥 Empleados CSV
-          </button>
+          <button onClick={descargarEmpleadosCSV} style={btnStyle}>
+  👥 Empleados CSV
+</button>
         </div>
       </Card>
     </div>
@@ -5936,7 +6004,7 @@ const addReconocimiento = async (reconocimiento) => {
       if (active==="expedientes") return <ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} archivosExpediente={archivosExpediente} onSubirArchivoExpediente={subirArchivoExpediente} />;
       if (active==="reconocimientos") return <ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />;
       if (active==="eventospersonal") return <EventosPersonal users={USERS} />;
-      if (active==="reportes") return <Reportes/>;
+      if (active==="reportes") return <Reportes users={USERS} encuestas={encuestas} />;
       if (active==="confidenciales") return <ReportesConfidencialesPanel reportes={reportesConfidenciales} />;
       if (active==="config") return <Config/>;
       if (active==="encuestas") return (<div><h2 style={{ margin:"0 0 20px",fontSize:22,fontWeight:800,color:"#004D40" }}>📋 Gestión de Encuestas</h2><Card><div style={{ fontWeight:700,fontSize:14,color:"#004D40",marginBottom:12 }}>Encuesta activa: {semanaActual}</div><div style={{ fontSize:13,color:"#6b7280",marginBottom:16 }}>{ENCUESTA_PREGUNTAS.length} preguntas · {new Set(encuestas.filter(e=>e.semana===semanaActual).map(e=>e.empleadoId)).size} respuestas</div>{ENCUESTA_PREGUNTAS.map((p,i)=>(<div key={p.id} style={{ padding:"10px 0",borderBottom:"1px solid #f3f4f6",fontSize:13 }}><span style={{ color:"#006D5B",fontWeight:700,marginRight:8 }}>{i+1}.</span><span style={{ color:"#374151" }}>{p.texto}</span><span style={{ color:"#9ca3af",marginLeft:8,fontSize:11 }}>({p.tipo})</span></div>))}<button style={{ marginTop:16,padding:"10px 20px",background:"#006D5B",color:"#fff",border:"none",borderRadius:10,fontWeight:700,cursor:"pointer" }}>+ Crear encuesta</button></Card></div>);
