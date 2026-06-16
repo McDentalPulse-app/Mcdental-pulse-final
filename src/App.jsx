@@ -424,7 +424,20 @@ const semaforoColor = { verde: "#22c55e", amarillo: "#f59e0b", rojo: "#ef4444" }
 const semaforoBg = { verde: "#dcfce7", amarillo: "#fef3c7", rojo: "#fee2e2" };
 const semaforoLabel = { verde: "Estable", amarillo: "Atención", rojo: "Foco Rojo" };
 const getInitials = (name) => name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
-
+const UI = {
+  verde: "#007A68",
+  verdeOscuro: "#003F35",
+  verdeMedio: "#006D5B",
+  aqua: "#00A88F",
+  azul: "#1F3A8A",
+  grisFondo: "#F3F7F6",
+  grisTexto: "#64748B",
+  grisSuave: "#E2E8F0",
+  blanco: "#FFFFFF",
+  sombra: "0 18px 45px rgba(15, 23, 42, 0.10)",
+  sombraSuave: "0 8px 24px rgba(15, 23, 42, 0.08)",
+  radio: 22
+};
 const Badge = ({ tipo }) => (
   <span style={{ background: semaforoBg[tipo], color: semaforoColor[tipo], padding: "2px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
     <span style={{ width: 7, height: 7, borderRadius: "50%", background: semaforoColor[tipo], display: "inline-block" }} />{semaforoLabel[tipo]}
@@ -434,14 +447,101 @@ const Avatar = ({ name, size = 36, color = "#006D5B" }) => (
   <div style={{ width: size, height: size, borderRadius: "50%", background: color, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: size * 0.35, flexShrink: 0 }}>{getInitials(name)}</div>
 );
 const Card = ({ children, style = {} }) => (
-  <div style={{ background: "#fff", borderRadius: 16, padding: "20px 24px", boxShadow: "0 1px 4px rgba(0,0,0,.07)", ...style }}>{children}</div>
+  <div
+    style={{
+      background: "linear-gradient(180deg, #ffffff 0%, #fbfefe 100%)",
+      borderRadius: UI.radio,
+      padding: "24px 26px",
+      border: "1px solid rgba(0, 109, 91, 0.08)",
+      boxShadow: UI.sombraSuave,
+      transition: "box-shadow .2s ease, transform .2s ease",
+      ...style
+    }}
+  >
+    {children}
+  </div>
 );
-const KPI = ({ label, value, sub, color = "#006D5B", icon }) => (
-  <Card style={{ flex: 1, minWidth: 130 }}>
-    <div style={{ fontSize: 22, marginBottom: 4 }}>{icon}</div>
-    <div style={{ fontSize: 30, fontWeight: 800, color, lineHeight: 1 }}>{value}</div>
-    <div style={{ fontSize: 13, fontWeight: 600, color: "#374151", marginTop: 4 }}>{label}</div>
-    {sub && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>{sub}</div>}
+const KPI = ({ label, value, sub, color = UI.verdeMedio, icon }) => (
+  <Card
+    style={{
+      flex: 1,
+      minWidth: 150,
+      padding: 20,
+      position: "relative",
+      overflow: "hidden"
+    }}
+  >
+    <div
+      style={{
+        position: "absolute",
+        right: -22,
+        top: -22,
+        width: 90,
+        height: 90,
+        borderRadius: "50%",
+        background: `${color}14`
+      }}
+    />
+
+    <div
+      style={{
+        width: 42,
+        height: 42,
+        borderRadius: 14,
+        background: `${color}18`,
+        color,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 22,
+        marginBottom: 14,
+        position: "relative",
+        zIndex: 1
+      }}
+    >
+      {icon}
+    </div>
+
+    <div
+      style={{
+        fontSize: 34,
+        fontWeight: 950,
+        color,
+        lineHeight: 1,
+        letterSpacing: "-1px",
+        position: "relative",
+        zIndex: 1
+      }}
+    >
+      {value}
+    </div>
+
+    <div
+      style={{
+        fontSize: 13,
+        fontWeight: 800,
+        color: "#0f172a",
+        marginTop: 8,
+        position: "relative",
+        zIndex: 1
+      }}
+    >
+      {label}
+    </div>
+
+    {sub && (
+      <div
+        style={{
+          fontSize: 11,
+          color: UI.grisTexto,
+          marginTop: 4,
+          position: "relative",
+          zIndex: 1
+        }}
+      >
+        {sub}
+      </div>
+    )}
   </Card>
 );
 const MiniBar = ({ data, colorFn }) => {
@@ -1489,28 +1589,194 @@ const Sidebar = ({ user, active, setActive, onLogout }) => {
   };
   const items = navItems[user.role] || [];
   return (
-    <div style={{ width: 220, background: "#004D40", color: "#fff", display: "flex", flexDirection: "column", minHeight: "100vh", flexShrink: 0 }}>
-      <div style={{ padding: "18px 16px 14px", borderBottom: "1px solid rgba(255,255,255,.1)" }}>
-        <img src={LOGO_SMALL} alt="McDental Pulse" style={{ width: "100%", maxWidth: 180, height: "auto", display: "block" }} />
-        <div style={{ fontSize: 9, color: "#80cbc4", marginTop: 6, letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 700 }}>✨ AI Engine Activado</div>
+  <aside
+    style={{
+      width: 248,
+      background: "linear-gradient(180deg, #003F35 0%, #005647 52%, #00382F 100%)",
+      color: "#fff",
+      display: "flex",
+      flexDirection: "column",
+      minHeight: "100vh",
+      flexShrink: 0,
+      boxShadow: "14px 0 35px rgba(15, 23, 42, 0.14)",
+      position: "sticky",
+      top: 0
+    }}
+  >
+    <div
+      style={{
+        padding: "22px 22px 18px",
+        borderBottom: "1px solid rgba(255,255,255,.12)"
+      }}
+    >
+      <div
+        style={{
+          background: "rgba(255,255,255,.08)",
+          borderRadius: 18,
+          padding: 10,
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,.12)"
+        }}
+      >
+        <img
+          src={LOGO_SMALL}
+          alt="McDental Pulse"
+          style={{
+            width: "100%",
+            maxWidth: 180,
+            display: "block",
+            margin: "0 auto"
+          }}
+        />
       </div>
-      <div style={{ padding: "16px 12px", flex: 1 }}>
-        {items.map(item => (
-          <button key={item.key} onClick={() => setActive(item.key)} style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: active === item.key ? "rgba(255,255,255,.15)" : "transparent", color: active === item.key ? "#fff" : "#a7f3d0", display: "flex", alignItems: "center", gap: 10, fontSize: 13, fontWeight: active === item.key ? 700 : 400, cursor: "pointer", textAlign: "left", marginBottom: 2 }}>
-            <span>{item.icon}</span>{item.label}
-            {item.badge && <span style={{ marginLeft: "auto", background: "linear-gradient(135deg,#f97316,#ec4899)", color: "#fff", fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 99 }}>{item.badge}</span>}
-          </button>
-        ))}
-      </div>
-      <div style={{ padding: "16px 12px", borderTop: "1px solid rgba(255,255,255,.1)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-          <Avatar name={user.name} size={32} color="#00897B" />
-          <div><div style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>{user.name.split(" ")[0]}</div><div style={{ fontSize: 10, color: "#80cbc4", textTransform: "capitalize" }}>{user.role}</div></div>
-        </div>
-        <button onClick={onLogout} style={{ width: "100%", padding: "8px", background: "rgba(255,255,255,.1)", color: "#fff", border: "none", borderRadius: 8, fontSize: 12, cursor: "pointer" }}>Cerrar sesión</button>
+
+      <div
+        style={{
+          marginTop: 12,
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 7,
+          padding: "6px 10px",
+          borderRadius: 999,
+          background: "rgba(0,168,143,.18)",
+          color: "#CFFDF5",
+          fontSize: 10,
+          letterSpacing: 1.8,
+          textTransform: "uppercase",
+          fontWeight: 900
+        }}
+      >
+        ✨ AI Engine Activo
       </div>
     </div>
-  );
+
+    <nav style={{ padding: "18px 14px", flex: 1 }}>
+      {items.map((item) => {
+        const isActive = active === item.key;
+
+        return (
+          <button
+            key={item.key}
+            onClick={() => setActive(item.key)}
+            style={{
+              width: "100%",
+              padding: "12px 13px",
+              borderRadius: 14,
+              border: isActive ? "1px solid rgba(255,255,255,.9)" : "1px solid transparent",
+              background: isActive
+                ? "linear-gradient(135deg, rgba(255,255,255,.22), rgba(255,255,255,.12))"
+                : "transparent",
+              color: "#fff",
+              textAlign: "left",
+              display: "flex",
+              alignItems: "center",
+              gap: 11,
+              marginBottom: 7,
+              cursor: "pointer",
+              fontWeight: isActive ? 900 : 700,
+              fontSize: 13,
+              boxShadow: isActive ? "0 10px 25px rgba(0,0,0,.16)" : "none"
+            }}
+          >
+            <span
+              style={{
+                width: 25,
+                height: 25,
+                borderRadius: 9,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: isActive ? "rgba(255,255,255,.18)" : "rgba(255,255,255,.08)"
+              }}
+            >
+              {item.icon}
+            </span>
+
+            <span style={{ flex: 1 }}>{item.label}</span>
+
+            {item.badge && (
+              <span
+                style={{
+                  background: "linear-gradient(135deg,#ff6b6b,#ee3f7f)",
+                  color: "#fff",
+                  fontSize: 9,
+                  fontWeight: 900,
+                  padding: "3px 7px",
+                  borderRadius: 999
+                }}
+              >
+                {item.badge}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </nav>
+
+    <div
+      style={{
+        padding: "18px 14px",
+        borderTop: "1px solid rgba(255,255,255,.12)"
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 11,
+          padding: 12,
+          borderRadius: 16,
+          background: "rgba(255,255,255,.08)",
+          marginBottom: 12
+        }}
+      >
+        <Avatar name={user.name} size={36} color="#00A88F" />
+
+        <div style={{ minWidth: 0 }}>
+          <div
+            style={{
+              fontSize: 13,
+              fontWeight: 900,
+              color: "#fff",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis"
+            }}
+          >
+            {user.name.split(" ")[0]}
+          </div>
+
+          <div
+            style={{
+              fontSize: 10,
+              color: "#B7F7EE",
+              textTransform: "capitalize",
+              marginTop: 2
+            }}
+          >
+            {user.role}
+          </div>
+        </div>
+      </div>
+
+      <button
+        onClick={onLogout}
+        style={{
+          width: "100%",
+          padding: "10px 12px",
+          background: "rgba(255,255,255,.12)",
+          color: "#fff",
+          border: "1px solid rgba(255,255,255,.12)",
+          borderRadius: 12,
+          fontSize: 12,
+          fontWeight: 900,
+          cursor: "pointer"
+        }}
+      >
+        Cerrar sesión
+      </button>
+    </div>
+  </aside>
+);
 };
 
 // ─── ADMIN DASHBOARD ──────────────────────────────────────────────────────────
@@ -6640,9 +6906,43 @@ onRestablecerPassword={restablecerPasswordUsuario}
     return <div style={{ color:"#9ca3af",padding:40,textAlign:"center" }}>Vista en construcción</div>;
   };
   return (
-    <div style={{ display:"flex",minHeight:"100vh",fontFamily:"'Segoe UI',system-ui,sans-serif",background:"#f8fafc" }}>
-      <Sidebar user={user} active={active} setActive={setActive} onLogout={()=>setUser(null)}/>
-      <div style={{ flex:1,padding:28,overflowY:"auto" }}>{renderView()}</div>
-    </div>
-  );
+  <div
+    style={{
+      display: "flex",
+      minHeight: "100vh",
+      fontFamily: "'Inter','Segoe UI',system-ui,sans-serif",
+      background:
+  "linear-gradient(135deg, #f4fbf9 0%, #f8fafc 42%, #ffffff 100%)",
+      color: "#0f172a"
+    }}
+  >
+    <Sidebar
+      user={user}
+      active={active}
+      setActive={setActive}
+      onLogout={() => setUser(null)}
+    />
+
+    <main
+      style={{
+      flex: 1,
+      padding: "34px 38px",
+      overflowY: "auto",
+      overflowX: "hidden",
+      minWidth: 0
+    }}
+>
+      <div
+      style={{
+      width: "100%",
+      maxWidth: 1180,
+      margin: "0 auto",
+      overflowX: "hidden"
+    }}
+>
+        {renderView()}
+      </div>
+    </main>
+  </div>
+);
 }
