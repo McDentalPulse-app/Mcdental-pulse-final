@@ -3946,7 +3946,9 @@ const EmpleadosList = ({
   permisos = [],
   descuentos = [],
   reconocimientos = [],
-  reportesConfidenciales = []
+  reportesConfidenciales = [],
+  currentUser,
+  onRestablecerPassword
 }) => {
   const [filtroSucursal, setFiltroSucursal] = useState("Todas");
   const [filtroSemaforo, setFiltroSemaforo] = useState("Todos");
@@ -3954,6 +3956,7 @@ const EmpleadosList = ({
   const [selected, setSelected] = useState(null);
 
   const empleados = USERS.filter(u => u.role === "empleado");
+  const puedeRestablecer = ["admin", "rh", "psicologa"].includes(currentUser?.role) && typeof onRestablecerPassword === "function";
 
   const getUltimoSemaforo = (empId) => {
     const enc = encuestas
@@ -4047,7 +4050,23 @@ const EmpleadosList = ({
                 </div>
               </div>
             </div>
-
+{puedeRestablecer && (
+  <button
+    onClick={() => onRestablecerPassword(selected)}
+    style={{
+      marginTop: 14,
+      padding: "10px 14px",
+      borderRadius: 10,
+      border: "none",
+      background: "#f59e0b",
+      color: "white",
+      fontWeight: 900,
+      cursor: "pointer"
+    }}
+  >
+    🔑 Restablecer contraseña
+  </button>
+)}
             <div style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
@@ -6097,6 +6116,52 @@ const cambiarPasswordActual = async (nuevaPassword) => {
     alert("Error al cambiar la contraseña.");
   }
 };
+const restablecerPasswordUsuario = async (empleado) => {
+  try {
+    if (!["admin", "rh", "psicologa"].includes(user?.role)) {
+  alert("No tienes permiso para restablecer contraseñas.");
+  return;
+}
+
+    const registroPassword = usuariosPassword.find((item) => item.userId === empleado.id);
+
+    if (!registroPassword?.id) {
+      alert("No se encontró el registro de contraseña de este usuario.");
+      return;
+    }
+
+    const confirmar = window.confirm(
+      `¿Deseas restablecer la contraseña de ${empleado.name} a emp123?`
+    );
+
+    if (!confirmar) return;
+
+    await updateDoc(doc(db, "usuariosPassword", registroPassword.id), {
+      password: "emp123",
+      debeCambiarPassword: true,
+      restablecidoEn: serverTimestamp(),
+      restablecidoPor: user?.name || "Sistema"
+    });
+
+    setUsuariosPassword((prev) =>
+      prev.map((item) =>
+        item.id === registroPassword.id
+          ? {
+              ...item,
+              password: "emp123",
+              debeCambiarPassword: true,
+              restablecidoPor: user?.name || "Sistema"
+            }
+          : item
+      )
+    );
+
+    alert(`Contraseña restablecida para ${empleado.name}.`);
+  } catch (error) {
+    console.error("Error restableciendo contraseña:", error);
+    alert("Error al restablecer contraseña.");
+  }
+};
   const addEncuesta = async (enc) => {
   const nuevaEncuesta = {
     ...enc,
@@ -6515,6 +6580,8 @@ const addReconocimiento = async (reconocimiento) => {
       if (active==="ai") return <AIEngine encuestas={encuestas}mensajes={mensajes}notas={notas}userRole="admin"permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>;
       if (active==="empleados") return (<EmpleadosList encuestas={encuestas} notas={notas}
     role="admin"
+    currentUser={user}
+onRestablecerPassword={restablecerPasswordUsuario}
     vacaciones={vacaciones}
     permisos={permisos}
     descuentos={descuentos}
@@ -6540,6 +6607,8 @@ const addReconocimiento = async (reconocimiento) => {
     encuestas={encuestas}
     notas={notas}
     role="psicologa"
+    currentUser={user}
+onRestablecerPassword={restablecerPasswordUsuario}
     vacaciones={vacaciones}
     permisos={permisos}
     descuentos={descuentos}
