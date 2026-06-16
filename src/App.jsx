@@ -94,9 +94,23 @@ const USERS = [
 { id: 82, name: "SEAN DAVID FLORES URIBE", role: "empleado", user: "sean flores", pass: "emp123", sucursal: "McDental Leon", puesto: "Doctor", fechaNacimiento: "", fechaIngreso: "" },
 { id: 83, name: "MIREYA HERNANDEZ FLORES", role: "empleado", user: "mireya hernandez", pass: "emp123", sucursal: "Martinez De La Torre", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
 { id: 84, name: "FABIOLA BELEN MARIANO", role: "empleado", user: "fabiola mariano", pass: "emp123", sucursal: "Martinez De La Torre", puesto: "Doctora", fechaNacimiento: "", fechaIngreso: "" },
-{ id: 85, name: "ALIA MARICRUZ LOPEZ GUZMAN", role: "empleado", user: "alia lopez", pass: "emp123", sucursal: "Martinez De La Torre", puesto: "Recepcionista", fechaNacimiento: "", fechaIngreso: "" }
+{ id: 85, name: "ALIA MARICRUZ LOPEZ GUZMAN", role: "empleado", user: "alia lopez", pass: "emp123", sucursal: "Martinez De La Torre", puesto: "Recepcionista", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 86, name: "ANA KAREN MEZA GONZALEZ", role: "empleado", user: "ana meza", pass: "emp123", sucursal: "Oficina Central", puesto: "Servicio al cliente/Aux Lic. Mario", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 87, name: "NOEMI TAMAR HERNANDEZ REYES", role: "empleado", user: "noemi hernandez", pass: "emp123", sucursal: "Oficina Central", puesto: "Aux. Gerencia", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 88, name: "ELIZABETH MARTINEZ FERRETIZ", role: "empleado", user: "elizabeth martinez", pass: "emp123", sucursal: "Oficina Central", puesto: "Coordinadora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 89, name: "MARIA CONCEPCION ANDRADE GARCIA", role: "empleado", user: "maria concepcion", pass: "emp123", sucursal: "Oficina Central", puesto: "Doctora/Especialista", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 90, name: "JESUS ARMANDO BAUTISTA DEL ANGEL", role: "empleado", user: "jesus bautista", pass: "emp123", sucursal: "Oficina Central", puesto: "Mantenimiento", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 91, name: "MARIA COVARRUVIAS TORRES", role: "empleado", user: "maria covarruvias", pass: "emp123", sucursal: "Oficina Central", puesto: "Limpieza", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 92, name: "ANA ROSA GOMEZ PEREZ", role: "empleado", user: "ana gomez", pass: "emp123", sucursal: "Oficina Central", puesto: "Coordinadora", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 93, name: "MINERVA GEORGINA SANCHEZ SILVA", role: "empleado", user: "minerva sanchez", pass: "emp123", sucursal: "Oficina Central", puesto: "Marketing", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 94, name: "SAMANTA PEREZ CARREÑO", role: "empleado", user: "samanta perez", pass: "emp123", sucursal: "Oficina Central", puesto: "Convenios", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 95, name: "ALEXIS ALAN RAFAEL CASTAN", role: "empleado", user: "alexis castan", pass: "emp123", sucursal: "Oficina Central", puesto: "Mantenimiento", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 96, name: "ALFREDO EDUARDO BURGOS REYES", role: "empleado", user: "alfredo burgos", pass: "emp123", sucursal: "Oficina Central", puesto: "Ing. Sistemas", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 97, name: "FRIDA VIRIDIANA MOGOLLON TELLEZ", role: "empleado", user: "frida mogollon", pass: "emp123", sucursal: "Oficina Central", puesto: "Psicométricos", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 98, name: "ANA GORETTY SALAS", role: "psicologa", user: "ana salas", pass: "psico123", sucursal: "Oficina Central", puesto: "Gerente Recursos Humanos", fechaNacimiento: "", fechaIngreso: "" },
+{ id: 99, name: "MARICRUZ IZAGUIRRE OLLERVIDES", role: "rh", user: "maricruz izaguirre", pass: "rh123", sucursal: "Oficina Central", puesto: "Aux. Recursos Humanos", fechaNacimiento: "", fechaIngreso: "" }
 ];
-const SUCURSALES = ["Norte","Sur","Centro","Central","McDental Palmas","McDental Madero","McDental Tampico","McDental Tampico Obregon","Popular Tampico","McDental Tuxpan","Popular Tuxpan","McDental Poza Rica","Popular Poza Rica","McDental Valles","McDental Irapuato","Popular Irapuato","McDental Victoria","McDental Reynosa","McDental Pachuca","McDental Hermosillo","McDental Villahermosa","McDental Huejutla","McDental Altamira","McDental Ebano","Popular Reynosa","McDental Mante","McDental Leon","Martinez De La Torre"];
+const SUCURSALES = ["Norte","Sur","Centro","Central","Oficina Central","McDental Palmas","McDental Madero","McDental Tampico","McDental Tampico Obregon","Popular Tampico","McDental Tuxpan","Popular Tuxpan","McDental Poza Rica","Popular Poza Rica","McDental Valles","McDental Irapuato","Popular Irapuato","McDental Victoria","McDental Reynosa","McDental Pachuca","McDental Hermosillo","McDental Villahermosa","McDental Huejutla","McDental Altamira","McDental Ebano","Popular Reynosa","McDental Mante","McDental Leon","Martinez De La Torre"];
 const VACACIONES_INIT = [];
 const PERMISOS_INIT = [];
 
@@ -229,6 +243,11 @@ const calcPulseScore = (empId, encuestas) => {
       : "→";
 
   return { score: pulse, nivel, color, tendencia, sinDatos: false };
+
+const puedeRestablecerPassword = (currentUser) => {
+  return ["admin", "rh", "psicologa"].includes(currentUser?.role);
+};
+
 };
 const getPulseStatus = (score) => {
   if (score >= 80) {
@@ -1374,9 +1393,31 @@ const cambiosComportamiento = analisisIA.filter(a =>
   );
 };
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
-const Login = ({ onLogin }) => {
+const Login = ({ onLogin, usuariosPassword }) => {
   const [u, setU] = useState(""); const [p, setP] = useState(""); const [err, setErr] = useState("");
-  const handle = () => { const found = USERS.find(x => x.user === u && x.pass === p); if (found) onLogin(found); else setErr("Usuario o contraseña incorrectos"); };
+  const handle = () => {
+  const usuarioBase = USERS.find((x) => x.user === u);
+
+  if (!usuarioBase) {
+    setErr("Usuario o contraseña incorrectos");
+    return;
+  }
+
+  const accesoFirebase = usuariosPassword.find((x) => x.userId === usuarioBase.id);
+
+  const passwordValida = accesoFirebase
+    ? accesoFirebase.password === p
+    : usuarioBase.pass === p;
+
+  if (passwordValida) {
+    onLogin({
+      ...usuarioBase,
+      accesoFirebase
+    });
+  } else {
+    setErr("Usuario o contraseña incorrectos");
+  }
+};
   const demo = (user) => onLogin(USERS.find(x => x.user === user));
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg,#004D40 0%,#006D5B 50%,#00897B 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI',sans-serif" }}>
@@ -5494,7 +5535,7 @@ semáforos, sucursales y participación.
     </div>
   );
 };
-const Config = () => {
+const Config = ({ inicializarUsuariosPassword }) => {
   const [verde, setVerde] = useState(70);
   const [amarillo, setAmarillo] = useState(45);
   const [rojo, setRojo] = useState(45);
@@ -5712,9 +5753,100 @@ const Config = () => {
     </div>
   );
 };
+const CambiarPassword = ({ user, onCambiarPassword }) => {
+  const [nueva, setNueva] = useState("");
+  const [confirmar, setConfirmar] = useState("");
+  const [err, setErr] = useState("");
+
+  const guardar = () => {
+    if (!nueva.trim() || !confirmar.trim()) {
+      setErr("Escribe y confirma tu nueva contraseña.");
+      return;
+    }
+
+    if (nueva.length < 6) {
+      setErr("La contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+
+    if (nueva !== confirmar) {
+      setErr("Las contraseñas no coinciden.");
+      return;
+    }
+
+    onCambiarPassword(nueva);
+  };
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "linear-gradient(135deg,#004D40 0%,#006D5B 50%,#00897B 100%)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24
+    }}>
+      <div style={{
+        width: 420,
+        background: "white",
+        borderRadius: 24,
+        padding: 32,
+        boxShadow: "0 20px 60px rgba(0,0,0,.25)",
+        textAlign: "center"
+      }}>
+        <img src={LOGO_SMALL} alt="McDental Pulse" style={{ width: "100%", maxWidth: 300, marginBottom: 16 }} />
+
+        <h2 style={{ color: "#004D40", marginBottom: 8 }}>
+          Cambia tu contraseña
+        </h2>
+
+        <p style={{ color: "#64748b", marginBottom: 20 }}>
+          Hola {user?.name}. Por seguridad, crea una nueva contraseña para continuar.
+        </p>
+
+        <input
+          type="password"
+          placeholder="Nueva contraseña"
+          value={nueva}
+          onChange={(e) => setNueva(e.target.value)}
+          style={{ width: "100%", padding: "12px 16px", borderRadius: 10, border: "1.5px solid #cbd5e1", marginBottom: 12 }}
+        />
+
+        <input
+          type="password"
+          placeholder="Confirmar contraseña"
+          value={confirmar}
+          onChange={(e) => setConfirmar(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && guardar()}
+          style={{ width: "100%", padding: "12px 16px", borderRadius: 10, border: "1.5px solid #cbd5e1", marginBottom: 12 }}
+        />
+
+        {err && <div style={{ color: "#ef4444", fontSize: 13, marginBottom: 12 }}>{err}</div>}
+
+        <button
+          onClick={guardar}
+          style={{
+            width: "100%",
+            padding: "13px",
+            borderRadius: 10,
+            border: "none",
+            background: "#006D5B",
+            color: "white",
+            fontWeight: 900,
+            cursor: "pointer"
+          }}
+        >
+          Guardar nueva contraseña
+        </button>
+      </div>
+    </div>
+  );
+};
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState(null);
+  const [usuariosPassword, setUsuariosPassword] = useState([]);
+  const [requiereCambioPassword, setRequiereCambioPassword] = useState(false);
   const [active, setActive] = useState("");
   const [encuestas, setEncuestas] = useState([]);
   const [mensajes, setMensajes] = useState(MENSAJES_INIT);
@@ -5744,11 +5876,38 @@ export default function App() {
     } catch (error) {
       console.error("Error cargando archivos de expediente:", error);
     }
+    const usuariosPasswordSnapshot = await getDocs(collection(db, "usuariosPassword"));
+const usuariosPasswordData = usuariosPasswordSnapshot.docs.map((docu) => ({
+  id: docu.id,
+  ...docu.data()
+}));
+setUsuariosPassword(usuariosPasswordData);
   };
 
   cargarArchivosExpediente();
 }, []);
+const inicializarUsuariosPassword = async () => {
+  try {
+    for (const empleado of USERS) {
+      const existe = usuariosPassword.find((u) => u.userId === empleado.id);
 
+      if (!existe) {
+        await addDoc(collection(db, "usuariosPassword"), {
+          userId: empleado.id,
+          usuario: empleado.user,
+          password: empleado.pass,
+          debeCambiarPassword: true,
+          creadoEn: serverTimestamp()
+        });
+      }
+    }
+
+    alert("Usuarios de contraseña inicializados.");
+  } catch (error) {
+    console.error("Error inicializando usuariosPassword:", error);
+    alert("Error al inicializar usuarios de contraseña.");
+  }
+};
 const subirArchivoExpediente = async ({ empleado, archivo, tipo }) => {
   if (!empleado || !archivo) {
     alert("Selecciona empleado y archivo.");
@@ -5887,7 +6046,57 @@ if (descuentosFirebase.length > 0) {
   cargarReportesConfidenciales();
 }, []);
   const [reconocimientos, setReconocimientos] = useState(RECONOCIMIENTOS_INIT);
-  const handleLogin = (u) => { setUser(u); setActive(u.role==="empleado"?"inicio":"dashboard"); };
+  const handleLogin = (u) => {
+  setUser(u);
+
+  if (u.accesoFirebase?.debeCambiarPassword) {
+    setRequiereCambioPassword(true);
+    setActive("cambiarPassword");
+    return;
+  }
+
+  setRequiereCambioPassword(false);
+  setActive(u.role === "empleado" ? "inicio" : "dashboard");
+};
+const cambiarPasswordActual = async (nuevaPassword) => {
+  try {
+    if (!user?.accesoFirebase?.id) {
+      alert("No se encontró el registro de contraseña del usuario.");
+      return;
+    }
+
+    await updateDoc(doc(db, "usuariosPassword", user.accesoFirebase.id), {
+      password: nuevaPassword,
+      debeCambiarPassword: false,
+      actualizadoEn: serverTimestamp()
+    });
+
+    setUsuariosPassword((prev) =>
+      prev.map((item) =>
+        item.id === user.accesoFirebase.id
+          ? { ...item, password: nuevaPassword, debeCambiarPassword: false }
+          : item
+      )
+    );
+
+    setUser((prev) => ({
+      ...prev,
+      accesoFirebase: {
+        ...prev.accesoFirebase,
+        password: nuevaPassword,
+        debeCambiarPassword: false
+      }
+    }));
+
+    setRequiereCambioPassword(false);
+    setActive(user.role === "empleado" ? "inicio" : "dashboard");
+
+    alert("Contraseña actualizada correctamente.");
+  } catch (error) {
+    console.error("Error cambiando contraseña:", error);
+    alert("Error al cambiar la contraseña.");
+  }
+};
   const addEncuesta = async (enc) => {
   const nuevaEncuesta = {
     ...enc,
@@ -5975,7 +6184,15 @@ if (descuentosFirebase.length > 0) {
     alert("La nota se guardó en la app, pero no se pudo guardar en Firebase.");
   }
 };
-  if (!user) return <Login onLogin={handleLogin} />;
+ if (!user) return <Login onLogin={handleLogin} usuariosPassword={usuariosPassword} />;
+ if (requiereCambioPassword) {
+  return (
+    <CambiarPassword
+      user={user}
+      onCambiarPassword={cambiarPasswordActual}
+    />
+  );
+}
   const updateVacacionEstado = async (id, estado, comentarioRH = "") => {
   const vacacionAntes = vacaciones.find(v => v.id === id);
 
@@ -6310,7 +6527,7 @@ const addReconocimiento = async (reconocimiento) => {
       if (active==="eventospersonal") return <EventosPersonal users={USERS} />;
       if (active==="reportes") return <Reportes users={USERS} encuestas={encuestas} />;
       if (active==="confidenciales") return <ReportesConfidencialesPanel reportes={reportesConfidenciales} />;
-      if (active==="config") return <Config/>;
+      if (active==="config") return <Config inicializarUsuariosPassword={inicializarUsuariosPassword} />;
       if (active==="encuestas") return (<div><h2 style={{ margin:"0 0 20px",fontSize:22,fontWeight:800,color:"#004D40" }}>📋 Gestión de Encuestas</h2><Card><div style={{ fontWeight:700,fontSize:14,color:"#004D40",marginBottom:12 }}>Encuesta activa: {semanaActual}</div><div style={{ fontSize:13,color:"#6b7280",marginBottom:16 }}>{ENCUESTA_PREGUNTAS.length} preguntas · {new Set(encuestas.filter(e=>e.semana===semanaActual).map(e=>e.empleadoId)).size} respuestas</div>{ENCUESTA_PREGUNTAS.map((p,i)=>(<div key={p.id} style={{ padding:"10px 0",borderBottom:"1px solid #f3f4f6",fontSize:13 }}><span style={{ color:"#006D5B",fontWeight:700,marginRight:8 }}>{i+1}.</span><span style={{ color:"#374151" }}>{p.texto}</span><span style={{ color:"#9ca3af",marginLeft:8,fontSize:11 }}>({p.tipo})</span></div>))}<button style={{ marginTop:16,padding:"10px 20px",background:"#006D5B",color:"#fff",border:"none",borderRadius:10,fontWeight:700,cursor:"pointer" }}>+ Crear encuesta</button></Card></div>);
     }
     if (user.role==="psicologa") {
