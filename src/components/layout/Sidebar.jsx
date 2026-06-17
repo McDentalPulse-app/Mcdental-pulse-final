@@ -1,6 +1,6 @@
 import React from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { LOGO_SMALL } from "../../App";
+import logoSmall from "../../assets/logos/logo-small.png";
 import Avatar from "../ui/Avatar";
 
 const Sidebar = ({ active, setActive }) => {
@@ -80,7 +80,7 @@ const Sidebar = ({ active, setActive }) => {
         }}
       >
         <img
-          src={LOGO_SMALL}
+          src={logoSmall}
           alt="McDental Pulse"
           style={{
             width: "100%",
