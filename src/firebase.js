@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, enableMultiTabIndexedDbPersistence } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
@@ -14,4 +14,13 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 export const db = getFirestore(app);
+
+try {
+  enableMultiTabIndexedDbPersistence(db).catch((err) => {
+    console.warn("La persistencia offline no se pudo habilitar:", err);
+  });
+} catch (error) {
+  console.warn("Error al intentar habilitar persistencia:", error);
+}
+
 export const storage = getStorage(app);
