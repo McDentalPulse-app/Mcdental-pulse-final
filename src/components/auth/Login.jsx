@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { LOGO_MED } from "../../App";
+import logoMed from "../../assets/logos/logo-med.png";
 
 const Login = () => {
   const { login, loadingAuth } = useAuth();
@@ -36,7 +36,7 @@ const Login = () => {
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg,#004D40 0%,#006D5B 50%,#00897B 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI',sans-serif" }}>
       <div style={{ width: 420, padding: 40, background: "#fff", borderRadius: 24, boxShadow: "0 20px 60px rgba(0,0,0,.2)" }}>
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <img src={LOGO_MED} alt="McDental Pulse" style={{ width: "100%", maxWidth: 340, height: "auto", marginBottom: 12, display: "block", margin: "0 auto 12px" }} />
+          <img src={logoMed} alt="McDental Pulse" style={{ width: "100%", maxWidth: 340, height: "auto", marginBottom: 12, display: "block", margin: "0 auto 12px" }} />
           <div style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>"Medimos bienestar para cuidar mejor a nuestro equipo."</div>
           <div style={{ marginTop: 8, background: "linear-gradient(135deg,#004D40,#0891b2)", color: "#fff", display: "inline-block", padding: "3px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>✨ AI Engine Activado</div>
         </div>
