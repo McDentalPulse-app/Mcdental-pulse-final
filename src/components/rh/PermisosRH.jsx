@@ -1,10 +1,21 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Card from "../common/Card";
+import Badge from "../common/Badge";
+import Avatar from "../ui/Avatar";
+import PulseScoreBadge from "../common/PulseScoreBadge";
+import RiskBar from "../common/RiskBar";
+import { semaforoColor, semaforoBg, semaforoLabel } from "../../config/theme";
+import { USERS } from "../../data/initialData";
+import { semanaActual } from "../../utils/constants";
+import { calcularAntiguedad } from "../../utils/helpers";
+import { calcPulseScore, getPulseStatus, calcRiesgos } from "../../utils/pulseScore";
+import { db } from "../../firebase";
+import { collection, addDoc, getDocs, updateDoc, doc, serverTimestamp } from "firebase/firestore";
 
-const VacacionesRH = ({ vacaciones, onUpdateEstado }) => {
-  const pendientes = vacaciones.filter(v => v.estado === "pendiente").length;
-  const aprobadas = vacaciones.filter(v => v.estado === "aprobada").length;
-  const rechazadas = vacaciones.filter(v => v.estado === "rechazada").length;
+const PermisosRH = ({ permisos, onUpdateEstado }) => {
+  const pendientes = permisos.filter(p => p.estado === "pendiente").length;
+  const aprobados = permisos.filter(p => p.estado === "aprobado").length;
+  const rechazados = permisos.filter(p => p.estado === "rechazado").length;
 
   const badgeStyle = (estado) => ({
     display: "inline-block",
@@ -13,22 +24,22 @@ const VacacionesRH = ({ vacaciones, onUpdateEstado }) => {
     fontSize: 12,
     fontWeight: 700,
     background:
-      estado === "aprobada" ? "#dcfce7" :
-      estado === "rechazada" ? "#fee2e2" :
+      estado === "aprobado" ? "#dcfce7" :
+      estado === "rechazado" ? "#fee2e2" :
       "#fef3c7",
     color:
-      estado === "aprobada" ? "#166534" :
-      estado === "rechazada" ? "#991b1b" :
+      estado === "aprobado" ? "#166534" :
+      estado === "rechazado" ? "#991b1b" :
       "#92400e"
   });
 
   return (
     <div>
       <h1 style={{ margin: "0 0 6px", fontSize: 28, color: "#004D40" }}>
-        Vacaciones
+        Permisos
       </h1>
       <p style={{ margin: "0 0 24px", color: "#64748b" }}>
-        Gestión de solicitudes, aprobación y seguimiento de vacaciones del personal.
+        Registro, autorización y seguimiento de permisos administrativos del personal.
       </p>
 
       <div style={{
@@ -44,26 +55,26 @@ const VacacionesRH = ({ vacaciones, onUpdateEstado }) => {
         </Card>
         <Card>
           <div style={{ fontSize: 24 }}>✅</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#22c55e" }}>{aprobadas}</div>
-          <div style={{ fontWeight: 700 }}>Aprobadas</div>
+          <div style={{ fontSize: 30, fontWeight: 800, color: "#22c55e" }}>{aprobados}</div>
+          <div style={{ fontWeight: 700 }}>Aprobados</div>
         </Card>
         <Card>
           <div style={{ fontSize: 24 }}>❌</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#ef4444" }}>{rechazadas}</div>
-          <div style={{ fontWeight: 700 }}>Rechazadas</div>
+          <div style={{ fontSize: 30, fontWeight: 800, color: "#ef4444" }}>{rechazados}</div>
+          <div style={{ fontWeight: 700 }}>Rechazados</div>
         </Card>
       </div>
 
       <Card>
-        <h3 style={{ marginTop: 0, color: "#004D40" }}>🏖️ Solicitudes de vacaciones</h3>
+        <h3 style={{ marginTop: 0, color: "#004D40" }}>📝 Solicitudes de permisos</h3>
 
         <div style={{ display: "grid", gap: 12 }}>
-          {vacaciones.map(v => (
+          {permisos.map(p => (
             <div
-              key={v.id}
+              key={p.id}
               style={{
                 display: "grid",
-                gridTemplateColumns: "1.5fr 1fr 1fr auto",
+                gridTemplateColumns: "1.4fr 1fr 1fr auto",
                 gap: 12,
                 alignItems: "center",
                 padding: "14px 0",
@@ -71,32 +82,41 @@ const VacacionesRH = ({ vacaciones, onUpdateEstado }) => {
               }}
             >
               <div>
-                <div style={{ fontWeight: 800, color: "#0f172a" }}>{v.empleado}</div>
+                <div style={{ fontWeight: 800, color: "#0f172a" }}>{p.empleado}</div>
                 <div style={{ color: "#64748b", fontSize: 13 }}>
-                  {v.sucursal} · {v.puesto}
+                  {p.sucursal} · {p.puesto}
+                </div>
+                <div style={{ color: "#334155", fontSize: 13, marginTop: 4 }}>
+                  {p.tipo}
                 </div>
                 <div style={{ color: "#94a3b8", fontSize: 12 }}>
-                  Motivo: {v.motivo}
+                  Motivo: {p.motivo}
                 </div>
+                {p.comentarioRH && (
+  <div style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>
+    Comentario RH: {p.comentarioRH}
+  </div>
+)}
               </div>
 
               <div style={{ color: "#334155", fontSize: 14 }}>
-                {v.inicio} al {v.fin}
-                <div style={{ color: "#64748b", fontSize: 12 }}>{v.dias} días</div>
+                {p.fecha}
+                <div style={{ color: "#64748b", fontSize: 12 }}>Hora: {p.hora}</div>
+                <div style={{ color: "#94a3b8", fontSize: 12 }}>{p.observaciones}</div>
               </div>
 
               <div>
-                <span style={badgeStyle(v.estado)}>{v.estado}</span>
+                <span style={badgeStyle(p.estado)}>{p.estado}</span>
               </div>
 
               <div style={{ display: "flex", gap: 8 }}>
-                {v.estado === "pendiente" ? (
+                {p.estado === "pendiente" ? (
                   <>
                     <button
                       onClick={() => {
-                        const comentarioRH = window.prompt("Comentario opcional de RH:");
-                        onUpdateEstado(v.id, "aprobada", comentarioRH || "");
-                      }}
+  const comentarioRH = window.prompt("Comentario opcional de RH:");
+  onUpdateEstado(p.id, "aprobado", comentarioRH || "");
+}}
                       style={{
                         border: "none",
                         background: "#00897B",
@@ -111,9 +131,9 @@ const VacacionesRH = ({ vacaciones, onUpdateEstado }) => {
                     </button>
                     <button
                       onClick={() => {
-                        const comentarioRH = window.prompt("Comentario opcional de RH:");
-                        onUpdateEstado(v.id, "rechazada", comentarioRH || "");
-                      }}
+  const comentarioRH = window.prompt("Comentario opcional de RH:");
+  onUpdateEstado(p.id, "rechazado", comentarioRH || "");
+}}
                       style={{
                         border: "none",
                         background: "#ef4444",
@@ -139,4 +159,5 @@ const VacacionesRH = ({ vacaciones, onUpdateEstado }) => {
   );
 };
 
-export default VacacionesRH;
+
+export default PermisosRH;

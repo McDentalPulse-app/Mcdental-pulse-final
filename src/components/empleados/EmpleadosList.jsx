@@ -1,0 +1,590 @@
+import React, { useState } from "react";
+import Card from "../common/Card";
+import Badge from "../common/Badge";
+import KPI from "../common/KPI";
+import Avatar from "../ui/Avatar";
+import PulseScoreBadge from "../common/PulseScoreBadge";
+import { SUCURSALES, semanaActual } from "../../utils/constants";
+import { USERS } from "../../data/initialData";
+import { calcPulseScore, getPulseStatus } from "../../utils/pulseScore";
+
+import { semaforoColor } from "../../config/theme";
+import LineChart from "../common/LineChart";
+import RiskBar from "../common/RiskBar";
+import { calcularAntiguedad } from "../../utils/helpers";
+import { calcRiesgos } from "../../utils/pulseScore";
+const EmpleadosList = ({
+  encuestas,
+  notas,
+  role,
+  vacaciones = [],
+  permisos = [],
+  descuentos = [],
+  reconocimientos = [],
+  reportesConfidenciales = [],
+  currentUser,
+  onRestablecerPassword
+}) => {
+  const [filtroSucursal, setFiltroSucursal] = useState("Todas");
+  const [filtroSemaforo, setFiltroSemaforo] = useState("Todos");
+  const [busqueda, setBusqueda] = useState("");
+  const [selected, setSelected] = useState(null);
+
+  const empleados = USERS.filter(u => u.role === "empleado");
+  const puedeRestablecer = ["admin", "rh", "psicologa"].includes(currentUser?.role) && typeof onRestablecerPassword === "function";
+
+  const getUltimoSemaforo = (empId) => {
+    const enc = encuestas
+      .filter(e => e.empleadoId === empId)
+      .sort((a, b) => b.semana.localeCompare(a.semana));
+
+    return enc[0]?.semaforo || "verde";
+  };
+
+  const filtered = empleados.filter(e => {
+    const texto = busqueda.toLowerCase();
+
+    const coincideBusqueda =
+      e.name.toLowerCase().includes(texto) ||
+      e.puesto.toLowerCase().includes(texto) ||
+      e.sucursal.toLowerCase().includes(texto);
+
+    const coincideSucursal =
+      filtroSucursal === "Todas" || e.sucursal === filtroSucursal;
+
+    const coincideSemaforo =
+      filtroSemaforo === "Todos" || getUltimoSemaforo(e.id) === filtroSemaforo;
+
+    return coincideBusqueda && coincideSucursal && coincideSemaforo;
+  });
+
+  if (selected) {
+    const encEmp = encuestas
+      .filter(e => e.empleadoId === selected.id)
+      .sort((a, b) => a.semana.localeCompare(b.semana));
+
+    const notasEmp = notas.filter(n => n.empleadoId === selected.id);
+    const vacacionesEmp = vacaciones.filter(v => v.empleadoId === selected.id);
+    const permisosEmp = permisos.filter(p => p.empleadoId === selected.id);
+    const descuentosEmp = descuentos.filter(d => d.empleadoId === selected.id);
+    const reconocimientosEmp = reconocimientos.filter(r =>
+  Number(r.empleadoId) === Number(selected.id) ||
+  r.empleado === selected.name ||
+  r.nombre === selected.name
+);
+    const reportesEmp = reportesConfidenciales.filter(r => r.empleadoId === selected.id);
+
+    const sem = getUltimoSemaforo(selected.id);
+    const ps = calcPulseScore(selected.id, encuestas);
+    const trend = encEmp.map(e => ({
+      label: e.semana.replace("2025-", ""),
+      v: e.score
+    }));
+    const riesgos = calcRiesgos(selected.id, encuestas);
+
+    return (
+      <div>
+        <button
+          onClick={() => setSelected(null)}
+          style={{
+            background: "none",
+            border: "none",
+            color: "#006D5B",
+            fontSize: 14,
+            cursor: "pointer",
+            fontWeight: 700,
+            marginBottom: 18
+          }}
+        >
+          ← Volver a empleados
+        </button>
+
+        <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
+          <Card style={{ flex: 2, minWidth: 280 }}>
+            <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 20 }}>
+              <Avatar name={selected.name} size={56} color={semaforoColor[sem]} />
+
+              <div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: "#004D40" }}>
+                  {selected.name}
+                </div>
+
+                <div style={{ fontSize: 13, color: "#6b7280" }}>
+                  {selected.puesto} · {selected.sucursal}
+                </div>
+
+                <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <Badge tipo={sem} />
+                  <PulseScoreBadge
+                    score={ps.score}
+                    nivel={ps.nivel}
+                    color={ps.color}
+                    tendencia={ps.tendencia}
+                    size="sm"
+                  />
+                </div>
+              </div>
+            </div>
+{puedeRestablecer && (
+  <button
+    onClick={() => onRestablecerPassword(selected)}
+    style={{
+      marginTop: 14,
+      padding: "10px 14px",
+      borderRadius: 10,
+      border: "none",
+      background: "#f59e0b",
+      color: "white",
+      fontWeight: 900,
+      cursor: "pointer"
+    }}
+  >
+    🔑 Restablecer contraseña
+  </button>
+)}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 10,
+              fontSize: 13,
+              marginBottom: 16
+            }}>
+              <div><span style={{ color: "#9ca3af" }}>Nombre:</span> {selected.name}</div>
+              <div><span style={{ color: "#9ca3af" }}>Puesto:</span> {selected.puesto}</div>
+              <div><span style={{ color: "#9ca3af" }}>Sucursal:</span> {selected.sucursal}</div>
+              <div><span style={{ color: "#9ca3af" }}>Antigüedad:</span> {calcularAntiguedad(selected.fechaIngreso)}</div>
+              <div><span style={{ color: "#9ca3af" }}>ID empleado:</span> {selected.id}</div>
+              <div><span style={{ color: "#9ca3af" }}>Estado:</span> Activo</div>
+            </div>
+
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3,1fr)",
+              gap: 10,
+              marginBottom: 16
+            }}>
+              <div style={{ background: "#f9fafb", padding: 12, borderRadius: 12 }}>
+                <div style={{ fontSize: 11, color: "#9ca3af" }}>Promedio</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: "#004D40" }}>
+                  {encEmp.length
+                    ? Math.round(encEmp.reduce((a, e) => a + e.score, 0) / encEmp.length)
+                    : 0}
+                </div>
+              </div>
+
+              <div style={{ background: "#f9fafb", padding: 12, borderRadius: 12 }}>
+                <div style={{ fontSize: 11, color: "#9ca3af" }}>Encuestas</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: "#004D40" }}>
+                  {encEmp.length}
+                </div>
+              </div>
+
+              <div style={{ background: "#f9fafb", padding: 12, borderRadius: 12 }}>
+                <div style={{ fontSize: 11, color: "#9ca3af" }}>Notas</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: "#004D40" }}>
+                  {notasEmp.length}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
+              Evolución Pulse
+            </div>
+
+            {trend.length > 1 ? (
+              <LineChart data={trend} color={ps.color} />
+            ) : (
+              <div style={{ color: "#9ca3af", fontSize: 13 }}>
+                Sin suficientes datos para graficar.
+              </div>
+            )}
+          </Card>
+
+          <Card style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 14 }}>
+              Riesgos IA
+            </div>
+
+            <RiskBar
+              label="Riesgo Renuncia"
+              value={riesgos.renuncia}
+              color={riesgos.renuncia > 60 ? "#ef4444" : riesgos.renuncia > 30 ? "#f97316" : "#22c55e"}
+            />
+
+            <RiskBar
+              label="Riesgo Burnout"
+              value={riesgos.burnout}
+              color={riesgos.burnout > 60 ? "#ef4444" : riesgos.burnout > 30 ? "#f97316" : "#22c55e"}
+            />
+
+            <RiskBar
+              label="Riesgo Emocional"
+              value={riesgos.emocional}
+              color={riesgos.emocional > 60 ? "#ef4444" : riesgos.emocional > 30 ? "#f97316" : "#22c55e"}
+            />
+          </Card>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
+          <Card>
+            <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
+              Historial de encuestas
+            </div>
+
+            {encEmp.length === 0 ? (
+              <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin encuestas registradas</div>
+            ) : (
+              encEmp.map(e => (
+                <div
+                  key={e.id}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "8px 0",
+                    borderBottom: "1px solid #f3f4f6",
+                    fontSize: 13
+                  }}
+                >
+                  <span>{e.semana}</span>
+                  <Badge tipo={e.semaforo} />
+                  <span style={{ fontWeight: 800 }}>{e.score}</span>
+                </div>
+              ))
+            )}
+          </Card>
+
+          {role === "psicologa" && (
+            <Card>
+              <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
+                Notas psicológicas
+              </div>
+
+              {notasEmp.length === 0 ? (
+                <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin notas registradas</div>
+              ) : (
+                notasEmp.map(n => (
+                  <div
+                    key={n.id}
+                    style={{
+                      padding: "8px 0",
+                      borderBottom: "1px solid #f3f4f6",
+                      fontSize: 13
+                    }}
+                  >
+                    <div style={{ color: "#374151" }}>{n.texto}</div>
+                    <div style={{ color: "#9ca3af", fontSize: 11 }}>{n.fecha}</div>
+                  </div>
+                ))
+              )}
+            </Card>
+          )}
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
+          <Card>
+            <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
+              Vacaciones
+            </div>
+
+            {vacacionesEmp.length === 0 ? (
+              <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin vacaciones registradas</div>
+            ) : (
+              vacacionesEmp.map(v => (
+                <div
+                  key={v.id}
+                  style={{
+                    padding: "8px 0",
+                    borderBottom: "1px solid #f3f4f6",
+                    fontSize: 13
+                  }}
+                >
+                  <strong>{v.estado}</strong> · {v.fechaInicio || v.inicio || v.desde} al {v.fechaFin || v.fin || v.hasta}
+                  <br />
+                  <span style={{ color: "#64748b" }}>
+                    {v.dias} días · {v.motivo}
+                  </span>
+                  {v.comentarioRH && (
+                    <>
+                      <br />
+                      <span style={{ color: "#64748b" }}>
+                        Comentario RH: {v.comentarioRH}
+                      </span>
+                    </>
+                  )}
+                </div>
+              ))
+            )}
+          </Card>
+
+          <Card>
+            <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
+              Permisos
+            </div>
+
+            {permisosEmp.length === 0 ? (
+              <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin permisos registrados</div>
+            ) : (
+              permisosEmp.map(p => (
+                <div
+                  key={p.id}
+                  style={{
+                    padding: "8px 0",
+                    borderBottom: "1px solid #f3f4f6",
+                    fontSize: 13
+                  }}
+                >
+                  <strong>{p.estado}</strong> · {p.fecha || p.fechaInicio} {p.hora || ""}
+                  <br />
+                  <span style={{ color: "#64748b" }}>
+                    {p.motivo}
+                  </span>
+                  {p.comentarioRH && (
+                    <>
+                      <br />
+                      <span style={{ color: "#64748b" }}>
+                        Comentario RH: {p.comentarioRH}
+                      </span>
+                    </>
+                  )}
+                </div>
+              ))
+            )}
+          </Card>
+
+          <Card>
+            <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
+              Descuentos
+            </div>
+
+            {descuentosEmp.length === 0 ? (
+              <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin descuentos</div>
+            ) : (
+              descuentosEmp.map(d => (
+                <div
+                  key={d.id}
+                  style={{
+                    padding: "8px 0",
+                    borderBottom: "1px solid #f3f4f6",
+                    fontSize: 13
+                  }}
+                >
+                  <strong>{d.estado}</strong> · {d.concepto || d.motivo}
+                  <br />
+                  <span style={{ color: "#64748b" }}>
+                    {d.monto ? `$${d.monto}` : ""}
+                  </span>
+                </div>
+              ))
+            )}
+          </Card>
+
+          <Card>
+            <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
+              Reconocimientos
+            </div>
+
+            {reconocimientosEmp.length === 0 ? (
+              <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin reconocimientos</div>
+            ) : (
+              reconocimientosEmp.map(r => (
+                <div
+                  key={r.id}
+                  style={{
+                    padding: "8px 0",
+                    borderBottom: "1px solid #f3f4f6",
+                    fontSize: 13
+                  }}
+                >
+                  <strong>{r.titulo || r.tipo || r.categoria}</strong>
+<br />
+<span style={{ color: "#64748b" }}>
+  {r.descripcion || r.motivo || r.comentario}
+</span>
+{r.otorgadoPor && (
+  <>
+    <br />
+    <span style={{ color: "#9ca3af", fontSize: 12 }}>
+      Otorgado por: {r.otorgadoPor}
+    </span>
+  </>
+)}
+{r.fecha && (
+  <>
+    <br />
+    <span style={{ color: "#9ca3af", fontSize: 12 }}>
+      Fecha: {r.fecha}
+    </span>
+  </>
+)}
+                </div>
+              ))
+            )}
+          </Card>
+
+          {role !== "rh" && (
+            <Card>
+              <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
+                Reportes confidenciales
+              </div>
+
+              {reportesEmp.length === 0 ? (
+                <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin reportes confidenciales</div>
+              ) : (
+                reportesEmp.map(r => (
+                  <div
+                    key={r.id}
+                    style={{
+                      padding: "8px 0",
+                      borderBottom: "1px solid #f3f4f6",
+                      fontSize: 13
+                    }}
+                  >
+                    <strong>{r.fecha || "Reporte"}</strong>
+                    <br />
+                    <span style={{ color: "#64748b" }}>
+                      {r.resumen || r.texto || r.motivo || r.descripcion}
+                    </span>
+                  </div>
+                ))
+              )}
+            </Card>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h2 style={{ margin: "0 0 20px", fontSize: 22, fontWeight: 800, color: "#004D40" }}>
+        Empleados
+      </h2>
+
+      <Card style={{ marginBottom: 18 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1.8fr 0.8fr 0.8fr",
+            gap: 12,
+            alignItems: "center"
+          }}
+        >
+          <input
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="🔍 Buscar por nombre, puesto o sucursal..."
+            style={{
+              width: "100%",
+              padding: "11px 12px",
+              borderRadius: 12,
+              border: "1px solid #d1d5db",
+              outline: "none",
+              background: "white",
+              color: "#111827"
+            }}
+          />
+
+          <select
+            value={filtroSucursal}
+            onChange={(e) => setFiltroSucursal(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "11px 12px",
+              borderRadius: 12,
+              border: "1px solid #d1d5db",
+              background: "white",
+              color: "#111827",
+              fontWeight: 700
+            }}
+          >
+            <option value="Todas">Todas las sucursales</option>
+            {[...new Set(empleados.map(e => e.sucursal))].map(s => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+
+          <select
+            value={filtroSemaforo}
+            onChange={(e) => setFiltroSemaforo(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "11px 12px",
+              borderRadius: 12,
+              border: "1px solid #d1d5db",
+              background: "white",
+              color: "#111827",
+              fontWeight: 700
+            }}
+          >
+            <option value="Todos">Todos los semáforos</option>
+            <option value="verde">Verde</option>
+            <option value="amarillo">Amarillo</option>
+            <option value="rojo">Rojo</option>
+          </select>
+        </div>
+
+        <div style={{ marginTop: 12, color: "#64748b", fontSize: 13, textAlign: "center" }}>
+          Mostrando {filtered.length} de {empleados.length} empleados
+        </div>
+      </Card>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 16 }}>
+        {filtered.map(emp => {
+          const sem = getUltimoSemaforo(emp.id);
+          const ps = calcPulseScore(emp.id, encuestas);
+          const contestoEsta = encuestas.some(e => e.empleadoId === emp.id && e.semana === semanaActual);
+
+          return (
+            <div
+              key={emp.id}
+              onClick={() => setSelected(emp)}
+              style={{ cursor: "pointer" }}
+            >
+              <Card>
+                <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 10 }}>
+                  <Avatar name={emp.name} size={40} color={semaforoColor[sem]} />
+
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 800, fontSize: 14, color: "#111827" }}>
+                      {emp.name}
+                    </div>
+
+                    <div style={{ fontSize: 12, color: "#6b7280" }}>
+                      {emp.puesto}
+                    </div>
+                  </div>
+
+                  <Badge tipo={sem} />
+                </div>
+
+                <div style={{ marginBottom: 8 }}>
+                  <PulseScoreBadge
+                    score={ps.score}
+                    nivel={ps.nivel}
+                    color={ps.color}
+                    tendencia={ps.tendencia}
+                    size="sm"
+                  />
+                </div>
+
+                <div style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontSize: 12,
+                  color: "#6b7280"
+                }}>
+                  <span>{emp.sucursal}</span>
+                  <span>{contestoEsta ? "✓ Contestó" : "Pendiente"}</span>
+                </div>
+              </Card>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+
+export default EmpleadosList;
