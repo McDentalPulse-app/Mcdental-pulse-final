@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Card from "../common/Card";
-import { ENCUESTA_PREGUNTAS } from "../../config/constants";
+import { ENCUESTA_PREGUNTAS } from "../../data/initialData";
 import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
