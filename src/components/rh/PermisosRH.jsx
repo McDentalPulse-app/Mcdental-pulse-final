@@ -9,7 +9,7 @@ import { USERS } from "../../data/initialData";
 import { semanaActual } from "../../utils/constants";
 import { calcularAntiguedad } from "../../utils/helpers";
 import { calcPulseScore, getPulseStatus, calcRiesgos } from "../../utils/pulseScore";
-import { db } from "../../firebase";
+import { db } from "../../config/firebase";
 import { collection, addDoc, getDocs, updateDoc, doc, serverTimestamp } from "firebase/firestore";
 
 const PermisosRH = ({ permisos, onUpdateEstado }) => {
