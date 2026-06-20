@@ -1,16 +1,19 @@
 import React, { useState } from "react";
+import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import RiskBar from "../common/RiskBar";
 import { semaforoColor, semaforoBg, semaforoLabel } from "../../config/theme";
-import { USERS } from "../../data/initialData";
+
 import { semanaActual } from "../../utils/constants";
 import { calcularAntiguedad } from "../../utils/helpers";
 import { calcPulseScore, getPulseStatus, calcRiesgos } from "../../utils/pulseScore";
 
 const ReporteConfidencialEmpleado = ({ user, onSubmit }) => {
+  const { usuarios: USERS } = useGlobal();
+
   const [tipo, setTipo] = useState("Conflictos internos");
   const [urgencia, setUrgencia] = useState("Media");
   const [descripcion, setDescripcion] = useState("");

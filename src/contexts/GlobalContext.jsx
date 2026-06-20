@@ -13,12 +13,15 @@ import { getMensajes } from "../services/firestore/mensajesService";
 import { getReportesConfidenciales } from "../services/firestore/reportesService";
 import { getReconocimientos } from "../services/firestore/reconocimientosService";
 import { getArchivosExpediente, getVacaciones, getPermisos, getDescuentos } from "../services/firestore/expedientesService";
+import { getUsuarios, getEncuestaPreguntas } from "../services/firestore/usuariosService";
 
 const GlobalContext = createContext();
 
 export const GlobalProvider = ({ children }) => {
   const { user } = useAuth();
   // Estados iniciales
+  const [usuarios, setUsuarios] = useState([]);
+  const [encuestaPreguntas, setEncuestaPreguntas] = useState([]);
   const [encuestas, setEncuestas] = useState([]);
   const [mensajes, setMensajes] = useState(MENSAJES_INIT);
   const [reportesConfidenciales, setReportesConfidenciales] = useState(REPORTES_CONFIDENCIALES_INIT);
@@ -50,6 +53,8 @@ export const GlobalProvider = ({ children }) => {
         const promises = [];
         const { role } = user;
 
+        let fbUsuarios = [];
+        let fbPreguntas = [];
         let fbEncuestas = [];
         let fbMensajes = [];
         let fbReportes = [];
@@ -58,6 +63,10 @@ export const GlobalProvider = ({ children }) => {
         let fbVacaciones = [];
         let fbPermisos = [];
         let fbDescuentos = [];
+
+        // Base data for everyone
+        promises.push(getUsuarios().then(res => fbUsuarios = res).catch(() => []));
+        promises.push(getEncuestaPreguntas().then(res => fbPreguntas = res).catch(() => []));
 
         // Encuestas y mensajes y reconocimientos: admin, psicologa, empleado
         if (role === "admin" || role === "psicologa" || role === "empleado") {
@@ -89,6 +98,8 @@ export const GlobalProvider = ({ children }) => {
 
         await Promise.all(promises);
 
+        if (fbUsuarios.length > 0) setUsuarios(fbUsuarios);
+        if (fbPreguntas.length > 0) setEncuestaPreguntas(fbPreguntas);
         if (fbEncuestas.length > 0) setEncuestas(fbEncuestas);
         if (fbMensajes.length > 0) setMensajes(fbMensajes);
         if (fbReportes.length > 0) setReportesConfidenciales(fbReportes);
@@ -112,6 +123,8 @@ export const GlobalProvider = ({ children }) => {
   return (
     <GlobalContext.Provider 
       value={{ 
+        usuarios,
+        encuestaPreguntas,
         encuestas, setEncuestas,
         mensajes, setMensajes,
         reportesConfidenciales, setReportesConfidenciales,

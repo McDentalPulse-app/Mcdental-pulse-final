@@ -3,9 +3,11 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../config/firebase";
 import { useGlobal } from "../contexts/GlobalContext";
 import { useAuth } from "../contexts/AuthContext";
-import { USERS } from "../data/initialData";
+
 
 export const useAppActions = () => {
+  const { usuarios: USERS } = useGlobal();
+
   const { user } = useAuth();
   const {
     vacaciones, setVacaciones,

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import Badge from "../common/Badge";
 import KPI from "../common/KPI";
@@ -7,11 +8,12 @@ import LineChart from "../common/LineChart";
 import Avatar from "../ui/Avatar";
 import { SUCURSALES } from "../../utils/constants";
 
-import { USERS } from "../../data/initialData";
 import { calcPulseScore, getPulseStatus } from "../../utils/pulseScore";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import { semanaActual } from "../../utils/constants";
 const AdminDashboard = ({ encuestas, mensajes }) => {
+  const { usuarios: USERS } = useGlobal();
+
   const empleados = USERS.filter(u => u.role === "empleado");
 const semanaEnc = encuestas.filter(e => e.semana === semanaActual);
 const contestaron = new Set(semanaEnc.map(e => e.empleadoId)).size;
@@ -91,6 +93,7 @@ const avgPulseStatus = avgPulse === null
         <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "#004D40" }}>Dashboard Global</h2>
         <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: 13 }}>Semana {semanaActual}</p>
       </div>
+
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 24 }}>
         <KPI icon="👥" label="Empleados" value={empleados.length} color="#006D5B" />
 <KPI icon="✅" label="Contestaron" value={contestaron} sub={`de ${empleados.length}`} color="#0891b2" />

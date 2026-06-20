@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import RiskBar from "../common/RiskBar";
 import { semaforoColor, semaforoBg, semaforoLabel } from "../../config/theme";
-import { USERS } from "../../data/initialData";
+
 import { semanaActual } from "../../utils/constants";
 import { calcularAntiguedad } from "../../utils/helpers";
 import { calcPulseScore, getPulseStatus, calcRiesgos } from "../../utils/pulseScore";
@@ -13,6 +14,8 @@ import { db } from "../../config/firebase";
 import { collection, addDoc, getDocs, updateDoc, doc, serverTimestamp } from "firebase/firestore";
 
 const DescuentosRH = ({ descuentos, empleados, user, onUpdateEstado, onAddDescuento }) => {
+  const { usuarios: USERS } = useGlobal();
+
     const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const pendientes = descuentos.filter(d => d.estado === "pendiente").length;
   const activos = descuentos.filter(d => d.estado === "activo").length;

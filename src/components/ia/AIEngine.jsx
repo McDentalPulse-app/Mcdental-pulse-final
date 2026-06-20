@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import RiskBar from "../common/RiskBar";
 import { semaforoColor, semaforoBg, semaforoLabel } from "../../config/theme";
-import { USERS } from "../../data/initialData";
+
 import { semanaActual } from "../../utils/constants";
 import { calcularAntiguedad } from "../../utils/helpers";
 import { calcPulseScore, getPulseStatus, calcRiesgos } from "../../utils/pulseScore";
@@ -13,7 +14,7 @@ import { callAI } from "../../utils/analysisEngine";
 import { db } from "../../config/firebase";
 import { collection, addDoc, getDocs, updateDoc, doc, serverTimestamp } from "firebase/firestore";
 
-const analyzeEmployeeAI = (empleado, encuestas, permisos = [], descuentos = [], reconocimientos = [], reportesConfidenciales = []) => {
+const analyzeEmployeeAI = (empleado, encuestas, permisos = [], descuentos = [], reconocimientos = [], reportesConfidenciales = [], USERS = []) => {
   const encuestasEmpleado = encuestas.filter(e => e.empleadoId === empleado.id);
   const permisosEmpleado = permisos.filter(p => p.empleadoId === empleado.id);
   const descuentosEmpleado = descuentos.filter(d => d.empleadoId === empleado.id);
@@ -124,6 +125,7 @@ const analyzeEmployeeAI = (empleado, encuestas, permisos = [], descuentos = [], 
 
 
 const AIEngine = ({ encuestas, mensajes, notas, userRole, permisos = [], descuentos = [], reconocimientos = [], reportesConfidenciales = [] }) => {
+  const { usuarios: USERS } = useGlobal();
   const [tab, setTab] = useState("resumen");
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -140,7 +142,8 @@ const analisisIA = empleados.map(emp =>
     permisos,
     descuentos,
     reconocimientos,
-    reportesConfidenciales
+    reportesConfidenciales,
+    USERS
   )
 );
 

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import KPI from "../common/KPI";
 import Badge from "../common/Badge";
@@ -6,12 +7,14 @@ import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import RiskBar from "../common/RiskBar";
 import { semaforoColor, semaforoBg, semaforoLabel } from "../../config/theme";
-import { USERS } from "../../data/initialData";
+
 import { semanaActual } from "../../utils/constants";
 import { calcularAntiguedad } from "../../utils/helpers";
 import { calcPulseScore, getPulseStatus, calcRiesgos } from "../../utils/pulseScore";
 
 const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
+  const { usuarios: USERS } = useGlobal();
+
   const empleados = USERS.filter(u => u.role === "empleado");
   const semanaEnc = encuestas.filter(e => e.semana === semanaActual);
   const [nuevaNota, setNuevaNota] = useState({ empId:null,texto:"" });

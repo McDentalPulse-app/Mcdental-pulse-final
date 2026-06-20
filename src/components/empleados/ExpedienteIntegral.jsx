@@ -1,11 +1,12 @@
 import React, { useState } from "react";
+import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import Badge from "../common/Badge";
 import KPI from "../common/KPI";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import { SUCURSALES, semanaActual } from "../../utils/constants";
-import { USERS } from "../../data/initialData";
+
 import { calcPulseScore, getPulseStatus } from "../../utils/pulseScore";
 
 const ExpedienteIntegral = ({
@@ -22,6 +23,8 @@ const ExpedienteIntegral = ({
   archivosExpediente = [],
   onSubirArchivoExpediente
 }) => {
+  const { usuarios: USERS } = useGlobal();
+
  const empleados = users.filter(u => u.role === "empleado");
 const [filtroSucursalExp, setFiltroSucursalExp] = useState("Todas");
 const [empleadoId, setEmpleadoId] = useState(empleados[0]?.id || "");

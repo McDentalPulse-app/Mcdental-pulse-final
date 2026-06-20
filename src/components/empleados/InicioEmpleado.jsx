@@ -1,16 +1,19 @@
 import React, { useState } from "react";
+import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import RiskBar from "../common/RiskBar";
 import { semaforoColor, semaforoBg, semaforoLabel } from "../../config/theme";
-import { USERS } from "../../data/initialData";
+
 import { semanaActual } from "../../utils/constants";
 import { calcularAntiguedad } from "../../utils/helpers";
 import { calcPulseScore, getPulseStatus, calcRiesgos } from "../../utils/pulseScore";
 
 const InicioEmpleado = ({ user, encuestas, mensajes, setActive }) => {
+  const { usuarios: USERS } = useGlobal();
+
   const mis = encuestas.filter(e => e.empleadoId === user.id);
   const yaContesto = mis.some(e => e.semana === semanaActual);
   const ultimo = mis.sort((a,b)=>b.semana.localeCompare(a.semana))[0];
