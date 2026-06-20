@@ -1,10 +1,14 @@
 import React from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useNavigate, useLocation } from "react-router-dom";
 import logoSmall from "../../assets/logos/logo-small.png";
 import Avatar from "../ui/Avatar";
 
-const Sidebar = ({ active, setActive }) => {
+const Sidebar = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const active = location.pathname.split("/").pop() || "dashboard";
 
   const navItems = {
     admin: [
@@ -118,7 +122,7 @@ const Sidebar = ({ active, setActive }) => {
         return (
           <button
             key={item.key}
-            onClick={() => setActive(item.key)}
+            onClick={() => navigate(`/${user.role}/${item.key}`)}
             style={{
               width: "100%",
               padding: "12px 13px",
