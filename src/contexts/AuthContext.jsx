@@ -114,7 +114,7 @@ export const AuthProvider = ({ children }) => {
 
   const restablecerPasswordUsuario = async (empleado) => {
     try {
-      if (!["admin", "rh", "psicologa"].includes(user?.role)) {
+      if (!["admin", "rh", "recursos humanos"].includes(user?.role)) {
         alert("No tienes permiso para restablecer contraseñas.");
         return;
       }

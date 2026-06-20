@@ -67,6 +67,7 @@ export const useAppActions = () => {
       texto,
       fecha: new Date().toISOString().slice(0, 10),
       autor: user?.name || "Dra. Laura Vega",
+      autorId: user?.id || null,
       createdAt: serverTimestamp()
     };
 
@@ -283,6 +284,12 @@ export const useAppActions = () => {
   const subirArchivoExpediente = async ({ empleado, archivo, tipo }) => {
     if (!empleado || !archivo) {
       alert("Selecciona empleado y archivo.");
+      return;
+    }
+
+    // Límite de 10 MB
+    if (archivo.size > 10 * 1024 * 1024) {
+      alert("El archivo excede el límite de 10 MB permitido.");
       return;
     }
 

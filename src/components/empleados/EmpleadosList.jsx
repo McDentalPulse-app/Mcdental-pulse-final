@@ -34,7 +34,7 @@ const EmpleadosList = ({
   const [selected, setSelected] = useState(null);
 
   const empleados = USERS.filter(u => u.role === "empleado");
-  const puedeRestablecer = ["admin", "rh", "psicologa"].includes(currentUser?.role) && typeof onRestablecerPassword === "function";
+  const puedeRestablecer = currentUser?.role === "admin" && typeof onRestablecerPassword === "function";
 
   const getUltimoSemaforo = (empId) => {
     const enc = encuestas
@@ -116,16 +116,18 @@ const EmpleadosList = ({
                   {selected.puesto} · {selected.sucursal}
                 </div>
 
-                <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <Badge tipo={sem} />
-                  <PulseScoreBadge
-                    score={ps.score}
-                    nivel={ps.nivel}
-                    color={ps.color}
-                    tendencia={ps.tendencia}
-                    size="sm"
-                  />
-                </div>
+                {role !== "rh" && (
+                  <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <Badge tipo={sem} />
+                    <PulseScoreBadge
+                      score={ps.score}
+                      nivel={ps.nivel}
+                      color={ps.color}
+                      tendencia={ps.tendencia}
+                      size="sm"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 {puedeRestablecer && (
@@ -160,102 +162,110 @@ const EmpleadosList = ({
               <div><span style={{ color: "#9ca3af" }}>Estado:</span> Activo</div>
             </div>
 
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3,1fr)",
-              gap: 10,
-              marginBottom: 16
-            }}>
-              <div style={{ background: "#f9fafb", padding: 12, borderRadius: 12 }}>
-                <div style={{ fontSize: 11, color: "#9ca3af" }}>Promedio</div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: "#004D40" }}>
-                  {encEmp.length
-                    ? Math.round(encEmp.reduce((a, e) => a + e.score, 0) / encEmp.length)
-                    : 0}
+            {role !== "rh" && (
+              <>
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3,1fr)",
+                  gap: 10,
+                  marginBottom: 16
+                }}>
+                  <div style={{ background: "#f9fafb", padding: 12, borderRadius: 12 }}>
+                    <div style={{ fontSize: 11, color: "#9ca3af" }}>Promedio</div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: "#004D40" }}>
+                      {encEmp.length
+                        ? Math.round(encEmp.reduce((a, e) => a + e.score, 0) / encEmp.length)
+                        : 0}
+                    </div>
+                  </div>
+
+                  <div style={{ background: "#f9fafb", padding: 12, borderRadius: 12 }}>
+                    <div style={{ fontSize: 11, color: "#9ca3af" }}>Encuestas</div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: "#004D40" }}>
+                      {encEmp.length}
+                    </div>
+                  </div>
+
+                  <div style={{ background: "#f9fafb", padding: 12, borderRadius: 12 }}>
+                    <div style={{ fontSize: 11, color: "#9ca3af" }}>Notas</div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: "#004D40" }}>
+                      {notasEmp.length}
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <div style={{ background: "#f9fafb", padding: 12, borderRadius: 12 }}>
-                <div style={{ fontSize: 11, color: "#9ca3af" }}>Encuestas</div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: "#004D40" }}>
-                  {encEmp.length}
+                <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
+                  Evolución Pulse
                 </div>
-              </div>
 
-              <div style={{ background: "#f9fafb", padding: 12, borderRadius: 12 }}>
-                <div style={{ fontSize: 11, color: "#9ca3af" }}>Notas</div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: "#004D40" }}>
-                  {notasEmp.length}
-                </div>
-              </div>
-            </div>
-
-            <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
-              Evolución Pulse
-            </div>
-
-            {trend.length > 1 ? (
-              <LineChart data={trend} color={ps.color} />
-            ) : (
-              <div style={{ color: "#9ca3af", fontSize: 13 }}>
-                Sin suficientes datos para graficar.
-              </div>
+                {trend.length > 1 ? (
+                  <LineChart data={trend} color={ps.color} />
+                ) : (
+                  <div style={{ color: "#9ca3af", fontSize: 13 }}>
+                    Sin suficientes datos para graficar.
+                  </div>
+                )}
+              </>
             )}
           </Card>
 
-          <Card style={{ flex: 1, minWidth: 220 }}>
-            <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 14 }}>
-              Riesgos IA
-            </div>
+          {role !== "rh" && (
+            <Card style={{ flex: 1, minWidth: 220 }}>
+              <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 14 }}>
+                Riesgos IA
+              </div>
 
-            <RiskBar
-              label="Riesgo Renuncia"
-              value={riesgos.renuncia}
-              color={riesgos.renuncia > 60 ? "#ef4444" : riesgos.renuncia > 30 ? "#f97316" : "#22c55e"}
-            />
+              <RiskBar
+                label="Riesgo Renuncia"
+                value={riesgos.renuncia}
+                color={riesgos.renuncia > 60 ? "#ef4444" : riesgos.renuncia > 30 ? "#f97316" : "#22c55e"}
+              />
 
-            <RiskBar
-              label="Riesgo Burnout"
-              value={riesgos.burnout}
-              color={riesgos.burnout > 60 ? "#ef4444" : riesgos.burnout > 30 ? "#f97316" : "#22c55e"}
-            />
+              <RiskBar
+                label="Riesgo Burnout"
+                value={riesgos.burnout}
+                color={riesgos.burnout > 60 ? "#ef4444" : riesgos.burnout > 30 ? "#f97316" : "#22c55e"}
+              />
 
-            <RiskBar
-              label="Riesgo Emocional"
-              value={riesgos.emocional}
-              color={riesgos.emocional > 60 ? "#ef4444" : riesgos.emocional > 30 ? "#f97316" : "#22c55e"}
-            />
-          </Card>
+              <RiskBar
+                label="Riesgo Emocional"
+                value={riesgos.emocional}
+                color={riesgos.emocional > 60 ? "#ef4444" : riesgos.emocional > 30 ? "#f97316" : "#22c55e"}
+              />
+            </Card>
+          )}
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
-          <Card>
-            <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
-              Historial de encuestas
-            </div>
+          {role !== "rh" && (
+            <Card>
+              <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
+                Historial de encuestas
+              </div>
 
-            {encEmp.length === 0 ? (
-              <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin encuestas registradas</div>
-            ) : (
-              encEmp.map(e => (
-                <div
-                  key={e.id}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "8px 0",
-                    borderBottom: "1px solid #f3f4f6",
-                    fontSize: 13
-                  }}
-                >
-                  <span>{e.semana}</span>
-                  <Badge tipo={e.semaforo} />
-                  <span style={{ fontWeight: 800 }}>{e.score}</span>
-                </div>
-              ))
-            )}
-          </Card>
+              {encEmp.length === 0 ? (
+                <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin encuestas registradas</div>
+              ) : (
+                encEmp.map(e => (
+                  <div
+                    key={e.id}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "8px 0",
+                      borderBottom: "1px solid #f3f4f6",
+                      fontSize: 13
+                    }}
+                  >
+                    <span>{e.semana}</span>
+                    <Badge tipo={e.semaforo} />
+                    <span style={{ fontWeight: 800 }}>{e.score}</span>
+                  </div>
+                ))
+              )}
+            </Card>
+          )}
 
           {role === "psicologa" && (
             <Card>
@@ -355,32 +365,34 @@ const EmpleadosList = ({
             )}
           </Card>
 
-          <Card>
-            <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
-              Descuentos
-            </div>
+          {role !== "psicologa" && (
+            <Card>
+              <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
+                Descuentos
+              </div>
 
-            {descuentosEmp.length === 0 ? (
-              <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin descuentos</div>
-            ) : (
-              descuentosEmp.map(d => (
-                <div
-                  key={d.id}
-                  style={{
-                    padding: "8px 0",
-                    borderBottom: "1px solid #f3f4f6",
-                    fontSize: 13
-                  }}
-                >
-                  <strong>{d.estado}</strong> · {d.concepto || d.motivo}
-                  <br />
-                  <span style={{ color: "#64748b" }}>
-                    {d.monto ? `$${d.monto}` : ""}
-                  </span>
-                </div>
-              ))
-            )}
-          </Card>
+              {descuentosEmp.length === 0 ? (
+                <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin descuentos</div>
+              ) : (
+                descuentosEmp.map(d => (
+                  <div
+                    key={d.id}
+                    style={{
+                      padding: "8px 0",
+                      borderBottom: "1px solid #f3f4f6",
+                      fontSize: 13
+                    }}
+                  >
+                    <strong>{d.estado}</strong> · {d.concepto || d.motivo}
+                    <br />
+                    <span style={{ color: "#64748b" }}>
+                      {d.monto ? `$${d.monto}` : ""}
+                    </span>
+                  </div>
+                ))
+              )}
+            </Card>
+          )}
 
           <Card>
             <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
@@ -558,18 +570,20 @@ const EmpleadosList = ({
                     </div>
                   </div>
 
-                  <Badge tipo={sem} />
+                  {role !== "rh" && <Badge tipo={sem} />}
                 </div>
 
-                <div style={{ marginBottom: 8 }}>
-                  <PulseScoreBadge
-                    score={ps.score}
-                    nivel={ps.nivel}
-                    color={ps.color}
-                    tendencia={ps.tendencia}
-                    size="sm"
-                  />
-                </div>
+                {role !== "rh" && (
+                  <div style={{ marginBottom: 8 }}>
+                    <PulseScoreBadge
+                      score={ps.score}
+                      nivel={ps.nivel}
+                      color={ps.color}
+                      tendencia={ps.tendencia}
+                      size="sm"
+                    />
+                  </div>
+                )}
 
                 <div style={{
                   display: "flex",
@@ -578,7 +592,7 @@ const EmpleadosList = ({
                   color: "#6b7280"
                 }}>
                   <span>{emp.sucursal}</span>
-                  <span>{contestoEsta ? "✓ Contestó" : "Pendiente"}</span>
+                  {role !== "rh" && <span>{contestoEsta ? "✓ Contestó" : "Pendiente"}</span>}
                 </div>
               </Card>
             </div>
