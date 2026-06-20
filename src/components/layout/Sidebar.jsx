@@ -15,6 +15,7 @@ const Sidebar = () => {
       { key: "dashboard", icon: "📊", label: "Dashboard" },
       { key: "ai", icon: "🤖", label: "AI Engine", badge: "NEW" },
       { key: "empleados", icon: "👥", label: "Empleados" },
+      { key: "usuarios", icon: "⚙️", label: "Gestión de Personal" },
       { key: "expedientes", icon: "📁", label: "Expedientes" },
       { key: "reconocimientos", icon: "🏅", label: "Reconocimientos" },
       { key: "eventospersonal", icon: "🎂", label: "Cumpleaños y Aniversarios" },
@@ -34,6 +35,8 @@ const Sidebar = () => {
     ],
     rh: [
       { key: "dashboard", icon: "📊", label: "Dashboard RH" },
+      { key: "usuarios", icon: "⚙️", label: "Gestión de Personal" },
+      { key: "empleados", icon: "👥", label: "Empleados" },
       { key: "vacaciones", icon: "🏖️", label: "Vacaciones" },
       { key: "descuentos", icon: "💸", label: "Descuentos" },
       { key: "calendario", icon: "📅", label: "Calendario" },

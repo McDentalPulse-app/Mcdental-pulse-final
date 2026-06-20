@@ -123,7 +123,7 @@ export const GlobalProvider = ({ children }) => {
   return (
     <GlobalContext.Provider 
       value={{ 
-        usuarios,
+        usuarios, setUsuarios,
         encuestaPreguntas,
         encuestas, setEncuestas,
         mensajes, setMensajes,

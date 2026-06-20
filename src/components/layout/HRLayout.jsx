@@ -9,12 +9,13 @@ import CalendarioRH from '../rh/CalendarioRH';
 import EventosPersonal from '../empleados/EventosPersonal';
 import ReconocimientosGestion from '../rh/ReconocimientosGestion';
 import ReportesRH from '../rh/ReportesRH';
-
+import GestionUsuarios from '../admin/GestionUsuarios';
+import EmpleadosList from '../empleados/EmpleadosList';
 
 export default function HRLayout({ user, globals, actions }) {
   const { usuarios: USERS } = useGlobal();
 
-  const { vacaciones, permisos, descuentos, calendarioExtra, reconocimientos } = globals;
+  const { vacaciones, permisos, descuentos, calendarioExtra, reconocimientos, encuestas, notas, reportesConfidenciales } = globals;
   const { updateVacacionEstado, updateDescuentoEstado, addDescuento, addReconocimiento } = actions;
 
   return (
@@ -24,6 +25,8 @@ export default function HRLayout({ user, globals, actions }) {
         <div style={{ width: "100%", maxWidth: 1180, margin: "0 auto", overflowX: "hidden" }}>
           <Routes>
             <Route path="dashboard" element={<HRDashboard users={USERS} />} />
+            <Route path="empleados" element={<EmpleadosList encuestas={encuestas} notas={notas} role="rh" currentUser={user} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} />} />
+            <Route path="usuarios" element={<GestionUsuarios />} />
             <Route path="vacaciones" element={<VacacionesRH vacaciones={vacaciones} onUpdateEstado={updateVacacionEstado} />} />
             <Route path="descuentos" element={<DescuentosRH descuentos={descuentos} empleados={USERS} user={user} onUpdateEstado={updateDescuentoEstado} onAddDescuento={addDescuento} />} />
             <Route path="calendario" element={<CalendarioRH vacaciones={vacaciones} permisos={permisos} eventosExtra={calendarioExtra} />} />

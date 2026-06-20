@@ -51,7 +51,6 @@ const empleado =
 
   const encuestasEmpleado = encuestas.filter(e => e.empleadoId === empleado.id);
   const mensajesEmpleado = mensajes.filter(m => m.de === empleado.id || m.para === empleado.id);
-  const notasEmpleado = notas.filter(n => n.empleadoId === empleado.id);
   const vacacionesEmpleado = vacaciones.filter(v => v.empleadoId === empleado.id);
   const permisosEmpleado = permisos.filter(p => p.empleadoId === empleado.id);
   const descuentosEmpleado = descuentos.filter(d => d.empleadoId === empleado.id);
@@ -62,11 +61,20 @@ const empleado =
     ? encuestasEmpleado[encuestasEmpleado.length - 1].score
     : calcPulseScore(empleado.id, encuestas).score;
 
- const pulseStatus = getPulseStatus(ultimoScore);
-const semaforo = pulseStatus.semaforo;
-const semaforoColor = pulseStatus.color;
+  const pulseStatus = getPulseStatus(ultimoScore);
+  const semaforo = pulseStatus.semaforo;
+  const semaforoColor = pulseStatus.color;
 
-  const puedeVerConfidencial = currentUser.role === "admin" || currentUser.role === "psicologa";
+  const esAdmin = currentUser?.role === "admin";
+  const esRH = currentUser?.role === "rh" || currentUser?.role === "recursos humanos";
+  const esPsicologa = currentUser?.role === "psicologa";
+
+  // Notas psicológicas: Solo la psicóloga que la escribió puede verla (o por nombre para notas previas)
+  const notasEmpleado = notas.filter(n => 
+    n.empleadoId === empleado.id && 
+    esPsicologa && 
+    (n.autorId === currentUser.id || n.autor === currentUser.name)
+  );
 
   return (
     <div>
@@ -239,7 +247,9 @@ const semaforoColor = pulseStatus.color;
             <div><b>Encuestas registradas:</b> {encuestasEmpleado.length}</div>
             <div><b>Score actual:</b> {ultimoScore}</div>
             <div><b>Semáforo:</b> <span style={{ color: semaforoColor, fontWeight: 900 }}>{semaforo}</span></div>
-            <div><b>Notas psicológicas:</b> {notasEmpleado.length}</div>
+            {esPsicologa && (
+              <div><b>Notas psicológicas (Propias):</b> {notasEmpleado.length}</div>
+            )}
           </div>
         </Card>
 
@@ -281,39 +291,78 @@ const semaforoColor = pulseStatus.color;
       />
 
       <button
-  onClick={() => {
-    alert("La subida de archivos queda pendiente hasta activar Firebase Storage.");
-  }}
->
-  Subir archivo
-</button>
+        onClick={async () => {
+          if (!archivoExpediente) {
+            alert("Por favor selecciona un archivo primero.");
+            return;
+          }
+          await onSubirArchivoExpediente({
+            empleado,
+            archivo: archivoExpediente,
+            tipo: tipoArchivoExpediente
+          });
+          setArchivoExpediente(null);
+          setMostrarSubirArchivo(false);
+        }}
+        style={{ padding: 8, background: "#004D40", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}
+      >
+        Confirmar Subida
+      </button>
     </div>
   )}
+
+  <div style={{ marginTop: 16 }}>
+    {archivosExpediente.filter(a => a.empleadoId === empleado.id).length === 0 ? (
+      <p style={{ color: "#64748b", fontSize: 13 }}>No hay archivos adjuntos.</p>
+    ) : (
+      archivosExpediente
+        .filter(a => a.empleadoId === empleado.id)
+        .map(a => (
+          <div key={a.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #e5e7eb" }}>
+            <div>
+              <b style={{ fontSize: 13 }}>{a.tipoArchivo}</b>
+              <div style={{ color: "#64748b", fontSize: 12 }}>{a.nombreArchivo}</div>
+            </div>
+            <a 
+              href={a.url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              style={{ color: "#00897B", textDecoration: "none", fontSize: 13, fontWeight: "bold" }}
+            >
+              Descargar
+            </a>
+          </div>
+        ))
+    )}
+  </div>
 </Card>
 
-        <Card>
-          <h3 style={{ marginTop: 0, color: "#004D40" }}>🏖️ Vacaciones</h3>
-          {vacacionesEmpleado.length === 0 ? (
-            <p style={{ color: "#64748b" }}>Sin vacaciones registradas.</p>
-          ) : vacacionesEmpleado.map(v => (
-            <div key={v.id} style={{ padding: "10px 0", borderBottom: "1px solid #e5e7eb" }}>
-              <b>{v.inicio} al {v.fin}</b>
-              <div style={{ color: "#64748b", fontSize: 13 }}>{v.dias} días · {v.estado}</div>
-            </div>
-          ))}
-        </Card>
 
-        <Card>
-          <h3 style={{ marginTop: 0, color: "#004D40" }}>💸 Descuentos</h3>
-          {descuentosEmpleado.length === 0 ? (
-            <p style={{ color: "#64748b" }}>Sin descuentos registrados.</p>
-          ) : descuentosEmpleado.map(d => (
-            <div key={d.id} style={{ padding: "10px 0", borderBottom: "1px solid #e5e7eb" }}>
-              <b>{d.tipo}</b>
-              <div style={{ color: "#64748b", fontSize: 13 }}>${d.monto} · {d.estado}</div>
-            </div>
-          ))}
-        </Card>
+            <Card>
+              <h3 style={{ marginTop: 0, color: "#004D40" }}>🏖️ Vacaciones</h3>
+              {vacacionesEmpleado.length === 0 ? (
+                <p style={{ color: "#64748b" }}>Sin vacaciones registradas.</p>
+              ) : vacacionesEmpleado.map(v => (
+                <div key={v.id} style={{ padding: "10px 0", borderBottom: "1px solid #e5e7eb" }}>
+                  <b>{v.inicio} al {v.fin}</b>
+                  <div style={{ color: "#64748b", fontSize: 13 }}>{v.dias} días · {v.estado}</div>
+                </div>
+              ))}
+            </Card>
+
+            {(esAdmin || esRH) && (
+              <Card>
+                <h3 style={{ marginTop: 0, color: "#004D40" }}>💸 Descuentos</h3>
+                {descuentosEmpleado.length === 0 ? (
+                  <p style={{ color: "#64748b" }}>Sin descuentos registrados.</p>
+                ) : descuentosEmpleado.map(d => (
+                  <div key={d.id} style={{ padding: "10px 0", borderBottom: "1px solid #e5e7eb" }}>
+                    <b>{d.tipo}</b>
+                    <div style={{ color: "#64748b", fontSize: 13 }}>${d.monto} · {d.estado}</div>
+                  </div>
+                ))}
+              </Card>
+            )}
 
         <Card>
           <h3 style={{ marginTop: 0, color: "#004D40" }}>🏅 Reconocimientos</h3>
@@ -336,20 +385,18 @@ const semaforoColor = pulseStatus.color;
           </div>
         </Card>
 
-        {puedeVerConfidencial && (
-          <Card>
-            <h3 style={{ marginTop: 0, color: "#004D40" }}>🔒 Reportes confidenciales</h3>
-            {reportesEmpleado.length === 0 ? (
-              <p style={{ color: "#64748b" }}>Sin reportes confidenciales registrados.</p>
-            ) : reportesEmpleado.map(r => (
-              <div key={r.id} style={{ padding: "10px 0", borderBottom: "1px solid #e5e7eb" }}>
-                <b>{r.tipo}</b>
-                <div style={{ color: "#64748b", fontSize: 13 }}>{r.fecha} · Urgencia {r.urgencia} · {r.estado}</div>
-                <div style={{ color: "#334155", fontSize: 13 }}>{r.descripcion}</div>
-              </div>
-            ))}
-          </Card>
-        )}
+        <Card>
+          <h3 style={{ marginTop: 0, color: "#004D40" }}>🔒 Reportes confidenciales</h3>
+          {reportesEmpleado.length === 0 ? (
+            <p style={{ color: "#64748b" }}>Sin reportes confidenciales registrados.</p>
+          ) : reportesEmpleado.map(r => (
+            <div key={r.id} style={{ padding: "10px 0", borderBottom: "1px solid #e5e7eb" }}>
+              <b>{r.tipo}</b>
+              <div style={{ color: "#64748b", fontSize: 13 }}>{r.fecha} · Urgencia {r.urgencia} · {r.estado}</div>
+              <div style={{ color: "#334155", fontSize: 13 }}>{r.descripcion}</div>
+            </div>
+          ))}
+        </Card>
       </div>
     </div>
   );
