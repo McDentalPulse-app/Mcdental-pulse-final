@@ -1,4 +1,5 @@
 import React from 'react';
+import { useGlobal } from "../../contexts/GlobalContext";
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import HRDashboard from '../dashboards/HRDashboard';
@@ -8,9 +9,11 @@ import CalendarioRH from '../rh/CalendarioRH';
 import EventosPersonal from '../empleados/EventosPersonal';
 import ReconocimientosGestion from '../rh/ReconocimientosGestion';
 import ReportesRH from '../rh/ReportesRH';
-import { USERS } from '../../data/initialData';
+
 
 export default function HRLayout({ user, globals, actions }) {
+  const { usuarios: USERS } = useGlobal();
+
   const { vacaciones, permisos, descuentos, calendarioExtra, reconocimientos } = globals;
   const { updateVacacionEstado, updateDescuentoEstado, addDescuento, addReconocimiento } = actions;
 

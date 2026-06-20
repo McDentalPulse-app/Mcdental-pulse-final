@@ -1,4 +1,5 @@
 import React from 'react';
+import { useGlobal } from "../../contexts/GlobalContext";
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import AdminDashboard from '../dashboards/AdminDashboard';
@@ -8,9 +9,11 @@ import ReportesConfidencialesPanel from '../psicologia/ReportesConfidencialesPan
 import EmpleadosList from '../empleados/EmpleadosList';
 import ExpedienteIntegral from '../empleados/ExpedienteIntegral';
 import Mensajes from '../comunicacion/Mensajes';
-import { USERS } from '../../data/initialData';
+
 
 export default function PsicologaLayout({ user, globals, actions }) {
+  const { usuarios: USERS } = useGlobal();
+
   const { encuestas, mensajes, notas, permisos, descuentos, reconocimientos, reportesConfidenciales, vacaciones } = globals;
   const { restablecerPasswordUsuario, addNota, sendMensaje } = actions;
 

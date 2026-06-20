@@ -1,4 +1,5 @@
 import React from 'react';
+import { useGlobal } from "../../contexts/GlobalContext";
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import InicioEmpleado from '../empleados/InicioEmpleado';
@@ -8,9 +9,11 @@ import PermisosEmpleado from '../empleados/PermisosEmpleado';
 import ReconocimientosEmpleado from '../empleados/ReconocimientosEmpleado';
 import ReporteConfidencialEmpleado from '../empleados/ReporteConfidencialEmpleado';
 import Mensajes from '../comunicacion/Mensajes';
-import { USERS } from '../../data/initialData';
+
 
 export default function EmpleadoLayout({ user, globals, actions }) {
+  const { usuarios: USERS } = useGlobal();
+
   const { encuestas, mensajes, vacaciones, permisos, reconocimientos } = globals;
   const { addEncuesta, sendMensaje, addSolicitudEmpleadoRH, addReporteConfidencial } = actions;
   const navigate = useNavigate();

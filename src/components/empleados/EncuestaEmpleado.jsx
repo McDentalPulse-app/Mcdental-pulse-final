@@ -1,17 +1,20 @@
 import React, { useState } from "react";
+import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
-import { ENCUESTA_PREGUNTAS } from "../../data/initialData";
+
 import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import RiskBar from "../common/RiskBar";
 import { semaforoColor, semaforoBg, semaforoLabel } from "../../config/theme";
-import { USERS } from "../../data/initialData";
+
 import { semanaActual } from "../../utils/constants";
 import { calcularAntiguedad } from "../../utils/helpers";
 import { calcPulseScore, getPulseStatus, calcRiesgos } from "../../utils/pulseScore";
 
 const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
+  const { usuarios: USERS, encuestaPreguntas: ENCUESTA_PREGUNTAS } = useGlobal();
+
   const yaContesto = encuestas.some(
     (e) => e.empleadoId === user.id && e.semana === semanaActual
   );

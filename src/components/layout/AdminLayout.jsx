@@ -1,4 +1,5 @@
 import React from 'react';
+import { useGlobal } from "../../contexts/GlobalContext";
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import AdminDashboard from '../dashboards/AdminDashboard';
@@ -11,10 +12,12 @@ import Reportes from '../rh/Reportes';
 import ReportesConfidencialesPanel from '../psicologia/ReportesConfidencialesPanel';
 import Config from '../settings/Config';
 import Card from '../common/Card';
-import { USERS, ENCUESTA_PREGUNTAS } from '../../data/initialData';
+
 import { semanaActual } from '../../utils/constants';
 
 export default function AdminLayout({ user, globals, actions }) {
+  const { usuarios: USERS, encuestaPreguntas: ENCUESTA_PREGUNTAS } = useGlobal();
+
   const { encuestas, mensajes, notas, permisos, descuentos, reconocimientos, reportesConfidenciales, vacaciones, archivosExpediente } = globals;
   const { restablecerPasswordUsuario, subirArchivoExpediente, addReconocimiento, inicializarUsuariosPassword } = actions;
 

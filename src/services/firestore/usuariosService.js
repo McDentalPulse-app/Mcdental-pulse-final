@@ -3,6 +3,28 @@ import { db } from "../../config/firebase";
 
 const COLLECTION_NAME = "usuariosPassword";
 
+// Obtiene todos los usuarios
+export const getUsuarios = async () => {
+  try {
+    const snapshot = await getDocs(collection(db, "usuarios"));
+    return snapshot.docs.map(doc => ({ firebaseId: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error("Error al obtener usuarios:", error);
+    throw new Error("No se pudieron cargar los usuarios.");
+  }
+};
+
+// Obtiene todas las preguntas de encuestas
+export const getEncuestaPreguntas = async () => {
+  try {
+    const snapshot = await getDocs(collection(db, "encuesta_preguntas"));
+    return snapshot.docs.map(doc => ({ firebaseId: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error("Error al obtener preguntas:", error);
+    throw new Error("No se pudieron cargar las preguntas.");
+  }
+};
+
 // Obtiene todos los registros de contraseñas
 export const getUsuariosPassword = async () => {
   try {

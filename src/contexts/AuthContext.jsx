@@ -1,6 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
-import { USERS } from "../data/initialData";
-import { getUsuariosPassword } from "../services/firestore/usuariosService";
+import { getUsuariosPassword, getUsuarios } from "../services/firestore/usuariosService";
 import { db } from "../config/firebase";
 import { collection, getDocs, updateDoc, doc, serverTimestamp, addDoc } from "firebase/firestore";
 
@@ -31,7 +30,9 @@ export const AuthProvider = ({ children }) => {
   const login = async (username, password) => {
     setLoadingAuth(true);
     try {
-      const usuarioBase = USERS.find((x) => x.user === username);
+      const allUsuarios = await getUsuarios();
+      const usuarioBase = allUsuarios.find((x) => x.user === username);
+      
       if (!usuarioBase) {
         throw new Error("Usuario o contraseña incorrectos");
       }
@@ -157,8 +158,9 @@ export const AuthProvider = ({ children }) => {
 
   const inicializarUsuariosPassword = async () => {
     try {
-      for (const empleado of USERS) {
-        const existe = usuariosPassword.find((u) => u.userId === empleado.id);
+      const allUsuarios = await getUsuarios();
+      for (const empleado of allUsuarios) {
+        const existe = usuariosPassword.find((u) => u.userId === empleado.idOriginal);
         if (!existe) {
           await addDoc(collection(db, "usuariosPassword"), {
             userId: empleado.id,

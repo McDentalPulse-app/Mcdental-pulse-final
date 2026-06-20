@@ -1,10 +1,13 @@
 import React, { useState } from "react";
+import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
-import { USERS } from "../../data/initialData";
+
 
 const ReportesConfidencialesPanel = ({ reportes }) => {
+  const { usuarios: USERS } = useGlobal();
+
   const nuevos = reportes.filter(r => r.estado === "nuevo").length;
   const seguimiento = reportes.filter(r => r.estado === "en seguimiento").length;
   const altas = reportes.filter(r => r.urgencia === "Alta" || r.urgencia === "Crítica").length;
