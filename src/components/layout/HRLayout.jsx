@@ -19,10 +19,10 @@ export default function HRLayout({ user, globals, actions }) {
   const { updateVacacionEstado, updateDescuentoEstado, addDescuento, addReconocimiento } = actions;
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Inter','Segoe UI',system-ui,sans-serif", background: "linear-gradient(135deg, #f4fbf9 0%, #f8fafc 42%, #ffffff 100%)", color: "#0f172a" }}>
+    <div className="app-shell">
       <Sidebar />
-      <main style={{ flex: 1, padding: "34px 38px", overflowY: "auto", overflowX: "hidden", minWidth: 0 }}>
-        <div style={{ width: "100%", maxWidth: 1180, margin: "0 auto", overflowX: "hidden" }}>
+      <main className="app-main">
+        <div className="app-main-inner">
           <Routes>
             <Route path="dashboard" element={<HRDashboard users={USERS} />} />
             <Route path="empleados" element={<EmpleadosList encuestas={encuestas} notas={notas} role="rh" currentUser={user} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} />} />

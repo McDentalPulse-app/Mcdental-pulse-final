@@ -7,6 +7,7 @@ import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import RiskBar from "../common/RiskBar";
+import Icon from "../ui/Icon";
 import { semaforoColor, semaforoBg, semaforoLabel } from "../../config/theme";
 
 import { semanaActual } from "../../utils/constants";
@@ -22,30 +23,14 @@ const PermisosRH = ({ permisos, onUpdateEstado }) => {
   const aprobados = permisos.filter(p => p.estado === "aprobado").length;
   const rechazados = permisos.filter(p => p.estado === "rechazado").length;
 
-  const badgeStyle = (estado) => ({
-    display: "inline-block",
-    padding: "4px 10px",
-    borderRadius: 999,
-    fontSize: 12,
-    fontWeight: 700,
-    background:
-      estado === "aprobado" ? "#dcfce7" :
-      estado === "rechazado" ? "#fee2e2" :
-      "#fef3c7",
-    color:
-      estado === "aprobado" ? "#166534" :
-      estado === "rechazado" ? "#991b1b" :
-      "#92400e"
-  });
-
   return (
-    <div>
-      <h1 style={{ margin: "0 0 6px", fontSize: 28, color: "#004D40" }}>
-        Permisos
-      </h1>
-      <p style={{ margin: "0 0 24px", color: "#64748b" }}>
-        Registro, autorización y seguimiento de permisos administrativos del personal.
-      </p>
+    <div className="admin-page">
+      <div className="admin-page-header">
+        <h1 className="admin-page-title">Permisos</h1>
+        <p className="admin-page-subtitle">
+          Registro, autorización y seguimiento de permisos administrativos del personal.
+        </p>
+      </div>
 
       <div className="admin-stat-grid">
         <StatCard iconName="clock" value={pendientes} label="Pendientes" valueClass="admin-stat-value--amber" />
@@ -56,87 +41,57 @@ const PermisosRH = ({ permisos, onUpdateEstado }) => {
       <Card>
         <SectionTitle icon="clipboard">Solicitudes de permisos</SectionTitle>
 
-        <div style={{ display: "grid", gap: 12 }}>
+        <div className="rh-data-list">
           {permisos.map(p => (
-            <div
-              key={p.id}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1.4fr 1fr 1fr auto",
-                gap: 12,
-                alignItems: "center",
-                padding: "14px 0",
-                borderBottom: "1px solid #e5e7eb"
-              }}
-            >
-              <div>
-                <div style={{ fontWeight: 800, color: "#0f172a" }}>{p.empleado}</div>
-                <div style={{ color: "#64748b", fontSize: 13 }}>
-                  {p.sucursal} · {p.puesto}
-                </div>
-                <div style={{ color: "#334155", fontSize: 13, marginTop: 4 }}>
-                  {p.tipo}
-                </div>
-                <div style={{ color: "#94a3b8", fontSize: 12 }}>
-                  Motivo: {p.motivo}
-                </div>
+            <div key={p.id} className="rh-data-row">
+              <div className="rh-data-row-main">
+                <div className="rh-data-row-title">{p.empleado}</div>
+                <div className="rh-data-row-sub">{p.sucursal} · {p.puesto}</div>
+                <div className="rh-data-row-detail">{p.tipo}</div>
+                <div className="rh-data-row-note">Motivo: {p.motivo}</div>
                 {p.comentarioRH && (
-  <div style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>
-    Comentario RH: {p.comentarioRH}
-  </div>
-)}
+                  <div className="rh-data-row-note">Comentario RH: {p.comentarioRH}</div>
+                )}
               </div>
 
-              <div style={{ color: "#334155", fontSize: 14 }}>
-                {p.fecha}
-                <div style={{ color: "#64748b", fontSize: 12 }}>Hora: {p.hora}</div>
-                <div style={{ color: "#94a3b8", fontSize: 12 }}>{p.observaciones}</div>
+              <div className="rh-data-row-meta">
+                <div className="rh-data-row-meta-primary">{p.fecha}</div>
+                <div className="rh-data-row-meta-secondary">Hora: {p.hora}</div>
+                {p.observaciones && (
+                  <div className="rh-data-row-note">{p.observaciones}</div>
+                )}
               </div>
 
-              <div>
-                <span style={badgeStyle(p.estado)}>{p.estado}</span>
+              <div className="rh-data-row-status">
+                <span className={`mc-status-pill mc-status-pill--${p.estado}`}>{p.estado}</span>
               </div>
 
-              <div style={{ display: "flex", gap: 8 }}>
+              <div className="rh-data-row-actions">
                 {p.estado === "pendiente" ? (
                   <>
                     <button
+                      type="button"
+                      className="mc-btn-primary mc-btn-sm-action"
                       onClick={() => {
-  const comentarioRH = window.prompt("Comentario opcional de RH:");
-  onUpdateEstado(p.id, "aprobado", comentarioRH || "");
-}}
-                      style={{
-                        border: "none",
-                        background: "#00897B",
-                        color: "white",
-                        padding: "8px 10px",
-                        borderRadius: 8,
-                        fontWeight: 700,
-                        cursor: "pointer"
+                        const comentarioRH = window.prompt("Comentario opcional de RH:");
+                        onUpdateEstado(p.id, "aprobado", comentarioRH || "");
                       }}
                     >
-                      Aprobar
+                      <Icon name="check" size={14} /> Aprobar
                     </button>
                     <button
+                      type="button"
+                      className="mc-btn-danger mc-btn-sm-action"
                       onClick={() => {
-  const comentarioRH = window.prompt("Comentario opcional de RH:");
-  onUpdateEstado(p.id, "rechazado", comentarioRH || "");
-}}
-                      style={{
-                        border: "none",
-                        background: "#ef4444",
-                        color: "white",
-                        padding: "8px 10px",
-                        borderRadius: 8,
-                        fontWeight: 700,
-                        cursor: "pointer"
+                        const comentarioRH = window.prompt("Comentario opcional de RH:");
+                        onUpdateEstado(p.id, "rechazado", comentarioRH || "");
                       }}
                     >
-                      Rechazar
+                      <Icon name="xCircle" size={14} /> Rechazar
                     </button>
                   </>
                 ) : (
-                  <span style={{ color: "#94a3b8", fontSize: 13 }}>Sin acciones</span>
+                  <span className="rh-data-row-muted">Sin acciones</span>
                 )}
               </div>
             </div>
@@ -146,6 +101,5 @@ const PermisosRH = ({ permisos, onUpdateEstado }) => {
     </div>
   );
 };
-
 
 export default PermisosRH;

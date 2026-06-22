@@ -4,17 +4,18 @@ import { useAuth } from "../../contexts/AuthContext";
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import Card from "../common/Card";
+import Icon from "../ui/Icon";
 
 const GestionUsuarios = () => {
   const { usuarios, setUsuarios } = useGlobal();
   const { user, restablecerPasswordUsuario } = useAuth();
-  
+  const esAdmin = user?.role === "admin";
+
   const [busqueda, setBusqueda] = useState("");
   const [mostrarModal, setMostrarModal] = useState(false);
   const [usuarioEditando, setUsuarioEditando] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Formulario
   const [formData, setFormData] = useState({
     name: "",
     user: "",
@@ -26,8 +27,8 @@ const GestionUsuarios = () => {
     telefono: ""
   });
 
-  const empleados = usuarios.filter(u => 
-    u.role !== "admin" && // Usualmente se ocultan los superadmins, pero dejémoslo libre por ahora o filtramos solo empleados
+  const empleados = usuarios.filter(u =>
+    u.role !== "admin" &&
     u.name?.toLowerCase().includes(busqueda.toLowerCase())
   );
 
@@ -66,25 +67,22 @@ const GestionUsuarios = () => {
 
     try {
       if (usuarioEditando) {
-        // ACTUALIZAR
         const docRef = doc(db, "usuarios", usuarioEditando.firebaseId || usuarioEditando.id);
         const newData = { ...formData, updatedAt: serverTimestamp() };
         await updateDoc(docRef, newData);
-        
+
         setUsuarios(prev => prev.map(u => u.id === usuarioEditando.id ? { ...u, ...newData } : u));
         alert("Usuario actualizado con éxito.");
       } else {
-        // CREAR
-        const nuevoId = Date.now(); // ID numérico para compatibilidad con código anterior
+        const nuevoId = Date.now();
         const newUser = {
           ...formData,
           id: nuevoId,
           createdAt: serverTimestamp()
         };
-        
+
         const docRef = await addDoc(collection(db, "usuarios"), newUser);
-        
-        // Registrar contraseña inicial por defecto en usuariosPassword
+
         await addDoc(collection(db, "usuariosPassword"), {
           userId: nuevoId,
           usuario: formData.user,
@@ -112,7 +110,7 @@ const GestionUsuarios = () => {
     try {
       const docRef = doc(db, "usuarios", empleado.firebaseId || empleado.id);
       await updateDoc(docRef, { inactivo: !estadoActivo });
-      
+
       setUsuarios(prev => prev.map(u => u.id === empleado.id ? { ...u, inactivo: !estadoActivo } : u));
     } catch (error) {
       console.error("Error cambiando estado:", error);
@@ -121,28 +119,28 @@ const GestionUsuarios = () => {
   };
 
   return (
-    <div className="list-page admin-page">
-      <div className="list-page-header admin-page-header admin-page-header--row">
+    <div className="list-page gestion-personal-page">
+      <div className="gestion-personal-header">
         <div>
-          <h1 className="list-page-title admin-page-title">Gestión de Personal</h1>
+          <h1 className="admin-page-title">Gestión de Personal</h1>
           <p className="admin-page-subtitle">Administra usuarios, roles y accesos del sistema.</p>
         </div>
-        <button className="mc-btn-primary" onClick={() => abrirModal()}>
-          + Añadir Empleado
+        <button type="button" className="mc-btn-primary mc-btn-with-icon" onClick={() => abrirModal()}>
+          <Icon name="plus" size={16} /> Añadir empleado
         </button>
       </div>
 
-      <Card className="list-page-sticky table-card-body">
+      <Card className="gestion-personal-card table-card-body">
         <input
           type="text"
-          className="table-search"
+          className="table-search gestion-personal-search"
           placeholder="Buscar empleado por nombre..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
         />
 
-        <div className="table-scroll-wrap">
-          <table className="mc-table">
+        <div className="table-scroll-wrap gestion-personal-table-wrap">
+          <table className={`mc-table gestion-personal-table${esAdmin ? " gestion-personal-table--admin" : ""}`}>
             <thead>
               <tr>
                 <th>Nombre</th>
@@ -150,64 +148,61 @@ const GestionUsuarios = () => {
                 <th>Sucursal</th>
                 <th>Rol</th>
                 <th>Estado</th>
-                <th>Acciones</th>
+                <th className="gestion-personal-th-actions gestion-personal-col-actions">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {empleados.map(emp => (
                 <tr key={emp.id}>
                   <td className="mc-table-name">{emp.name}</td>
-                  <td style={{ color: "#475569" }}>{emp.user}</td>
+                  <td className="mc-table-muted">{emp.user}</td>
                   <td>{emp.sucursal}</td>
                   <td>
-                    <span style={{
-                      background: emp.role === "empleado" ? "#f1f5f9" : "#e0e7ff",
-                      padding: "4px 8px", borderRadius: 12, fontSize: 12
-                    }}>
+                    <span className={`mc-tag ${emp.role !== "empleado" ? "mc-tag--role-privileged" : ""}`}>
                       {emp.role}
                     </span>
                   </td>
                   <td>
-                    {emp.inactivo ? (
-                      <span style={{ color: "#dc2626", fontWeight: "bold", fontSize: 13 }}>Inactivo</span>
-                    ) : (
-                      <span style={{ color: "#16a34a", fontWeight: "bold", fontSize: 13 }}>Activo</span>
-                    )}
+                    <span className={`mc-status-pill ${emp.inactivo ? "mc-status-pill--inactivo" : "mc-status-pill--activo"}`}>
+                      {emp.inactivo ? "Inactivo" : "Activo"}
+                    </span>
                   </td>
-                  <td className="mc-table-actions">
-                    <button
-                      type="button"
-                      className="mc-btn-outline mc-btn-outline--edit"
-                      onClick={() => abrirModal(emp)}
-                    >
-                      Editar
-                    </button>
-                    {user?.role === "admin" && (
-                      <button
-                        type="button"
-                        className="mc-btn-outline mc-btn-outline--amber"
-                        onClick={() => restablecerPasswordUsuario(emp)}
-                      >
-                        Contraseña
-                      </button>
-                    )}
-                    {emp.inactivo ? (
+                  <td className="gestion-personal-col-actions">
+                    <div className="user-actions">
                       <button
                         type="button"
                         className="mc-btn-outline mc-btn-outline--edit"
-                        onClick={() => cambiarEstado(emp, true)}
+                        onClick={() => abrirModal(emp)}
                       >
-                        Activar
+                        Editar
                       </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="mc-btn-outline mc-btn-outline--danger"
-                        onClick={() => cambiarEstado(emp, false)}
-                      >
-                        Desactivar
-                      </button>
-                    )}
+                      {esAdmin && (
+                        <button
+                          type="button"
+                          className="mc-btn-outline mc-btn-outline--amber"
+                          onClick={() => restablecerPasswordUsuario(emp)}
+                        >
+                          Contraseña
+                        </button>
+                      )}
+                      {emp.inactivo ? (
+                        <button
+                          type="button"
+                          className="mc-btn-outline mc-btn-outline--edit"
+                          onClick={() => cambiarEstado(emp, true)}
+                        >
+                          Activar
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="mc-btn-outline mc-btn-outline--danger"
+                          onClick={() => cambiarEstado(emp, false)}
+                        >
+                          Desactivar
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -221,7 +216,6 @@ const GestionUsuarios = () => {
         </div>
       </Card>
 
-      {/* Modal Formulario */}
       {mostrarModal && (
         <div className="mc-modal-overlay">
           <div className="mc-modal">
@@ -267,7 +261,8 @@ const GestionUsuarios = () => {
               </div>
               <div className="mc-form-actions">
                 <button type="button" className="mc-btn-secondary" onClick={() => setMostrarModal(false)}>Cancelar</button>
-                <button type="submit" className="mc-btn-primary" disabled={loading}>
+                <button type="submit" className="mc-btn-primary mc-btn-with-icon" disabled={loading}>
+                  <Icon name="check" size={16} />
                   {loading ? "Guardando..." : "Guardar Empleado"}
                 </button>
               </div>

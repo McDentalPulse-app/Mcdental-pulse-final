@@ -4,6 +4,12 @@ import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
 
+const tipoPillClass = (tipo) => {
+  if (tipo === "Vacaciones") return "mc-status-pill--vacaciones";
+  if (tipo === "Permiso") return "mc-status-pill--permiso";
+  return "mc-status-pill--festivo";
+};
+
 const CalendarioRH = ({ vacaciones, permisos, eventosExtra }) => {
   const eventos = [
     ...vacaciones.map(v => ({
@@ -45,30 +51,14 @@ const CalendarioRH = ({ vacaciones, permisos, eventosExtra }) => {
     extra: eventos.filter(e => ["Festivo", "Asueto", "Evento"].includes(e.tipo)).length
   };
 
-  const badgeStyle = (tipo) => ({
-    display: "inline-block",
-    padding: "4px 10px",
-    borderRadius: 999,
-    fontSize: 12,
-    fontWeight: 700,
-    background:
-      tipo === "Vacaciones" ? "#ecfeff" :
-      tipo === "Permiso" ? "#fef3c7" :
-      "#fdcfe7",
-    color:
-      tipo === "Vacaciones" ? "#0e7490" :
-      tipo === "Permiso" ? "#92400e" :
-      "#166534"
-  });
-
   return (
-    <div>
-      <h1 style={{ margin: "0 0 6px", fontSize: 28, color: "#004D40" }}>
-        Calendario General
-      </h1>
-      <p style={{ margin: "0 0 24px", color: "#64748b" }}>
-        Vista general de vacaciones, permisos, festivos y asuetos.
-      </p>
+    <div className="admin-page">
+      <div className="admin-page-header">
+        <h1 className="admin-page-title">Calendario General</h1>
+        <p className="admin-page-subtitle">
+          Vista general de vacaciones, permisos, festivos y asuetos.
+        </p>
+      </div>
 
       <div className="admin-stat-grid">
         <StatCard iconName="vacation" value={resumen.vacaciones} label="Vacaciones" valueClass="admin-stat-value--blue" />
@@ -79,37 +69,25 @@ const CalendarioRH = ({ vacaciones, permisos, eventosExtra }) => {
       <Card>
         <SectionTitle icon="calendar">Agenda laboral</SectionTitle>
 
-        <div style={{ display: "grid", gap: 10 }}>
+        <div className="rh-calendar-list">
           {eventos.map(e => (
-            <div
-              key={e.id}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "120px 1fr auto",
-                gap: 14,
-                alignItems: "center",
-                padding: "14px 0",
-                borderBottom: "1px solid #e5e7eb"
-              }}
-            >
-              <div style={{ color: "#334155", fontWeight: 800 }}>
+            <div key={e.id} className="rh-calendar-row">
+              <div className="rh-calendar-date">
                 {e.fecha}
                 {e.fechaFin && e.fechaFin !== e.fecha ? (
-                  <div style={{ color: "#94a3b8", fontSize: 12 }}>al {e.fechaFin}</div>
+                  <span className="rh-calendar-date-end">al {e.fechaFin}</span>
                 ) : null}
               </div>
 
-              <div>
-                <div style={{ fontWeight: 800, color: "#0f172a", display: "flex", alignItems: "center", gap: 8 }}>
+              <div className="rh-calendar-body">
+                <div className="rh-calendar-title">
                   <Icon name={e.icon} size={16} /> {e.titulo}
                 </div>
-                <div style={{ color: "#64748b", fontSize: 13 }}>
-                  {e.sucursal} · {e.detalle}
-                </div>
+                <div className="rh-calendar-detail">{e.sucursal} · {e.detalle}</div>
               </div>
 
-              <div>
-                <span style={badgeStyle(e.tipo)}>{e.tipo}</span>
+              <div className="rh-calendar-badge">
+                <span className={`mc-status-pill ${tipoPillClass(e.tipo)}`}>{e.tipo}</span>
               </div>
             </div>
           ))}

@@ -8,10 +8,10 @@ const HRDashboard = ({ users }) => {
   const empleados = users.filter(u => u.role === "empleado");
 
   const stats = [
-    { label: "Empleados activos", value: empleados.length, iconName: "users" },
-    { label: "Vacaciones pendientes", value: 3, iconName: "vacation" },
-    { label: "Retardos registrados", value: 4, iconName: "clock" },
-    { label: "Descuentos activos", value: 2, iconName: "dollar" },
+    { label: "Empleados activos", value: empleados.length, iconName: "users", valueClass: "admin-stat-value--green" },
+    { label: "Vacaciones pendientes", value: 3, iconName: "vacation", valueClass: "admin-stat-value--amber" },
+    { label: "Retardos registrados", value: 4, iconName: "clock", valueClass: "admin-stat-value--amber" },
+    { label: "Descuentos activos", value: 2, iconName: "dollar", valueClass: "admin-stat-value--blue" },
   ];
 
   const pendientes = [
@@ -21,27 +21,36 @@ const HRDashboard = ({ users }) => {
   ];
 
   return (
-    <div>
-      <h1 style={{ margin: "0 0 6px", fontSize: 28, color: "#004D40" }}>
-        Dashboard RH
-      </h1>
-      <p style={{ margin: "0 0 24px", color: "#64748b" }}>
-        Gestión administrativa de vacaciones, descuentos y calendario laboral.
-      </p>
+    <div className="admin-page dashboard-page">
+      <header className="dashboard-executive-header">
+        <div className="dashboard-executive-main">
+          <span className="dashboard-eyebrow">McDental Pulse · Recursos Humanos</span>
+          <h1 className="dashboard-title">Dashboard RH</h1>
+          <p className="dashboard-subtitle">
+            Gestión administrativa de vacaciones, descuentos y calendario laboral.
+          </p>
+        </div>
+        <div className="dashboard-executive-meta">
+          <span className="dashboard-week-badge">
+            <Icon name="users" size={14} />
+            {empleados.length} colaboradores
+          </span>
+        </div>
+      </header>
 
       <div className="admin-stat-grid">
         {stats.map((s, i) => (
-          <StatCard key={i} iconName={s.iconName} value={s.value} label={s.label} valueClass="admin-stat-value--green" />
+          <StatCard key={i} iconName={s.iconName} value={s.value} label={s.label} valueClass={s.valueClass} />
         ))}
       </div>
 
       <Card>
         <SectionTitle icon="pin">Pendientes RH</SectionTitle>
-        <div style={{ display: "grid", gap: 10 }}>
+        <div className="rh-pending-list">
           {pendientes.map((p, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, color: "#334155" }}>
-              <span style={{ marginTop: 2, flexShrink: 0 }}><Icon name={p.icon} size={16} /></span>
-              {p.text}
+            <div key={i} className="rh-pending-item">
+              <span className="rh-pending-icon"><Icon name={p.icon} size={16} /></span>
+              <span className="rh-pending-text">{p.text}</span>
             </div>
           ))}
         </div>
@@ -49,6 +58,5 @@ const HRDashboard = ({ users }) => {
     </div>
   );
 };
-
 
 export default HRDashboard;

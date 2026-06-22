@@ -7,6 +7,7 @@ import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import RiskBar from "../common/RiskBar";
+import Icon from "../ui/Icon";
 import { semaforoColor, semaforoBg, semaforoLabel } from "../../config/theme";
 
 import { semanaActual } from "../../utils/constants";
@@ -18,31 +19,13 @@ import { collection, addDoc, getDocs, updateDoc, doc, serverTimestamp } from "fi
 const DescuentosRH = ({ descuentos, empleados, user, onUpdateEstado, onAddDescuento }) => {
   const { usuarios: USERS } = useGlobal();
 
-    const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const pendientes = descuentos.filter(d => d.estado === "pendiente").length;
   const activos = descuentos.filter(d => d.estado === "activo").length;
   const pagados = descuentos.filter(d => d.estado === "pagado").length;
   const totalActivo = descuentos
     .filter(d => d.estado !== "pagado" && d.estado !== "cancelado")
     .reduce((sum, d) => sum + d.monto, 0);
-
-  const badgeStyle = (estado) => ({
-    display: "inline-block",
-    padding: "4px 10px",
-    borderRadius: 999,
-    fontSize: 12,
-    fontWeight: 700,
-    background:
-      estado === "pagado" ? "#dcfce7" :
-      estado === "cancelado" ? "#fee2e2" :
-      estado === "activo" ? "#dbeafe" :
-      "#fef3c7",
-    color:
-      estado === "pagado" ? "#166534" :
-      estado === "cancelado" ? "#991b1b" :
-      estado === "activo" ? "#1e40af" :
-      "#92400e"
-  });
 
   const money = (amount) =>
     new Intl.NumberFormat("es-MX", {
@@ -51,89 +34,114 @@ const DescuentosRH = ({ descuentos, empleados, user, onUpdateEstado, onAddDescue
     }).format(amount);
 
   return (
-    <div>
-      <h1 style={{ margin: "0 0 6px", fontSize: 28, color: "#004D40" }}>
-        Descuentos
-      </h1>
-      <p style={{ margin: "0 0 24px", color: "#64748b" }}>
-        Registro y seguimiento de descuentos administrativos del personal.
-      </p>
+    <div className="admin-page">
+      <div className="admin-page-header admin-page-header--row">
+        <div>
+          <h1 className="admin-page-title">Descuentos</h1>
+          <p className="admin-page-subtitle">
+            Registro y seguimiento de descuentos administrativos del personal.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="mc-btn-primary mc-btn-with-icon"
+          onClick={() => setMostrarFormulario(!mostrarFormulario)}
+        >
+          <Icon name={mostrarFormulario ? "xCircle" : "plus"} size={16} />
+          {mostrarFormulario ? "Cancelar" : "Agregar descuento"}
+        </button>
+      </div>
 
-      <button
-  onClick={() => setMostrarFormulario(!mostrarFormulario)}
-  style={{
-    marginBottom: 15,
-    padding: "10px 16px",
-    borderRadius: 8,
-    border: "none",
-    background: "#006D5B",
-    color: "white",
-    fontWeight: 700,
-    cursor: "pointer"
-  }}
->
-  {mostrarFormulario ? "Cancelar" : "+ Agregar descuento"}
-</button>
-{mostrarFormulario && (
-  <Card>
-    <h3 style={{ marginTop: 0, color: "#004D40" }}>Agregar descuento</h3>
+      {mostrarFormulario && (
+        <Card className="rh-form-panel">
+          <SectionTitle icon="plus">Agregar descuento</SectionTitle>
 
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
+          <form
+            className="mc-form-grid"
+            onSubmit={(e) => {
+              e.preventDefault();
 
-        const form = e.target;
-        const empleadoId = Number(form.empleadoId.value);
-        const empleadoSeleccionado = empleados.find(emp => emp.id === empleadoId);
+              const form = e.target;
+              const empleadoId = Number(form.empleadoId.value);
+              const empleadoSeleccionado = empleados.find(emp => emp.id === empleadoId);
 
-        if (!empleadoSeleccionado) {
-          alert("Selecciona un empleado.");
-          return;
-        }
+              if (!empleadoSeleccionado) {
+                alert("Selecciona un empleado.");
+                return;
+              }
 
-        const nuevoDescuento = {
-          empleadoId: empleadoSeleccionado.id,
-          empleado: empleadoSeleccionado.name,
-          sucursal: empleadoSeleccionado.sucursal || "Sin sucursal",
-          puesto: empleadoSeleccionado.puesto || empleadoSeleccionado.categoria || "Empleado",
-          tipo: form.tipo.value,
-          motivo: form.motivo.value,
-          observaciones: form.observaciones.value,
-          fecha: form.fecha.value,
-          monto: Number(form.monto.value),
-          responsable: user?.name || "RH"
-        };
+              const nuevoDescuento = {
+                empleadoId: empleadoSeleccionado.id,
+                empleado: empleadoSeleccionado.name,
+                sucursal: empleadoSeleccionado.sucursal || "Sin sucursal",
+                puesto: empleadoSeleccionado.puesto || empleadoSeleccionado.categoria || "Empleado",
+                tipo: form.tipo.value,
+                motivo: form.motivo.value,
+                observaciones: form.observaciones.value,
+                fecha: form.fecha.value,
+                monto: Number(form.monto.value),
+                responsable: user?.name || "RH"
+              };
 
-        onAddDescuento(nuevoDescuento);
+              onAddDescuento(nuevoDescuento);
 
-        alert("Descuento agregado correctamente.");
-        form.reset();
-        setMostrarFormulario(false);
-      }}
-    >
-      <select name="empleadoId" required>
-        <option value="">Selecciona empleado</option>
-        {empleados
-          .filter(emp => emp.role === "empleado")
-          .map(emp => (
-            <option key={emp.id} value={emp.id}>
-              {emp.name} - {emp.sucursal}
-            </option>
-          ))}
-      </select>
+              alert("Descuento agregado correctamente.");
+              form.reset();
+              setMostrarFormulario(false);
+            }}
+          >
+            <div className="mc-form-group">
+              <label className="mc-form-label">Empleado</label>
+              <select className="mc-form-select" name="empleadoId" required>
+                <option value="">Selecciona empleado</option>
+                {empleados
+                  .filter(emp => emp.role === "empleado")
+                  .map(emp => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.name} - {emp.sucursal}
+                    </option>
+                  ))}
+              </select>
+            </div>
 
-      <input name="tipo" placeholder="Tipo de descuento" required />
-      <input name="motivo" placeholder="Motivo" required />
-      <input name="observaciones" placeholder="Observaciones" />
-      <input name="fecha" type="date" required />
-      <input name="monto" type="number" placeholder="Monto" required />
+            <div className="mc-form-row-2">
+              <div className="mc-form-group">
+                <label className="mc-form-label">Tipo de descuento</label>
+                <input className="mc-form-input" name="tipo" placeholder="Ej. Préstamo, Faltante..." required />
+              </div>
+              <div className="mc-form-group">
+                <label className="mc-form-label">Motivo</label>
+                <input className="mc-form-input" name="motivo" placeholder="Motivo del descuento" required />
+              </div>
+            </div>
 
-      <button type="submit">
-        Guardar descuento
-      </button>
-    </form>
-  </Card>
-)}
+            <div className="mc-form-row-2">
+              <div className="mc-form-group">
+                <label className="mc-form-label">Fecha</label>
+                <input className="mc-form-input" name="fecha" type="date" required />
+              </div>
+              <div className="mc-form-group">
+                <label className="mc-form-label">Monto</label>
+                <input className="mc-form-input" name="monto" type="number" placeholder="0.00" required />
+              </div>
+            </div>
+
+            <div className="mc-form-group">
+              <label className="mc-form-label">Observaciones</label>
+              <input className="mc-form-input" name="observaciones" placeholder="Observaciones opcionales" />
+            </div>
+
+            <div className="rh-form-actions">
+              <button type="button" className="mc-btn-secondary" onClick={() => setMostrarFormulario(false)}>
+                Cancelar
+              </button>
+              <button type="submit" className="mc-btn-primary mc-btn-with-icon">
+                <Icon name="check" size={16} /> Guardar descuento
+              </button>
+            </div>
+          </form>
+        </Card>
+      )}
 
       <div className="admin-stat-grid">
         <StatCard iconName="clock" value={pendientes} label="Pendientes" valueClass="admin-stat-value--amber" />
@@ -145,78 +153,46 @@ const DescuentosRH = ({ descuentos, empleados, user, onUpdateEstado, onAddDescue
       <Card>
         <SectionTitle icon="dollar">Registro de descuentos</SectionTitle>
 
-        <div style={{ display: "grid", gap: 12 }}>
+        <div className="rh-data-list">
           {descuentos.map(d => (
-            <div
-              key={d.id}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1.4fr 1fr 1fr auto",
-                gap: 12,
-                alignItems: "center",
-                padding: "14px 0",
-                borderBottom: "1px solid #e5e7eb"
-              }}
-            >
-              <div>
-                <div style={{ fontWeight: 800, color: "#0f172a" }}>{d.empleado}</div>
-                <div style={{ color: "#64748b", fontSize: 13 }}>
-                  {d.sucursal} · {d.puesto}
-                </div>
-                <div style={{ color: "#334155", fontSize: 13, marginTop: 4 }}>
-                  {d.tipo} · {d.motivo}
-                </div>
-                <div style={{ color: "#94a3b8", fontSize: 12 }}>
-                  Observaciones: {d.observaciones}
-                </div>
+            <div key={d.id} className="rh-data-row">
+              <div className="rh-data-row-main">
+                <div className="rh-data-row-title">{d.empleado}</div>
+                <div className="rh-data-row-sub">{d.sucursal} · {d.puesto}</div>
+                <div className="rh-data-row-detail">{d.tipo} · {d.motivo}</div>
+                <div className="rh-data-row-note">Observaciones: {d.observaciones}</div>
               </div>
 
-              <div style={{ color: "#334155", fontSize: 14 }}>
-                {d.fecha}
-                <div style={{ color: "#64748b", fontSize: 12 }}>{money(d.monto)}</div>
-                <div style={{ color: "#94a3b8", fontSize: 12 }}>
-                  Responsable: {d.responsable}
-                </div>
+              <div className="rh-data-row-meta">
+                <div className="rh-data-row-meta-primary">{d.fecha}</div>
+                <div className="rh-data-row-meta-secondary">{money(d.monto)}</div>
+                <div className="rh-data-row-note">Responsable: {d.responsable}</div>
               </div>
 
-              <div>
-                <span style={badgeStyle(d.estado)}>{d.estado}</span>
+              <div className="rh-data-row-status">
+                <span className={`mc-status-pill mc-status-pill--${d.estado}`}>{d.estado}</span>
               </div>
 
-              <div style={{ display: "flex", gap: 8 }}>
+              <div className="rh-data-row-actions">
                 {d.estado !== "pagado" && d.estado !== "cancelado" ? (
                   <>
                     <button
+                      type="button"
+                      className="mc-btn-primary mc-btn-sm-action"
                       onClick={() => onUpdateEstado(d.id, "pagado")}
-                      style={{
-                        border: "none",
-                        background: "#00897B",
-                        color: "white",
-                        padding: "8px 10px",
-                        borderRadius: 8,
-                        fontWeight: 700,
-                        cursor: "pointer"
-                      }}
                     >
-                      Marcar pagado
+                      <Icon name="check" size={14} /> Marcar pagado
                     </button>
                     <button
+                      type="button"
+                      className="mc-btn-danger mc-btn-sm-action"
                       onClick={() => onUpdateEstado(d.id, "cancelado")}
-                      style={{
-                        border: "none",
-                        background: "#ef4444",
-                        color: "white",
-                        padding: "8px 10px",
-                        borderRadius: 8,
-                        fontWeight: 700,
-                        cursor: "pointer"
-                      }}
                     >
-                      Cancelar
+                      <Icon name="xCircle" size={14} /> Cancelar
                     </button>
                   </>
                 ) : (
-                  <span style={{ color: "#94a3b8", fontSize: 13 }}>Sin acciones</span>
+                  <span className="rh-data-row-muted">Sin acciones</span>
                 )}
               </div>
             </div>
@@ -226,6 +202,5 @@ const DescuentosRH = ({ descuentos, empleados, user, onUpdateEstado, onAddDescue
     </div>
   );
 };
-
 
 export default DescuentosRH;

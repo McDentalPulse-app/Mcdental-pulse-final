@@ -83,13 +83,26 @@ const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) 
             </div>
             <div className="mc-form-group">
               <label className="mc-form-label">Diploma del reconocimiento</label>
-              <input type="file" accept=".pdf,image/*" className="mc-form-input" onChange={(e) => setDiplomaArchivo(e.target.files?.[0] || null)} />
-              {diplomaArchivo && <div className="mc-form-hint">Archivo seleccionado: {diplomaArchivo.name}</div>}
+              <label className="mc-file-input-wrap">
+                <span className="mc-file-input-icon"><Icon name="paperclip" size={18} /></span>
+                <span className="mc-file-input-text">
+                  {diplomaArchivo ? diplomaArchivo.name : "Seleccionar diploma (PDF o imagen)"}
+                </span>
+                <input
+                  type="file"
+                  accept=".pdf,image/*"
+                  className="mc-file-input-overlay"
+                  onChange={(e) => setDiplomaArchivo(e.target.files?.[0] || null)}
+                />
+              </label>
               <div className="mc-form-hint mc-form-hint--warn">
-                Adjunto preparado. La carga del diploma se activará cuando Firebase Storage esté habilitado.
+                <Icon name="alert" size={14} />
+                <span>Adjunto preparado. La carga del diploma se activará cuando Firebase Storage esté habilitado.</span>
               </div>
             </div>
-            <button className="mc-btn-primary" onClick={otorgar}>Otorgar reconocimiento</button>
+            <button type="button" className="mc-btn-primary mc-btn-with-icon" onClick={otorgar}>
+              <Icon name="award" size={16} /> Otorgar reconocimiento
+            </button>
           </div>
         </Card>
 

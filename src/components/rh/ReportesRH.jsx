@@ -41,13 +41,13 @@ const ReportesRH = ({ vacaciones, permisos, descuentos }) => {
   }));
 
   return (
-    <div>
-      <h1 style={{ margin: "0 0 6px", fontSize: 28, color: "#004D40" }}>
-        Reportes RH
-      </h1>
-      <p style={{ margin: "0 0 24px", color: "#64748b" }}>
-        Resumen administrativo de vacaciones, permisos y descuentos.
-      </p>
+    <div className="admin-page">
+      <div className="admin-page-header">
+        <h1 className="admin-page-title">Reportes RH</h1>
+        <p className="admin-page-subtitle">
+          Resumen administrativo de vacaciones, permisos y descuentos por sucursal y colaborador.
+        </p>
+      </div>
 
       <div className="admin-stat-grid">
         <StatCard iconName="vacation" value={vacaciones.length} label="Vacaciones" valueClass="admin-stat-value--blue" />
@@ -55,78 +55,48 @@ const ReportesRH = ({ vacaciones, permisos, descuentos }) => {
         <StatCard iconName="dollar" value={money(totalDescuentosActivos)} label="Descuentos activos" valueClass="admin-stat-value--green" />
       </div>
 
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-        gap: 16
-      }}>
-        <Card>
+      <div className="rh-report-grid">
+        <Card className="rh-report-card">
           <SectionTitle icon="chart">Resumen por sucursal</SectionTitle>
-          <div style={{ display: "grid", gap: 10 }}>
+          <div className="rh-sucursal-list">
             {resumenSucursal.map(s => (
-              <div key={s.sucursal} style={{
-                padding: 12,
-                border: "1px solid #e5e7eb",
-                borderRadius: 12,
-                background: "#f8fafc"
-              }}>
-                <div style={{ fontWeight: 800, color: "#0f172a", marginBottom: 6 }}>
-                  {s.sucursal}
-                </div>
-                <div style={{ color: "#64748b", fontSize: 13, display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="vacation" size={14} /> {s.vacaciones} vacaciones</span>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="clipboard" size={14} /> {s.permisos} permisos</span>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="dollar" size={14} /> {s.descuentos} descuentos</span>
+              <div key={s.sucursal} className="rh-sucursal-item">
+                <div className="rh-sucursal-name">{s.sucursal}</div>
+                <div className="rh-sucursal-stats">
+                  <span className="rh-sucursal-stat"><Icon name="vacation" size={14} /> {s.vacaciones} vacaciones</span>
+                  <span className="rh-sucursal-stat"><Icon name="clipboard" size={14} /> {s.permisos} permisos</span>
+                  <span className="rh-sucursal-stat"><Icon name="dollar" size={14} /> {s.descuentos} descuentos</span>
                 </div>
               </div>
             ))}
           </div>
         </Card>
 
-        <Card>
+        <Card className="rh-report-card">
           <SectionTitle icon="users">Empleados con más movimientos</SectionTitle>
-          <div style={{ display: "grid", gap: 10 }}>
+          <div className="rh-ranking-list">
             {ranking.map((e, index) => (
-              <div key={e.empleado} style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "12px 0",
-                borderBottom: "1px solid #e5e7eb"
-              }}>
-                <div>
-                  <div style={{ fontWeight: 800, color: "#0f172a" }}>
-                    {index + 1}. {e.empleado}
-                  </div>
-                  <div style={{ color: "#64748b", fontSize: 13 }}>
-                    {e.sucursal}
-                  </div>
+              <div key={e.empleado} className="rh-ranking-row">
+                <div className="rh-ranking-main">
+                  <div className="rh-ranking-name">{index + 1}. {e.empleado}</div>
+                  <div className="rh-ranking-sub">{e.sucursal}</div>
                 </div>
-                <div style={{
-                  background: "#ecfeff",
-                  color: "#0e7490",
-                  padding: "6px 10px",
-                  borderRadius: 999,
-                  fontWeight: 800,
-                  fontSize: 13
-                }}>
-                  {e.total} movimientos
-                </div>
+                <span className="rh-ranking-badge">{e.total} movimientos</span>
               </div>
             ))}
           </div>
         </Card>
 
-        <Card>
+        <Card className="rh-report-card rh-report-card--wide">
           <SectionTitle icon="pin">Lectura administrativa</SectionTitle>
-          <div style={{ color: "#334155", lineHeight: 1.7 }}>
+          <div className="rh-report-insight">
             <p>
               RH tiene registrados {vacaciones.length} movimientos de vacaciones,
               {` ${permisos.length}`} permisos
               y {` ${descuentos.length}`} descuentos administrativos.
             </p>
             <p>
-              El monto activo en descuentos es de <b>{money(totalDescuentosActivos)}</b>.
+              El monto activo en descuentos es de <strong>{money(totalDescuentosActivos)}</strong>.
             </p>
             <p>
               Este reporte ayuda a identificar carga administrativa, incidencias recurrentes y seguimiento por sucursal.
@@ -137,6 +107,5 @@ const ReportesRH = ({ vacaciones, permisos, descuentos }) => {
     </div>
   );
 };
-
 
 export default ReportesRH;
