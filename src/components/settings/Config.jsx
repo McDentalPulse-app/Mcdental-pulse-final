@@ -74,39 +74,44 @@ const Config = ({ inicializarUsuariosPassword }) => {
         </Card>
       </div>
 
-      <Card>
+      <Card className="config-panel">
         <SectionTitle icon="stable">Umbrales del semáforo</SectionTitle>
+        <p className="config-panel-lead">
+          Rangos de Pulse Score para clasificar el bienestar del equipo en verde, amarillo y rojo.
+        </p>
 
-        <div className="admin-grid-auto">
-          <div className="mc-form-group config-threshold--verde">
+        <div className="config-threshold-grid">
+          <div className="config-threshold-card config-threshold--verde">
             <label className="mc-form-label config-threshold-label--verde">
               <Icon name="check" size={14} /> Verde mayor o igual a
             </label>
-            <input className="mc-form-input" value={verde} onChange={(e) => setVerde(e.target.value)} />
+            <input className="mc-form-input config-threshold-input" value={verde} onChange={(e) => setVerde(e.target.value)} />
           </div>
-          <div className="mc-form-group config-threshold--amarillo">
+          <div className="config-threshold-card config-threshold--amarillo">
             <label className="mc-form-label config-threshold-label--amarillo">
               <Icon name="warning" size={14} /> Amarillo mayor o igual a
             </label>
-            <input className="mc-form-input" value={amarillo} onChange={(e) => setAmarillo(e.target.value)} />
+            <input className="mc-form-input config-threshold-input" value={amarillo} onChange={(e) => setAmarillo(e.target.value)} />
           </div>
-          <div className="mc-form-group config-threshold--rojo">
+          <div className="config-threshold-card config-threshold--rojo">
             <label className="mc-form-label config-threshold-label--rojo">
               <Icon name="critical" size={14} /> Rojo menor a
             </label>
-            <input className="mc-form-input" value={rojo} onChange={(e) => setRojo(e.target.value)} />
+            <input className="mc-form-input config-threshold-input" value={rojo} onChange={(e) => setRojo(e.target.value)} />
           </div>
         </div>
 
-        <button className="mc-btn-primary" onClick={guardarConfig} style={{ marginTop: 8 }}>
-          Guardar configuración
-        </button>
+        <div className="config-panel-footer">
+          <button type="button" className="mc-btn-primary mc-btn-with-icon" onClick={guardarConfig}>
+            <Icon name="check" size={16} /> Guardar configuración
+          </button>
+        </div>
       </Card>
 
-      <div className="admin-grid-2">
-        <Card>
+      <div className="admin-grid-2 config-info-grid">
+        <Card className="config-info-card">
           <SectionTitle icon="users">Roles del sistema</SectionTitle>
-          <div className="mc-form-grid">
+          <div className="config-info-list">
             {roles.map(r => (
               <div key={r.nombre} className="config-role-item">
                 <div className="config-role-name">{r.nombre}</div>
@@ -116,12 +121,13 @@ const Config = ({ inicializarUsuariosPassword }) => {
           </div>
         </Card>
 
-        <Card>
+        <Card className="config-info-card">
           <SectionTitle icon="shield">Privacidad y seguridad</SectionTitle>
-          <div className="mc-form-grid">
+          <div className="config-info-list">
             {privacidad.map((p, idx) => (
               <div key={idx} className="config-privacy-item">
-                <Icon name="check" size={14} className="config-privacy-check" /> {p}
+                <Icon name="check" size={14} className="config-privacy-check" />
+                <span>{p}</span>
               </div>
             ))}
           </div>

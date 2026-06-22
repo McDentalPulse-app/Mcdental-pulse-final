@@ -2,12 +2,9 @@ import React, { useState } from "react";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
-import { SUCURSALES, semanaActual } from "../../utils/constants";
+import { semanaActual } from "../../utils/constants";
 
 const Reportes = ({ users = [], encuestas = [] }) => {
-  const generarReporte = (tipo) => {
-    alert(`${tipo} generado correctamente en modo demo. Cuando conectemos Firebase, aquí se descargará el archivo real.`);
-  };
   const [sucursalReporte, setSucursalReporte] = useState("Todas");
   const [mostrarSelectorSucursal, setMostrarSelectorSucursal] = useState(false);
   const sucursalesReporte = [
@@ -193,27 +190,61 @@ const Reportes = ({ users = [], encuestas = [] }) => {
     URL.revokeObjectURL(url);
   };
 
+  const exportOptions = [
+    {
+      icon: "file",
+      title: "Reporte Semanal",
+      desc: "Excel · bienestar de la semana activa",
+      action: descargarReporteSemanalExcel,
+    },
+    {
+      icon: "chart",
+      title: "Reporte Mensual",
+      desc: "Excel · consolidado del mes en curso",
+      action: descargarReporteMensualExcel,
+    },
+    {
+      icon: "building",
+      title: "Por Sucursal",
+      desc: "Excel · filtrar y descargar por ubicación",
+      action: () => setMostrarSelectorSucursal(!mostrarSelectorSucursal),
+      toggle: true,
+    },
+    {
+      icon: "users",
+      title: "Directorio de Empleados",
+      desc: "Excel · listado con score y semáforo",
+      action: descargarEmpleadosCSV,
+    },
+  ];
+
   return (
     <div className="admin-page">
       <div className="admin-page-header">
         <h1 className="admin-page-title">Reportes</h1>
-        <p className="admin-page-subtitle">Exporta reportes de bienestar por sucursal, empleado, semana o mes.</p>
+        <p className="admin-page-subtitle">
+          Centro de exportación ejecutiva · bienestar, participación y desempeño por periodo.
+        </p>
       </div>
 
       <Card className="reportes-hero">
-        <div className="reportes-hero-icon"><Icon name="chart" size={28} /></div>
-        <SectionTitle icon="chart" className="reportes-hero-title">Exportar Reportes</SectionTitle>
-        <p className="admin-page-subtitle" style={{ margin: "0 auto", textAlign: "center" }}>
-          Descarga archivos con los datos actuales del sistema.
-        </p>
+        <div className="reportes-hero-top">
+          <div className="reportes-hero-icon"><Icon name="spreadsheet" size={28} /></div>
+          <div>
+            <h2 className="reportes-hero-heading">Exportar reportes</h2>
+            <p className="reportes-hero-lead">
+              Descarga archivos con los datos actuales del sistema listos para revisión directiva.
+            </p>
+          </div>
+        </div>
 
         <div className="admin-info-box">
-          Los reportes incluyen encuestas, Pulse Score, semáforos, sucursales y participación del periodo activo.
+          Incluye encuestas, Pulse Score, semáforos, sucursales y participación del periodo activo.
         </div>
 
         {mostrarSelectorSucursal && (
-          <div style={{ marginBottom: 20 }}>
-            <div className="mc-form-group" style={{ maxWidth: 320, margin: "0 auto 12px" }}>
+          <div className="reportes-sucursal-panel">
+            <div className="mc-form-group">
               <label className="mc-form-label">Selecciona la sucursal</label>
               <select className="mc-form-select" value={sucursalReporte} onChange={(e) => setSucursalReporte(e.target.value)}>
                 {sucursalesReporte.map((sucursal) => (
@@ -221,19 +252,28 @@ const Reportes = ({ users = [], encuestas = [] }) => {
                 ))}
               </select>
             </div>
-            <div className="reportes-actions">
-              <button className="mc-btn-outline" onClick={descargarReporteSucursalExcel}>
-                Descargar reporte de sucursal
-              </button>
-            </div>
+            <button type="button" className="mc-btn-primary mc-btn-with-icon" onClick={descargarReporteSucursalExcel}>
+              <Icon name="spreadsheet" size={16} /> Descargar reporte de sucursal
+            </button>
           </div>
         )}
 
-        <div className="reportes-actions">
-          <button className="mc-btn-outline" onClick={descargarReporteSemanalExcel}><Icon name="file" size={16} /> Reporte Semanal Excel</button>
-          <button className="mc-btn-outline" onClick={descargarReporteMensualExcel}><Icon name="chart" size={16} /> Reporte Mensual Excel</button>
-          <button className="mc-btn-outline" onClick={() => setMostrarSelectorSucursal(!mostrarSelectorSucursal)}><Icon name="building" size={16} /> Por Sucursal Excel</button>
-          <button className="mc-btn-outline" onClick={descargarEmpleadosCSV}><Icon name="users" size={16} /> Empleados Excel</button>
+        <div className="reportes-export-grid">
+          {exportOptions.map((opt) => (
+            <button
+              key={opt.title}
+              type="button"
+              className={`reportes-export-btn${opt.toggle && mostrarSelectorSucursal ? " reportes-export-btn--active" : ""}`}
+              onClick={opt.action}
+            >
+              <span className="reportes-export-btn-icon"><Icon name={opt.icon} size={22} /></span>
+              <span className="reportes-export-btn-body">
+                <span className="reportes-export-btn-title">{opt.title}</span>
+                <span className="reportes-export-btn-desc">{opt.desc}</span>
+              </span>
+              <Icon name="spreadsheet" size={16} className="reportes-export-btn-arrow" />
+            </button>
+          ))}
         </div>
       </Card>
     </div>

@@ -179,46 +179,82 @@ const empleado =
           </div>
         </Card>
 
-        <Card>
+        <Card className="expediente-files-card">
           <SectionTitle icon="paperclip">Archivos del expediente</SectionTitle>
-          <button className="mc-btn-primary" style={{ marginBottom: 12 }} onClick={() => setMostrarSubirArchivo(!mostrarSubirArchivo)}>
-            {mostrarSubirArchivo ? "Cancelar" : "+ Subir archivo"}
-          </button>
-          {mostrarSubirArchivo && (
-            <div className="mc-form-grid" style={{ marginBottom: 12 }}>
-              <select className="mc-form-select" value={tipoArchivoExpediente} onChange={(e) => setTipoArchivoExpediente(e.target.value)}>
-                <option value="General">General</option>
-                <option value="Contrato">Contrato</option>
-                <option value="INE">INE</option>
-                <option value="Comprobante">Comprobante</option>
-                <option value="PDF">PDF</option>
-              </select>
-              <input type="file" className="mc-form-input" onChange={(e) => setArchivoExpediente(e.target.files[0])} />
-              {archivoExpediente && (
-                <div className="mc-form-hint">Archivo seleccionado: {archivoExpediente.name}</div>
-              )}
-              <div className="mc-form-hint mc-form-hint--warn">
-                El archivo no se subirá todavía porque Firebase Storage no está activo.
-                La carga de archivos se activará cuando Firebase Storage esté habilitado.
+          {!mostrarSubirArchivo ? (
+            <button
+              type="button"
+              className="mc-btn-primary mc-btn-with-icon"
+              onClick={() => setMostrarSubirArchivo(true)}
+            >
+              <Icon name="plus" size={16} /> Subir archivo
+            </button>
+          ) : (
+            <div className="expediente-upload-panel">
+              <div className="mc-form-group">
+                <label className="mc-form-label">Tipo de archivo</label>
+                <select className="mc-form-select" value={tipoArchivoExpediente} onChange={(e) => setTipoArchivoExpediente(e.target.value)}>
+                  <option value="General">General</option>
+                  <option value="Contrato">Contrato</option>
+                  <option value="INE">INE</option>
+                  <option value="Comprobante">Comprobante</option>
+                  <option value="PDF">PDF</option>
+                </select>
               </div>
-              <button
-                className="mc-btn-primary"
-                type="button"
-                onClick={() => {
-                  if (!archivoExpediente) {
-                    alert("Por favor selecciona un archivo primero.");
-                    return;
-                  }
-                  const continuar = window.confirm(
-                    "El archivo no se subirá todavía porque Firebase Storage no está activo.\n\nLa carga de archivos se activará cuando Firebase Storage esté habilitado.\n\n¿Deseas preparar el adjunto sin subirlo?"
-                  );
-                  if (!continuar) return;
-                  setArchivoExpediente(null);
-                  setMostrarSubirArchivo(false);
-                }}
-              >
-                Confirmar selección
-              </button>
+
+              <div className="mc-form-group">
+                <label className="mc-form-label">Archivo adjunto</label>
+                <label className="mc-file-input-wrap">
+                  <span className="mc-file-input-icon"><Icon name="paperclip" size={18} /></span>
+                  <span className="mc-file-input-text">
+                    {archivoExpediente ? archivoExpediente.name : "Seleccionar archivo del expediente"}
+                  </span>
+                  <input
+                    type="file"
+                    className="mc-file-input-overlay"
+                    onChange={(e) => setArchivoExpediente(e.target.files?.[0] || null)}
+                  />
+                </label>
+              </div>
+
+              <div className="mc-form-hint mc-form-hint--warn expediente-storage-hint">
+                <Icon name="alert" size={14} />
+                <span>
+                  El archivo no se subirá todavía porque Firebase Storage no está activo.
+                  La carga de archivos se activará cuando Firebase Storage esté habilitado.
+                </span>
+              </div>
+
+              <div className="expediente-upload-actions">
+                <button
+                  type="button"
+                  className="mc-btn-secondary"
+                  onClick={() => {
+                    setMostrarSubirArchivo(false);
+                    setArchivoExpediente(null);
+                  }}
+                >
+                  Cancelar archivo
+                </button>
+                <button
+                  className="mc-btn-primary mc-btn-with-icon"
+                  type="button"
+                  onClick={() => {
+                    if (!archivoExpediente) {
+                      alert("Por favor selecciona un archivo primero.");
+                      return;
+                    }
+                    const continuar = window.confirm(
+                      "El archivo no se subirá todavía porque Firebase Storage no está activo.\n\nLa carga de archivos se activará cuando Firebase Storage esté habilitado.\n\n¿Deseas preparar el adjunto sin subirlo?"
+                    );
+                    if (!continuar) return;
+                    setArchivoExpediente(null);
+                    setMostrarSubirArchivo(false);
+                  }}
+                >
+                  <Icon name="paperclip" size={16} /> Preparar archivo
+                </button>
+              </div>
             </div>
           )}
           <div className="expediente-list-scroll">
