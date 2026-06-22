@@ -1,102 +1,58 @@
-import React, { useState } from "react";
+import React from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
-import Badge from "../common/Badge";
-import Avatar from "../ui/Avatar";
-import PulseScoreBadge from "../common/PulseScoreBadge";
-import RiskBar from "../common/RiskBar";
-import { semaforoColor, semaforoBg, semaforoLabel } from "../../config/theme";
-
-import { semanaActual } from "../../utils/constants";
-import { calcularAntiguedad } from "../../utils/helpers";
-import { calcPulseScore, getPulseStatus, calcRiesgos } from "../../utils/pulseScore";
 
 const EventosPersonal = ({ users }) => {
   const { usuarios: USERS } = useGlobal();
 
   const empleados = users.filter(u => ["empleado", "rh", "psicologa", "admin"].includes(u.role));
-
   const today = new Date();
   const currentYear = today.getFullYear();
 
   const daysUntil = (dateString) => {
     if (!dateString) return 999;
-
     const original = new Date(dateString);
     let next = new Date(currentYear, original.getMonth(), original.getDate());
-
     if (next < new Date(today.getFullYear(), today.getMonth(), today.getDate())) {
       next = new Date(currentYear + 1, original.getMonth(), original.getDate());
     }
-
     const diff = next - new Date(today.getFullYear(), today.getMonth(), today.getDate());
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   };
 
   const formatDate = (dateString) => {
     if (!dateString) return "Sin fecha";
-    return new Date(dateString).toLocaleDateString("es-MX", {
-      day: "2-digit",
-      month: "long"
-    });
+    return new Date(dateString).toLocaleDateString("es-MX", { day: "2-digit", month: "long" });
   };
 
   const yearsSince = (dateString) => {
     if (!dateString) return 0;
-    const date = new Date(dateString);
-    return currentYear - date.getFullYear();
+    return currentYear - new Date(dateString).getFullYear();
   };
 
   const eventos = [
     ...empleados.map(u => ({
-      id: `cumple-${u.id}`,
-      tipo: "Cumpleaños",
-      icon: "🎂",
-      empleado: u.name,
-      puesto: u.puesto,
-      sucursal: u.sucursal,
-      fechaBase: u.fechaNacimiento,
-      fechaTexto: formatDate(u.fechaNacimiento),
-      dias: daysUntil(u.fechaNacimiento),
-      detalle: "Cumpleaños del colaborador"
+      id: `cumple-${u.id}`, tipo: "Cumpleaños", icon: "🎂", empleado: u.name,
+      puesto: u.puesto, sucursal: u.sucursal, fechaTexto: formatDate(u.fechaNacimiento),
+      dias: daysUntil(u.fechaNacimiento), detalle: "Cumpleaños del colaborador"
     })),
     ...empleados.map(u => ({
-      id: `aniv-${u.id}`,
-      tipo: "Aniversario laboral",
-      icon: "🎉",
-      empleado: u.name,
-      puesto: u.puesto,
-      sucursal: u.sucursal,
-      fechaBase: u.fechaIngreso,
-      fechaTexto: formatDate(u.fechaIngreso),
-      dias: daysUntil(u.fechaIngreso),
-      detalle: `${yearsSince(u.fechaIngreso)} año(s) en McDental`
+      id: `aniv-${u.id}`, tipo: "Aniversario laboral", icon: "🎉", empleado: u.name,
+      puesto: u.puesto, sucursal: u.sucursal, fechaTexto: formatDate(u.fechaIngreso),
+      dias: daysUntil(u.fechaIngreso), detalle: `${yearsSince(u.fechaIngreso)} año(s) en McDental`
     }))
-  ]
-    .filter(e => e.dias <= 30)
-    .sort((a, b) => a.dias - b.dias);
+  ].filter(e => e.dias <= 30).sort((a, b) => a.dias - b.dias);
 
   const hoy = eventos.filter(e => e.dias === 0).length;
   const proximos3 = eventos.filter(e => e.dias > 0 && e.dias <= 3).length;
   const proximos7 = eventos.filter(e => e.dias > 0 && e.dias <= 7).length;
 
-  const badgeStyle = (dias) => ({
-    display: "inline-block",
-    padding: "5px 10px",
-    borderRadius: 999,
-    fontSize: 12,
-    fontWeight: 900,
-    background:
-      dias === 0 ? "#fee2e2" :
-      dias <= 3 ? "#ffedd5" :
-      dias <= 7 ? "#fef3c7" :
-      "#dcfce7",
-    color:
-      dias === 0 ? "#991b1b" :
-      dias <= 3 ? "#c2410c" :
-      dias <= 7 ? "#92400e" :
-      "#166534"
-  });
+  const pillClass = (dias) => {
+    if (dias === 0) return "mc-status-pill mc-status-pill--today";
+    if (dias <= 3) return "mc-status-pill mc-status-pill--soon3";
+    if (dias <= 7) return "mc-status-pill mc-status-pill--soon7";
+    return "mc-status-pill mc-status-pill--later";
+  };
 
   const textoDias = (dias) => {
     if (dias === 0) return "Hoy";
@@ -105,98 +61,54 @@ const EventosPersonal = ({ users }) => {
   };
 
   return (
-    <div>
-      <h1 style={{ margin: "0 0 6px", fontSize: 28, color: "#004D40" }}>
-        Cumpleaños y Aniversarios
-      </h1>
-      <p style={{ margin: "0 0 24px", color: "#64748b" }}>
-        Recordatorios automáticos de cumpleaños y aniversarios laborales del equipo.
-      </p>
+    <div className="admin-page">
+      <div className="admin-page-header">
+        <h1 className="admin-page-title">Cumpleaños y Aniversarios</h1>
+        <p className="admin-page-subtitle">
+          Recordatorios automáticos de cumpleaños y aniversarios laborales del equipo.
+        </p>
+      </div>
 
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-        gap: 14,
-        marginBottom: 22
-      }}>
-        <Card>
-          <div style={{ fontSize: 24 }}>🎂</div>
-          <div style={{ fontSize: 30, fontWeight: 900, color: "#ef4444" }}>
-            {hoy}
-          </div>
-          <div style={{ fontWeight: 800 }}>Eventos hoy</div>
+      <div className="admin-stat-grid">
+        <Card className="admin-stat-card">
+          <div className="admin-stat-icon">🎂</div>
+          <div className="admin-stat-value admin-stat-value--red">{hoy}</div>
+          <div className="admin-stat-label">Eventos hoy</div>
         </Card>
-
-        <Card>
-          <div style={{ fontSize: 24 }}>⏰</div>
-          <div style={{ fontSize: 30, fontWeight: 900, color: "#f97316" }}>
-            {proximos3}
-          </div>
-          <div style={{ fontWeight: 800 }}>Próximos 3 días</div>
+        <Card className="admin-stat-card">
+          <div className="admin-stat-icon">⏰</div>
+          <div className="admin-stat-value admin-stat-value--orange">{proximos3}</div>
+          <div className="admin-stat-label">Próximos 3 días</div>
         </Card>
-
-        <Card>
-          <div style={{ fontSize: 24 }}>📅</div>
-          <div style={{ fontSize: 30, fontWeight: 900, color: "#f59e0b" }}>
-            {proximos7}
-          </div>
-          <div style={{ fontWeight: 800 }}>Próximos 7 días</div>
+        <Card className="admin-stat-card">
+          <div className="admin-stat-icon">📅</div>
+          <div className="admin-stat-value admin-stat-value--amber">{proximos7}</div>
+          <div className="admin-stat-label">Próximos 7 días</div>
         </Card>
-
-        <Card>
-          <div style={{ fontSize: 24 }}>🎉</div>
-          <div style={{ fontSize: 30, fontWeight: 900, color: "#00897B" }}>
-            {eventos.length}
-          </div>
-          <div style={{ fontWeight: 800 }}>Próximos 30 días</div>
+        <Card className="admin-stat-card">
+          <div className="admin-stat-icon">🎉</div>
+          <div className="admin-stat-value admin-stat-value--green">{eventos.length}</div>
+          <div className="admin-stat-label">Próximos 30 días</div>
         </Card>
       </div>
 
       <Card>
-        <h3 style={{ marginTop: 0, color: "#004D40" }}>
-          🎁 Agenda de celebraciones
-        </h3>
-
+        <h3 className="admin-section-title">🎁 Agenda de celebraciones</h3>
         {eventos.length === 0 ? (
-          <p style={{ color: "#64748b" }}>
-            No hay cumpleaños ni aniversarios próximos en los siguientes 30 días.
-          </p>
+          <p className="admin-empty">No hay cumpleaños ni aniversarios próximos en los siguientes 30 días.</p>
         ) : (
-          <div style={{ display: "grid", gap: 12 }}>
+          <div className="admin-list-scroll admin-list-scroll--tall">
             {eventos.map(e => (
-              <div
-                key={e.id}
-                style={{
-                  padding: 16,
-                  border: "1px solid #e5e7eb",
-                  borderRadius: 14,
-                  background: "#f8fafc",
-                  display: "grid",
-                  gridTemplateColumns: "1fr auto",
-                  gap: 12,
-                  alignItems: "center"
-                }}
-              >
+              <div key={e.id} className="admin-list-item" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "center" }}>
                 <div>
-                  <div style={{ fontWeight: 900, color: "#0f172a", fontSize: 17 }}>
-                    {e.icon} {e.empleado}
-                  </div>
-                  <div style={{ color: "#64748b", fontSize: 13 }}>
-                    {e.sucursal} · {e.puesto}
-                  </div>
-                  <div style={{ color: "#334155", marginTop: 6 }}>
+                  <div className="admin-list-item-title">{e.icon} {e.empleado}</div>
+                  <div className="admin-list-item-meta">{e.sucursal} · {e.puesto}</div>
+                  <div className="admin-list-item-body" style={{ marginTop: 6 }}>
                     <b>{e.tipo}</b> · {e.fechaTexto}
                   </div>
-                  <div style={{ color: "#64748b", fontSize: 13 }}>
-                    {e.detalle}
-                  </div>
+                  <div className="admin-list-item-meta">{e.detalle}</div>
                 </div>
-
-                <div style={{ textAlign: "right" }}>
-                  <span style={badgeStyle(e.dias)}>
-                    {textoDias(e.dias)}
-                  </span>
-                </div>
+                <span className={pillClass(e.dias)}>{textoDias(e.dias)}</span>
               </div>
             ))}
           </div>
@@ -205,6 +117,5 @@ const EventosPersonal = ({ users }) => {
     </div>
   );
 };
-
 
 export default EventosPersonal;

@@ -78,11 +78,11 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
   const enFocoRojo = empleadosConDatos.filter(e => e.status.semaforo === "Rojo");
 
   return (
-    <div className="dashboard-page">
-      <div className="dashboard-header">
+    <div className="admin-page dashboard-page">
+      <div className="admin-page-header dashboard-header">
         <div>
-          <h2 className="dashboard-title">Dashboard Global</h2>
-          <p className="dashboard-subtitle">Visión ejecutiva del bienestar organizacional</p>
+          <h1 className="admin-page-title dashboard-title">Dashboard Global</h1>
+          <p className="admin-page-subtitle dashboard-subtitle">Visión ejecutiva del bienestar organizacional</p>
         </div>
         <span className="dashboard-week-badge">📅 Semana {semanaActual}</span>
       </div>

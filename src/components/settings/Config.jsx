@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import Card from '../common/Card';
-import { UI, semaforoBg, semaforoColor } from '../../config/theme';
-import Badge from '../common/Badge';
 import { SUCURSALES } from '../../utils/constants';
 
 const Config = ({ inicializarUsuariosPassword }) => {
@@ -29,190 +27,85 @@ const Config = ({ inicializarUsuariosPassword }) => {
   ];
 
   return (
-    <div>
-      <h1 style={{ margin: "0 0 6px", fontSize: 28, color: "#004D40", textAlign: "center" }}>
-        Configuración
-      </h1>
-      <p style={{ margin: "0 0 24px", color: "#64748b", textAlign: "center" }}>
-        Parámetros generales de McDental Pulse, roles, privacidad y umbrales de bienestar.
-      </p>
+    <div className="admin-page">
+      <div className="admin-page-header">
+        <h1 className="admin-page-title">Configuración</h1>
+        <p className="admin-page-subtitle">
+          Parámetros generales de McDental Pulse, roles, privacidad y umbrales de bienestar.
+        </p>
+      </div>
 
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-        gap: 16,
-        marginBottom: 18
-      }}>
-        <Card>
-          <div style={{ fontSize: 26 }}>🫀</div>
-          <h3 style={{ margin: "8px 0 6px", color: "#004D40" }}>McDental Pulse</h3>
-          <p style={{ color: "#64748b", margin: 0, lineHeight: 1.6 }}>
+      <div className="admin-grid-auto">
+        <Card className="admin-stat-card">
+          <div className="admin-stat-icon">🫀</div>
+          <h3 className="admin-section-title" style={{ marginBottom: 8 }}>McDental Pulse</h3>
+          <p className="admin-list-item-meta" style={{ margin: 0 }}>
             Plataforma interna de telemetría avanzada para bienestar, clima laboral,
             seguimiento psicológico y gestión administrativa.
           </p>
         </Card>
 
-        <Card>
-          <div style={{ fontSize: 26 }}>🏢</div>
-          <h3 style={{ margin: "8px 0 6px", color: "#004D40" }}>Sucursales activas</h3>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", marginTop: 10 }}>
+        <Card className="admin-stat-card">
+          <div className="admin-stat-icon">🏢</div>
+          <h3 className="admin-section-title" style={{ marginBottom: 12 }}>Sucursales activas</h3>
+          <div className="mc-tag-grid">
             {SUCURSALES.map(s => (
-              <span
-                key={s}
-                style={{
-                  padding: "6px 10px",
-                  borderRadius: 999,
-                  background: "#ecfeff",
-                  color: "#00796B",
-                  fontWeight: 900,
-                  fontSize: 13
-                }}
-              >
-                {s}
-              </span>
+              <span key={s} className="mc-tag">{s}</span>
             ))}
           </div>
         </Card>
 
-        <Card>
-          <div style={{ fontSize: 26 }}>🤖</div>
-          <h3 style={{ margin: "8px 0 6px", color: "#004D40" }}>AI Engine</h3>
-          <p style={{ color: "#64748b", margin: 0, lineHeight: 1.6 }}>
+        <Card className="admin-stat-card">
+          <div className="admin-stat-icon">🤖</div>
+          <h3 className="admin-section-title" style={{ marginBottom: 8 }}>AI Engine</h3>
+          <p className="admin-list-item-meta" style={{ margin: 0 }}>
             Motor local por reglas activo. No genera costos de API. Preparado para conectar Gemini,
             Groq u OpenRouter más adelante.
           </p>
         </Card>
       </div>
 
-      <Card style={{ marginBottom: 18 }}>
-        <h3 style={{ marginTop: 0, color: "#004D40" }}>
-          🚦 Umbrales del semáforo
-        </h3>
+      <Card>
+        <h3 className="admin-section-title">🚦 Umbrales del semáforo</h3>
 
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: 14,
-          marginBottom: 18
-        }}>
-          <div>
-            <label style={{ display: "block", fontWeight: 900, color: "#16a34a", marginBottom: 8 }}>
-              🟢 Verde mayor o igual a
-            </label>
-            <input
-              value={verde}
-              onChange={(e) => setVerde(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "12px 14px",
-                borderRadius: 10,
-                border: "1px solid #86efac",
-                background: "#f0fdf4"
-              }}
-            />
+        <div className="admin-grid-auto">
+          <div className="mc-form-group config-threshold--verde">
+            <label className="mc-form-label config-threshold-label--verde">🟢 Verde mayor o igual a</label>
+            <input className="mc-form-input" value={verde} onChange={(e) => setVerde(e.target.value)} />
           </div>
-
-          <div>
-            <label style={{ display: "block", fontWeight: 900, color: "#d97706", marginBottom: 8 }}>
-              🟡 Amarillo mayor o igual a
-            </label>
-            <input
-              value={amarillo}
-              onChange={(e) => setAmarillo(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "12px 14px",
-                borderRadius: 10,
-                border: "1px solid #fbbf24",
-                background: "#fffbeb"
-              }}
-            />
+          <div className="mc-form-group config-threshold--amarillo">
+            <label className="mc-form-label config-threshold-label--amarillo">🟡 Amarillo mayor o igual a</label>
+            <input className="mc-form-input" value={amarillo} onChange={(e) => setAmarillo(e.target.value)} />
           </div>
-
-          <div>
-            <label style={{ display: "block", fontWeight: 900, color: "#dc2626", marginBottom: 8 }}>
-              🔴 Rojo menor a
-            </label>
-            <input
-              value={rojo}
-              onChange={(e) => setRojo(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "12px 14px",
-                borderRadius: 10,
-                border: "1px solid #fca5a5",
-                background: "#fef2f2"
-              }}
-            />
+          <div className="mc-form-group config-threshold--rojo">
+            <label className="mc-form-label config-threshold-label--rojo">🔴 Rojo menor a</label>
+            <input className="mc-form-input" value={rojo} onChange={(e) => setRojo(e.target.value)} />
           </div>
         </div>
 
-        <button
-          onClick={guardarConfig}
-          style={{
-            border: "none",
-            background: "#00897B",
-            color: "white",
-            padding: "12px 26px",
-            borderRadius: 12,
-            fontWeight: 900,
-            cursor: "pointer"
-          }}
-        >
+        <button className="mc-btn-primary" onClick={guardarConfig} style={{ marginTop: 8 }}>
           Guardar configuración
         </button>
       </Card>
 
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-        gap: 16
-      }}>
+      <div className="admin-grid-2">
         <Card>
-          <h3 style={{ marginTop: 0, color: "#004D40" }}>
-            👥 Roles del sistema
-          </h3>
-
-          <div style={{ display: "grid", gap: 10 }}>
+          <h3 className="admin-section-title">👥 Roles del sistema</h3>
+          <div className="mc-form-grid">
             {roles.map(r => (
-              <div
-                key={r.nombre}
-                style={{
-                  padding: 12,
-                  borderRadius: 12,
-                  background: "#f8fafc",
-                  border: "1px solid #e5e7eb"
-                }}
-              >
-                <div style={{ fontWeight: 900, color: "#0f172a" }}>
-                  {r.nombre}
-                </div>
-                <div style={{ color: "#64748b", fontSize: 13, lineHeight: 1.5 }}>
-                  {r.acceso}
-                </div>
+              <div key={r.nombre} className="config-role-item">
+                <div className="config-role-name">{r.nombre}</div>
+                <div className="config-role-desc">{r.acceso}</div>
               </div>
             ))}
           </div>
         </Card>
 
         <Card>
-          <h3 style={{ marginTop: 0, color: "#004D40" }}>
-            🔐 Privacidad y seguridad
-          </h3>
-
-          <div style={{ display: "grid", gap: 10 }}>
+          <h3 className="admin-section-title">🔐 Privacidad y seguridad</h3>
+          <div className="mc-form-grid">
             {privacidad.map((p, idx) => (
-              <div
-                key={idx}
-                style={{
-                  padding: 12,
-                  borderRadius: 12,
-                  background: "#f8fafc",
-                  border: "1px solid #e5e7eb",
-                  color: "#334155",
-                  lineHeight: 1.5
-                }}
-              >
+              <div key={idx} className="config-privacy-item">
                 ✅ {p}
               </div>
             ))}

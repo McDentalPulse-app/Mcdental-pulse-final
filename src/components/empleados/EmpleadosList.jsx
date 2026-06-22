@@ -86,7 +86,7 @@ const EmpleadosList = ({
     const riesgos = calcRiesgos(selected.id, encuestas);
 
     return (
-      <div className="detail-page">
+      <div className="detail-page admin-page">
         <button className="detail-back-btn" onClick={() => setSelected(null)}>
           ← Volver a empleados
         </button>
@@ -120,19 +120,7 @@ const EmpleadosList = ({
               </div>
             </div>
 {puedeRestablecer && (
-  <button
-    onClick={() => onRestablecerPassword(selected)}
-    style={{
-      marginTop: 14,
-      padding: "10px 14px",
-      borderRadius: 10,
-      border: "none",
-      background: "#f59e0b",
-      color: "white",
-      fontWeight: 900,
-      cursor: "pointer"
-    }}
-  >
+  <button className="mc-btn-warning" style={{ marginTop: 14 }} onClick={() => onRestablecerPassword(selected)}>
     🔑 Restablecer contraseña
   </button>
 )}
@@ -401,9 +389,12 @@ const EmpleadosList = ({
   }
 
   return (
-    <div className="list-page">
-      <div className="list-page-header">
-        <h2 className="list-page-title">Empleados</h2>
+    <div className="list-page admin-page">
+      <div className="list-page-header admin-page-header admin-page-header--row">
+        <div>
+          <h2 className="list-page-title admin-page-title">Empleados</h2>
+          <p className="admin-page-subtitle">Directorio del equipo con bienestar y semáforo por colaborador.</p>
+        </div>
       </div>
 
       <Card className="list-page-sticky list-card-spaced">

@@ -121,9 +121,12 @@ const GestionUsuarios = () => {
   };
 
   return (
-    <div className="list-page">
-      <div className="list-page-header">
-        <h1 className="list-page-title">Gestión de Personal</h1>
+    <div className="list-page admin-page">
+      <div className="list-page-header admin-page-header admin-page-header--row">
+        <div>
+          <h1 className="list-page-title admin-page-title">Gestión de Personal</h1>
+          <p className="admin-page-subtitle">Administra usuarios, roles y accesos del sistema.</p>
+        </div>
         <button className="mc-btn-primary" onClick={() => abrirModal()}>
           + Añadir Empleado
         </button>
@@ -220,37 +223,31 @@ const GestionUsuarios = () => {
 
       {/* Modal Formulario */}
       {mostrarModal && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-          background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
-        }}>
-          <div style={{ background: "#fff", padding: 30, borderRadius: 12, width: 500, maxWidth: "90%" }}>
-            <h2 style={{ marginTop: 0 }}>{usuarioEditando ? "Editar Empleado" : "Añadir Empleado"}</h2>
-            <form onSubmit={guardarUsuario} style={{ display: "grid", gap: 12 }}>
-              
-              <div>
-                <label style={{ display: "block", marginBottom: 4, fontWeight: "bold" }}>Nombre Completo</label>
-                <input required type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} style={{ width: "100%", padding: 10, borderRadius: 6, border: "1px solid #ccc" }} />
+        <div className="mc-modal-overlay">
+          <div className="mc-modal">
+            <h2 className="mc-modal-title">{usuarioEditando ? "Editar Empleado" : "Añadir Empleado"}</h2>
+            <form onSubmit={guardarUsuario} className="mc-form-grid">
+              <div className="mc-form-group">
+                <label className="mc-form-label">Nombre Completo</label>
+                <input required type="text" className="mc-form-input" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
               </div>
-
-              <div>
-                <label style={{ display: "block", marginBottom: 4, fontWeight: "bold" }}>Nombre de Usuario (Para iniciar sesión)</label>
-                <input required type="text" value={formData.user} onChange={(e) => setFormData({...formData, user: e.target.value})} style={{ width: "100%", padding: 10, borderRadius: 6, border: "1px solid #ccc" }} />
+              <div className="mc-form-group">
+                <label className="mc-form-label">Nombre de Usuario (Para iniciar sesión)</label>
+                <input required type="text" className="mc-form-input" value={formData.user} onChange={(e) => setFormData({...formData, user: e.target.value})} />
               </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
-                  <label style={{ display: "block", marginBottom: 4, fontWeight: "bold" }}>Rol</label>
-                  <select value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})} style={{ width: "100%", padding: 10, borderRadius: 6, border: "1px solid #ccc" }}>
+              <div className="mc-form-row-2">
+                <div className="mc-form-group">
+                  <label className="mc-form-label">Rol</label>
+                  <select className="mc-form-select" value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})}>
                     <option value="empleado">Empleado</option>
                     <option value="rh">Recursos Humanos</option>
                     <option value="psicologa">Psicóloga</option>
                     <option value="admin">Administrador</option>
                   </select>
                 </div>
-                <div>
-                  <label style={{ display: "block", marginBottom: 4, fontWeight: "bold" }}>Sucursal</label>
-                  <select value={formData.sucursal} onChange={(e) => setFormData({...formData, sucursal: e.target.value})} style={{ width: "100%", padding: 10, borderRadius: 6, border: "1px solid #ccc" }}>
+                <div className="mc-form-group">
+                  <label className="mc-form-label">Sucursal</label>
+                  <select className="mc-form-select" value={formData.sucursal} onChange={(e) => setFormData({...formData, sucursal: e.target.value})}>
                     <option value="Polanco">Polanco</option>
                     <option value="Roma">Roma</option>
                     <option value="Condesa">Condesa</option>
@@ -258,27 +255,22 @@ const GestionUsuarios = () => {
                   </select>
                 </div>
               </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
-                  <label style={{ display: "block", marginBottom: 4, fontWeight: "bold" }}>Teléfono</label>
-                  <input type="text" value={formData.telefono} onChange={(e) => setFormData({...formData, telefono: e.target.value})} style={{ width: "100%", padding: 10, borderRadius: 6, border: "1px solid #ccc" }} />
+              <div className="mc-form-row-2">
+                <div className="mc-form-group">
+                  <label className="mc-form-label">Teléfono</label>
+                  <input type="text" className="mc-form-input" value={formData.telefono} onChange={(e) => setFormData({...formData, telefono: e.target.value})} />
                 </div>
-                <div>
-                  <label style={{ display: "block", marginBottom: 4, fontWeight: "bold" }}>Fecha Ingreso (Antigüedad)</label>
-                  <input type="date" value={formData.antiguedad} onChange={(e) => setFormData({...formData, antiguedad: e.target.value})} style={{ width: "100%", padding: 10, borderRadius: 6, border: "1px solid #ccc" }} />
+                <div className="mc-form-group">
+                  <label className="mc-form-label">Fecha Ingreso (Antigüedad)</label>
+                  <input type="date" className="mc-form-input" value={formData.antiguedad} onChange={(e) => setFormData({...formData, antiguedad: e.target.value})} />
                 </div>
               </div>
-
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 10 }}>
-                <button type="button" onClick={() => setMostrarModal(false)} style={{ padding: "10px 20px", borderRadius: 8, border: "none", background: "#f1f5f9", cursor: "pointer", fontWeight: "bold" }}>
-                  Cancelar
-                </button>
-                <button type="submit" disabled={loading} style={{ padding: "10px 20px", borderRadius: 8, border: "none", background: "#006D5B", color: "#fff", cursor: "pointer", fontWeight: "bold" }}>
+              <div className="mc-form-actions">
+                <button type="button" className="mc-btn-secondary" onClick={() => setMostrarModal(false)}>Cancelar</button>
+                <button type="submit" className="mc-btn-primary" disabled={loading}>
                   {loading ? "Guardando..." : "Guardar Empleado"}
                 </button>
               </div>
-
             </form>
           </div>
         </div>

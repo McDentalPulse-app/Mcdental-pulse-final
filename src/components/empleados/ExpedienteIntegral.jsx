@@ -43,8 +43,8 @@ const empleado =
 
   if (!empleado) {
     return (
-      <div style={{ color: "#64748b", padding: 40 }}>
-        No hay empleados registrados.
+      <div className="admin-page">
+        <p className="admin-empty">No hay empleados registrados.</p>
       </div>
     );
   }
@@ -77,161 +77,85 @@ const empleado =
   );
 
   return (
-    <div>
-      <h1 style={{ margin: "0 0 6px", fontSize: 28, color: "#004D40" }}>
-        Expediente Integral
-      </h1>
-      <p style={{ margin: "0 0 24px", color: "#64748b" }}>
-        Vista consolidada del colaborador: bienestar, administración, comunicación y reconocimientos.
-      </p>
+    <div className="admin-page">
+      <div className="admin-page-header">
+        <h1 className="admin-page-title">Expediente Integral</h1>
+        <p className="admin-page-subtitle">
+          Vista consolidada del colaborador: bienestar, administración, comunicación y reconocimientos.
+        </p>
+      </div>
 
-      <Card style={{ marginBottom: 18 }}>
-  <div style={{
-    display: "grid",
-    gridTemplateColumns: "0.8fr 1.2fr",
-    gap: 12,
-    alignItems: "end"
-  }}>
-    <div>
-      <label style={{
-        display: "block",
-        marginBottom: 8,
-        fontWeight: 900,
-        color: "#004D40",
-        textAlign: "center"
-      }}>
-        Filtrar por sucursal
-      </label>
-
-      <select
-        value={filtroSucursalExp}
-        onChange={(e) => {
-          const nuevaSucursal = e.target.value;
-          setFiltroSucursalExp(nuevaSucursal);
-
-          const lista = empleados.filter(emp =>
-            nuevaSucursal === "Todas" || emp.sucursal === nuevaSucursal
-          );
-
-          setEmpleadoId(lista[0]?.id || "");
-        }}
-        style={{
-          width: "100%",
-          padding: "13px 14px",
-          borderRadius: 10,
-          border: "1px solid #cbd5e1",
-          background: "#ffffff",
-          color: "#0f172a",
-          fontSize: 14,
-          fontWeight: 800,
-          outline: "none"
-        }}
-      >
-        <option value="Todas">Todas las sucursales</option>
-        {[...new Set(empleados.map(emp => emp.sucursal))].map(s => (
-          <option key={s} value={s}>{s}</option>
-        ))}
-      </select>
-    </div>
-
-    <div>
-      <label style={{
-        display: "block",
-        marginBottom: 8,
-        fontWeight: 900,
-        color: "#004D40",
-        textAlign: "center"
-      }}>
-        Seleccionar empleado
-      </label>
-
-      <select
-        value={empleado?.id || ""}
-        onChange={(e) => setEmpleadoId(e.target.value)}
-        style={{
-          width: "100%",
-          padding: "13px 14px",
-          borderRadius: 10,
-          border: "1px solid #cbd5e1",
-          background: "#3b3b3b",
-          color: "#ffffff",
-          fontSize: 14,
-          fontWeight: 800,
-          outline: "none"
-        }}
-      >
-        {empleadosFiltrados.map(emp => (
-          <option key={emp.id} value={emp.id}>
-            {emp.name} · {emp.sucursal} · {emp.puesto}
-          </option>
-        ))}
-      </select>
-    </div>
-  </div>
-
-  <div style={{
-    marginTop: 12,
-    color: "#64748b",
-    textAlign: "center",
-    fontSize: 13,
-    fontWeight: 700
-  }}>
-    Mostrando {empleadosFiltrados.length} de {empleados.length} empleados
-  </div>
-</Card>
-
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-        gap: 14,
-        margin: "18px 0 22px"
-      }}>
-        <Card>
-          <div style={{ fontSize: 24 }}>👤</div>
-          <div style={{ fontSize: 22, fontWeight: 900, color: "#004D40" }}>
-            {empleado.name}
+      <Card>
+        <div className="expediente-filters">
+          <div className="mc-form-group">
+            <label className="mc-form-label">Filtrar por sucursal</label>
+            <select
+              className="mc-form-select"
+              value={filtroSucursalExp}
+              onChange={(e) => {
+                const nuevaSucursal = e.target.value;
+                setFiltroSucursalExp(nuevaSucursal);
+                const lista = empleados.filter(emp =>
+                  nuevaSucursal === "Todas" || emp.sucursal === nuevaSucursal
+                );
+                setEmpleadoId(lista[0]?.id || "");
+              }}
+            >
+              <option value="Todas">Todas las sucursales</option>
+              {[...new Set(empleados.map(emp => emp.sucursal))].map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
           </div>
-          <div style={{ color: "#64748b" }}>{empleado.puesto}</div>
-          <div style={{ color: "#64748b" }}>{empleado.sucursal}</div>
+          <div className="mc-form-group">
+            <label className="mc-form-label">Seleccionar empleado</label>
+            <select
+              className="mc-form-select"
+              value={empleado?.id || ""}
+              onChange={(e) => setEmpleadoId(e.target.value)}
+            >
+              {empleadosFiltrados.map(emp => (
+                <option key={emp.id} value={emp.id}>
+                  {emp.name} · {emp.sucursal} · {emp.puesto}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="list-filter-count">
+          Mostrando {empleadosFiltrados.length} de {empleados.length} empleados
+        </div>
+      </Card>
+
+      <div className="admin-stat-grid">
+        <Card className="admin-stat-card">
+          <div className="admin-stat-icon">👤</div>
+          <div className="admin-stat-value admin-stat-value--green" style={{ fontSize: 20 }}>{empleado.name}</div>
+          <div className="admin-stat-label">{empleado.puesto}</div>
+          <div className="admin-stat-label">{empleado.sucursal}</div>
         </Card>
-
-        <Card>
-          <div style={{ fontSize: 24 }}>💓</div>
-          <div style={{ fontSize: 30, fontWeight: 900, color: "#00897B" }}>
-            {ultimoScore}
-          </div>
-          <div style={{ fontWeight: 700 }}>Pulse Score™</div>
-          <div style={{ fontWeight: 700 }}>Pulse Score™</div>
-<div style={{ color: pulseStatus.color, fontWeight: 800, fontSize: 13 }}>
-  {pulseStatus.label}
-</div>
+        <Card className="admin-stat-card">
+          <div className="admin-stat-icon">💓</div>
+          <div className="admin-stat-value admin-stat-value--aqua">{ultimoScore}</div>
+          <div className="admin-stat-label">Pulse Score™</div>
+          <div style={{ color: pulseStatus.color, fontWeight: 800, fontSize: 13, marginTop: 4 }}>{pulseStatus.label}</div>
         </Card>
-
-        <Card>
-          <div style={{ fontSize: 24 }}>🚦</div>
-          <div style={{ fontSize: 24, fontWeight: 900, color: semaforoColor }}>
-            {semaforo}
-          </div>
-          <div style={{ fontWeight: 700 }}>Semáforo actual</div>
+        <Card className="admin-stat-card">
+          <div className="admin-stat-icon">🚦</div>
+          <div className="admin-stat-value" style={{ color: semaforoColor, fontSize: 24 }}>{semaforo}</div>
+          <div className="admin-stat-label">Semáforo actual</div>
         </Card>
-
-        <Card>
-          <div style={{ fontSize: 24 }}>🏅</div>
-          <div style={{ fontSize: 30, fontWeight: 900, color: "#2563eb" }}>
-            {reconocimientosEmpleado.length}
-          </div>
-          <div style={{ fontWeight: 700 }}>Reconocimientos</div>
+        <Card className="admin-stat-card">
+          <div className="admin-stat-icon">🏅</div>
+          <div className="admin-stat-value admin-stat-value--blue">{reconocimientosEmpleado.length}</div>
+          <div className="admin-stat-label">Reconocimientos</div>
         </Card>
       </div>
 
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
-        gap: 16
-      }}>
+      <div className="expediente-data-grid">
         <Card>
-          <h3 style={{ marginTop: 0, color: "#004D40" }}>📌 Datos generales</h3>
-          <div style={{ color: "#334155", lineHeight: 1.8 }}>
+          <h3 className="admin-section-title">📌 Datos generales</h3>
+          <div className="expediente-data-row">
             <div><b>Nombre:</b> {empleado.name}</div>
             <div><b>Puesto:</b> {empleado.puesto}</div>
             <div><b>Sucursal:</b> {empleado.sucursal}</div>
@@ -242,8 +166,8 @@ const empleado =
         </Card>
 
         <Card>
-          <h3 style={{ marginTop: 0, color: "#004D40" }}>💓 Bienestar</h3>
-          <div style={{ color: "#334155", lineHeight: 1.8 }}>
+          <h3 className="admin-section-title">💓 Bienestar</h3>
+          <div className="expediente-data-row">
             <div><b>Encuestas registradas:</b> {encuestasEmpleado.length}</div>
             <div><b>Score actual:</b> {ultimoScore}</div>
             <div><b>Semáforo:</b> <span style={{ color: semaforoColor, fontWeight: 900 }}>{semaforo}</span></div>
@@ -254,148 +178,121 @@ const empleado =
         </Card>
 
         <Card>
-  <h3 style={{ marginTop: 0, color: "#004D40" }}>📎 Archivos del expediente</h3>
-
-  <button
-    onClick={() => setMostrarSubirArchivo(!mostrarSubirArchivo)}
-    style={{
-      marginBottom: 12,
-      padding: "9px 14px",
-      border: "none",
-      borderRadius: 8,
-      background: "#00897B",
-      color: "white",
-      fontWeight: 700,
-      cursor: "pointer"
-    }}
-  >
-    {mostrarSubirArchivo ? "Cancelar" : "+ Subir archivo"}
-  </button>
-
-  {mostrarSubirArchivo && (
-    <div style={{ display: "grid", gap: 8 }}>
-      <select
-        value={tipoArchivoExpediente}
-        onChange={(e) => setTipoArchivoExpediente(e.target.value)}
-      >
-        <option value="General">General</option>
-        <option value="Contrato">Contrato</option>
-        <option value="INE">INE</option>
-        <option value="Comprobante">Comprobante</option>
-        <option value="PDF">PDF</option>
-      </select>
-
-      <input
-        type="file"
-        onChange={(e) => setArchivoExpediente(e.target.files[0])}
-      />
-
-      <button
-        onClick={async () => {
-          if (!archivoExpediente) {
-            alert("Por favor selecciona un archivo primero.");
-            return;
-          }
-          await onSubirArchivoExpediente({
-            empleado,
-            archivo: archivoExpediente,
-            tipo: tipoArchivoExpediente
-          });
-          setArchivoExpediente(null);
-          setMostrarSubirArchivo(false);
-        }}
-        style={{ padding: 8, background: "#004D40", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}
-      >
-        Confirmar Subida
-      </button>
-    </div>
-  )}
-
-  <div style={{ marginTop: 16 }}>
-    {archivosExpediente.filter(a => a.empleadoId === empleado.id).length === 0 ? (
-      <p style={{ color: "#64748b", fontSize: 13 }}>No hay archivos adjuntos.</p>
-    ) : (
-      archivosExpediente
-        .filter(a => a.empleadoId === empleado.id)
-        .map(a => (
-          <div key={a.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #e5e7eb" }}>
-            <div>
-              <b style={{ fontSize: 13 }}>{a.tipoArchivo}</b>
-              <div style={{ color: "#64748b", fontSize: 12 }}>{a.nombreArchivo}</div>
+          <h3 className="admin-section-title">📎 Archivos del expediente</h3>
+          <button className="mc-btn-primary" style={{ marginBottom: 12 }} onClick={() => setMostrarSubirArchivo(!mostrarSubirArchivo)}>
+            {mostrarSubirArchivo ? "Cancelar" : "+ Subir archivo"}
+          </button>
+          {mostrarSubirArchivo && (
+            <div className="mc-form-grid" style={{ marginBottom: 12 }}>
+              <select className="mc-form-select" value={tipoArchivoExpediente} onChange={(e) => setTipoArchivoExpediente(e.target.value)}>
+                <option value="General">General</option>
+                <option value="Contrato">Contrato</option>
+                <option value="INE">INE</option>
+                <option value="Comprobante">Comprobante</option>
+                <option value="PDF">PDF</option>
+              </select>
+              <input type="file" className="mc-form-input" onChange={(e) => setArchivoExpediente(e.target.files[0])} />
+              <button
+                className="mc-btn-primary"
+                onClick={async () => {
+                  if (!archivoExpediente) {
+                    alert("Por favor selecciona un archivo primero.");
+                    return;
+                  }
+                  await onSubirArchivoExpediente({ empleado, archivo: archivoExpediente, tipo: tipoArchivoExpediente });
+                  setArchivoExpediente(null);
+                  setMostrarSubirArchivo(false);
+                }}
+              >
+                Confirmar Subida
+              </button>
             </div>
-            <a 
-              href={a.url} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              style={{ color: "#00897B", textDecoration: "none", fontSize: 13, fontWeight: "bold" }}
-            >
-              Descargar
-            </a>
-          </div>
-        ))
-    )}
-  </div>
-</Card>
-
-
-            <Card>
-              <h3 style={{ marginTop: 0, color: "#004D40" }}>🏖️ Vacaciones</h3>
-              {vacacionesEmpleado.length === 0 ? (
-                <p style={{ color: "#64748b" }}>Sin vacaciones registradas.</p>
-              ) : vacacionesEmpleado.map(v => (
-                <div key={v.id} style={{ padding: "10px 0", borderBottom: "1px solid #e5e7eb" }}>
-                  <b>{v.inicio} al {v.fin}</b>
-                  <div style={{ color: "#64748b", fontSize: 13 }}>{v.dias} días · {v.estado}</div>
-                </div>
-              ))}
-            </Card>
-
-            {(esAdmin || esRH) && (
-              <Card>
-                <h3 style={{ marginTop: 0, color: "#004D40" }}>💸 Descuentos</h3>
-                {descuentosEmpleado.length === 0 ? (
-                  <p style={{ color: "#64748b" }}>Sin descuentos registrados.</p>
-                ) : descuentosEmpleado.map(d => (
-                  <div key={d.id} style={{ padding: "10px 0", borderBottom: "1px solid #e5e7eb" }}>
-                    <b>{d.tipo}</b>
-                    <div style={{ color: "#64748b", fontSize: 13 }}>${d.monto} · {d.estado}</div>
+          )}
+          <div className="expediente-list-scroll">
+            {archivosExpediente.filter(a => a.empleadoId === empleado.id).length === 0 ? (
+              <p className="admin-list-item-meta">No hay archivos adjuntos.</p>
+            ) : (
+              archivosExpediente.filter(a => a.empleadoId === empleado.id).map(a => (
+                <div key={a.id} className="expediente-list-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <b>{a.tipoArchivo}</b>
+                    <div className="admin-list-item-meta">{a.nombreArchivo}</div>
                   </div>
-                ))}
-              </Card>
+                  <a href={a.url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--mc-aqua)", fontWeight: 700, fontSize: 13, textDecoration: "none" }}>
+                    Descargar
+                  </a>
+                </div>
+              ))
             )}
-
-        <Card>
-          <h3 style={{ marginTop: 0, color: "#004D40" }}>🏅 Reconocimientos</h3>
-          {reconocimientosEmpleado.length === 0 ? (
-            <p style={{ color: "#64748b" }}>Sin reconocimientos registrados.</p>
-          ) : reconocimientosEmpleado.map(r => (
-            <div key={r.id} style={{ padding: "10px 0", borderBottom: "1px solid #e5e7eb" }}>
-              <b>{r.categoria}</b>
-              <div style={{ color: "#64748b", fontSize: 13 }}>{r.fecha} · {r.otorgadoPor}</div>
-              <div style={{ color: "#334155", fontSize: 13 }}>{r.comentario}</div>
-            </div>
-          ))}
+          </div>
         </Card>
 
         <Card>
-          <h3 style={{ marginTop: 0, color: "#004D40" }}>💬 Comunicación</h3>
-          <div style={{ color: "#334155", lineHeight: 1.8 }}>
+          <h3 className="admin-section-title">🏖️ Vacaciones</h3>
+          <div className="expediente-list-scroll">
+            {vacacionesEmpleado.length === 0 ? (
+              <p className="admin-list-item-meta">Sin vacaciones registradas.</p>
+            ) : vacacionesEmpleado.map(v => (
+              <div key={v.id} className="expediente-list-row">
+                <b>{v.inicio} al {v.fin}</b>
+                <div className="admin-list-item-meta">{v.dias} días · {v.estado}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {(esAdmin || esRH) && (
+          <Card>
+            <h3 className="admin-section-title">💸 Descuentos</h3>
+            <div className="expediente-list-scroll">
+              {descuentosEmpleado.length === 0 ? (
+                <p className="admin-list-item-meta">Sin descuentos registrados.</p>
+              ) : descuentosEmpleado.map(d => (
+                <div key={d.id} className="expediente-list-row">
+                  <b>{d.tipo}</b>
+                  <div className="admin-list-item-meta">${d.monto} · {d.estado}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        <Card>
+          <h3 className="admin-section-title">🏅 Reconocimientos</h3>
+          <div className="expediente-list-scroll">
+            {reconocimientosEmpleado.length === 0 ? (
+              <p className="admin-list-item-meta">Sin reconocimientos registrados.</p>
+            ) : reconocimientosEmpleado.map(r => (
+              <div key={r.id} className="expediente-list-row">
+                <b>{r.categoria}</b>
+                <div className="admin-list-item-meta">{r.fecha} · {r.otorgadoPor}</div>
+                <div className="admin-list-item-body">{r.comentario}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card>
+          <h3 className="admin-section-title">💬 Comunicación</h3>
+          <div className="expediente-data-row">
             <div><b>Mensajes relacionados:</b> {mensajesEmpleado.length}</div>
             <div><b>Último contacto:</b> {mensajesEmpleado.length ? "Registrado" : "Sin mensajes"}</div>
           </div>
         </Card>
 
         <Card>
-          <h3 style={{ marginTop: 0, color: "#004D40" }}>🔒 Reportes confidenciales</h3>
-          {reportesEmpleado.length === 0 ? (
-            <p style={{ color: "#64748b" }}>Sin reportes confidenciales registrados.</p>
-          ) : reportesEmpleado.map(r => (
-            <div key={r.id} style={{ padding: "10px 0", borderBottom: "1px solid #e5e7eb" }}>
-              <b>{r.tipo}</b>
-              <div style={{ color: "#64748b", fontSize: 13 }}>{r.fecha} · Urgencia {r.urgencia} · {r.estado}</div>
-              <div style={{ color: "#334155", fontSize: 13 }}>{r.descripcion}</div>
-            </div>
-          ))}
+          <h3 className="admin-section-title">🔒 Reportes confidenciales</h3>
+          <div className="expediente-list-scroll">
+            {reportesEmpleado.length === 0 ? (
+              <p className="admin-list-item-meta">Sin reportes confidenciales registrados.</p>
+            ) : reportesEmpleado.map(r => (
+              <div key={r.id} className="expediente-list-row">
+                <b>{r.tipo}</b>
+                <div className="admin-list-item-meta">{r.fecha} · Urgencia {r.urgencia} · {r.estado}</div>
+                <div className="admin-list-item-body">{r.descripcion}</div>
+              </div>
+            ))}
+          </div>
         </Card>
       </div>
     </div>

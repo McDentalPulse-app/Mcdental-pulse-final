@@ -38,8 +38,38 @@ export default function AdminLayout({ user, globals, actions }) {
             <Route path="reportes" element={<Reportes users={USERS} encuestas={encuestas} />} />
             <Route path="confidenciales" element={<ReportesConfidencialesPanel reportes={reportesConfidenciales} />} />
             <Route path="config" element={<Config inicializarUsuariosPassword={inicializarUsuariosPassword} />} />
-            <Route path="encuestas" element={<div><h2 style={{ margin:"0 0 20px",fontSize:22,fontWeight:800,color:"#004D40" }}>📋 Gestión de Encuestas</h2><Card><div style={{ fontWeight:700,fontSize:14,color:"#004D40",marginBottom:12 }}>Encuesta activa: {semanaActual}</div><div style={{ fontSize:13,color:"#6b7280",marginBottom:16 }}>{ENCUESTA_PREGUNTAS.length} preguntas · {new Set(encuestas.filter(e=>e.semana===semanaActual).map(e=>e.empleadoId)).size} respuestas</div>{ENCUESTA_PREGUNTAS.map((p,i)=>(<div key={p.id} style={{ padding:"10px 0",borderBottom:"1px solid #f3f4f6",fontSize:13 }}><span style={{ color:"#006D5B",fontWeight:700,marginRight:8 }}>{i+1}.</span><span style={{ color:"#374151" }}>{p.texto}</span><span style={{ color:"#9ca3af",marginLeft:8,fontSize:11 }}>({p.tipo})</span></div>))}<button style={{ marginTop:16,padding:"10px 20px",background:"#006D5B",color:"#fff",border:"none",borderRadius:10,fontWeight:700,cursor:"pointer" }}>+ Crear encuesta</button></Card></div>} />
-            <Route path="mensajes" element={<div style={{ padding: 40, textAlign: "center", color: "#64748b" }}><h2 style={{ color: "#004D40" }}>Acceso restringido</h2><p>Este canal es privado y solo está disponible para empleados y psicóloga.</p></div>} />
+            <Route path="encuestas" element={
+              <div className="admin-page">
+                <div className="admin-page-header">
+                  <h1 className="admin-page-title">Gestión de Encuestas</h1>
+                  <p className="admin-page-subtitle">Encuesta activa y preguntas del periodo actual.</p>
+                </div>
+                <Card>
+                  <div className="encuesta-meta">
+                    <span className="encuesta-meta-item">📅 Semana {semanaActual}</span>
+                    <span className="encuesta-meta-item">{ENCUESTA_PREGUNTAS.length} preguntas</span>
+                    <span className="encuesta-meta-item">{new Set(encuestas.filter(e=>e.semana===semanaActual).map(e=>e.empleadoId)).size} respuestas</span>
+                  </div>
+                  <div className="encuesta-list">
+                    {ENCUESTA_PREGUNTAS.map((p,i)=>(
+                      <div key={p.id} className="encuesta-item">
+                        <span className="encuesta-num">{i+1}.</span>
+                        <span>{p.texto}</span>
+                        <span className="encuesta-tipo">({p.tipo})</span>
+                      </div>
+                    ))}
+                  </div>
+                  <button className="mc-btn-primary" style={{ marginTop: 20 }}>+ Crear encuesta</button>
+                </Card>
+              </div>
+            } />
+            <Route path="mensajes" element={
+              <Card className="admin-restricted">
+                <div className="admin-restricted-icon">🔒</div>
+                <h2 className="admin-restricted-title">Acceso restringido</h2>
+                <p className="admin-restricted-text">Este canal es privado y solo está disponible para empleados y psicóloga.</p>
+              </Card>
+            } />
             <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Routes>
         </div>
