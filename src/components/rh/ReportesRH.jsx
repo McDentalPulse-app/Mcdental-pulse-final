@@ -58,7 +58,7 @@ const ReportesRH = ({ vacaciones, permisos, descuentos }) => {
       <div className="rh-report-grid">
         <Card className="rh-report-card">
           <SectionTitle icon="chart">Resumen por sucursal</SectionTitle>
-          <div className="rh-sucursal-list">
+          <div className="rh-sucursal-list rh-report-scroll-list">
             {resumenSucursal.map(s => (
               <div key={s.sucursal} className="rh-sucursal-item">
                 <div className="rh-sucursal-name">{s.sucursal}</div>

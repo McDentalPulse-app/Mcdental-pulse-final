@@ -2920,16 +2920,47 @@
 .rh-report-card {
   height: 100%;
   margin-bottom: 0 !important;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .rh-report-card--wide {
   grid-column: 1 / -1;
+  display: block;
+}
+
+.rh-report-scroll-list {
+  max-height: 420px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
+  flex: 1 1 auto;
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.rh-report-scroll-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.rh-report-scroll-list::-webkit-scrollbar-thumb {
+  background: rgba(0, 109, 91, 0.25);
+  border-radius: 999px;
 }
 
 .rh-sucursal-list,
 .rh-ranking-list {
   display: grid;
   gap: 10px;
+}
+
+.rh-report-card:not(.rh-report-card--wide) .admin-section-title {
+  flex-shrink: 0;
+}
+
+.rh-report-card:not(.rh-report-card--wide) .rh-ranking-list {
+  min-height: 420px;
 }
 
 .rh-sucursal-item {
@@ -4205,6 +4236,14 @@
   .psico-emp-grid,
   .emp-grid {
     grid-template-columns: 1fr;
+  }
+
+  .rh-report-scroll-list {
+    max-height: min(420px, 55vh);
+  }
+
+  .rh-report-card:not(.rh-report-card--wide) .rh-ranking-list {
+    min-height: auto;
   }
 
   .rh-data-row-actions {
