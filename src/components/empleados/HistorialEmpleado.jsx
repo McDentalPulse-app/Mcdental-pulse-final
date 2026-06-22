@@ -1,5 +1,4 @@
 import React from "react";
-import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
@@ -7,8 +6,6 @@ import Icon from "../ui/Icon";
 import { getPulseStatus } from "../../utils/pulseScore";
 
 const HistorialEmpleado = ({ user, encuestas }) => {
-  const { usuarios: USERS } = useGlobal();
-
   const historial = encuestas
     .filter(e => e.empleadoId === user.id)
     .slice()
@@ -25,67 +22,44 @@ const HistorialEmpleado = ({ user, encuestas }) => {
   const ultima = historial[0];
 
   return (
-    <div>
-      <h1 style={{ margin: "0 0 6px", fontSize: 28, color: "#004D40", textAlign: "center" }}>
-        Mi Historial
-      </h1>
-      <p style={{ margin: "0 0 24px", color: "#64748b", textAlign: "center" }}>
-        Consulta privada de tus mediciones semanales de bienestar.
-      </p>
+    <div className="admin-page empleado-page">
+      <div className="admin-page-header">
+        <h1 className="admin-page-title">Mi historial</h1>
+        <p className="admin-page-subtitle">
+          Consulta privada de tus mediciones semanales de bienestar.
+        </p>
+      </div>
 
       <div className="admin-stat-grid">
         <StatCard iconName="chart" value={historial.length} label="Encuestas registradas" valueClass="admin-stat-value--green" />
-        <StatCard iconName="heart" value={promedio} label="Promedio personal" valueClass="admin-stat-value--green" />
+        <StatCard iconName="heart" value={promedio} label="Promedio personal" valueClass="admin-stat-value--blue" />
         <StatCard iconName="star" value={mejor} label="Mejor score" valueClass="admin-stat-value--green" />
-        <StatCard iconName="calendarDays" value={ultima?.semana || "N/A"} label="Última medición" valueClass="admin-stat-value--green" />
+        <StatCard iconName="calendarDays" value={ultima?.semana || "N/A"} label="Última medición" valueClass="admin-stat-value--amber" />
       </div>
 
       <Card>
         <SectionTitle icon="clipboard">Historial semanal</SectionTitle>
 
         {historial.length === 0 ? (
-          <p style={{ color: "#64748b" }}>Aún no tienes encuestas registradas.</p>
+          <p className="admin-empty">Aún no tienes encuestas registradas.</p>
         ) : (
-          <div style={{ display: "grid", gap: 12 }}>
+          <div className="empleado-timeline">
             {historial.map(e => {
               const status = getPulseStatus(e.score);
 
               return (
-                <div
-                  key={`${e.empleadoId}-${e.semana}`}
-                  style={{
-                    padding: 16,
-                    borderRadius: 14,
-                    border: "1px solid #e5e7eb",
-                    background: "#f8fafc",
-                    display: "grid",
-                    gridTemplateColumns: "1fr auto",
-                    gap: 12,
-                    alignItems: "center"
-                  }}
-                >
-                  <div>
-                    <div style={{ fontWeight: 900, color: "#0f172a", fontSize: 17, display: "flex", alignItems: "center", gap: 8 }}>
+                <div key={`${e.empleadoId}-${e.semana}`} className="empleado-timeline-item">
+                  <div className="empleado-timeline-main">
+                    <div className="empleado-timeline-week">
                       <Icon name="calendarDays" size={16} /> {e.semana}
                     </div>
-                    <div style={{ color: "#64748b", fontSize: 13 }}>
-                      Resultado semanal de bienestar
-                    </div>
+                    <div className="empleado-timeline-label">Resultado semanal de bienestar</div>
                   </div>
-
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 24, fontWeight: 900, color: status.color }}>
-                     {Number.isFinite(Number(e.score)) ? Number(e.score) : 50} pts
+                  <div className="empleado-timeline-score">
+                    <div className="empleado-timeline-points" style={{ color: status.color }}>
+                      {Number.isFinite(Number(e.score)) ? Number(e.score) : 50} pts
                     </div>
-                    <span style={{
-                      display: "inline-block",
-                      padding: "5px 10px",
-                      borderRadius: 999,
-                      background: status.bg,
-                      color: status.color,
-                      fontWeight: 900,
-                      fontSize: 12
-                    }}>
+                    <span className="mc-status-pill" style={{ background: status.bg, color: status.color }}>
                       {status.label}
                     </span>
                   </div>
@@ -96,27 +70,12 @@ const HistorialEmpleado = ({ user, encuestas }) => {
         )}
       </Card>
 
-      <div style={{
-        marginTop: 16,
-        padding: 14,
-        borderRadius: 14,
-        background: "#ecfeff",
-        border: "1px solid #bae6fd",
-        color: "#004D40",
-        lineHeight: 1.6,
-        textAlign: "center",
-        fontWeight: 700,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 8
-      }}>
+      <div className="psico-confidential-banner empleado-privacy-banner">
         <Icon name="lock" size={16} />
         Este historial es privado. Solo muestra tus propias respuestas y resultados.
       </div>
     </div>
   );
 };
-
 
 export default HistorialEmpleado;

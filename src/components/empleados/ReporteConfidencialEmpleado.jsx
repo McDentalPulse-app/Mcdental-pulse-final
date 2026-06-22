@@ -1,12 +1,9 @@
 import React, { useState } from "react";
-import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
 
 const ReporteConfidencialEmpleado = ({ user, onSubmit }) => {
-  const { usuarios: USERS } = useGlobal();
-
   const [tipo, setTipo] = useState("Conflictos internos");
   const [urgencia, setUrgencia] = useState("Media");
   const [descripcion, setDescripcion] = useState("");
@@ -51,126 +48,75 @@ const ReporteConfidencialEmpleado = ({ user, onSubmit }) => {
   };
 
   return (
-    <div>
-      <h1 style={{ margin: "0 0 6px", fontSize: 28, color: "#004D40" }}>
-        Reporte Confidencial
-      </h1>
-      <p style={{ margin: "0 0 24px", color: "#64748b" }}>
-        Este espacio permite reportar situaciones sensibles. La información será visible únicamente para Psicóloga y Admin Principal.
-      </p>
+    <div className="admin-page empleado-page empleado-page--narrow">
+      <div className="admin-page-header">
+        <h1 className="admin-page-title">Reporte confidencial</h1>
+        <p className="admin-page-subtitle">
+          Este espacio permite reportar situaciones sensibles. La información será visible únicamente para Psicóloga y Admin Principal.
+        </p>
+      </div>
+
+      <div className="admin-info-box psico-confidential-info empleado-confidential-info">
+        <Icon name="shield" size={16} />
+        <span>Tu reporte es confidencial. Será revisado con discreción y solo por personal autorizado.</span>
+      </div>
 
       {enviado ? (
-        <Card>
+        <Card className="empleado-success-card">
           <SectionTitle icon="check">Reporte enviado</SectionTitle>
-          <p style={{ color: "#334155" }}>
+          <p className="admin-page-subtitle">
             Tu reporte fue registrado de forma confidencial para seguimiento.
           </p>
-          <button
-            onClick={() => setEnviado(false)}
-            style={{
-              border: "none",
-              background: "#00897B",
-              color: "white",
-              padding: "10px 14px",
-              borderRadius: 10,
-              fontWeight: 800,
-              cursor: "pointer"
-            }}
-          >
-            Crear otro reporte
+          <button type="button" className="mc-btn-primary mc-btn-with-icon" onClick={() => setEnviado(false)}>
+            <Icon name="plus" size={16} /> Crear otro reporte
           </button>
         </Card>
       ) : (
-        <Card>
+        <Card className="empleado-form-card empleado-confidential-form">
           <SectionTitle icon="lock">Nuevo reporte</SectionTitle>
 
-          <div style={{ display: "grid", gap: 14 }}>
-            <label style={{ fontWeight: 800, color: "#0f172a" }}>
-              Tipo de reporte
-              <select
-                value={tipo}
-                onChange={(e) => setTipo(e.target.value)}
-                style={{
-                  width: "100%",
-                  marginTop: 6,
-                  padding: 12,
-                  borderRadius: 10,
-                  border: "1px solid #cbd5e1"
-                }}
-              >
+          <div className="mc-form-grid">
+            <div className="mc-form-group">
+              <label className="mc-form-label">Tipo de reporte</label>
+              <select className="mc-form-select" value={tipo} onChange={(e) => setTipo(e.target.value)}>
                 {tipos.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
-            </label>
+            </div>
 
-            <label style={{ fontWeight: 800, color: "#0f172a" }}>
-              Nivel de urgencia
-              <select
-                value={urgencia}
-                onChange={(e) => setUrgencia(e.target.value)}
-                style={{
-                  width: "100%",
-                  marginTop: 6,
-                  padding: 12,
-                  borderRadius: 10,
-                  border: "1px solid #cbd5e1"
-                }}
-              >
+            <div className="mc-form-group">
+              <label className="mc-form-label">Nivel de urgencia</label>
+              <select className="mc-form-select" value={urgencia} onChange={(e) => setUrgencia(e.target.value)}>
                 <option>Baja</option>
                 <option>Media</option>
                 <option>Alta</option>
                 <option>Crítica</option>
               </select>
-            </label>
+            </div>
 
-            <label style={{ fontWeight: 800, color: "#0f172a" }}>
-              Descripción
+            <div className="mc-form-group">
+              <label className="mc-form-label">Descripción</label>
               <textarea
+                className="mc-form-textarea"
                 value={descripcion}
                 onChange={(e) => setDescripcion(e.target.value)}
                 placeholder="Describe lo ocurrido con el mayor detalle posible..."
                 rows={5}
-                style={{
-                  width: "100%",
-                  marginTop: 6,
-                  padding: 12,
-                  borderRadius: 10,
-                  border: "1px solid #cbd5e1",
-                  resize: "vertical"
-                }}
               />
-            </label>
+            </div>
 
-            <label style={{ fontWeight: 800, color: "#0f172a" }}>
-              Evidencias o notas adicionales
+            <div className="mc-form-group">
+              <label className="mc-form-label">Evidencias o notas adicionales</label>
               <textarea
+                className="mc-form-textarea"
                 value={evidencias}
                 onChange={(e) => setEvidencias(e.target.value)}
-                placeholder="Puedes indicar si tienes evidencias, fechas, personas involucradas o contexto adicional..."
+                placeholder="Indica si tienes evidencias, fechas, personas involucradas o contexto adicional..."
                 rows={3}
-                style={{
-                  width: "100%",
-                  marginTop: 6,
-                  padding: 12,
-                  borderRadius: 10,
-                  border: "1px solid #cbd5e1",
-                  resize: "vertical"
-                }}
               />
-            </label>
+            </div>
 
-            <button
-              onClick={enviar}
-              style={{
-                border: "none",
-                background: "#004D40",
-                color: "white",
-                padding: "12px 16px",
-                borderRadius: 10,
-                fontWeight: 900,
-                cursor: "pointer"
-              }}
-            >
-              Enviar reporte confidencial
+            <button type="button" className="mc-btn-primary mc-btn-with-icon empleado-confidential-submit" onClick={enviar}>
+              <Icon name="lock" size={16} /> Enviar reporte confidencial
             </button>
           </div>
         </Card>
@@ -178,6 +124,5 @@ const ReporteConfidencialEmpleado = ({ user, onSubmit }) => {
     </div>
   );
 };
-
 
 export default ReporteConfidencialEmpleado;
