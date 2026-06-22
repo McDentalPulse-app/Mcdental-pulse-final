@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
+import { useNotification } from "../../contexts/NotificationContext";
 
 const ReporteConfidencialEmpleado = ({ user, onSubmit }) => {
+  const { toast, confirm } = useNotification();
   const [tipo, setTipo] = useState("Conflictos internos");
   const [urgencia, setUrgencia] = useState("Media");
   const [descripcion, setDescripcion] = useState("");
@@ -23,11 +25,19 @@ const ReporteConfidencialEmpleado = ({ user, onSubmit }) => {
     "Otros"
   ];
 
-  const enviar = () => {
+  const enviar = async () => {
     if (!descripcion.trim()) {
-      alert("Por favor escribe una descripción del reporte.");
+      toast.warning("Por favor escribe una descripción del reporte.");
       return;
     }
+
+    const confirmar = await confirm({
+      title: "Enviar reporte confidencial",
+      description: "Tu reporte será enviado de forma confidencial a la psicóloga. ¿Deseas continuar?",
+      variant: "warning",
+      confirmText: "Enviar reporte",
+    });
+    if (!confirmar) return;
 
     onSubmit({
       empleadoId: user.id,

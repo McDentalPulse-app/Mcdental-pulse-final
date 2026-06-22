@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
+import { useNotification } from "../../contexts/NotificationContext";
 
 export default function PermisosEmpleado({
   user,
@@ -9,6 +10,7 @@ export default function PermisosEmpleado({
   permisos = [],
   onEnviarSolicitudEmpleado
 }) {
+  const { toast, confirm } = useNotification();
   const [tipoSeleccionado, setTipoSeleccionado] = useState("Vacaciones");
   const [fechaInicioPreview, setFechaInicioPreview] = useState("");
   const [fechaFinPreview, setFechaFinPreview] = useState("");
@@ -45,6 +47,87 @@ export default function PermisosEmpleado({
     return "mc-status-pill--pendiente";
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const form = e.target;
+    const tipo = form.tipo.value;
+    const fechaInicio = form.fechaInicio.value;
+    const fechaFin =
+      tipo === "Vacaciones" ? form.fechaFin.value : form.fechaInicio.value;
+
+    if (!tipo) {
+      toast.warning("Selecciona un tipo de permiso");
+      return;
+    }
+
+    if (!fechaInicio) {
+      toast.warning("Selecciona la fecha de inicio");
+      return;
+    }
+
+    if (tipo === "Vacaciones" && !fechaFin) {
+      toast.warning("Selecciona la fecha de fin");
+      return;
+    }
+
+    let dias = 1;
+
+    if (tipo === "Vacaciones") {
+      dias = calcularDias(fechaInicio, fechaFin);
+
+      if (dias <= 0) {
+        toast.warning("La fecha final debe ser igual o posterior a la fecha inicial.");
+        return;
+      }
+    }
+
+    const confirmar = await confirm({
+      title: "Enviar solicitud",
+      description: `¿Deseas enviar esta solicitud de "${tipo}"?`,
+      confirmText: "Enviar solicitud",
+    });
+
+    if (!confirmar) return;
+
+    const nuevoPermiso = {
+      id: Date.now(),
+      tipo,
+      empleadoId: user?.id,
+      empleado: user?.name || "Empleado",
+      nombre: user?.name || "Empleado",
+      name: user?.name || "Empleado",
+      sucursal: user?.sucursal || "Sin sucursal",
+      puesto: user?.puesto || user?.categoria || "Empleado",
+      categoria: user?.categoria || user?.puesto || "Empleado",
+      fecha: fechaInicio,
+      fechaInicio,
+      fechaFin,
+      inicio: fechaInicio,
+      fin: fechaFin,
+      desde: fechaInicio,
+      hasta: fechaFin,
+      hora: "",
+      dias: tipo === "Vacaciones" ? dias : "",
+      motivo: form.motivo.value,
+      comentario: form.comentario.value,
+      estado: "pendiente",
+      origen: "empleado"
+    };
+
+    if (onEnviarSolicitudEmpleado) {
+      onEnviarSolicitudEmpleado(nuevoPermiso);
+    }
+
+    toast.success("Solicitud enviada correctamente a RH.");
+
+    form.reset();
+    setTipoSeleccionado("Vacaciones");
+    setFechaInicioPreview("");
+    setFechaFinPreview("");
+    setDiasPreview(0);
+  };
+
   return (
     <div className="admin-page empleado-page empleado-page--narrow">
       <div className="admin-page-header">
@@ -59,84 +142,7 @@ export default function PermisosEmpleado({
 
         <form
           className="mc-form-grid"
-          onSubmit={(e) => {
-            e.preventDefault();
-
-            const form = e.target;
-            const tipo = form.tipo.value;
-            const fechaInicio = form.fechaInicio.value;
-            const fechaFin =
-              tipo === "Vacaciones" ? form.fechaFin.value : form.fechaInicio.value;
-
-            if (!tipo) {
-              alert("Selecciona un tipo de permiso");
-              return;
-            }
-
-            if (!fechaInicio) {
-              alert("Selecciona la fecha de inicio");
-              return;
-            }
-
-            if (tipo === "Vacaciones" && !fechaFin) {
-              alert("Selecciona la fecha de fin");
-              return;
-            }
-
-            let dias = 1;
-
-            if (tipo === "Vacaciones") {
-              dias = calcularDias(fechaInicio, fechaFin);
-
-              if (dias <= 0) {
-                alert("La fecha final debe ser igual o posterior a la fecha inicial.");
-                return;
-              }
-            }
-
-            const confirmar = window.confirm(
-              `¿Deseas enviar esta solicitud de "${tipo}"?`
-            );
-
-            if (!confirmar) return;
-
-            const nuevoPermiso = {
-              id: Date.now(),
-              tipo,
-              empleadoId: user?.id,
-              empleado: user?.name || "Empleado",
-              nombre: user?.name || "Empleado",
-              name: user?.name || "Empleado",
-              sucursal: user?.sucursal || "Sin sucursal",
-              puesto: user?.puesto || user?.categoria || "Empleado",
-              categoria: user?.categoria || user?.puesto || "Empleado",
-              fecha: fechaInicio,
-              fechaInicio,
-              fechaFin,
-              inicio: fechaInicio,
-              fin: fechaFin,
-              desde: fechaInicio,
-              hasta: fechaFin,
-              hora: "",
-              dias: tipo === "Vacaciones" ? dias : "",
-              motivo: form.motivo.value,
-              comentario: form.comentario.value,
-              estado: "pendiente",
-              origen: "empleado"
-            };
-
-            if (onEnviarSolicitudEmpleado) {
-              onEnviarSolicitudEmpleado(nuevoPermiso);
-            }
-
-            alert("Solicitud enviada correctamente a RH.");
-
-            form.reset();
-            setTipoSeleccionado("Vacaciones");
-            setFechaInicioPreview("");
-            setFechaFinPreview("");
-            setDiasPreview(0);
-          }}
+          onSubmit={handleSubmit}
         >
           <input type="hidden" name="tipo" value="Vacaciones" />
 

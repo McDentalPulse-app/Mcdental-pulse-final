@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNotification } from '../../contexts/NotificationContext';
 import Card from '../common/Card';
 import SectionTitle from '../common/SectionTitle';
 import StatCard from '../common/StatCard';
@@ -6,12 +7,13 @@ import Icon from '../ui/Icon';
 import { SUCURSALES } from '../../utils/constants';
 
 const Config = ({ inicializarUsuariosPassword }) => {
+  const { toast } = useNotification();
   const [verde, setVerde] = useState(70);
   const [amarillo, setAmarillo] = useState(45);
   const [rojo, setRojo] = useState(45);
 
   const guardarConfig = () => {
-    alert("Configuración guardada correctamente en modo demo. Cuando conectemos Firebase, estos valores se guardarán por organización.");
+    toast.success("Configuración guardada correctamente en modo demo. Cuando conectemos Firebase, estos valores se guardarán por organización.");
   };
 
   const roles = [

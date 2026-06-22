@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import { useAuth } from "../../contexts/AuthContext";
+import { useNotification } from "../../contexts/NotificationContext";
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import Card from "../common/Card";
@@ -9,6 +10,7 @@ import Icon from "../ui/Icon";
 const GestionUsuarios = () => {
   const { usuarios, setUsuarios } = useGlobal();
   const { user, restablecerPasswordUsuario } = useAuth();
+  const { toast, confirm } = useNotification();
   const esAdmin = user?.role === "admin";
 
   const [busqueda, setBusqueda] = useState("");
@@ -72,7 +74,7 @@ const GestionUsuarios = () => {
         await updateDoc(docRef, newData);
 
         setUsuarios(prev => prev.map(u => u.id === usuarioEditando.id ? { ...u, ...newData } : u));
-        alert("Usuario actualizado con éxito.");
+        toast.success("Usuario actualizado con éxito.");
       } else {
         const nuevoId = Date.now();
         const newUser = {
@@ -92,19 +94,24 @@ const GestionUsuarios = () => {
         });
 
         setUsuarios(prev => [...prev, { ...newUser, firebaseId: docRef.id }]);
-        alert("Usuario creado con éxito. Contraseña inicial: emp123");
+        toast.success("Usuario creado con éxito. Contraseña inicial: emp123");
       }
       setMostrarModal(false);
     } catch (error) {
       console.error("Error guardando usuario:", error);
-      alert("Hubo un error al guardar el usuario en Firebase.");
+      toast.error("Hubo un error al guardar el usuario en Firebase.");
     } finally {
       setLoading(false);
     }
   };
 
   const cambiarEstado = async (empleado, estadoActivo) => {
-    const confirmar = window.confirm(`¿Deseas ${estadoActivo ? "activar" : "desactivar"} a ${empleado.name}?`);
+    const confirmar = await confirm({
+      title: estadoActivo ? "Activar empleado" : "Desactivar empleado",
+      description: `¿Deseas ${estadoActivo ? "activar" : "desactivar"} a ${empleado.name}?`,
+      variant: estadoActivo ? "default" : "danger",
+      confirmText: estadoActivo ? "Activar" : "Desactivar",
+    });
     if (!confirmar) return;
 
     try {
@@ -112,9 +119,10 @@ const GestionUsuarios = () => {
       await updateDoc(docRef, { inactivo: !estadoActivo });
 
       setUsuarios(prev => prev.map(u => u.id === empleado.id ? { ...u, inactivo: !estadoActivo } : u));
+      toast.success(`Empleado ${estadoActivo ? "activado" : "desactivado"} correctamente.`);
     } catch (error) {
       console.error("Error cambiando estado:", error);
-      alert("Error al cambiar el estado del usuario.");
+      toast.error("Error al cambiar el estado del usuario.");
     }
   };
 

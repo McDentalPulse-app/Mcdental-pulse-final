@@ -2,10 +2,12 @@ import React, { useState } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import Icon from "../ui/Icon";
+import { useNotification } from "../../contexts/NotificationContext";
 import { semanaActual } from "../../utils/constants";
 
 const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
   const { encuestaPreguntas: ENCUESTA_PREGUNTAS } = useGlobal();
+  const { toast, confirm } = useNotification();
 
   const yaContesto = encuestas.some(
     (e) => e.empleadoId === user.id && e.semana === semanaActual
@@ -35,7 +37,7 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
     ? Math.round((answeredCount / preguntas.length) * 100)
     : 0;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const preguntasConScore = preguntas.filter((p) => p.tipo === "escala");
 
     const valoresNumericos = preguntasConScore
@@ -43,9 +45,16 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
       .filter((valor) => Number.isFinite(valor));
 
     if (valoresNumericos.length !== preguntasConScore.length) {
-      alert("Faltan respuestas numéricas para calcular el Pulse Score.");
+      toast.warning("Faltan respuestas numéricas para calcular el Pulse Score.");
       return;
     }
+
+    const confirmar = await confirm({
+      title: "Enviar encuesta",
+      description: "¿Deseas enviar tu encuesta semanal? No podrás modificarla después.",
+      confirmText: "Enviar encuesta",
+    });
+    if (!confirmar) return;
 
     const score = Math.round(
       (valoresNumericos.reduce((acc, valor) => acc + valor, 0) /

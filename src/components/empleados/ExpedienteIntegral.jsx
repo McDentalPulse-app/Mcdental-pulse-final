@@ -10,6 +10,7 @@ import PulseScoreBadge from "../common/PulseScoreBadge";
 import { SUCURSALES, semanaActual } from "../../utils/constants";
 
 import { calcPulseScore, getPulseStatus } from "../../utils/pulseScore";
+import { useNotification } from "../../contexts/NotificationContext";
 
 const ExpedienteIntegral = ({
   users,
@@ -26,6 +27,7 @@ const ExpedienteIntegral = ({
   onSubirArchivoExpediente
 }) => {
   const { usuarios: USERS } = useGlobal();
+  const { toast, confirm } = useNotification();
 
  const empleados = users.filter(u => u.role === "empleado");
 const [filtroSucursalExp, setFiltroSucursalExp] = useState("Todas");
@@ -239,14 +241,17 @@ const empleado =
                 <button
                   className="mc-btn-primary mc-btn-with-icon"
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     if (!archivoExpediente) {
-                      alert("Por favor selecciona un archivo primero.");
+                      toast.warning("Por favor selecciona un archivo primero.");
                       return;
                     }
-                    const continuar = window.confirm(
-                      "El archivo no se subirá todavía porque Firebase Storage no está activo.\n\nLa carga de archivos se activará cuando Firebase Storage esté habilitado.\n\n¿Deseas preparar el adjunto sin subirlo?"
-                    );
+                    const continuar = await confirm({
+                      title: "Preparar archivo",
+                      description: "El archivo no se subirá todavía porque Firebase Storage no está activo.\n\nLa carga de archivos se activará cuando Firebase Storage esté habilitado.\n\n¿Deseas preparar el adjunto sin subirlo?",
+                      variant: "warning",
+                      confirmText: "Preparar archivo",
+                    });
                     if (!continuar) return;
                     setArchivoExpediente(null);
                     setMostrarSubirArchivo(false);

@@ -1,6 +1,7 @@
 import { collection, addDoc, updateDoc, doc, serverTimestamp, getDocs } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../config/firebase";
+import { notify } from "../utils/notify";
 import { useGlobal } from "../contexts/GlobalContext";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -35,7 +36,7 @@ export const useAppActions = () => {
       setEncuestas(prev => prev.map(e => e.id === nuevaEncuesta.id ? { ...e, firebaseId: docRef.id } : e));
     } catch (error) {
       console.error("Error guardando encuesta:", error);
-      alert("La encuesta se guardó en la app, pero no se pudo guardar en Firebase.");
+      notify.toast.error("La encuesta se guardó en la app, pero no se pudo guardar en Firebase.");
     }
   };
 
@@ -54,7 +55,7 @@ export const useAppActions = () => {
       setMensajes(prev => prev.map(m => m.id === nuevoMensaje.id ? { ...m, firebaseId: docRef.id } : m));
     } catch (error) {
       console.error("Error guardando mensaje:", error);
-      alert("El mensaje se guardó en la app, pero no se pudo guardar en Firebase.");
+      notify.toast.error("El mensaje se guardó en la app, pero no se pudo guardar en Firebase.");
     }
   };
 
@@ -78,7 +79,7 @@ export const useAppActions = () => {
       setNotas(prev => prev.map(n => n.id === nuevaNota.id ? { ...n, firebaseId: docRef.id } : n));
     } catch (error) {
       console.error("Error guardando nota psicológica:", error);
-      alert("La nota se guardó en la app, pero no se pudo guardar en Firebase.");
+      notify.toast.error("La nota se guardó en la app, pero no se pudo guardar en Firebase.");
     }
   };
 
@@ -99,7 +100,7 @@ export const useAppActions = () => {
       }
     } catch (error) {
       console.error("Error actualizando vacación en Firebase:", error);
-      alert("La vacación se actualizó en la app, pero no se pudo actualizar en Firebase.");
+      notify.toast.error("La vacación se actualizó en la app, pero no se pudo actualizar en Firebase.");
     }
   };
 
@@ -120,7 +121,7 @@ export const useAppActions = () => {
       }
     } catch (error) {
       console.error("Error actualizando permiso en Firebase:", error);
-      alert("El permiso se actualizó en la app, pero no se pudo actualizar en Firebase.");
+      notify.toast.error("El permiso se actualizó en la app, pero no se pudo actualizar en Firebase.");
     }
   };
 
@@ -161,7 +162,7 @@ export const useAppActions = () => {
         setVacaciones((prev) => prev.map((v) => v.id === nuevaVacacion.id ? { ...v, firebaseId: docRef.id } : v));
       } catch (error) {
         console.error("Error guardando vacación:", error);
-        alert("La solicitud se guardó en la app, pero no se pudo guardar en Firebase.");
+        notify.toast.error("La solicitud se guardó en la app, pero no se pudo guardar en Firebase.");
       }
       return;
     }
@@ -192,7 +193,7 @@ export const useAppActions = () => {
         setPermisos((prev) => prev.map((p) => p.id === nuevoPermiso.id ? { ...p, firebaseId: docRef.id } : p));
       } catch (error) {
         console.error("Error guardando permiso:", error);
-        alert("La solicitud se guardó en la app, pero no se pudo guardar en Firebase.");
+        notify.toast.error("La solicitud se guardó en la app, pero no se pudo guardar en Firebase.");
       }
     }
   };
@@ -217,7 +218,7 @@ export const useAppActions = () => {
       setDescuentos(prev => prev.map(d => d.id === id ? { ...d, firebaseId: docRef.id } : d));
     } catch (error) {
       console.error("Error actualizando descuento en Firebase:", error);
-      alert("El descuento se actualizó localmente, pero no en Firebase.");
+      notify.toast.error("El descuento se actualizó localmente, pero no en Firebase.");
     }
   };
 
@@ -237,7 +238,7 @@ export const useAppActions = () => {
       setDescuentos(prev => prev.map(d => d.id === nuevoDescuento.id ? { ...d, firebaseId: docRef.id } : d));
     } catch (error) {
       console.error("Error guardando descuento:", error);
-      alert("El descuento se guardó localmente, pero no en Firebase.");
+      notify.toast.error("El descuento se guardó localmente, pero no en Firebase.");
     }
   };
 
@@ -257,7 +258,7 @@ export const useAppActions = () => {
       setReportesConfidenciales(prev => prev.map(r => r.id === nuevoReporte.id ? { ...r, firebaseId: docRef.id } : r));
     } catch (error) {
       console.error("Error enviando reporte confidencial:", error);
-      alert("El reporte se guardó localmente, pero no en Firebase.");
+      notify.toast.error("El reporte se guardó localmente, pero no en Firebase.");
     }
   };
 
@@ -277,19 +278,19 @@ export const useAppActions = () => {
       setReconocimientos(prev => prev.map(r => r.id === nuevoRec.id ? { ...r, firebaseId: docRef.id } : r));
     } catch (error) {
       console.error("Error enviando reconocimiento:", error);
-      alert("El reconocimiento se guardó localmente, pero no en Firebase.");
+      notify.toast.error("El reconocimiento se guardó localmente, pero no en Firebase.");
     }
   };
 
   const subirArchivoExpediente = async ({ empleado, archivo, tipo }) => {
     if (!empleado || !archivo) {
-      alert("Selecciona empleado y archivo.");
+      notify.toast.warning("Selecciona empleado y archivo.");
       return;
     }
 
     // Límite de 10 MB
     if (archivo.size > 10 * 1024 * 1024) {
-      alert("El archivo excede el límite de 10 MB permitido.");
+      notify.toast.warning("El archivo excede el límite de 10 MB permitido.");
       return;
     }
 
@@ -316,10 +317,10 @@ export const useAppActions = () => {
 
       const docRef = await addDoc(collection(db, "archivosExpediente"), nuevoArchivo);
       setArchivosExpediente(prev => [{ ...nuevoArchivo, firebaseId: docRef.id }, ...prev]);
-      alert("Archivo subido correctamente.");
+      notify.toast.success("Archivo subido correctamente.");
     } catch (error) {
       console.error("Error subiendo archivo de expediente:", error);
-      alert("No se pudo subir el archivo.");
+      notify.toast.error("No se pudo subir el archivo.");
     }
   };
 

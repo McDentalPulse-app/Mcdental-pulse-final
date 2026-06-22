@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from "react";
 import { getUsuariosPassword, getUsuarios } from "../services/firestore/usuariosService";
 import { db } from "../config/firebase";
 import { collection, getDocs, updateDoc, doc, serverTimestamp, addDoc } from "firebase/firestore";
+import { notify } from "../utils/notify";
 
 const AuthContext = createContext();
 
@@ -75,7 +76,7 @@ export const AuthProvider = ({ children }) => {
   const cambiarPasswordActual = async (nuevaPassword) => {
     try {
       if (!user?.accesoFirebase?.id) {
-        alert("No se encontró el registro de contraseña del usuario.");
+        notify.toast.error("No se encontró el registro de contraseña del usuario.");
         return;
       }
 
@@ -103,11 +104,11 @@ export const AuthProvider = ({ children }) => {
       }));
 
       setRequiereCambioPassword(false);
-      alert("Contraseña actualizada correctamente.");
+      notify.toast.success("Contraseña actualizada correctamente.");
       return true;
     } catch (error) {
       console.error("Error cambiando contraseña:", error);
-      alert("Error al cambiar la contraseña: " + (error?.message || error));
+      notify.toast.error("Error al cambiar la contraseña: " + (error?.message || error));
       return false;
     }
   };
@@ -115,18 +116,23 @@ export const AuthProvider = ({ children }) => {
   const restablecerPasswordUsuario = async (empleado) => {
     try {
       if (!["admin", "rh", "recursos humanos"].includes(user?.role)) {
-        alert("No tienes permiso para restablecer contraseñas.");
+        notify.toast.error("No tienes permiso para restablecer contraseñas.");
         return;
       }
 
       const registroPassword = usuariosPassword.find((item) => item.userId === empleado.id);
 
       if (!registroPassword?.id) {
-        alert("No se encontró el registro de contraseña de este usuario.");
+        notify.toast.error("No se encontró el registro de contraseña de este usuario.");
         return;
       }
 
-      const confirmar = window.confirm(`¿Deseas restablecer la contraseña de ${empleado.name} a emp123?`);
+      const confirmar = await notify.confirm({
+        title: "Restablecer contraseña",
+        description: `¿Deseas restablecer la contraseña de ${empleado.name} a emp123?`,
+        variant: "warning",
+        confirmText: "Restablecer",
+      });
       if (!confirmar) return;
 
       await updateDoc(doc(db, "usuariosPassword", registroPassword.id), {
@@ -149,10 +155,10 @@ export const AuthProvider = ({ children }) => {
         )
       );
 
-      alert(`Contraseña restablecida para ${empleado.name}.`);
+      notify.toast.success(`Contraseña restablecida para ${empleado.name}.`);
     } catch (error) {
       console.error("Error restableciendo contraseña:", error);
-      alert("Error al restablecer contraseña.");
+      notify.toast.error("Error al restablecer contraseña.");
     }
   };
 
@@ -171,13 +177,13 @@ export const AuthProvider = ({ children }) => {
           });
         }
       }
-      alert("Usuarios de contraseña inicializados.");
+      notify.toast.success("Usuarios de contraseña inicializados.");
       // Recargar usuarios
       const usuariosPasswordSnapshot = await getDocs(collection(db, "usuariosPassword"));
       setUsuariosPassword(usuariosPasswordSnapshot.docs.map((docu) => ({ id: docu.id, ...docu.data() })));
     } catch (error) {
       console.error("Error inicializando usuariosPassword:", error);
-      alert("Error al inicializar usuarios de contraseña.");
+      notify.toast.error("Error al inicializar usuarios de contraseña.");
     }
   };
 

@@ -1,27 +1,27 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useGlobal } from "../../contexts/GlobalContext";
+import React from "react";
 import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
-import Badge from "../common/Badge";
-import Avatar from "../ui/Avatar";
-import PulseScoreBadge from "../common/PulseScoreBadge";
-import RiskBar from "../common/RiskBar";
 import Icon from "../ui/Icon";
-import { semaforoColor, semaforoBg, semaforoLabel } from "../../config/theme";
-
-import { semanaActual } from "../../utils/constants";
-import { calcularAntiguedad } from "../../utils/helpers";
-import { calcPulseScore, getPulseStatus, calcRiesgos } from "../../utils/pulseScore";
-import { db } from "../../config/firebase";
-import { collection, addDoc, getDocs, updateDoc, doc, serverTimestamp } from "firebase/firestore";
+import { useNotification } from "../../contexts/NotificationContext";
 
 const PermisosRH = ({ permisos, onUpdateEstado }) => {
-  const { usuarios: USERS } = useGlobal();
+  const { prompt } = useNotification();
 
   const pendientes = permisos.filter(p => p.estado === "pendiente").length;
   const aprobados = permisos.filter(p => p.estado === "aprobado").length;
   const rechazados = permisos.filter(p => p.estado === "rechazado").length;
+
+  const handleEstado = async (id, estado) => {
+    const comentarioRH = await prompt({
+      title: estado === "aprobado" ? "Aprobar permiso" : "Rechazar permiso",
+      description: "Comentario opcional de RH:",
+      placeholder: "Escribe un comentario (opcional)",
+      confirmText: estado === "aprobado" ? "Aprobar" : "Rechazar",
+    });
+    if (comentarioRH === null) return;
+    onUpdateEstado(id, estado, comentarioRH || "");
+  };
 
   return (
     <div className="admin-page">
@@ -72,20 +72,14 @@ const PermisosRH = ({ permisos, onUpdateEstado }) => {
                     <button
                       type="button"
                       className="mc-btn-primary mc-btn-sm-action"
-                      onClick={() => {
-                        const comentarioRH = window.prompt("Comentario opcional de RH:");
-                        onUpdateEstado(p.id, "aprobado", comentarioRH || "");
-                      }}
+                      onClick={() => handleEstado(p.id, "aprobado")}
                     >
                       <Icon name="check" size={14} /> Aprobar
                     </button>
                     <button
                       type="button"
                       className="mc-btn-danger mc-btn-sm-action"
-                      onClick={() => {
-                        const comentarioRH = window.prompt("Comentario opcional de RH:");
-                        onUpdateEstado(p.id, "rechazado", comentarioRH || "");
-                      }}
+                      onClick={() => handleEstado(p.id, "rechazado")}
                     >
                       <Icon name="xCircle" size={14} /> Rechazar
                     </button>

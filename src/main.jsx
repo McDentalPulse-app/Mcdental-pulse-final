@@ -6,6 +6,7 @@ import './App.css'
 import App from './App.jsx'
 import { AuthProvider } from './contexts/AuthContext.jsx'
 import { GlobalProvider } from './contexts/GlobalContext.jsx'
+import { NotificationProvider } from './contexts/NotificationContext.jsx'
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -59,7 +60,9 @@ createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <AuthProvider>
         <GlobalProvider>
-          <ErrorBoundary><App /></ErrorBoundary>
+          <NotificationProvider>
+            <ErrorBoundary><App /></ErrorBoundary>
+          </NotificationProvider>
         </GlobalProvider>
       </AuthProvider>
     </BrowserRouter>

@@ -3,11 +3,25 @@ import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
+import { useNotification } from "../../contexts/NotificationContext";
 
 const VacacionesRH = ({ vacaciones, onUpdateEstado }) => {
+  const { prompt } = useNotification();
+
   const pendientes = vacaciones.filter(v => v.estado === "pendiente").length;
   const aprobadas = vacaciones.filter(v => v.estado === "aprobada").length;
   const rechazadas = vacaciones.filter(v => v.estado === "rechazada").length;
+
+  const handleEstado = async (id, estado) => {
+    const comentarioRH = await prompt({
+      title: estado === "aprobada" ? "Aprobar vacaciones" : "Rechazar vacaciones",
+      description: "Comentario opcional de RH:",
+      placeholder: "Escribe un comentario (opcional)",
+      confirmText: estado === "aprobada" ? "Aprobar" : "Rechazar",
+    });
+    if (comentarioRH === null) return;
+    onUpdateEstado(id, estado, comentarioRH || "");
+  };
 
   return (
     <div className="admin-page">
@@ -51,20 +65,14 @@ const VacacionesRH = ({ vacaciones, onUpdateEstado }) => {
                     <button
                       type="button"
                       className="mc-btn-primary mc-btn-sm-action"
-                      onClick={() => {
-                        const comentarioRH = window.prompt("Comentario opcional de RH:");
-                        onUpdateEstado(v.id, "aprobada", comentarioRH || "");
-                      }}
+                      onClick={() => handleEstado(v.id, "aprobada")}
                     >
                       <Icon name="check" size={14} /> Aprobar
                     </button>
                     <button
                       type="button"
                       className="mc-btn-danger mc-btn-sm-action"
-                      onClick={() => {
-                        const comentarioRH = window.prompt("Comentario opcional de RH:");
-                        onUpdateEstado(v.id, "rechazada", comentarioRH || "");
-                      }}
+                      onClick={() => handleEstado(v.id, "rechazada")}
                     >
                       <Icon name="xCircle" size={14} /> Rechazar
                     </button>

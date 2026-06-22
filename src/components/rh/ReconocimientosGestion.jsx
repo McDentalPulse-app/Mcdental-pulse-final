@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
+import { useNotification } from "../../contexts/NotificationContext";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
 import StatCard from "../common/StatCard";
@@ -7,6 +8,7 @@ import Icon from "../ui/Icon";
 
 const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) => {
   const { usuarios: USERS } = useGlobal();
+  const { toast, confirm } = useNotification();
 
   const empleados = users.filter((u) => u.role === "empleado");
   const [empleadoId, setEmpleadoId] = useState(empleados[0]?.id || "");
@@ -19,14 +21,17 @@ const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) 
     "Atención al paciente", "Puntualidad", "Valores McDental"
   ];
 
-  const otorgar = () => {
+  const otorgar = async () => {
     const empleado = empleados.find(e => e.id === Number(empleadoId));
-    if (!empleado) { alert("Selecciona un empleado."); return; }
-    if (!comentario.trim()) { alert("Escribe un comentario para el reconocimiento."); return; }
+    if (!empleado) { toast.warning("Selecciona un empleado."); return; }
+    if (!comentario.trim()) { toast.warning("Escribe un comentario para el reconocimiento."); return; }
     if (diplomaArchivo) {
-      const continuar = window.confirm(
-        "El diploma no se subirá todavía porque Firebase Storage no está activo.\n\n¿Deseas otorgar el reconocimiento sin diploma?"
-      );
+      const continuar = await confirm({
+        title: "Otorgar sin diploma",
+        description: "El diploma no se subirá todavía porque Firebase Storage no está activo.\n\n¿Deseas otorgar el reconocimiento sin diploma?",
+        variant: "warning",
+        confirmText: "Otorgar sin diploma",
+      });
       if (!continuar) return;
     }
     onAdd({
@@ -36,7 +41,7 @@ const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) 
     setCategoria("Excelente actitud");
     setComentario("");
     setDiplomaArchivo(null);
-    alert("Reconocimiento otorgado.");
+    toast.success("Reconocimiento otorgado.");
   };
 
   return (
