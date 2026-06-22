@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { UI } from '../../config/theme';
 import logoSmall from '../../assets/logos/logo-small.png';
 
 const CambiarPassword = ({ user, onCambiarPassword }) => {
@@ -27,64 +26,44 @@ const CambiarPassword = ({ user, onCambiarPassword }) => {
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "linear-gradient(135deg,#004D40 0%,#006D5B 50%,#00897B 100%)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: 24
-    }}>
-      <div style={{
-        width: 420,
-        background: "white",
-        borderRadius: 24,
-        padding: 32,
-        boxShadow: "0 20px 60px rgba(0,0,0,.25)",
-        textAlign: "center"
-      }}>
-        <img src={logoSmall} alt="McDental Pulse" style={{ width: "100%", maxWidth: 300, marginBottom: 16 }} />
+    <div className="auth-page">
+      <div className="auth-card">
+        <div className="auth-header">
+          <img src={logoSmall} alt="McDental Pulse" className="auth-logo" style={{ maxWidth: 220 }} />
+          <h2 className="auth-title">Cambia tu contraseña</h2>
+          <p className="auth-subtitle">
+            Hola {user?.name}. Por seguridad, crea una nueva contraseña para continuar.
+          </p>
+        </div>
 
-        <h2 style={{ color: "#004D40", marginBottom: 8 }}>
-          Cambia tu contraseña
-        </h2>
+        <div className="auth-field">
+          <label className="auth-label" htmlFor="new-pass">Nueva contraseña</label>
+          <input
+            id="new-pass"
+            type="password"
+            className="auth-input"
+            placeholder="Mínimo 6 caracteres"
+            value={nueva}
+            onChange={(e) => setNueva(e.target.value)}
+          />
+        </div>
 
-        <p style={{ color: "#64748b", marginBottom: 20 }}>
-          Hola {user?.name}. Por seguridad, crea una nueva contraseña para continuar.
-        </p>
+        <div className="auth-field">
+          <label className="auth-label" htmlFor="confirm-pass">Confirmar contraseña</label>
+          <input
+            id="confirm-pass"
+            type="password"
+            className="auth-input"
+            placeholder="Repite tu contraseña"
+            value={confirmar}
+            onChange={(e) => setConfirmar(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && guardar()}
+          />
+        </div>
 
-        <input
-          type="password"
-          placeholder="Nueva contraseña"
-          value={nueva}
-          onChange={(e) => setNueva(e.target.value)}
-          style={{ width: "100%", padding: "12px 16px", borderRadius: 10, border: "1.5px solid #cbd5e1", marginBottom: 12 }}
-        />
+        {err && <div className="auth-error">{err}</div>}
 
-        <input
-          type="password"
-          placeholder="Confirmar contraseña"
-          value={confirmar}
-          onChange={(e) => setConfirmar(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && guardar()}
-          style={{ width: "100%", padding: "12px 16px", borderRadius: 10, border: "1.5px solid #cbd5e1", marginBottom: 12 }}
-        />
-
-        {err && <div style={{ color: "#ef4444", fontSize: 13, marginBottom: 12 }}>{err}</div>}
-
-        <button
-          onClick={guardar}
-          style={{
-            width: "100%",
-            padding: "13px",
-            borderRadius: 10,
-            border: "none",
-            background: "#006D5B",
-            color: "white",
-            fontWeight: 900,
-            cursor: "pointer"
-          }}
-        >
+        <button className="auth-btn" onClick={guardar}>
           Guardar nueva contraseña
         </button>
       </div>
