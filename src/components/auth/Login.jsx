@@ -42,8 +42,8 @@ const Login = () => {
             Plataforma de bienestar organizacional para clínicas dentales
           </p>
           <span className="auth-badge">
-            <Icon name="sparkles" size={13} />
-            AI Engine activo
+            <Icon name="shield" size={13} />
+            Acceso interno McDental
           </span>
         </div>
 
