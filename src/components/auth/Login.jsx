@@ -21,11 +21,11 @@ const Login = () => {
   const demo = async (user) => {
     setErr("");
     try {
-      const demoPasswords = { 
-        mario: "admin123", 
-        laura: "psico123", 
-        patricia: "rh123", 
-        ana: "emp123" 
+      const demoPasswords = {
+        mario: "admin123",
+        laura: "psico123",
+        patricia: "rh123",
+        ana: "emp123"
       };
       await login(user, demoPasswords[user]);
     } catch (error) {
@@ -38,10 +38,12 @@ const Login = () => {
       <div className="auth-card">
         <div className="auth-header">
           <img src={logoMed} alt="McDental Pulse" className="auth-logo" />
-          <p className="auth-tagline">"Medimos bienestar para cuidar mejor a nuestro equipo."</p>
+          <p className="auth-microcopy">
+            Plataforma de bienestar organizacional para clínicas dentales
+          </p>
           <span className="auth-badge">
             <Icon name="sparkles" size={13} />
-            AI Engine Activado
+            AI Engine activo
           </span>
         </div>
 
@@ -76,7 +78,7 @@ const Login = () => {
         </button>
 
         <div className="auth-demo">
-          <div className="auth-demo-label">ACCESO RÁPIDO DEMO</div>
+          <div className="auth-demo-label">Acceso demo</div>
           <div className="auth-demo-grid">
             {[
               { label: "Admin", u: "mario" },
@@ -89,6 +91,7 @@ const Login = () => {
                 className="auth-demo-btn"
                 onClick={() => demo(d.u)}
                 disabled={loadingAuth}
+                type="button"
               >
                 {d.label}
               </button>

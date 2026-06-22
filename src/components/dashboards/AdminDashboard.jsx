@@ -13,6 +13,16 @@ import { calcPulseScore, getPulseStatus } from "../../utils/pulseScore";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import { semanaActual } from "../../utils/constants";
 
+const abbrevSucursal = (name) => {
+  if (!name) return "—";
+  const parts = name.trim().split(/\s+/);
+  if (name.length <= 14) return name;
+  if (parts.length >= 2) {
+    return parts.map((p) => p[0]?.toUpperCase() || "").join("") + ".";
+  }
+  return `${name.slice(0, 10)}…`;
+};
+
 const AdminDashboard = ({ encuestas, mensajes }) => {
   const { usuarios: USERS } = useGlobal();
 
@@ -60,6 +70,7 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
     );
     return {
       label: s,
+      shortLabel: abbrevSucursal(s),
       v: encValidas.length
         ? Math.round(encValidas.reduce((sum,e)=>sum+Number(e.score),0) / encValidas.length)
         : 0
@@ -78,45 +89,71 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
     : getPulseStatus(avgPulse);
 
   const enFocoRojo = empleadosConDatos.filter(e => e.status.semaforo === "Rojo");
+  const participacion = empleados.length
+    ? Math.round((contestaron / empleados.length) * 100)
+    : 0;
 
   return (
     <div className="admin-page dashboard-page">
-      <div className="admin-page-header dashboard-header">
-        <div>
-          <h1 className="admin-page-title dashboard-title">Dashboard Global</h1>
-          <p className="admin-page-subtitle dashboard-subtitle">Visión ejecutiva del bienestar organizacional</p>
+      <header className="dashboard-executive-header">
+        <div className="dashboard-executive-main">
+          <span className="dashboard-eyebrow">McDental Pulse · Administración</span>
+          <h1 className="dashboard-title">Dashboard Global</h1>
+          <p className="dashboard-subtitle">
+            Visión ejecutiva del bienestar organizacional · {empleados.length} colaboradores activos
+          </p>
         </div>
-        <span className="dashboard-week-badge">
-          <Icon name="calendar" size={14} />
-          Semana {semanaActual}
-        </span>
-      </div>
+        <div className="dashboard-executive-meta">
+          <span className="dashboard-week-badge">
+            <Icon name="calendar" size={14} />
+            Semana {semanaActual}
+          </span>
+          <span className="dashboard-participation-badge">
+            <Icon name="clipboardCheck" size={14} />
+            {participacion}% participación
+          </span>
+        </div>
+      </header>
 
-      <div className="kpi-row">
-        <KPI iconName="users" label="Empleados" value={empleados.length} color="#2D6A5F" />
-        <KPI iconName="check" label="Contestaron" value={contestaron} sub={`de ${empleados.length}`} color="#3D8B7E" />
-        <KPI iconName="stable" label="Verde" value={verdes} color="#2F7D5A" />
-        <KPI iconName="warning" label="Amarillo" value={amarillos} color="#9A6B1F" />
-        <KPI iconName="critical" label="Rojo" value={rojos} color="#A84444" />
-        <Card className="pulse-hero-card" style={{ minWidth: 160 }}>
-          <div className="pulse-hero-label">PULSE SCORE</div>
+      <div className="dashboard-metrics">
+        <div className="dashboard-kpi-grid">
+          <KPI iconName="users" label="Empleados" value={empleados.length} color="#2D6A5F" />
+          <KPI iconName="check" label="Contestaron" value={contestaron} sub={`de ${empleados.length}`} color="#3D8B7E" />
+          <KPI iconName="stable" label="Verde" value={verdes} color="#2F7D5A" />
+          <KPI iconName="warning" label="Amarillo" value={amarillos} color="#9A6B1F" />
+          <KPI iconName="critical" label="Rojo" value={rojos} color="#A84444" />
+        </div>
+
+        <Card className="pulse-hero-card dashboard-pulse-feature">
+          <div className="pulse-hero-top">
+            <div className="pulse-hero-icon-wrap">
+              <Icon name="activity" size={22} color="#fff" />
+            </div>
+            <div className="pulse-hero-label">Pulse Score™</div>
+          </div>
           <div className="pulse-hero-value">{avgPulse ?? "—"}</div>
           <div className="pulse-hero-meta">
-            {avgPulseStatus.label} · Semáforo {avgPulseStatus.semaforo}
+            <span className="pulse-hero-status" style={{ color: avgPulseStatus.color }}>
+              {avgPulseStatus.label}
+            </span>
+            <span className="pulse-hero-dot">·</span>
+            <span>Semáforo {avgPulseStatus.semaforo}</span>
           </div>
-          <div className="pulse-hero-sub">Promedio organizacional</div>
+          <div className="pulse-hero-sub">Promedio organizacional del periodo</div>
         </Card>
       </div>
 
       <div className="dashboard-grid-2">
-        <Card>
+        <Card className="dashboard-chart-card">
           <SectionTitle icon="trending">Tendencia Semanal</SectionTitle>
           <LineChart data={tendencia} color="#2D6A5F" />
         </Card>
-        <Card>
+        <Card className="dashboard-chart-card">
           <SectionTitle icon="building">Score por Sucursal</SectionTitle>
+          <p className="dashboard-chart-hint">Pase el cursor sobre cada barra para ver la sucursal completa.</p>
           <MiniBar
             data={porSucursal}
+            labelKey="shortLabel"
             colorFn={d => {
               const val = d.value ?? d.v ?? 0;
               return val >= 70 ? "#2F7D5A" : val >= 45 ? "#9A6B1F" : "#A84444";
@@ -125,26 +162,38 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
         </Card>
       </div>
 
-      <Card>
-        <SectionTitle icon="alert">Empleados en Foco Rojo</SectionTitle>
+      <Card className={`dashboard-foco-card${enFocoRojo.length ? " dashboard-foco-card--active" : ""}`}>
+        <div className="dashboard-foco-header">
+          <SectionTitle icon="alert" className="dashboard-foco-title">
+            Empleados en Foco Rojo
+          </SectionTitle>
+          <span className={`dashboard-foco-count${enFocoRojo.length ? " dashboard-foco-count--alert" : ""}`}>
+            {enFocoRojo.length}
+          </span>
+        </div>
         {enFocoRojo.length === 0 ? (
-          <div className="dashboard-empty">Sin empleados en foco rojo esta semana</div>
+          <div className="dashboard-empty dashboard-empty--ok">
+            <Icon name="check" size={18} />
+            Sin empleados en foco rojo esta semana
+          </div>
         ) : (
-          enFocoRojo.map(e => {
-            const emp = e.empleado;
-            const ps = e.pulse;
-            return (
-              <div key={emp.id} className="dashboard-employee-row">
-                <Avatar name={emp.name} size={40} color="#A84444" />
-                <div className="dashboard-employee-info">
-                  <div className="dashboard-employee-name">{emp.name}</div>
-                  <div className="dashboard-employee-meta">{emp.sucursal} · {emp.puesto}</div>
+          <div className="dashboard-foco-list">
+            {enFocoRojo.map(e => {
+              const emp = e.empleado;
+              const ps = e.pulse;
+              return (
+                <div key={emp.id} className="dashboard-employee-row dashboard-employee-row--alert">
+                  <Avatar name={emp.name} size={40} color="#A84444" />
+                  <div className="dashboard-employee-info">
+                    <div className="dashboard-employee-name">{emp.name}</div>
+                    <div className="dashboard-employee-meta">{emp.sucursal} · {emp.puesto}</div>
+                  </div>
+                  <Badge tipo="rojo" />
+                  <PulseScoreBadge score={ps.score} nivel={ps.nivel} color={ps.color} tendencia={ps.tendencia} size="sm" />
                 </div>
-                <Badge tipo="rojo" />
-                <PulseScoreBadge score={ps.score} nivel={ps.nivel} color={ps.color} tendencia={ps.tendencia} size="sm" />
-              </div>
-            );
-          })
+              );
+            })}
+          </div>
         )}
       </Card>
     </div>

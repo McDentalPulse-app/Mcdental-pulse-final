@@ -174,36 +174,36 @@ const GestionUsuarios = () => {
                       <span style={{ color: "#16a34a", fontWeight: "bold", fontSize: 13 }}>Activo</span>
                     )}
                   </td>
-                  <td>
+                  <td className="mc-table-actions">
                     <button
-                      className="mc-btn-sm"
+                      type="button"
+                      className="mc-btn-outline mc-btn-outline--edit"
                       onClick={() => abrirModal(emp)}
-                      style={{ background: "#f0fdf4", color: "#166534" }}
                     >
                       Editar
                     </button>
                     {user?.role === "admin" && (
                       <button
-                        className="mc-btn-sm"
+                        type="button"
+                        className="mc-btn-outline mc-btn-outline--amber"
                         onClick={() => restablecerPasswordUsuario(emp)}
-                        style={{ background: "#fef3c7", color: "#b45309" }}
                       >
                         Contraseña
                       </button>
                     )}
                     {emp.inactivo ? (
                       <button
-                        className="mc-btn-sm"
+                        type="button"
+                        className="mc-btn-outline mc-btn-outline--edit"
                         onClick={() => cambiarEstado(emp, true)}
-                        style={{ background: "#dcfce7", color: "#166534" }}
                       >
                         Activar
                       </button>
                     ) : (
                       <button
-                        className="mc-btn-sm"
+                        type="button"
+                        className="mc-btn-outline mc-btn-outline--danger"
                         onClick={() => cambiarEstado(emp, false)}
-                        style={{ background: "#fee2e2", color: "#b91c1c" }}
                       >
                         Desactivar
                       </button>

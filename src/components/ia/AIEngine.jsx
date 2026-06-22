@@ -17,25 +17,55 @@ import { callAI } from "../../utils/analysisEngine";
 import { db } from "../../config/firebase";
 import { collection, addDoc, getDocs, updateDoc, doc, serverTimestamp } from "firebase/firestore";
 
+const STATUS_SIN_DATOS = {
+  label: "Sin datos",
+  semaforo: "Sin evaluación",
+  color: "#94a3b8",
+  bg: "#f1f5f9"
+};
+
 const analyzeEmployeeAI = (empleado, encuestas, permisos = [], descuentos = [], reconocimientos = [], reportesConfidenciales = [], USERS = []) => {
   const encuestasEmpleado = encuestas.filter(e => e.empleadoId === empleado.id);
+  const encuestasConScore = encuestasEmpleado.filter(e => Number.isFinite(Number(e.score)));
   const permisosEmpleado = permisos.filter(p => p.empleadoId === empleado.id);
   const descuentosEmpleado = descuentos.filter(d => d.empleadoId === empleado.id);
   const reconocimientosEmpleado = reconocimientos.filter(r => r.empleadoId === empleado.id);
   const reportesEmpleado = reportesConfidenciales.filter(r => r.empleadoId === empleado.id);
 
-  const pulse = calcPulseScore(empleado.id, encuestas).score;
-  const status = getPulseStatus(pulse);
+  const pulseResult = calcPulseScore(empleado.id, encuestas);
+  const tieneDatosReales = !pulseResult.sinDatos && Number.isFinite(Number(pulseResult.score));
+  const pulse = tieneDatosReales ? pulseResult.score : null;
+  const status = tieneDatosReales ? getPulseStatus(pulse) : STATUS_SIN_DATOS;
 
-  const ultimas = encuestasEmpleado.slice(-3);
-  const primera = ultimas[0]?.score ?? pulse;
-  const ultima = ultimas[ultimas.length - 1]?.score ?? pulse;
-  const cambio = ultima - primera;
-
-  const faltasAdministrativas =
-  permisosEmpleado.length + descuentosEmpleado.length;
+  const ultimas = encuestasConScore.slice(-3);
+  const primera = ultimas[0]?.score ?? null;
+  const ultima = ultimas[ultimas.length - 1]?.score ?? null;
+  const cambio = tieneDatosReales && primera !== null && ultima !== null ? ultima - primera : 0;
 
   const riesgos = [];
+
+  if (reportesEmpleado.some(r => r.urgencia === "Alta" || r.urgencia === "Crítica")) {
+    riesgos.push({
+      tipo: "Reporte confidencial prioritario",
+      nivel: "Alta",
+      detalle: "Existe un reporte confidencial de urgencia alta o crítica."
+    });
+  }
+
+  if (!tieneDatosReales) {
+    return {
+      empleado,
+      pulse,
+      sinDatos: true,
+      status,
+      cambio: 0,
+      prioridad: "Sin datos",
+      riesgos,
+      recomendacion: encuestasEmpleado.length
+        ? "Encuesta registrada sin score válido. Pendiente de evaluación."
+        : "Sin encuestas registradas. Pendiente de evaluación semanal."
+    };
+  }
 
   if (pulse < 50) {
     riesgos.push({
@@ -57,13 +87,13 @@ const analyzeEmployeeAI = (empleado, encuestas, permisos = [], descuentos = [], 
     });
   }
 
-  if (cambio <= -10) {
+  if (ultimas.length >= 2 && cambio <= -10) {
     riesgos.push({
       tipo: "Cambio de comportamiento",
       nivel: "Alta",
       detalle: `Disminución de ${Math.abs(cambio)} puntos en sus últimas mediciones.`
     });
-  } else if (cambio <= -5) {
+  } else if (ultimas.length >= 2 && cambio <= -5) {
     riesgos.push({
       tipo: "Tendencia negativa",
       nivel: "Media",
@@ -72,26 +102,18 @@ const analyzeEmployeeAI = (empleado, encuestas, permisos = [], descuentos = [], 
   }
 
   if (permisosEmpleado.length >= 2) {
-  riesgos.push({
-    tipo: "Riesgo de ausentismo",
-    nivel: "Media",
-    detalle: "Presenta varios permisos registrados."
-  });
-}
+    riesgos.push({
+      tipo: "Riesgo de ausentismo",
+      nivel: "Media",
+      detalle: "Presenta varios permisos registrados."
+    });
+  }
 
   if (descuentosEmpleado.some(d => d.estado === "activo" || d.estado === "pendiente")) {
     riesgos.push({
       tipo: "Posible presión financiera/administrativa",
       nivel: "Baja",
       detalle: "Tiene descuentos administrativos activos o pendientes."
-    });
-  }
-
-  if (reportesEmpleado.some(r => r.urgencia === "Alta" || r.urgencia === "Crítica")) {
-    riesgos.push({
-      tipo: "Reporte confidencial prioritario",
-      nivel: "Alta",
-      detalle: "Existe un reporte confidencial de urgencia alta o crítica."
     });
   }
 
@@ -118,6 +140,7 @@ const analyzeEmployeeAI = (empleado, encuestas, permisos = [], descuentos = [], 
   return {
     empleado,
     pulse,
+    sinDatos: false,
     status,
     cambio,
     prioridad,
@@ -150,12 +173,23 @@ const analisisIA = empleados.map(emp =>
   )
 );
 
-const prioridadCritica = analisisIA.filter(a => a.prioridad === "Crítica").length;
-const prioridadAlta = analisisIA.filter(a => a.prioridad === "Alta").length;
-const prioridadMedia = analisisIA.filter(a => a.prioridad === "Media").length;
-const cambiosComportamiento = analisisIA.filter(a =>
+const analisisConDatos = analisisIA.filter(a => !a.sinDatos);
+const analisisConRiesgo = analisisConDatos.filter(
+  a => a.riesgos.some(r => ["Crítica", "Alta", "Media"].includes(r.nivel))
+);
+const analisisFocoRojo = analisisConDatos.filter(
+  a => a.prioridad === "Crítica" || a.status?.semaforo === "Rojo"
+);
+
+const prioridadCritica = analisisConDatos.filter(a => a.prioridad === "Crítica").length;
+const prioridadAlta = analisisConDatos.filter(a => a.prioridad === "Alta").length;
+const prioridadMedia = analisisConDatos.filter(a => a.prioridad === "Media").length;
+const cambiosComportamiento = analisisConDatos.filter(a =>
   a.riesgos.some(r => r.tipo === "Cambio de comportamiento" || r.tipo === "Tendencia negativa")
 ).length;
+const pendientesEvaluacion = analisisIA.filter(a => a.sinDatos).length;
+
+const RESUMEN_LIMITE = 8;
   const buildContexto = () => {
     const semanaEnc = encuestas.filter(e => e.semana === semanaActual);
     const resumen = empleados.map(emp => {
@@ -258,6 +292,7 @@ const cambiosComportamiento = analisisIA.filter(a =>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
         {USERS.filter(u=>u.role==="empleado").map(emp => {
           const ps = calcPulseScore(emp.id, encuestas);
+          if (ps.sinDatos) return null;
           return (
             <div key={emp.id} style={{ background: "#fff", borderRadius: 12, padding: "10px 14px", border: `1.5px solid ${ps.color}30`, display: "flex", alignItems: "center", gap: 10, cursor: "pointer", minWidth: 180 }}
               onClick={() => { setTab("expedientes"); analizarEmpleado(emp); }}>
@@ -289,88 +324,66 @@ const cambiosComportamiento = analisisIA.filter(a =>
      {tab === "resumen" && (
   <Card style={{ marginTop: 16 }}>
     <SectionTitle icon="brain">Análisis local por reglas</SectionTitle>
+    <p className="ai-resumen-hint">
+      Solo se listan colaboradores con Pulse Score real y señales de riesgo verificadas.
+      {pendientesEvaluacion > 0 && (
+        <span> · {pendientesEvaluacion} pendiente(s) de evaluación sin datos.</span>
+      )}
+    </p>
 
-    <div style={{ display: "grid", gap: 12 }}>
-      {analisisIA
-        .slice()
-        .sort((a, b) => {
-          const orden = { "Crítica": 0, "Alta": 1, "Media": 2, "Baja": 3 };
-          return orden[a.prioridad] - orden[b.prioridad];
-        })
-        .map(a => (
+    {analisisConRiesgo.length === 0 ? (
+      <div className="dashboard-empty dashboard-empty--ok ai-resumen-empty">
+        <Icon name="check" size={18} />
+        Sin empleados con señales de riesgo esta semana
+      </div>
+    ) : (
+      <div className="admin-list-scroll ai-resumen-scroll">
+        {analisisConRiesgo
+          .slice()
+          .sort((a, b) => {
+            const orden = { "Crítica": 0, "Alta": 1, "Media": 2, "Baja": 3, "Sin datos": 4 };
+            return orden[a.prioridad] - orden[b.prioridad];
+          })
+          .slice(0, RESUMEN_LIMITE)
+          .map(a => (
           <div
             key={a.empleado.id}
-            style={{
-              padding: 14,
-              border: "1px solid #e5e7eb",
-              borderRadius: 14,
-              background:
-                a.prioridad === "Crítica" ? "#fef2f2" :
-                a.prioridad === "Alta" ? "#fff7ed" :
-                a.prioridad === "Media" ? "#fffbeb" :
-                "#f8fafc"
-            }}
+            className={`ai-resumen-item ai-resumen-item--${a.prioridad.toLowerCase().replace("í", "i")}`}
           >
-            <div style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 12,
-              alignItems: "center",
-              marginBottom: 8
-            }}>
+            <div className="ai-resumen-item-head">
               <div>
-                <div style={{ fontWeight: 900, color: "#0f172a" }}>
-                  {a.empleado.name}
-                </div>
-                <div style={{ color: "#64748b", fontSize: 13 }}>
-                  {a.empleado.sucursal} · {a.empleado.puesto}
-                </div>
+                <div className="ai-resumen-name">{a.empleado.name}</div>
+                <div className="ai-resumen-meta">{a.empleado.sucursal} · {a.empleado.puesto}</div>
               </div>
-
-              <div style={{
-                padding: "6px 10px",
-                borderRadius: 999,
-                fontWeight: 900,
-                fontSize: 13,
-                background:
-                  a.prioridad === "Crítica" ? "#fee2e2" :
-                  a.prioridad === "Alta" ? "#ffedd5" :
-                  a.prioridad === "Media" ? "#fef3c7" :
-                  "#dcfce7",
-                color:
-                  a.prioridad === "Crítica" ? "#991b1b" :
-                  a.prioridad === "Alta" ? "#c2410c" :
-                  a.prioridad === "Media" ? "#92400e" :
-                  "#166534"
-              }}>
+              <span className={`ai-priority-pill ai-priority-pill--${a.prioridad.toLowerCase().replace("í", "i")}`}>
                 {a.prioridad}
-              </div>
+              </span>
             </div>
 
-            <div style={{ color: "#334155", marginBottom: 8 }}>
+            <div className="ai-resumen-score">
               <b>Pulse Score:</b> {a.pulse} · {a.status.label} · Semáforo {a.status.semaforo}
             </div>
 
-            {a.riesgos.length > 0 ? (
-              <div style={{ display: "grid", gap: 6, marginBottom: 8 }}>
+            {a.riesgos.length > 0 && (
+              <div className="ai-resumen-risks">
                 {a.riesgos.map((r, idx) => (
-                  <div key={idx} style={{ color: "#475569", fontSize: 13 }}>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="alert" size={14} /> <b>{r.tipo}</b></span> — {r.detalle}
+                  <div key={idx} className="ai-resumen-risk-line">
+                    <Icon name="alert" size={14} /> <b>{r.tipo}</b> — {r.detalle}
                   </div>
                 ))}
               </div>
-            ) : (
-              <div style={{ color: "#64748b", fontSize: 13, marginBottom: 8 }}>
-                Sin riesgos relevantes detectados.
-              </div>
             )}
 
-            <div style={{ color: "#004D40", fontWeight: 800 }}>
-              Recomendación: {a.recomendacion}
-            </div>
+            <div className="ai-resumen-rec">Recomendación: {a.recomendacion}</div>
           </div>
         ))}
-    </div>
+        {analisisConRiesgo.length > RESUMEN_LIMITE && (
+          <p className="ai-resumen-more">
+            Mostrando {RESUMEN_LIMITE} de {analisisConRiesgo.length} casos con señales. Revise expedientes para el detalle completo.
+          </p>
+        )}
+      </div>
+    )}
   </Card>
 )}
     {/* Alertas */}
@@ -382,8 +395,7 @@ const cambiosComportamiento = analisisIA.filter(a =>
     </p>
 
     <div style={{ display: "grid", gap: 12 }}>
-      {analisisIA
-        .filter(a => a.riesgos.length > 0)
+      {analisisConRiesgo
         .slice()
         .sort((a, b) => {
           const orden = { "Crítica": 0, "Alta": 1, "Media": 2, "Baja": 3 };
@@ -480,7 +492,7 @@ const cambiosComportamiento = analisisIA.filter(a =>
           </div>
         ))}
 
-      {analisisIA.filter(a => a.riesgos.length > 0).length === 0 && (
+      {analisisConRiesgo.length === 0 && (
         <div style={{ color: "#64748b", textAlign: "center", padding: 30 }}>
           No hay alertas activas por el momento.
         </div>
@@ -498,7 +510,7 @@ const cambiosComportamiento = analisisIA.filter(a =>
     </p>
 
     <div style={{ display: "grid", gap: 12 }}>
-      {analisisIA
+      {analisisConDatos
         .slice()
         .sort((a, b) => {
           const orden = { "Crítica": 0, "Alta": 1, "Media": 2, "Baja": 3 };
@@ -649,9 +661,9 @@ const cambiosComportamiento = analisisIA.filter(a =>
     </p>
 
     <div className="admin-stat-grid" style={{ marginBottom: 18 }}>
-      <StatCard iconName="shieldAlert" value={analisisIA.filter(a => a.prioridad === "Crítica").length} label="Casos urgentes" valueClass="admin-stat-value--red" />
-      <StatCard iconName="critical" value={analisisIA.filter(a => a.prioridad === "Alta").length} label="Casos de alta prioridad" valueClass="admin-stat-value--red" />
-      <StatCard iconName="clipboard" value={analisisIA.filter(a => a.riesgos.length > 0).length} label="Casos con señales" valueClass="admin-stat-value--green" />
+      <StatCard iconName="shieldAlert" value={prioridadCritica} label="Casos urgentes" valueClass="admin-stat-value--red" />
+      <StatCard iconName="critical" value={prioridadAlta} label="Casos de alta prioridad" valueClass="admin-stat-value--red" />
+      <StatCard iconName="clipboard" value={analisisConRiesgo.length} label="Casos con señales" valueClass="admin-stat-value--green" />
     </div>
 
     <div style={{ display: "grid", gap: 14 }}>
@@ -665,19 +677,21 @@ const cambiosComportamiento = analisisIA.filter(a =>
           <Icon name="target" size={16} /> Prioridad de atención esta semana
         </h4>
 
-        {analisisIA
+        {analisisConRiesgo.length === 0 ? (
+          <p style={{ color: "#64748b", margin: 0 }}>Sin empleados en foco rojo esta semana.</p>
+        ) : analisisConRiesgo
           .slice()
           .sort((a, b) => {
             const orden = { "Crítica": 0, "Alta": 1, "Media": 2, "Baja": 3 };
             return orden[a.prioridad] - orden[b.prioridad];
           })
           .slice(0, 3)
-          .map((a, idx) => (
+          .map((a, idx, arr) => (
             <div
               key={a.empleado.id}
               style={{
                 padding: "10px 0",
-                borderBottom: idx < 2 ? "1px solid #bae6fd" : "none"
+                borderBottom: idx < arr.length - 1 ? "1px solid #bae6fd" : "none"
               }}
             >
               <div style={{ fontWeight: 900, color: "#0f172a" }}>
@@ -765,7 +779,7 @@ const cambiosComportamiento = analisisIA.filter(a =>
     </p>
 
     <div style={{ display: "grid", gap: 14 }}>
-      {analisisIA
+      {analisisConDatos
         .slice()
         .sort((a, b) => {
           const orden = { "Crítica": 0, "Alta": 1, "Media": 2, "Baja": 3 };

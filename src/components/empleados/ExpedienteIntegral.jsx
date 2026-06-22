@@ -194,19 +194,30 @@ const empleado =
                 <option value="PDF">PDF</option>
               </select>
               <input type="file" className="mc-form-input" onChange={(e) => setArchivoExpediente(e.target.files[0])} />
+              {archivoExpediente && (
+                <div className="mc-form-hint">Archivo seleccionado: {archivoExpediente.name}</div>
+              )}
+              <div className="mc-form-hint mc-form-hint--warn">
+                El archivo no se subirá todavía porque Firebase Storage no está activo.
+                La carga de archivos se activará cuando Firebase Storage esté habilitado.
+              </div>
               <button
                 className="mc-btn-primary"
-                onClick={async () => {
+                type="button"
+                onClick={() => {
                   if (!archivoExpediente) {
                     alert("Por favor selecciona un archivo primero.");
                     return;
                   }
-                  await onSubirArchivoExpediente({ empleado, archivo: archivoExpediente, tipo: tipoArchivoExpediente });
+                  const continuar = window.confirm(
+                    "El archivo no se subirá todavía porque Firebase Storage no está activo.\n\nLa carga de archivos se activará cuando Firebase Storage esté habilitado.\n\n¿Deseas preparar el adjunto sin subirlo?"
+                  );
+                  if (!continuar) return;
                   setArchivoExpediente(null);
                   setMostrarSubirArchivo(false);
                 }}
               >
-                Confirmar Subida
+                Confirmar selección
               </button>
             </div>
           )}

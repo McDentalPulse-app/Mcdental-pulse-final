@@ -61,12 +61,16 @@ const Sidebar = () => {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <div className="sidebar-logo-wrap">
+        <div className="sidebar-brand-row">
           <img src={logoSmall} alt="McDental Pulse" className="sidebar-logo" />
+          <div className="sidebar-brand-text">
+            <span className="sidebar-brand-title">McDental Pulse</span>
+            <span className="sidebar-brand-sub">Bienestar organizacional</span>
+          </div>
         </div>
         <div className="sidebar-ai-badge">
-          <Icon name="sparkles" size={12} />
-          AI Engine Activo
+          <Icon name="sparkles" size={11} />
+          AI Engine
         </div>
       </div>
 
