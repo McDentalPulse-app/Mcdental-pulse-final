@@ -45,7 +45,14 @@ body {
 #root {
   width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
   text-align: left;
+  overflow-x: hidden;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
 }
 
 /* ── Auth (Login / CambiarPassword) ── */
@@ -232,6 +239,23 @@ body {
 .auth-demo-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .auth-page {
+    padding: 24px 16px;
+    align-items: flex-start;
+    padding-top: max(24px, env(safe-area-inset-top));
+  }
+
+  .auth-card {
+    padding: 32px 24px 28px;
+  }
+
+  .auth-input,
+  .auth-btn {
+    min-height: 44px;
+  }
 }
 
 @media (max-width: 480px) {
