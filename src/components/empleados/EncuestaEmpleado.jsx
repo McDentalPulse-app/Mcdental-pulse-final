@@ -81,7 +81,7 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
 
   if (yaContesto || enviada) {
     return (
-      <div className="admin-page empleado-page empleado-page--narrow">
+      <div className="admin-page empleado-page empleado-form-narrow">
         <Card className="empleado-success-card">
           <div className="empleado-success-icon">
             <Icon name="check" size={32} />
@@ -96,7 +96,7 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
   }
 
   return (
-    <div className="admin-page empleado-page empleado-page--narrow">
+    <div className="admin-page empleado-page empleado-form-narrow">
       <div className="admin-page-header">
         <h1 className="admin-page-title">Mi encuesta</h1>
         <p className="admin-page-subtitle">

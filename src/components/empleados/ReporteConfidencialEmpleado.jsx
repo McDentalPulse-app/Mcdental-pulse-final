@@ -58,7 +58,7 @@ const ReporteConfidencialEmpleado = ({ user, onSubmit }) => {
   };
 
   return (
-    <div className="admin-page empleado-page empleado-page--narrow">
+    <div className="admin-page empleado-page empleado-form-narrow">
       <div className="admin-page-header">
         <h1 className="admin-page-title">Reporte confidencial</h1>
         <p className="admin-page-subtitle">
