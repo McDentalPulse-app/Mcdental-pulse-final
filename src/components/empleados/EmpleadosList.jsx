@@ -86,23 +86,12 @@ const EmpleadosList = ({
     const riesgos = calcRiesgos(selected.id, encuestas);
 
     return (
-      <div>
-        <button
-          onClick={() => setSelected(null)}
-          style={{
-            background: "none",
-            border: "none",
-            color: "#006D5B",
-            fontSize: 14,
-            cursor: "pointer",
-            fontWeight: 700,
-            marginBottom: 18
-          }}
-        >
+      <div className="detail-page">
+        <button className="detail-back-btn" onClick={() => setSelected(null)}>
           ← Volver a empleados
         </button>
 
-        <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
+        <div className="detail-grid-top">
           <Card style={{ flex: 2, minWidth: 280 }}>
             <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 20 }}>
               <Avatar name={selected.name} size={56} color={semaforoColor[sem]} />
@@ -236,82 +225,54 @@ const EmpleadosList = ({
           )}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
+        <div className="detail-grid-2">
           {role !== "rh" && (
             <Card>
-              <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
-                Historial de encuestas
-              </div>
-
+              <div className="detail-section-title">Historial de encuestas</div>
+              <div className="detail-list-scroll">
               {encEmp.length === 0 ? (
                 <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin encuestas registradas</div>
               ) : (
                 encEmp.map(e => (
-                  <div
-                    key={e.id}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "8px 0",
-                      borderBottom: "1px solid #f3f4f6",
-                      fontSize: 13
-                    }}
-                  >
+                  <div key={e.id} className="detail-list-item">
                     <span>{e.semana}</span>
                     <Badge tipo={e.semaforo} />
                     <span style={{ fontWeight: 800 }}>{e.score}</span>
                   </div>
                 ))
               )}
+              </div>
             </Card>
           )}
 
           {role === "psicologa" && (
             <Card>
-              <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
-                Notas psicológicas
-              </div>
-
+              <div className="detail-section-title">Notas psicológicas</div>
+              <div className="detail-list-scroll">
               {notasEmp.length === 0 ? (
                 <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin notas registradas</div>
               ) : (
                 notasEmp.map(n => (
-                  <div
-                    key={n.id}
-                    style={{
-                      padding: "8px 0",
-                      borderBottom: "1px solid #f3f4f6",
-                      fontSize: 13
-                    }}
-                  >
+                  <div key={n.id} className="detail-list-item-block">
                     <div style={{ color: "#374151" }}>{n.texto}</div>
                     <div style={{ color: "#9ca3af", fontSize: 11 }}>{n.fecha}</div>
                   </div>
                 ))
               )}
+              </div>
             </Card>
           )}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
+        <div className="detail-grid-2">
           <Card>
-            <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
-              Vacaciones
-            </div>
-
+            <div className="detail-section-title">Vacaciones</div>
+            <div className="detail-list-scroll">
             {vacacionesEmp.length === 0 ? (
               <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin vacaciones registradas</div>
             ) : (
               vacacionesEmp.map(v => (
-                <div
-                  key={v.id}
-                  style={{
-                    padding: "8px 0",
-                    borderBottom: "1px solid #f3f4f6",
-                    fontSize: 13
-                  }}
-                >
+                <div key={v.id} className="detail-list-item-block">
                   <strong>{v.estado}</strong> · {v.fechaInicio || v.inicio || v.desde} al {v.fechaFin || v.fin || v.hasta}
                   <br />
                   <span style={{ color: "#64748b" }}>
@@ -328,25 +289,17 @@ const EmpleadosList = ({
                 </div>
               ))
             )}
+            </div>
           </Card>
 
           <Card>
-            <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
-              Permisos
-            </div>
-
+            <div className="detail-section-title">Permisos</div>
+            <div className="detail-list-scroll">
             {permisosEmp.length === 0 ? (
               <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin permisos registrados</div>
             ) : (
               permisosEmp.map(p => (
-                <div
-                  key={p.id}
-                  style={{
-                    padding: "8px 0",
-                    borderBottom: "1px solid #f3f4f6",
-                    fontSize: 13
-                  }}
-                >
+                <div key={p.id} className="detail-list-item-block">
                   <strong>{p.estado}</strong> · {p.fecha || p.fechaInicio} {p.hora || ""}
                   <br />
                   <span style={{ color: "#64748b" }}>
@@ -363,26 +316,18 @@ const EmpleadosList = ({
                 </div>
               ))
             )}
+            </div>
           </Card>
 
           {role !== "psicologa" && (
             <Card>
-              <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
-                Descuentos
-              </div>
-
+              <div className="detail-section-title">Descuentos</div>
+              <div className="detail-list-scroll">
               {descuentosEmp.length === 0 ? (
                 <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin descuentos</div>
               ) : (
                 descuentosEmp.map(d => (
-                  <div
-                    key={d.id}
-                    style={{
-                      padding: "8px 0",
-                      borderBottom: "1px solid #f3f4f6",
-                      fontSize: 13
-                    }}
-                  >
+                  <div key={d.id} className="detail-list-item-block">
                     <strong>{d.estado}</strong> · {d.concepto || d.motivo}
                     <br />
                     <span style={{ color: "#64748b" }}>
@@ -391,26 +336,18 @@ const EmpleadosList = ({
                   </div>
                 ))
               )}
+              </div>
             </Card>
           )}
 
           <Card>
-            <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
-              Reconocimientos
-            </div>
-
+            <div className="detail-section-title">Reconocimientos</div>
+            <div className="detail-list-scroll">
             {reconocimientosEmp.length === 0 ? (
               <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin reconocimientos</div>
             ) : (
               reconocimientosEmp.map(r => (
-                <div
-                  key={r.id}
-                  style={{
-                    padding: "8px 0",
-                    borderBottom: "1px solid #f3f4f6",
-                    fontSize: 13
-                  }}
-                >
+                <div key={r.id} className="detail-list-item-block">
                   <strong>{r.titulo || r.tipo || r.categoria}</strong>
 <br />
 <span style={{ color: "#64748b" }}>
@@ -435,26 +372,18 @@ const EmpleadosList = ({
                 </div>
               ))
             )}
+            </div>
           </Card>
 
           {role !== "rh" && (
             <Card>
-              <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
-                Reportes confidenciales
-              </div>
-
+              <div className="detail-section-title">Reportes confidenciales</div>
+              <div className="detail-list-scroll">
               {reportesEmp.length === 0 ? (
                 <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin reportes confidenciales</div>
               ) : (
                 reportesEmp.map(r => (
-                  <div
-                    key={r.id}
-                    style={{
-                      padding: "8px 0",
-                      borderBottom: "1px solid #f3f4f6",
-                      fontSize: 13
-                    }}
-                  >
+                  <div key={r.id} className="detail-list-item-block">
                     <strong>{r.fecha || "Reporte"}</strong>
                     <br />
                     <span style={{ color: "#64748b" }}>
@@ -463,6 +392,7 @@ const EmpleadosList = ({
                   </div>
                 ))
               )}
+              </div>
             </Card>
           )}
         </div>
@@ -471,47 +401,24 @@ const EmpleadosList = ({
   }
 
   return (
-    <div>
-      <h2 style={{ margin: "0 0 20px", fontSize: 22, fontWeight: 800, color: "#004D40" }}>
-        Empleados
-      </h2>
+    <div className="list-page">
+      <div className="list-page-header">
+        <h2 className="list-page-title">Empleados</h2>
+      </div>
 
-      <Card style={{ marginBottom: 18 }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1.8fr 0.8fr 0.8fr",
-            gap: 12,
-            alignItems: "center"
-          }}
-        >
+      <Card className="list-page-sticky list-card-spaced">
+        <div className="list-filters-grid">
           <input
+            className="list-filter-input"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="🔍 Buscar por nombre, puesto o sucursal..."
-            style={{
-              width: "100%",
-              padding: "11px 12px",
-              borderRadius: 12,
-              border: "1px solid #d1d5db",
-              outline: "none",
-              background: "white",
-              color: "#111827"
-            }}
           />
 
           <select
+            className="list-filter-select"
             value={filtroSucursal}
             onChange={(e) => setFiltroSucursal(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "11px 12px",
-              borderRadius: 12,
-              border: "1px solid #d1d5db",
-              background: "white",
-              color: "#111827",
-              fontWeight: 700
-            }}
           >
             <option value="Todas">Todas las sucursales</option>
             {[...new Set(empleados.map(e => e.sucursal))].map(s => (
@@ -520,17 +427,9 @@ const EmpleadosList = ({
           </select>
 
           <select
+            className="list-filter-select"
             value={filtroSemaforo}
             onChange={(e) => setFiltroSemaforo(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "11px 12px",
-              borderRadius: 12,
-              border: "1px solid #d1d5db",
-              background: "white",
-              color: "#111827",
-              fontWeight: 700
-            }}
           >
             <option value="Todos">Todos los semáforos</option>
             <option value="verde">Verde</option>
@@ -539,12 +438,13 @@ const EmpleadosList = ({
           </select>
         </div>
 
-        <div style={{ marginTop: 12, color: "#64748b", fontSize: 13, textAlign: "center" }}>
+        <div className="list-filter-count">
           Mostrando {filtered.length} de {empleados.length} empleados
         </div>
       </Card>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 16 }}>
+      <div className="list-scroll-body">
+        <div className="emp-grid">
         {filtered.map(emp => {
           const sem = getUltimoSemaforo(emp.id);
           const ps = calcPulseScore(emp.id, encuestas);
@@ -553,28 +453,23 @@ const EmpleadosList = ({
           return (
             <div
               key={emp.id}
+              className="emp-card-wrap"
               onClick={() => setSelected(emp)}
-              style={{ cursor: "pointer" }}
             >
               <Card>
-                <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 10 }}>
-                  <Avatar name={emp.name} size={40} color={semaforoColor[sem]} />
+                <div className="emp-card-top">
+                  <Avatar name={emp.name} size={36} color={semaforoColor[sem]} />
 
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 800, fontSize: 14, color: "#111827" }}>
-                      {emp.name}
-                    </div>
-
-                    <div style={{ fontSize: 12, color: "#6b7280" }}>
-                      {emp.puesto}
-                    </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="emp-card-name">{emp.name}</div>
+                    <div className="emp-card-role">{emp.puesto}</div>
                   </div>
 
                   {role !== "rh" && <Badge tipo={sem} />}
                 </div>
 
                 {role !== "rh" && (
-                  <div style={{ marginBottom: 8 }}>
+                  <div style={{ marginBottom: 6 }}>
                     <PulseScoreBadge
                       score={ps.score}
                       nivel={ps.nivel}
@@ -585,12 +480,7 @@ const EmpleadosList = ({
                   </div>
                 )}
 
-                <div style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  fontSize: 12,
-                  color: "#6b7280"
-                }}>
+                <div className="emp-card-footer">
                   <span>{emp.sucursal}</span>
                   {role !== "rh" && <span>{contestoEsta ? "✓ Contestó" : "Pendiente"}</span>}
                 </div>
@@ -598,6 +488,7 @@ const EmpleadosList = ({
             </div>
           );
         })}
+        </div>
       </div>
     </div>
   );

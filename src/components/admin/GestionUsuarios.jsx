@@ -121,30 +121,28 @@ const GestionUsuarios = () => {
   };
 
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <h1 style={{ margin: 0, fontSize: 28, color: "#004D40" }}>Gestión de Personal</h1>
-        <button 
-          onClick={() => abrirModal()}
-          style={{ background: "#006D5B", color: "#fff", border: "none", padding: "10px 20px", borderRadius: 8, cursor: "pointer", fontWeight: "bold" }}>
+    <div className="list-page">
+      <div className="list-page-header">
+        <h1 className="list-page-title">Gestión de Personal</h1>
+        <button className="mc-btn-primary" onClick={() => abrirModal()}>
           + Añadir Empleado
         </button>
       </div>
 
-      <Card>
-        <input 
-          type="text" 
-          placeholder="Buscar empleado por nombre..." 
+      <Card className="list-page-sticky table-card-body">
+        <input
+          type="text"
+          className="table-search"
+          placeholder="Buscar empleado por nombre..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          style={{ width: "100%", padding: 12, marginBottom: 20, borderRadius: 8, border: "1px solid #ccc" }}
         />
-        
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", textAlign: "left", borderCollapse: "collapse", minWidth: 700 }}>
+
+        <div className="table-scroll-wrap">
+          <table className="mc-table">
             <thead>
-              <tr style={{ borderBottom: "2px solid #eee", color: "#64748b" }}>
-                <th style={{ padding: 12 }}>Nombre</th>
+              <tr>
+                <th>Nombre</th>
                 <th>Usuario</th>
                 <th>Sucursal</th>
                 <th>Rol</th>
@@ -154,14 +152,14 @@ const GestionUsuarios = () => {
             </thead>
             <tbody>
               {empleados.map(emp => (
-                <tr key={emp.id} style={{ borderBottom: "1px solid #eee" }}>
-                  <td style={{ padding: 12, fontWeight: "bold" }}>{emp.name}</td>
+                <tr key={emp.id}>
+                  <td className="mc-table-name">{emp.name}</td>
                   <td style={{ color: "#475569" }}>{emp.user}</td>
                   <td>{emp.sucursal}</td>
                   <td>
-                    <span style={{ 
-                      background: emp.role === "empleado" ? "#f1f5f9" : "#e0e7ff", 
-                      padding: "4px 8px", borderRadius: 12, fontSize: 12 
+                    <span style={{
+                      background: emp.role === "empleado" ? "#f1f5f9" : "#e0e7ff",
+                      padding: "4px 8px", borderRadius: 12, fontSize: 12
                     }}>
                       {emp.role}
                     </span>
@@ -174,28 +172,36 @@ const GestionUsuarios = () => {
                     )}
                   </td>
                   <td>
-                    <button 
+                    <button
+                      className="mc-btn-sm"
                       onClick={() => abrirModal(emp)}
-                      style={{ marginRight: 8, padding: "6px 12px", background: "#f0fdf4", color: "#166534", border: "none", borderRadius: 4, cursor: "pointer" }}>
+                      style={{ background: "#f0fdf4", color: "#166534" }}
+                    >
                       Editar
                     </button>
                     {user?.role === "admin" && (
-                      <button 
+                      <button
+                        className="mc-btn-sm"
                         onClick={() => restablecerPasswordUsuario(emp)}
-                        style={{ marginRight: 8, padding: "6px 12px", background: "#fef3c7", color: "#b45309", border: "none", borderRadius: 4, cursor: "pointer" }}>
+                        style={{ background: "#fef3c7", color: "#b45309" }}
+                      >
                         Contraseña
                       </button>
                     )}
                     {emp.inactivo ? (
-                      <button 
+                      <button
+                        className="mc-btn-sm"
                         onClick={() => cambiarEstado(emp, true)}
-                        style={{ padding: "6px 12px", background: "#dcfce7", color: "#166534", border: "none", borderRadius: 4, cursor: "pointer" }}>
+                        style={{ background: "#dcfce7", color: "#166534" }}
+                      >
                         Activar
                       </button>
                     ) : (
-                      <button 
+                      <button
+                        className="mc-btn-sm"
                         onClick={() => cambiarEstado(emp, false)}
-                        style={{ padding: "6px 12px", background: "#fee2e2", color: "#b91c1c", border: "none", borderRadius: 4, cursor: "pointer" }}>
+                        style={{ background: "#fee2e2", color: "#b91c1c" }}
+                      >
                         Desactivar
                       </button>
                     )}
@@ -204,7 +210,7 @@ const GestionUsuarios = () => {
               ))}
               {empleados.length === 0 && (
                 <tr>
-                  <td colSpan="6" style={{ padding: 20, textAlign: "center", color: "#64748b" }}>No se encontraron empleados.</td>
+                  <td colSpan="6" className="mc-table-empty">No se encontraron empleados.</td>
                 </tr>
               )}
             </tbody>
