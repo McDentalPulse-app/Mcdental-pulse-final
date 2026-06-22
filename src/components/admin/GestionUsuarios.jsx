@@ -6,6 +6,9 @@ import { collection, addDoc, updateDoc, doc, serverTimestamp } from "firebase/fi
 import { db } from "../../config/firebase";
 import Card from "../common/Card";
 import Icon from "../ui/Icon";
+import { SUCURSALES } from "../../utils/constants";
+
+const DEFAULT_SUCURSAL = SUCURSALES[0];
 
 const GestionUsuarios = () => {
   const { usuarios, setUsuarios } = useGlobal();
@@ -21,7 +24,7 @@ const GestionUsuarios = () => {
   const [formData, setFormData] = useState({
     name: "",
     user: "",
-    sucursal: "Polanco",
+    sucursal: DEFAULT_SUCURSAL,
     puesto: "Asistente Dental",
     role: "empleado",
     email: "",
@@ -40,7 +43,7 @@ const GestionUsuarios = () => {
       setFormData({
         name: empleado.name || "",
         user: empleado.user || "",
-        sucursal: empleado.sucursal || "Polanco",
+        sucursal: empleado.sucursal || DEFAULT_SUCURSAL,
         puesto: empleado.puesto || "Asistente Dental",
         role: empleado.role || "empleado",
         email: empleado.email || "",
@@ -52,7 +55,7 @@ const GestionUsuarios = () => {
       setFormData({
         name: "",
         user: "",
-        sucursal: "Polanco",
+        sucursal: DEFAULT_SUCURSAL,
         puesto: "Asistente Dental",
         role: "empleado",
         email: "",
@@ -250,10 +253,9 @@ const GestionUsuarios = () => {
                 <div className="mc-form-group">
                   <label className="mc-form-label">Sucursal</label>
                   <select className="mc-form-select" value={formData.sucursal} onChange={(e) => setFormData({...formData, sucursal: e.target.value})}>
-                    <option value="Polanco">Polanco</option>
-                    <option value="Roma">Roma</option>
-                    <option value="Condesa">Condesa</option>
-                    <option value="Coyoacán">Coyoacán</option>
+                    {SUCURSALES.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
                   </select>
                 </div>
               </div>
