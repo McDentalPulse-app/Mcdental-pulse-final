@@ -269,17 +269,17 @@ const RESUMEN_LIMITE = 8;
   ];
 
   return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-        <div className="admin-stat-icon-wrap" style={{ width: 44, height: 44, borderRadius: 12, background: "var(--mc-verde-claro)" }}>
+    <div className="admin-page ai-engine-page">
+      <div className="ai-engine-header">
+        <div className="admin-stat-icon-wrap ai-engine-header-icon">
           <Icon name="ai" size={22} />
         </div>
-        <div>
-          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "#004D40" }}>McDental Pulse AI Engine</h2>
-          <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>Motor de Inteligencia Artificial · Análisis en tiempo real</p>
+        <div className="ai-engine-header-main">
+          <h1 className="admin-page-title">McDental Pulse AI Engine</h1>
+          <p className="admin-page-subtitle">Motor de inteligencia artificial · análisis en tiempo real</p>
         </div>
-        <div style={{ marginLeft: "auto", background: "var(--mc-verde-oscuro)", color: "#fff", padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 6 }}>
-          <Icon name="sparkles" size={14} color="#fff" /> ACTIVO
+        <div className="ai-engine-status-badge">
+          <Icon name="sparkles" size={14} /> Activo
         </div>
       </div>
       <div className="admin-stat-grid">

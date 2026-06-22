@@ -390,10 +390,10 @@ const EmpleadosList = ({
   }
 
   return (
-    <div className="list-page admin-page">
+    <div className="list-page">
       <div className="list-page-header admin-page-header admin-page-header--row">
         <div>
-          <h2 className="list-page-title admin-page-title">Empleados</h2>
+          <h2 className="admin-page-title">Empleados</h2>
           <p className="admin-page-subtitle">Directorio del equipo con bienestar y semáforo por colaborador.</p>
         </div>
       </div>
@@ -474,7 +474,15 @@ const EmpleadosList = ({
 
                 <div className="emp-card-footer">
                   <span>{emp.sucursal}</span>
-                  {role !== "rh" && <span>{contestoEsta ? "✓ Contestó" : "Pendiente"}</span>}
+                  {role !== "rh" && (
+                    <span className="emp-card-status">
+                      {contestoEsta ? (
+                        <><Icon name="check" size={12} /> Contestó</>
+                      ) : (
+                        <><Icon name="clock" size={12} /> Pendiente</>
+                      )}
+                    </span>
+                  )}
                 </div>
               </Card>
             </div>

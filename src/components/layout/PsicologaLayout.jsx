@@ -2,14 +2,13 @@ import React from 'react';
 import { useGlobal } from "../../contexts/GlobalContext";
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import AdminDashboard from '../dashboards/AdminDashboard';
+import PsicologaDashboard from '../dashboards/PsicologaDashboard';
 import AIEngine from '../ia/AIEngine';
 import PsicologaSeguimiento from '../psicologia/PsicologaSeguimiento';
 import ReportesConfidencialesPanel from '../psicologia/ReportesConfidencialesPanel';
 import EmpleadosList from '../empleados/EmpleadosList';
 import ExpedienteIntegral from '../empleados/ExpedienteIntegral';
 import Mensajes from '../comunicacion/Mensajes';
-
 
 export default function PsicologaLayout({ user, globals, actions }) {
   const { usuarios: USERS } = useGlobal();
@@ -18,12 +17,12 @@ export default function PsicologaLayout({ user, globals, actions }) {
   const { restablecerPasswordUsuario, addNota, sendMensaje } = actions;
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Inter','Segoe UI',system-ui,sans-serif", background: "linear-gradient(135deg, #f4fbf9 0%, #f8fafc 42%, #ffffff 100%)", color: "#0f172a" }}>
+    <div className="app-shell">
       <Sidebar />
-      <main style={{ flex: 1, padding: "34px 38px", overflowY: "auto", overflowX: "hidden", minWidth: 0 }}>
-        <div style={{ width: "100%", maxWidth: 1180, margin: "0 auto", overflowX: "hidden" }}>
+      <main className="app-main">
+        <div className="app-main-inner">
           <Routes>
-            <Route path="dashboard" element={<AdminDashboard encuestas={encuestas} mensajes={mensajes}/>} />
+            <Route path="dashboard" element={<PsicologaDashboard encuestas={encuestas} mensajes={mensajes} reportesConfidenciales={reportesConfidenciales} />} />
             <Route path="ai" element={<AIEngine encuestas={encuestas} mensajes={mensajes} notas={notas} userRole="psicologa" permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>} />
             <Route path="seguimiento" element={<PsicologaSeguimiento encuestas={encuestas} notas={notas} onUpdateNota={addNota}/>} />
             <Route path="confidenciales" element={<ReportesConfidencialesPanel reportes={reportesConfidenciales} />} />

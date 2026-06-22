@@ -1,13 +1,10 @@
 import React from "react";
-import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
 import StatCard from "../common/StatCard";
 import Icon from "../ui/Icon";
 
 const ReportesConfidencialesPanel = ({ reportes }) => {
-  const { usuarios: USERS } = useGlobal();
-
   const nuevos = reportes.filter(r => r.estado === "nuevo").length;
   const seguimiento = reportes.filter(r => r.estado === "en seguimiento").length;
   const altas = reportes.filter(r => r.urgencia === "Alta" || r.urgencia === "Crítica").length;
@@ -26,12 +23,17 @@ const ReportesConfidencialesPanel = ({ reportes }) => {
   };
 
   return (
-    <div className="admin-page">
+    <div className="admin-page psico-confidenciales-page">
       <div className="admin-page-header">
         <h1 className="admin-page-title">Reportes Confidenciales</h1>
         <p className="admin-page-subtitle">
           Bandeja confidencial visible únicamente para Psicóloga y Admin Principal.
         </p>
+      </div>
+
+      <div className="admin-info-box psico-confidential-info">
+        <Icon name="shield" size={16} />
+        <span>Contenido protegido · uso exclusivo clínico-administrativo · no compartir fuera del canal autorizado.</span>
       </div>
 
       <div className="admin-stat-grid">
@@ -41,26 +43,30 @@ const ReportesConfidencialesPanel = ({ reportes }) => {
         <StatCard iconName="shieldAlert" value={altas} label="Alta prioridad" valueClass="admin-stat-value--red" />
       </div>
 
-      <Card>
+      <Card className="psico-inbox-card">
         <SectionTitle icon="clipboard">Bandeja de reportes</SectionTitle>
-        <div className="admin-list-scroll admin-list-scroll--tall">
-          {reportes.map(r => (
-            <div key={r.id} className="admin-list-item">
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", marginBottom: 10, flexWrap: "wrap" }}>
+        <div className="psico-inbox-list admin-list-scroll admin-list-scroll--tall">
+          {reportes.length === 0 ? (
+            <p className="admin-empty">No hay reportes confidenciales registrados.</p>
+          ) : reportes.map(r => (
+            <div key={r.id} className="psico-inbox-item">
+              <div className="psico-inbox-head">
                 <div>
                   <div className="admin-list-item-title">{r.empleado}</div>
                   <div className="admin-list-item-meta">{r.sucursal} · {r.puesto} · {r.fecha}</div>
                 </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <div className="psico-inbox-badges">
                   <span className={urgenciaClass(r.urgencia)}>{r.urgencia}</span>
                   <span className={estadoClass(r.estado)}>{r.estado}</span>
                 </div>
               </div>
-              <div style={{ color: "var(--mc-verde-oscuro)", fontWeight: 800, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+              <div className="psico-inbox-type">
                 <Icon name="lock" size={14} /> {r.tipo}
               </div>
               <div className="admin-list-item-body">{r.descripcion}</div>
-              <div className="admin-list-item-meta" style={{ marginTop: 8 }}><b>Evidencias:</b> {r.evidencias}</div>
+              <div className="admin-list-item-meta psico-inbox-evidence">
+                <strong>Evidencias:</strong> {r.evidencias}
+              </div>
             </div>
           ))}
         </div>
