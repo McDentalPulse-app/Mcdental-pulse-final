@@ -1,15 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
-import Badge from "../common/Badge";
-import Avatar from "../ui/Avatar";
-import PulseScoreBadge from "../common/PulseScoreBadge";
-import RiskBar from "../common/RiskBar";
-import { semaforoColor, semaforoBg, semaforoLabel } from "../../config/theme";
-
-import { semanaActual } from "../../utils/constants";
-import { calcularAntiguedad } from "../../utils/helpers";
-import { calcPulseScore, getPulseStatus, calcRiesgos } from "../../utils/pulseScore";
+import StatCard from "../common/StatCard";
+import SectionTitle from "../common/SectionTitle";
+import Icon from "../ui/Icon";
+import { getPulseStatus } from "../../utils/pulseScore";
 
 const HistorialEmpleado = ({ user, encuestas }) => {
   const { usuarios: USERS } = useGlobal();
@@ -38,54 +33,18 @@ const HistorialEmpleado = ({ user, encuestas }) => {
         Consulta privada de tus mediciones semanales de bienestar.
       </p>
 
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-        gap: 14,
-        marginBottom: 22
-      }}>
-        <Card>
-          <div style={{ fontSize: 24 }}>📊</div>
-          <div style={{ fontSize: 30, fontWeight: 900, color: "#00897B" }}>
-            {historial.length}
-          </div>
-          <div style={{ fontWeight: 800 }}>Encuestas registradas</div>
-        </Card>
-
-        <Card>
-          <div style={{ fontSize: 24 }}>💓</div>
-          <div style={{ fontSize: 30, fontWeight: 900, color: "#00897B" }}>
-            {promedio}
-          </div>
-          <div style={{ fontWeight: 800 }}>Promedio personal</div>
-        </Card>
-
-        <Card>
-          <div style={{ fontSize: 24 }}>⭐</div>
-          <div style={{ fontSize: 30, fontWeight: 900, color: "#00897B" }}>
-            {mejor}
-          </div>
-          <div style={{ fontWeight: 800 }}>Mejor score</div>
-        </Card>
-
-        <Card>
-          <div style={{ fontSize: 24 }}>🗓️</div>
-          <div style={{ fontSize: 24, fontWeight: 900, color: "#00897B" }}>
-            {ultima?.semana || "N/A"}
-          </div>
-          <div style={{ fontWeight: 800 }}>Última medición</div>
-        </Card>
+      <div className="admin-stat-grid">
+        <StatCard iconName="chart" value={historial.length} label="Encuestas registradas" valueClass="admin-stat-value--green" />
+        <StatCard iconName="heart" value={promedio} label="Promedio personal" valueClass="admin-stat-value--green" />
+        <StatCard iconName="star" value={mejor} label="Mejor score" valueClass="admin-stat-value--green" />
+        <StatCard iconName="calendarDays" value={ultima?.semana || "N/A"} label="Última medición" valueClass="admin-stat-value--green" />
       </div>
 
       <Card>
-        <h3 style={{ marginTop: 0, color: "#004D40" }}>
-          📋 Historial semanal
-        </h3>
+        <SectionTitle icon="clipboard">Historial semanal</SectionTitle>
 
         {historial.length === 0 ? (
-          <p style={{ color: "#64748b" }}>
-            Aún no tienes encuestas registradas.
-          </p>
+          <p style={{ color: "#64748b" }}>Aún no tienes encuestas registradas.</p>
         ) : (
           <div style={{ display: "grid", gap: 12 }}>
             {historial.map(e => {
@@ -106,8 +65,8 @@ const HistorialEmpleado = ({ user, encuestas }) => {
                   }}
                 >
                   <div>
-                    <div style={{ fontWeight: 900, color: "#0f172a", fontSize: 17 }}>
-                      🗓️ {e.semana}
+                    <div style={{ fontWeight: 900, color: "#0f172a", fontSize: 17, display: "flex", alignItems: "center", gap: 8 }}>
+                      <Icon name="calendarDays" size={16} /> {e.semana}
                     </div>
                     <div style={{ color: "#64748b", fontSize: 13 }}>
                       Resultado semanal de bienestar
@@ -146,9 +105,14 @@ const HistorialEmpleado = ({ user, encuestas }) => {
         color: "#004D40",
         lineHeight: 1.6,
         textAlign: "center",
-        fontWeight: 700
+        fontWeight: 700,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8
       }}>
-        🔒 Este historial es privado. Solo muestra tus propias respuestas y resultados.
+        <Icon name="lock" size={16} />
+        Este historial es privado. Solo muestra tus propias respuestas y resultados.
       </div>
     </div>
   );

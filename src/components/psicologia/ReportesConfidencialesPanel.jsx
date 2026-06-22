@@ -1,6 +1,9 @@
 import React from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
+import SectionTitle from "../common/SectionTitle";
+import StatCard from "../common/StatCard";
+import Icon from "../ui/Icon";
 
 const ReportesConfidencialesPanel = ({ reportes }) => {
   const { usuarios: USERS } = useGlobal();
@@ -32,30 +35,14 @@ const ReportesConfidencialesPanel = ({ reportes }) => {
       </div>
 
       <div className="admin-stat-grid">
-        <Card className="admin-stat-card">
-          <div className="admin-stat-icon">🔒</div>
-          <div className="admin-stat-value admin-stat-value--green">{reportes.length}</div>
-          <div className="admin-stat-label">Reportes totales</div>
-        </Card>
-        <Card className="admin-stat-card">
-          <div className="admin-stat-icon">🆕</div>
-          <div className="admin-stat-value admin-stat-value--blue">{nuevos}</div>
-          <div className="admin-stat-label">Nuevos</div>
-        </Card>
-        <Card className="admin-stat-card">
-          <div className="admin-stat-icon">🎯</div>
-          <div className="admin-stat-value admin-stat-value--amber">{seguimiento}</div>
-          <div className="admin-stat-label">En seguimiento</div>
-        </Card>
-        <Card className="admin-stat-card">
-          <div className="admin-stat-icon">🚨</div>
-          <div className="admin-stat-value admin-stat-value--red">{altas}</div>
-          <div className="admin-stat-label">Alta prioridad</div>
-        </Card>
+        <StatCard iconName="lock" value={reportes.length} label="Reportes totales" valueClass="admin-stat-value--green" />
+        <StatCard iconName="inbox" value={nuevos} label="Nuevos" valueClass="admin-stat-value--blue" />
+        <StatCard iconName="target" value={seguimiento} label="En seguimiento" valueClass="admin-stat-value--amber" />
+        <StatCard iconName="shieldAlert" value={altas} label="Alta prioridad" valueClass="admin-stat-value--red" />
       </div>
 
       <Card>
-        <h3 className="admin-section-title">📋 Bandeja de reportes</h3>
+        <SectionTitle icon="clipboard">Bandeja de reportes</SectionTitle>
         <div className="admin-list-scroll admin-list-scroll--tall">
           {reportes.map(r => (
             <div key={r.id} className="admin-list-item">
@@ -69,7 +56,9 @@ const ReportesConfidencialesPanel = ({ reportes }) => {
                   <span className={estadoClass(r.estado)}>{r.estado}</span>
                 </div>
               </div>
-              <div style={{ color: "var(--mc-verde-oscuro)", fontWeight: 800, marginBottom: 6 }}>🔒 {r.tipo}</div>
+              <div style={{ color: "var(--mc-verde-oscuro)", fontWeight: 800, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                <Icon name="lock" size={14} /> {r.tipo}
+              </div>
               <div className="admin-list-item-body">{r.descripcion}</div>
               <div className="admin-list-item-meta" style={{ marginTop: 8 }}><b>Evidencias:</b> {r.evidencias}</div>
             </div>

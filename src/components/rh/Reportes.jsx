@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import Card from "../common/Card";
+import SectionTitle from "../common/SectionTitle";
+import Icon from "../ui/Icon";
 import { SUCURSALES, semanaActual } from "../../utils/constants";
 
 const Reportes = ({ users = [], encuestas = [] }) => {
@@ -199,8 +201,8 @@ const Reportes = ({ users = [], encuestas = [] }) => {
       </div>
 
       <Card className="reportes-hero">
-        <div className="reportes-hero-icon">📊</div>
-        <h3 className="admin-section-title" style={{ justifyContent: "center" }}>Exportar Reportes</h3>
+        <div className="reportes-hero-icon"><Icon name="chart" size={28} /></div>
+        <SectionTitle icon="chart" className="reportes-hero-title">Exportar Reportes</SectionTitle>
         <p className="admin-page-subtitle" style={{ margin: "0 auto", textAlign: "center" }}>
           Descarga archivos con los datos actuales del sistema.
         </p>
@@ -228,10 +230,10 @@ const Reportes = ({ users = [], encuestas = [] }) => {
         )}
 
         <div className="reportes-actions">
-          <button className="mc-btn-outline" onClick={descargarReporteSemanalExcel}>📄 Reporte Semanal Excel</button>
-          <button className="mc-btn-outline" onClick={descargarReporteMensualExcel}>📊 Reporte Mensual Excel</button>
-          <button className="mc-btn-outline" onClick={() => setMostrarSelectorSucursal(!mostrarSelectorSucursal)}>🏢 Por Sucursal Excel</button>
-          <button className="mc-btn-outline" onClick={descargarEmpleadosCSV}>👥 Empleados Excel</button>
+          <button className="mc-btn-outline" onClick={descargarReporteSemanalExcel}><Icon name="file" size={16} /> Reporte Semanal Excel</button>
+          <button className="mc-btn-outline" onClick={descargarReporteMensualExcel}><Icon name="chart" size={16} /> Reporte Mensual Excel</button>
+          <button className="mc-btn-outline" onClick={() => setMostrarSelectorSucursal(!mostrarSelectorSucursal)}><Icon name="building" size={16} /> Por Sucursal Excel</button>
+          <button className="mc-btn-outline" onClick={descargarEmpleadosCSV}><Icon name="users" size={16} /> Empleados Excel</button>
         </div>
       </Card>
     </div>

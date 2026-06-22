@@ -3,6 +3,8 @@ import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import Badge from "../common/Badge";
 import KPI from "../common/KPI";
+import SectionTitle from "../common/SectionTitle";
+import Icon from "../ui/Icon";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import { SUCURSALES, semanaActual } from "../../utils/constants";
@@ -129,24 +131,24 @@ const empleado =
 
       <div className="admin-stat-grid">
         <Card className="admin-stat-card">
-          <div className="admin-stat-icon">👤</div>
+          <div className="admin-stat-icon-wrap"><Icon name="user" size={20} /></div>
           <div className="admin-stat-value admin-stat-value--green" style={{ fontSize: 20 }}>{empleado.name}</div>
           <div className="admin-stat-label">{empleado.puesto}</div>
           <div className="admin-stat-label">{empleado.sucursal}</div>
         </Card>
         <Card className="admin-stat-card">
-          <div className="admin-stat-icon">💓</div>
+          <div className="admin-stat-icon-wrap"><Icon name="heart" size={20} /></div>
           <div className="admin-stat-value admin-stat-value--aqua">{ultimoScore}</div>
           <div className="admin-stat-label">Pulse Score™</div>
           <div style={{ color: pulseStatus.color, fontWeight: 800, fontSize: 13, marginTop: 4 }}>{pulseStatus.label}</div>
         </Card>
         <Card className="admin-stat-card">
-          <div className="admin-stat-icon">🚦</div>
+          <div className="admin-stat-icon-wrap"><Icon name="stable" size={20} /></div>
           <div className="admin-stat-value" style={{ color: semaforoColor, fontSize: 24 }}>{semaforo}</div>
           <div className="admin-stat-label">Semáforo actual</div>
         </Card>
         <Card className="admin-stat-card">
-          <div className="admin-stat-icon">🏅</div>
+          <div className="admin-stat-icon-wrap"><Icon name="award" size={20} /></div>
           <div className="admin-stat-value admin-stat-value--blue">{reconocimientosEmpleado.length}</div>
           <div className="admin-stat-label">Reconocimientos</div>
         </Card>
@@ -154,7 +156,7 @@ const empleado =
 
       <div className="expediente-data-grid">
         <Card>
-          <h3 className="admin-section-title">📌 Datos generales</h3>
+          <SectionTitle icon="pin">Datos generales</SectionTitle>
           <div className="expediente-data-row">
             <div><b>Nombre:</b> {empleado.name}</div>
             <div><b>Puesto:</b> {empleado.puesto}</div>
@@ -166,7 +168,7 @@ const empleado =
         </Card>
 
         <Card>
-          <h3 className="admin-section-title">💓 Bienestar</h3>
+          <SectionTitle icon="heart">Bienestar</SectionTitle>
           <div className="expediente-data-row">
             <div><b>Encuestas registradas:</b> {encuestasEmpleado.length}</div>
             <div><b>Score actual:</b> {ultimoScore}</div>
@@ -178,7 +180,7 @@ const empleado =
         </Card>
 
         <Card>
-          <h3 className="admin-section-title">📎 Archivos del expediente</h3>
+          <SectionTitle icon="paperclip">Archivos del expediente</SectionTitle>
           <button className="mc-btn-primary" style={{ marginBottom: 12 }} onClick={() => setMostrarSubirArchivo(!mostrarSubirArchivo)}>
             {mostrarSubirArchivo ? "Cancelar" : "+ Subir archivo"}
           </button>
@@ -228,7 +230,7 @@ const empleado =
         </Card>
 
         <Card>
-          <h3 className="admin-section-title">🏖️ Vacaciones</h3>
+          <SectionTitle icon="vacation">Vacaciones</SectionTitle>
           <div className="expediente-list-scroll">
             {vacacionesEmpleado.length === 0 ? (
               <p className="admin-list-item-meta">Sin vacaciones registradas.</p>
@@ -243,7 +245,7 @@ const empleado =
 
         {(esAdmin || esRH) && (
           <Card>
-            <h3 className="admin-section-title">💸 Descuentos</h3>
+            <SectionTitle icon="dollar">Descuentos</SectionTitle>
             <div className="expediente-list-scroll">
               {descuentosEmpleado.length === 0 ? (
                 <p className="admin-list-item-meta">Sin descuentos registrados.</p>
@@ -258,7 +260,7 @@ const empleado =
         )}
 
         <Card>
-          <h3 className="admin-section-title">🏅 Reconocimientos</h3>
+          <SectionTitle icon="award">Reconocimientos</SectionTitle>
           <div className="expediente-list-scroll">
             {reconocimientosEmpleado.length === 0 ? (
               <p className="admin-list-item-meta">Sin reconocimientos registrados.</p>
@@ -273,7 +275,7 @@ const empleado =
         </Card>
 
         <Card>
-          <h3 className="admin-section-title">💬 Comunicación</h3>
+          <SectionTitle icon="message">Comunicación</SectionTitle>
           <div className="expediente-data-row">
             <div><b>Mensajes relacionados:</b> {mensajesEmpleado.length}</div>
             <div><b>Último contacto:</b> {mensajesEmpleado.length ? "Registrado" : "Sin mensajes"}</div>
@@ -281,7 +283,7 @@ const empleado =
         </Card>
 
         <Card>
-          <h3 className="admin-section-title">🔒 Reportes confidenciales</h3>
+          <SectionTitle icon="lock">Reportes confidenciales</SectionTitle>
           <div className="expediente-list-scroll">
             {reportesEmpleado.length === 0 ? (
               <p className="admin-list-item-meta">Sin reportes confidenciales registrados.</p>

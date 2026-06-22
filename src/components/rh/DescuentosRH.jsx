@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
+import StatCard from "../common/StatCard";
+import SectionTitle from "../common/SectionTitle";
 import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
@@ -133,36 +135,15 @@ const DescuentosRH = ({ descuentos, empleados, user, onUpdateEstado, onAddDescue
   </Card>
 )}
 
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-        gap: 14,
-        marginBottom: 22
-      }}>
-        <Card>
-          <div style={{ fontSize: 24 }}>⏳</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#f59e0b" }}>{pendientes}</div>
-          <div style={{ fontWeight: 700 }}>Pendientes</div>
-        </Card>
-        <Card>
-          <div style={{ fontSize: 24 }}>📌</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#2563eb" }}>{activos}</div>
-          <div style={{ fontWeight: 700 }}>Activos</div>
-        </Card>
-        <Card>
-          <div style={{ fontSize: 24 }}>✅</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#22c55e" }}>{pagados}</div>
-          <div style={{ fontWeight: 700 }}>Pagados</div>
-        </Card>
-        <Card>
-          <div style={{ fontSize: 24 }}>💰</div>
-          <div style={{ fontSize: 26, fontWeight: 800, color: "#00897B" }}>{money(totalActivo)}</div>
-          <div style={{ fontWeight: 700 }}>Monto activo</div>
-        </Card>
+      <div className="admin-stat-grid">
+        <StatCard iconName="clock" value={pendientes} label="Pendientes" valueClass="admin-stat-value--amber" />
+        <StatCard iconName="pin" value={activos} label="Activos" valueClass="admin-stat-value--blue" />
+        <StatCard iconName="check" value={pagados} label="Pagados" valueClass="admin-stat-value--green" />
+        <StatCard iconName="dollar" value={money(totalActivo)} label="Monto activo" valueClass="admin-stat-value--green" />
       </div>
 
       <Card>
-        <h3 style={{ marginTop: 0, color: "#004D40" }}>💸 Registro de descuentos</h3>
+        <SectionTitle icon="dollar">Registro de descuentos</SectionTitle>
 
         <div style={{ display: "grid", gap: 12 }}>
           {descuentos.map(d => (

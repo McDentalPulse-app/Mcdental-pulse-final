@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import Card from '../common/Card';
+import SectionTitle from '../common/SectionTitle';
+import StatCard from '../common/StatCard';
+import Icon from '../ui/Icon';
 import { SUCURSALES } from '../../utils/constants';
 
 const Config = ({ inicializarUsuariosPassword }) => {
@@ -37,7 +40,9 @@ const Config = ({ inicializarUsuariosPassword }) => {
 
       <div className="admin-grid-auto">
         <Card className="admin-stat-card">
-          <div className="admin-stat-icon">🫀</div>
+          <div className="admin-stat-icon-wrap">
+            <Icon name="activity" size={20} />
+          </div>
           <h3 className="admin-section-title" style={{ marginBottom: 8 }}>McDental Pulse</h3>
           <p className="admin-list-item-meta" style={{ margin: 0 }}>
             Plataforma interna de telemetría avanzada para bienestar, clima laboral,
@@ -46,8 +51,10 @@ const Config = ({ inicializarUsuariosPassword }) => {
         </Card>
 
         <Card className="admin-stat-card">
-          <div className="admin-stat-icon">🏢</div>
-          <h3 className="admin-section-title" style={{ marginBottom: 12 }}>Sucursales activas</h3>
+          <div className="admin-stat-icon-wrap">
+            <Icon name="building" size={20} />
+          </div>
+          <SectionTitle icon="building" className="config-inline-title">Sucursales activas</SectionTitle>
           <div className="mc-tag-grid">
             {SUCURSALES.map(s => (
               <span key={s} className="mc-tag">{s}</span>
@@ -56,8 +63,10 @@ const Config = ({ inicializarUsuariosPassword }) => {
         </Card>
 
         <Card className="admin-stat-card">
-          <div className="admin-stat-icon">🤖</div>
-          <h3 className="admin-section-title" style={{ marginBottom: 8 }}>AI Engine</h3>
+          <div className="admin-stat-icon-wrap">
+            <Icon name="ai" size={20} />
+          </div>
+          <SectionTitle icon="ai" className="config-inline-title">AI Engine</SectionTitle>
           <p className="admin-list-item-meta" style={{ margin: 0 }}>
             Motor local por reglas activo. No genera costos de API. Preparado para conectar Gemini,
             Groq u OpenRouter más adelante.
@@ -66,19 +75,25 @@ const Config = ({ inicializarUsuariosPassword }) => {
       </div>
 
       <Card>
-        <h3 className="admin-section-title">🚦 Umbrales del semáforo</h3>
+        <SectionTitle icon="stable">Umbrales del semáforo</SectionTitle>
 
         <div className="admin-grid-auto">
           <div className="mc-form-group config-threshold--verde">
-            <label className="mc-form-label config-threshold-label--verde">🟢 Verde mayor o igual a</label>
+            <label className="mc-form-label config-threshold-label--verde">
+              <Icon name="check" size={14} /> Verde mayor o igual a
+            </label>
             <input className="mc-form-input" value={verde} onChange={(e) => setVerde(e.target.value)} />
           </div>
           <div className="mc-form-group config-threshold--amarillo">
-            <label className="mc-form-label config-threshold-label--amarillo">🟡 Amarillo mayor o igual a</label>
+            <label className="mc-form-label config-threshold-label--amarillo">
+              <Icon name="warning" size={14} /> Amarillo mayor o igual a
+            </label>
             <input className="mc-form-input" value={amarillo} onChange={(e) => setAmarillo(e.target.value)} />
           </div>
           <div className="mc-form-group config-threshold--rojo">
-            <label className="mc-form-label config-threshold-label--rojo">🔴 Rojo menor a</label>
+            <label className="mc-form-label config-threshold-label--rojo">
+              <Icon name="critical" size={14} /> Rojo menor a
+            </label>
             <input className="mc-form-input" value={rojo} onChange={(e) => setRojo(e.target.value)} />
           </div>
         </div>
@@ -90,7 +105,7 @@ const Config = ({ inicializarUsuariosPassword }) => {
 
       <div className="admin-grid-2">
         <Card>
-          <h3 className="admin-section-title">👥 Roles del sistema</h3>
+          <SectionTitle icon="users">Roles del sistema</SectionTitle>
           <div className="mc-form-grid">
             {roles.map(r => (
               <div key={r.nombre} className="config-role-item">
@@ -102,11 +117,11 @@ const Config = ({ inicializarUsuariosPassword }) => {
         </Card>
 
         <Card>
-          <h3 className="admin-section-title">🔐 Privacidad y seguridad</h3>
+          <SectionTitle icon="shield">Privacidad y seguridad</SectionTitle>
           <div className="mc-form-grid">
             {privacidad.map((p, idx) => (
               <div key={idx} className="config-privacy-item">
-                ✅ {p}
+                <Icon name="check" size={14} className="config-privacy-check" /> {p}
               </div>
             ))}
           </div>

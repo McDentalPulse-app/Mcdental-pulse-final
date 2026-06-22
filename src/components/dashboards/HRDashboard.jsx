@@ -1,20 +1,23 @@
-import React, { useState } from "react";
+import React from "react";
 import Card from "../common/Card";
-import Badge from "../common/Badge";
-import KPI from "../common/KPI";
-import MiniBar from "../common/MiniBar";
-import LineChart from "../common/LineChart";
-import Avatar from "../ui/Avatar";
-import { SUCURSALES } from "../../utils/constants";
+import StatCard from "../common/StatCard";
+import SectionTitle from "../common/SectionTitle";
+import Icon from "../ui/Icon";
 
 const HRDashboard = ({ users }) => {
   const empleados = users.filter(u => u.role === "empleado");
 
   const stats = [
-    { label: "Empleados activos", value: empleados.length, icon: "👥" },
-    { label: "Vacaciones pendientes", value: 3, icon: "🏖️" },
-    { label: "Retardos registrados", value: 4, icon: "⏰" },
-    { label: "Descuentos activos", value: 2, icon: "💸" },
+    { label: "Empleados activos", value: empleados.length, iconName: "users" },
+    { label: "Vacaciones pendientes", value: 3, iconName: "vacation" },
+    { label: "Retardos registrados", value: 4, iconName: "clock" },
+    { label: "Descuentos activos", value: 2, iconName: "dollar" },
+  ];
+
+  const pendientes = [
+    { icon: "vacation", text: "Ana García solicitó vacaciones del 15 al 19 de julio." },
+    { icon: "dollar", text: "Luis Torres tiene descuento pendiente de revisión." },
+    { icon: "clock", text: "Luis Torres acumula 2 retardos este mes." },
   ];
 
   return (
@@ -26,31 +29,21 @@ const HRDashboard = ({ users }) => {
         Gestión administrativa de vacaciones, descuentos y calendario laboral.
       </p>
 
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-        gap: 14,
-        marginBottom: 22
-      }}>
+      <div className="admin-stat-grid">
         {stats.map((s, i) => (
-          <Card key={i}>
-            <div style={{ fontSize: 24 }}>{s.icon}</div>
-            <div style={{ fontSize: 30, fontWeight: 800, color: "#00897B", marginTop: 8 }}>
-              {s.value}
-            </div>
-            <div style={{ color: "#0f172a", fontWeight: 700 }}>
-              {s.label}
-            </div>
-          </Card>
+          <StatCard key={i} iconName={s.iconName} value={s.value} label={s.label} valueClass="admin-stat-value--green" />
         ))}
       </div>
 
       <Card>
-        <h3 style={{ marginTop: 0, color: "#004D40" }}>📌 Pendientes RH</h3>
+        <SectionTitle icon="pin">Pendientes RH</SectionTitle>
         <div style={{ display: "grid", gap: 10 }}>
-          <div>🏖️ Ana García solicitó vacaciones del 15 al 19 de julio.</div>
-          <div>💸 Luis Torres tiene descuento pendiente de revisión.</div>
-          <div>⏰ Luis Torres acumula 2 retardos este mes.</div>
+          {pendientes.map((p, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, color: "#334155" }}>
+              <span style={{ marginTop: 2, flexShrink: 0 }}><Icon name={p.icon} size={16} /></span>
+              {p.text}
+            </div>
+          ))}
         </div>
       </Card>
     </div>

@@ -1,6 +1,9 @@
 import React from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
+import SectionTitle from "../common/SectionTitle";
+import StatCard from "../common/StatCard";
+import Icon from "../ui/Icon";
 
 const EventosPersonal = ({ users }) => {
   const { usuarios: USERS } = useGlobal();
@@ -32,12 +35,12 @@ const EventosPersonal = ({ users }) => {
 
   const eventos = [
     ...empleados.map(u => ({
-      id: `cumple-${u.id}`, tipo: "Cumpleaños", icon: "🎂", empleado: u.name,
+      id: `cumple-${u.id}`, tipo: "Cumpleaños", icon: "cake", empleado: u.name,
       puesto: u.puesto, sucursal: u.sucursal, fechaTexto: formatDate(u.fechaNacimiento),
       dias: daysUntil(u.fechaNacimiento), detalle: "Cumpleaños del colaborador"
     })),
     ...empleados.map(u => ({
-      id: `aniv-${u.id}`, tipo: "Aniversario laboral", icon: "🎉", empleado: u.name,
+      id: `aniv-${u.id}`, tipo: "Aniversario laboral", icon: "party", empleado: u.name,
       puesto: u.puesto, sucursal: u.sucursal, fechaTexto: formatDate(u.fechaIngreso),
       dias: daysUntil(u.fechaIngreso), detalle: `${yearsSince(u.fechaIngreso)} año(s) en McDental`
     }))
@@ -70,30 +73,14 @@ const EventosPersonal = ({ users }) => {
       </div>
 
       <div className="admin-stat-grid">
-        <Card className="admin-stat-card">
-          <div className="admin-stat-icon">🎂</div>
-          <div className="admin-stat-value admin-stat-value--red">{hoy}</div>
-          <div className="admin-stat-label">Eventos hoy</div>
-        </Card>
-        <Card className="admin-stat-card">
-          <div className="admin-stat-icon">⏰</div>
-          <div className="admin-stat-value admin-stat-value--orange">{proximos3}</div>
-          <div className="admin-stat-label">Próximos 3 días</div>
-        </Card>
-        <Card className="admin-stat-card">
-          <div className="admin-stat-icon">📅</div>
-          <div className="admin-stat-value admin-stat-value--amber">{proximos7}</div>
-          <div className="admin-stat-label">Próximos 7 días</div>
-        </Card>
-        <Card className="admin-stat-card">
-          <div className="admin-stat-icon">🎉</div>
-          <div className="admin-stat-value admin-stat-value--green">{eventos.length}</div>
-          <div className="admin-stat-label">Próximos 30 días</div>
-        </Card>
+        <StatCard iconName="cake" value={hoy} label="Eventos hoy" valueClass="admin-stat-value--red" />
+        <StatCard iconName="clock" value={proximos3} label="Próximos 3 días" valueClass="admin-stat-value--orange" />
+        <StatCard iconName="calendar" value={proximos7} label="Próximos 7 días" valueClass="admin-stat-value--amber" />
+        <StatCard iconName="party" value={eventos.length} label="Próximos 30 días" valueClass="admin-stat-value--green" />
       </div>
 
       <Card>
-        <h3 className="admin-section-title">🎁 Agenda de celebraciones</h3>
+        <SectionTitle icon="gift">Agenda de celebraciones</SectionTitle>
         {eventos.length === 0 ? (
           <p className="admin-empty">No hay cumpleaños ni aniversarios próximos en los siguientes 30 días.</p>
         ) : (
@@ -101,7 +88,9 @@ const EventosPersonal = ({ users }) => {
             {eventos.map(e => (
               <div key={e.id} className="admin-list-item" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "center" }}>
                 <div>
-                  <div className="admin-list-item-title">{e.icon} {e.empleado}</div>
+                  <div className="admin-list-item-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <Icon name={e.icon} size={16} /> {e.empleado}
+                  </div>
                   <div className="admin-list-item-meta">{e.sucursal} · {e.puesto}</div>
                   <div className="admin-list-item-body" style={{ marginTop: 6 }}>
                     <b>{e.tipo}</b> · {e.fechaTexto}

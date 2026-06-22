@@ -13,6 +13,7 @@ import { semaforoColor } from "../../config/theme";
 import LineChart from "../common/LineChart";
 import RiskBar from "../common/RiskBar";
 import { calcularAntiguedad } from "../../utils/helpers";
+import Icon from "../ui/Icon";
 import { calcRiesgos } from "../../utils/pulseScore";
 const EmpleadosList = ({
   encuestas,
@@ -120,8 +121,8 @@ const EmpleadosList = ({
               </div>
             </div>
 {puedeRestablecer && (
-  <button className="mc-btn-warning" style={{ marginTop: 14 }} onClick={() => onRestablecerPassword(selected)}>
-    🔑 Restablecer contraseña
+  <button className="mc-btn-warning" style={{ marginTop: 14, display: "inline-flex", alignItems: "center", gap: 8 }} onClick={() => onRestablecerPassword(selected)}>
+    <Icon name="key" size={16} /> Restablecer contraseña
   </button>
 )}
             <div style={{
@@ -403,7 +404,7 @@ const EmpleadosList = ({
             className="list-filter-input"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="🔍 Buscar por nombre, puesto o sucursal..."
+            placeholder="Buscar por nombre, puesto o sucursal..."
           />
 
           <select

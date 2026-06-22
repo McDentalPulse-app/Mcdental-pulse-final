@@ -1,5 +1,8 @@
 import React from "react";
 import Card from "../common/Card";
+import StatCard from "../common/StatCard";
+import SectionTitle from "../common/SectionTitle";
+import Icon from "../ui/Icon";
 
 const CalendarioRH = ({ vacaciones, permisos, eventosExtra }) => {
   const eventos = [
@@ -12,7 +15,7 @@ const CalendarioRH = ({ vacaciones, permisos, eventosExtra }) => {
       detalle: `${v.dias} días · ${v.estado}`,
       sucursal: v.sucursal,
       estado: v.estado,
-      icon: "🏖️"
+      icon: "vacation"
     })),
     ...permisos.map(p => ({
       id: `perm-${p.id}`,
@@ -22,7 +25,7 @@ const CalendarioRH = ({ vacaciones, permisos, eventosExtra }) => {
       detalle: `${p.hora} · ${p.estado}`,
       sucursal: p.sucursal,
       estado: p.estado,
-      icon: "📝"
+      icon: "clipboard"
     })),
     ...eventosExtra.map(e => ({
       id: `extra-${e.id}`,
@@ -32,7 +35,7 @@ const CalendarioRH = ({ vacaciones, permisos, eventosExtra }) => {
       detalle: `${e.area} · ${e.estado}`,
       sucursal: e.sucursal,
       estado: e.estado,
-      icon: e.tipo === "Festivo" ? "🎉" : e.tipo === "Asueto" ? "🌴" : "📌"
+      icon: e.tipo === "Festivo" ? "party" : e.tipo === "Asueto" ? "vacation" : "pin"
     }))
   ].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
@@ -67,31 +70,14 @@ const CalendarioRH = ({ vacaciones, permisos, eventosExtra }) => {
         Vista general de vacaciones, permisos, festivos y asuetos.
       </p>
 
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-        gap: 14,
-        marginBottom: 22
-      }}>
-        <Card>
-          <div style={{ fontSize: 24 }}>🏖️</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#0891b2" }}>{resumen.vacaciones}</div>
-          <div style={{ fontWeight: 700 }}>Vacaciones</div>
-        </Card>
-        <Card>
-          <div style={{ fontSize: 24 }}>📝</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#f59e0b" }}>{resumen.permisos}</div>
-          <div style={{ fontWeight: 700 }}>Permisos</div>
-        </Card>
-        <Card>
-          <div style={{ fontSize: 24 }}>🎉</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#22c55e" }}>{resumen.extra}</div>
-          <div style={{ fontWeight: 700 }}>Festivos / Asuetos</div>
-        </Card>
+      <div className="admin-stat-grid">
+        <StatCard iconName="vacation" value={resumen.vacaciones} label="Vacaciones" valueClass="admin-stat-value--blue" />
+        <StatCard iconName="clipboard" value={resumen.permisos} label="Permisos" valueClass="admin-stat-value--amber" />
+        <StatCard iconName="party" value={resumen.extra} label="Festivos / Asuetos" valueClass="admin-stat-value--green" />
       </div>
 
       <Card>
-        <h3 style={{ marginTop: 0, color: "#004D40" }}>📅 Agenda laboral</h3>
+        <SectionTitle icon="calendar">Agenda laboral</SectionTitle>
 
         <div style={{ display: "grid", gap: 10 }}>
           {eventos.map(e => (
@@ -114,8 +100,8 @@ const CalendarioRH = ({ vacaciones, permisos, eventosExtra }) => {
               </div>
 
               <div>
-                <div style={{ fontWeight: 800, color: "#0f172a" }}>
-                  {e.icon} {e.titulo}
+                <div style={{ fontWeight: 800, color: "#0f172a", display: "flex", alignItems: "center", gap: 8 }}>
+                  <Icon name={e.icon} size={16} /> {e.titulo}
                 </div>
                 <div style={{ color: "#64748b", fontSize: 13 }}>
                   {e.sucursal} · {e.detalle}

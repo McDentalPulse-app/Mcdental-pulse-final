@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import Icon from "../ui/Icon";
 import logoMed from "../../assets/logos/logo-med.png";
 
 const Login = () => {
@@ -38,7 +39,10 @@ const Login = () => {
         <div className="auth-header">
           <img src={logoMed} alt="McDental Pulse" className="auth-logo" />
           <p className="auth-tagline">"Medimos bienestar para cuidar mejor a nuestro equipo."</p>
-          <span className="auth-badge">✨ AI Engine Activado</span>
+          <span className="auth-badge">
+            <Icon name="sparkles" size={13} />
+            AI Engine Activado
+          </span>
         </div>
 
         <div className="auth-field">

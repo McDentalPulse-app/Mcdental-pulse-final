@@ -1,5 +1,7 @@
 import React from "react";
 import Card from "../common/Card";
+import StatCard from "../common/StatCard";
+import SectionTitle from "../common/SectionTitle";
 
 const VacacionesRH = ({ vacaciones, onUpdateEstado }) => {
   const pendientes = vacaciones.filter(v => v.estado === "pendiente").length;
@@ -31,31 +33,14 @@ const VacacionesRH = ({ vacaciones, onUpdateEstado }) => {
         Gestión de solicitudes, aprobación y seguimiento de vacaciones del personal.
       </p>
 
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-        gap: 14,
-        marginBottom: 22
-      }}>
-        <Card>
-          <div style={{ fontSize: 24 }}>⏳</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#f59e0b" }}>{pendientes}</div>
-          <div style={{ fontWeight: 700 }}>Pendientes</div>
-        </Card>
-        <Card>
-          <div style={{ fontSize: 24 }}>✅</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#22c55e" }}>{aprobadas}</div>
-          <div style={{ fontWeight: 700 }}>Aprobadas</div>
-        </Card>
-        <Card>
-          <div style={{ fontSize: 24 }}>❌</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#ef4444" }}>{rechazadas}</div>
-          <div style={{ fontWeight: 700 }}>Rechazadas</div>
-        </Card>
+      <div className="admin-stat-grid">
+        <StatCard iconName="clock" value={pendientes} label="Pendientes" valueClass="admin-stat-value--amber" />
+        <StatCard iconName="check" value={aprobadas} label="Aprobadas" valueClass="admin-stat-value--green" />
+        <StatCard iconName="xCircle" value={rechazadas} label="Rechazadas" valueClass="admin-stat-value--red" />
       </div>
 
       <Card>
-        <h3 style={{ marginTop: 0, color: "#004D40" }}>🏖️ Solicitudes de vacaciones</h3>
+        <SectionTitle icon="vacation">Solicitudes de vacaciones</SectionTitle>
 
         <div style={{ display: "grid", gap: 12 }}>
           {vacaciones.map(v => (

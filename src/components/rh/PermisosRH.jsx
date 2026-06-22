@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
+import StatCard from "../common/StatCard";
+import SectionTitle from "../common/SectionTitle";
 import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
@@ -45,31 +47,14 @@ const PermisosRH = ({ permisos, onUpdateEstado }) => {
         Registro, autorización y seguimiento de permisos administrativos del personal.
       </p>
 
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-        gap: 14,
-        marginBottom: 22
-      }}>
-        <Card>
-          <div style={{ fontSize: 24 }}>⏳</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#f59e0b" }}>{pendientes}</div>
-          <div style={{ fontWeight: 700 }}>Pendientes</div>
-        </Card>
-        <Card>
-          <div style={{ fontSize: 24 }}>✅</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#22c55e" }}>{aprobados}</div>
-          <div style={{ fontWeight: 700 }}>Aprobados</div>
-        </Card>
-        <Card>
-          <div style={{ fontSize: 24 }}>❌</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#ef4444" }}>{rechazados}</div>
-          <div style={{ fontWeight: 700 }}>Rechazados</div>
-        </Card>
+      <div className="admin-stat-grid">
+        <StatCard iconName="clock" value={pendientes} label="Pendientes" valueClass="admin-stat-value--amber" />
+        <StatCard iconName="check" value={aprobados} label="Aprobados" valueClass="admin-stat-value--green" />
+        <StatCard iconName="xCircle" value={rechazados} label="Rechazados" valueClass="admin-stat-value--red" />
       </div>
 
       <Card>
-        <h3 style={{ marginTop: 0, color: "#004D40" }}>📝 Solicitudes de permisos</h3>
+        <SectionTitle icon="clipboard">Solicitudes de permisos</SectionTitle>
 
         <div style={{ display: "grid", gap: 12 }}>
           {permisos.map(p => (

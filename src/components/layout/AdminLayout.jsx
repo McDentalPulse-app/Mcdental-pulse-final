@@ -12,6 +12,7 @@ import Reportes from '../rh/Reportes';
 import ReportesConfidencialesPanel from '../psicologia/ReportesConfidencialesPanel';
 import Config from '../settings/Config';
 import Card from '../common/Card';
+import Icon from '../ui/Icon';
 import GestionUsuarios from '../admin/GestionUsuarios';
 
 import { semanaActual } from '../../utils/constants';
@@ -46,7 +47,7 @@ export default function AdminLayout({ user, globals, actions }) {
                 </div>
                 <Card>
                   <div className="encuesta-meta">
-                    <span className="encuesta-meta-item">📅 Semana {semanaActual}</span>
+                    <span className="encuesta-meta-item"><Icon name="calendar" size={14} /> Semana {semanaActual}</span>
                     <span className="encuesta-meta-item">{ENCUESTA_PREGUNTAS.length} preguntas</span>
                     <span className="encuesta-meta-item">{new Set(encuestas.filter(e=>e.semana===semanaActual).map(e=>e.empleadoId)).size} respuestas</span>
                   </div>
@@ -65,7 +66,7 @@ export default function AdminLayout({ user, globals, actions }) {
             } />
             <Route path="mensajes" element={
               <Card className="admin-restricted">
-                <div className="admin-restricted-icon">🔒</div>
+                <div className="admin-restricted-icon"><Icon name="lock" size={32} /></div>
                 <h2 className="admin-restricted-title">Acceso restringido</h2>
                 <p className="admin-restricted-text">Este canal es privado y solo está disponible para empleados y psicóloga.</p>
               </Card>

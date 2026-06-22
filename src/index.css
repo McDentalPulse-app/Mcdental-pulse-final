@@ -1,21 +1,25 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --mc-verde: #007A68;
-  --mc-verde-oscuro: #003F35;
-  --mc-verde-medio: #006D5B;
-  --mc-verde-claro: #E8F5F2;
-  --mc-aqua: #00A88F;
-  --mc-gris-fondo: #F3F7F6;
+  --mc-verde: #2D6A5F;
+  --mc-verde-oscuro: #1A3D37;
+  --mc-verde-medio: #2D6A5F;
+  --mc-verde-claro: #F0F5F4;
+  --mc-aqua: #3D8B7E;
+  --mc-gris-fondo: #F7F8FA;
+  --mc-gris-perla: #F7F8FA;
   --mc-gris-texto: #64748B;
-  --mc-gris-suave: #E2E8F0;
-  --mc-texto: #0f172a;
+  --mc-gris-suave: #E8ECF0;
+  --mc-texto: #1E293B;
   --mc-blanco: #ffffff;
-  --mc-sombra: 0 18px 45px rgba(15, 23, 42, 0.10);
-  --mc-sombra-suave: 0 8px 24px rgba(15, 23, 42, 0.08);
+  --mc-sombra: 0 12px 32px rgba(26, 61, 55, 0.08);
+  --mc-sombra-suave: 0 2px 12px rgba(26, 61, 55, 0.06);
   --mc-radio: 16px;
   --mc-radio-lg: 20px;
   --font-sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --mc-semaforo-verde: #2F7D5A;
+  --mc-semaforo-amarillo: #9A6B1F;
+  --mc-semaforo-rojo: #A84444;
 }
 
 *, *::before, *::after {
@@ -51,10 +55,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background:
-    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(0, 168, 143, 0.18) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 90% 90%, rgba(0, 122, 104, 0.12) 0%, transparent 55%),
-    linear-gradient(145deg, #003F35 0%, #006D5B 45%, #00897B 100%);
+  background: var(--mc-verde-oscuro);
 }
 
 .auth-card {
@@ -94,11 +95,12 @@ body {
   margin-top: 12px;
   padding: 5px 14px;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--mc-verde-oscuro), var(--mc-aqua));
-  color: #fff;
+  background: var(--mc-verde-claro);
+  color: var(--mc-verde-medio);
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  border: 1px solid rgba(45, 106, 95, 0.15);
 }
 
 .auth-title {

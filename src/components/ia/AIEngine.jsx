@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
+import StatCard from "../common/StatCard";
+import SectionTitle from "../common/SectionTitle";
+import Icon from "../ui/Icon";
 import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
@@ -224,60 +227,32 @@ const cambiosComportamiento = analisisIA.filter(a =>
   };
 
   const tabs = [
-    { key: "resumen", label: "📋 Resumen Semanal" },
-    { key: "alertas", label: "🚨 Alertas IA" },
-    { key: "prediccion", label: "🔮 Predicciones" },
-    { key: "copiloto", label: "🤖 Copiloto" },
-    { key: "expedientes", label: "📁 Expedientes IA" },
+    { key: "resumen", label: "Resumen Semanal", icon: "clipboard" },
+    { key: "alertas", label: "Alertas IA", icon: "shieldAlert" },
+    { key: "prediccion", label: "Predicciones", icon: "wand" },
+    { key: "copiloto", label: "Copiloto", icon: "ai" },
+    { key: "expedientes", label: "Expedientes IA", icon: "folderSearch" },
   ];
 
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 12, background: "linear-gradient(135deg,#006D5B,#0891b2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>🤖</div>
+        <div className="admin-stat-icon-wrap" style={{ width: 44, height: 44, borderRadius: 12, background: "var(--mc-verde-claro)" }}>
+          <Icon name="ai" size={22} />
+        </div>
         <div>
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "#004D40" }}>McDental Pulse AI Engine</h2>
           <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>Motor de Inteligencia Artificial · Análisis en tiempo real</p>
         </div>
-        <div style={{ marginLeft: "auto", background: "linear-gradient(135deg,#004D40,#0891b2)", color: "#fff", padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700 }}>✨ ACTIVO</div>
+        <div style={{ marginLeft: "auto", background: "var(--mc-verde-oscuro)", color: "#fff", padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <Icon name="sparkles" size={14} color="#fff" /> ACTIVO
+        </div>
       </div>
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-        gap: 12,
-        margin: "18px 0"
-      }}>
-        <Card>
-          <div style={{ fontSize: 24 }}>🚨</div>
-          <div style={{ fontSize: 30, fontWeight: 900, color: "#b91c1c" }}>
-            {prioridadCritica}
-          </div>
-          <div style={{ fontWeight: 800 }}>Prioridad crítica</div>
-        </Card>
-
-        <Card>
-          <div style={{ fontSize: 24 }}>🔴</div>
-          <div style={{ fontSize: 30, fontWeight: 900, color: "#ef4444" }}>
-            {prioridadAlta}
-          </div>
-          <div style={{ fontWeight: 800 }}>Prioridad alta</div>
-        </Card>
-
-        <Card>
-          <div style={{ fontSize: 24 }}>🟠</div>
-          <div style={{ fontSize: 30, fontWeight: 900, color: "#f97316" }}>
-            {prioridadMedia}
-          </div>
-          <div style={{ fontWeight: 800 }}>Prioridad media</div>
-        </Card>
-
-        <Card>
-          <div style={{ fontSize: 24 }}>📉</div>
-          <div style={{ fontSize: 30, fontWeight: 900, color: "#7c3aed" }}>
-            {cambiosComportamiento}
-          </div>
-          <div style={{ fontWeight: 800 }}>Cambios detectados</div>
-        </Card>
+      <div className="admin-stat-grid">
+        <StatCard iconName="shieldAlert" value={prioridadCritica} label="Prioridad crítica" valueClass="admin-stat-value--red" />
+        <StatCard iconName="critical" value={prioridadAlta} label="Prioridad alta" valueClass="admin-stat-value--red" />
+        <StatCard iconName="warning" value={prioridadMedia} label="Prioridad media" valueClass="admin-stat-value--amber" />
+        <StatCard iconName="trendingDown" value={cambiosComportamiento} label="Cambios detectados" valueClass="admin-stat-value--blue" />
       </div>
       {/* Pulse Scores resumen */}
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
@@ -304,17 +279,16 @@ const cambiosComportamiento = analisisIA.filter(a =>
             borderColor: tab === t.key ? "#006D5B" : "#e5e7eb",
             background: tab === t.key ? "#006D5B" : "#fff",
             color: tab === t.key ? "#fff" : "#374151",
-            fontSize: 12, fontWeight: 600, cursor: "pointer"
-          }}>{t.label}</button>
+            fontSize: 12, fontWeight: 600, cursor: "pointer",
+            display: "inline-flex", alignItems: "center", gap: 6
+          }}><Icon name={t.icon} size={14} color={tab === t.key ? "#fff" : undefined} /> {t.label}</button>
         ))}
       </div>
 
       {/* Resumen Semanal */}
      {tab === "resumen" && (
   <Card style={{ marginTop: 16 }}>
-    <h3 style={{ marginTop: 0, color: "#004D40" }}>
-      🧠 Análisis local por reglas
-    </h3>
+    <SectionTitle icon="brain">Análisis local por reglas</SectionTitle>
 
     <div style={{ display: "grid", gap: 12 }}>
       {analisisIA
@@ -381,7 +355,7 @@ const cambiosComportamiento = analisisIA.filter(a =>
               <div style={{ display: "grid", gap: 6, marginBottom: 8 }}>
                 {a.riesgos.map((r, idx) => (
                   <div key={idx} style={{ color: "#475569", fontSize: 13 }}>
-                    ⚠️ <b>{r.tipo}</b> — {r.detalle}
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="alert" size={14} /> <b>{r.tipo}</b></span> — {r.detalle}
                   </div>
                 ))}
               </div>
@@ -402,9 +376,7 @@ const cambiosComportamiento = analisisIA.filter(a =>
     {/* Alertas */}
 {tab === "alertas" && (
   <Card>
-    <h3 style={{ marginTop: 0, color: "#004D40" }}>
-      🚨 Alertas IA
-    </h3>
+    <SectionTitle icon="shieldAlert">Alertas IA</SectionTitle>
     <p style={{ color: "#64748b", marginTop: 0 }}>
       Alertas generadas automáticamente por el motor local de reglas.
     </p>
@@ -483,7 +455,7 @@ const cambiosComportamiento = analisisIA.filter(a =>
                   }}
                 >
                   <div style={{ fontWeight: 900, color: "#0f172a" }}>
-                    ⚠️ {r.tipo}
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="alert" size={14} /> {r.tipo}</span>
                   </div>
                   <div style={{ color: "#64748b", fontSize: 13 }}>
                     Nivel: {r.nivel}
@@ -520,9 +492,7 @@ const cambiosComportamiento = analisisIA.filter(a =>
      {/* Predicciones */}
 {tab === "prediccion" && (
   <Card>
-    <h3 style={{ marginTop: 0, color: "#004D40" }}>
-      🔮 Predicciones IA
-    </h3>
+    <SectionTitle icon="wand">Predicciones IA</SectionTitle>
     <p style={{ color: "#64748b", marginTop: 0 }}>
       Predicciones generadas localmente a partir de Pulse Score, tendencias, incidencias y señales administrativas.
     </p>
@@ -673,42 +643,15 @@ const cambiosComportamiento = analisisIA.filter(a =>
       {/* Copiloto */}
 {tab === "copiloto" && (
   <Card>
-    <h3 style={{ marginTop: 0, color: "#004D40" }}>
-      🤖 Copiloto de Bienestar Organizacional
-    </h3>
+    <SectionTitle icon="ai">Copiloto de Bienestar Organizacional</SectionTitle>
     <p style={{ color: "#64748b", marginTop: 0 }}>
       Recomendaciones automáticas para priorizar seguimiento humano, psicológico y organizacional.
     </p>
 
-    <div style={{
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-      gap: 14,
-      marginBottom: 18
-    }}>
-      <Card>
-        <div style={{ fontSize: 24 }}>🚨</div>
-        <div style={{ fontSize: 26, fontWeight: 900, color: "#b91c1c" }}>
-          {analisisIA.filter(a => a.prioridad === "Crítica").length}
-        </div>
-        <div style={{ fontWeight: 800 }}>Casos urgentes</div>
-      </Card>
-
-      <Card>
-        <div style={{ fontSize: 24 }}>🔴</div>
-        <div style={{ fontSize: 26, fontWeight: 900, color: "#ef4444" }}>
-          {analisisIA.filter(a => a.prioridad === "Alta").length}
-        </div>
-        <div style={{ fontWeight: 800 }}>Casos de alta prioridad</div>
-      </Card>
-
-      <Card>
-        <div style={{ fontSize: 24 }}>📋</div>
-        <div style={{ fontSize: 26, fontWeight: 900, color: "#00897B" }}>
-          {analisisIA.filter(a => a.riesgos.length > 0).length}
-        </div>
-        <div style={{ fontWeight: 800 }}>Casos con señales</div>
-      </Card>
+    <div className="admin-stat-grid" style={{ marginBottom: 18 }}>
+      <StatCard iconName="shieldAlert" value={analisisIA.filter(a => a.prioridad === "Crítica").length} label="Casos urgentes" valueClass="admin-stat-value--red" />
+      <StatCard iconName="critical" value={analisisIA.filter(a => a.prioridad === "Alta").length} label="Casos de alta prioridad" valueClass="admin-stat-value--red" />
+      <StatCard iconName="clipboard" value={analisisIA.filter(a => a.riesgos.length > 0).length} label="Casos con señales" valueClass="admin-stat-value--green" />
     </div>
 
     <div style={{ display: "grid", gap: 14 }}>
@@ -718,8 +661,8 @@ const cambiosComportamiento = analisisIA.filter(a =>
         background: "#ecfeff",
         border: "1px solid #bae6fd"
       }}>
-        <h4 style={{ margin: "0 0 10px", color: "#004D40" }}>
-          🎯 Prioridad de atención esta semana
+        <h4 style={{ margin: "0 0 10px", color: "#004D40", display: "flex", alignItems: "center", gap: 8 }}>
+          <Icon name="target" size={16} /> Prioridad de atención esta semana
         </h4>
 
         {analisisIA
@@ -761,8 +704,8 @@ const cambiosComportamiento = analisisIA.filter(a =>
           background: "#f8fafc",
           border: "1px solid #e5e7eb"
         }}>
-          <h4 style={{ margin: "0 0 10px", color: "#004D40" }}>
-            💬 Preguntas sugeridas para seguimiento
+          <h4 style={{ margin: "0 0 10px", color: "#004D40", display: "flex", alignItems: "center", gap: 8 }}>
+            <Icon name="message" size={16} /> Preguntas sugeridas para seguimiento
           </h4>
 
           <ul style={{ color: "#334155", lineHeight: 1.8, margin: 0, paddingLeft: 20 }}>
@@ -780,8 +723,8 @@ const cambiosComportamiento = analisisIA.filter(a =>
           background: "#f8fafc",
           border: "1px solid #e5e7eb"
         }}>
-          <h4 style={{ margin: "0 0 10px", color: "#004D40" }}>
-            🛠️ Acciones recomendadas
+          <h4 style={{ margin: "0 0 10px", color: "#004D40", display: "flex", alignItems: "center", gap: 8 }}>
+            <Icon name="wrench" size={16} /> Acciones recomendadas
           </h4>
 
           <ul style={{ color: "#334155", lineHeight: 1.8, margin: 0, paddingLeft: 20 }}>
@@ -800,8 +743,8 @@ const cambiosComportamiento = analisisIA.filter(a =>
         background: "#fff7ed",
         border: "1px solid #fed7aa"
       }}>
-        <h4 style={{ margin: "0 0 10px", color: "#9a3412" }}>
-          ⚠️ Nota del Copiloto
+        <h4 style={{ margin: "0 0 10px", color: "#9a3412", display: "flex", alignItems: "center", gap: 8 }}>
+          <Icon name="alert" size={16} /> Nota del Copiloto
         </h4>
         <p style={{ color: "#7c2d12", lineHeight: 1.7, margin: 0 }}>
           Este análisis no sustituye el criterio humano ni profesional. Su función es priorizar señales,
@@ -816,9 +759,7 @@ const cambiosComportamiento = analisisIA.filter(a =>
  {/* Expedientes IA */}
 {tab === "expedientes" && (
   <Card>
-    <h3 style={{ marginTop: 0, color: "#004D40" }}>
-      📁 Expedientes IA
-    </h3>
+    <SectionTitle icon="folderSearch">Expedientes IA</SectionTitle>
     <p style={{ color: "#64748b", marginTop: 0 }}>
       Resumen inteligente por colaborador para acelerar la revisión de casos y expedientes integrales.
     </p>
@@ -948,8 +889,8 @@ const cambiosComportamiento = analisisIA.filter(a =>
               border: "1px solid #e5e7eb",
               marginBottom: 12
             }}>
-              <div style={{ fontWeight: 900, color: "#004D40", marginBottom: 8 }}>
-                🧠 Resumen IA del expediente
+              <div style={{ fontWeight: 900, color: "#004D40", marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+                <Icon name="brain" size={16} /> Resumen IA del expediente
               </div>
 
               <div style={{ color: "#334155", lineHeight: 1.7 }}>
@@ -968,8 +909,8 @@ const cambiosComportamiento = analisisIA.filter(a =>
               border: "1px solid #e5e7eb",
               marginBottom: 12
             }}>
-              <div style={{ fontWeight: 900, color: "#004D40", marginBottom: 8 }}>
-                ⚠️ Riesgos principales
+              <div style={{ fontWeight: 900, color: "#004D40", marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+                <Icon name="alert" size={16} /> Riesgos principales
               </div>
 
               {a.riesgos.length > 0 ? (

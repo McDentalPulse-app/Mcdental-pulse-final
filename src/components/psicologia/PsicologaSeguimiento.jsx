@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import KPI from "../common/KPI";
+import Icon from "../ui/Icon";
 import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
@@ -22,12 +23,12 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
   const getUltimoSemaforo = (empId) => { const enc=encuestas.filter(e=>e.empleadoId===empId).sort((a,b)=>b.semana.localeCompare(a.semana)); return enc[0]?.semaforo||"verde"; };
   return (
     <div>
-      <h2 style={{ margin:"0 0 20px",fontSize:22,fontWeight:800,color:"#004D40" }}>🎯 Panel de Seguimiento</h2>
+      <h2 style={{ margin:"0 0 20px",fontSize:22,fontWeight:800,color:"#004D40" }}>Panel de Seguimiento</h2>
       <div style={{ display:"flex",gap:16,flexWrap:"wrap",marginBottom:24 }}>
-        <KPI icon="👥" label="Total" value={empleados.length} color="#006D5B" />
-        <KPI icon="✅" label="Contestaron" value={new Set(semanaEnc.map(e=>e.empleadoId)).size} sub={semanaActual} color="#0891b2" />
-        <KPI icon="⏳" label="Pendientes" value={empleados.length-new Set(semanaEnc.map(e=>e.empleadoId)).size} color="#f59e0b" />
-        <KPI icon="🔴" label="Foco Rojo" value={semanaEnc.filter(e=>e.semaforo==="rojo").length} color="#ef4444" />
+        <KPI iconName="users" label="Total" value={empleados.length} color="#006D5B" />
+        <KPI iconName="check" label="Contestaron" value={new Set(semanaEnc.map(e=>e.empleadoId)).size} sub={semanaActual} color="#0891b2" />
+        <KPI iconName="clock" label="Pendientes" value={empleados.length-new Set(semanaEnc.map(e=>e.empleadoId)).size} color="#f59e0b" />
+        <KPI iconName="critical" label="Foco Rojo" value={semanaEnc.filter(e=>e.semaforo==="rojo").length} color="#ef4444" />
       </div>
       <Card>
         <div style={{ fontWeight:700,fontSize:14,color:"#004D40",marginBottom:16 }}>Semáforo por Empleado</div>
@@ -43,7 +44,10 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
                   <Badge tipo={sem}/>
                 </div>
                 <div style={{ marginBottom:8 }}><PulseScoreBadge score={ps.score} nivel={ps.nivel} color={ps.color} tendencia={ps.tendencia} size="sm"/></div>
-                <div style={{ fontSize:12,color:contesto?"#22c55e":"#f59e0b",marginBottom:8 }}>{contesto?"✅ Contestó":"⏳ Pendiente"}</div>
+                <div style={{ fontSize:12,color:contesto?"#22c55e":"#f59e0b",marginBottom:8,display:"flex",alignItems:"center",gap:6 }}>
+                  <Icon name={contesto?"check":"clock"} size={14} />
+                  {contesto?"Contestó":"Pendiente"}
+                </div>
                 {nuevaNota.empId===emp.id ? (<div onClick={(e) => e.stopPropagation()} style={{ display: "grid", gap: 6 }}> <textarea value={nuevaNota.texto} onClick={(e) => e.stopPropagation()} onChange={e=>setNuevaNota(p=>({...p,texto:e.target.value}))} placeholder="Nota de seguimiento..." rows={2} style={{ width:"100%" }} />
 
     <button
@@ -68,7 +72,7 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
     + Agregar nota
   </button>
 )}
-                {notaEmp&&<div style={{ marginTop:8,background:"#fef3c7",borderRadius:8,padding:"8px 10px",fontSize:11,color:"#92400e" }}>📝 {notaEmp.texto.slice(0,60)}...</div>}
+                {notaEmp&&<div style={{ marginTop:8,background:"#fef3c7",borderRadius:8,padding:"8px 10px",fontSize:11,color:"#92400e",display:"flex",alignItems:"flex-start",gap:6 }}><Icon name="note" size={12} /> {notaEmp.texto.slice(0,60)}...</div>}
               </div>
             );
           })}
@@ -289,9 +293,13 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
           border: "1px solid #bae6fd",
           color: "#004D40",
           fontWeight: 800,
-          textAlign: "center"
+          textAlign: "center",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8
         }}>
-          🔒 Vista privada disponible únicamente para Psicóloga.
+          <Icon name="lock" size={16} /> Vista privada disponible únicamente para Psicóloga.
         </div>
       </div>
     </div>

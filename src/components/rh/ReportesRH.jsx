@@ -1,10 +1,8 @@
-import React, { useState } from "react";
+import React from "react";
 import Card from "../common/Card";
-import Badge from "../common/Badge";
-import KPI from "../common/KPI";
-import MiniBar from "../common/MiniBar";
-import LineChart from "../common/LineChart";
-import Avatar from "../ui/Avatar";
+import StatCard from "../common/StatCard";
+import SectionTitle from "../common/SectionTitle";
+import Icon from "../ui/Icon";
 import { SUCURSALES } from "../../utils/constants";
 
 const ReportesRH = ({ vacaciones, permisos, descuentos }) => {
@@ -51,29 +49,10 @@ const ReportesRH = ({ vacaciones, permisos, descuentos }) => {
         Resumen administrativo de vacaciones, permisos y descuentos.
       </p>
 
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-        gap: 14,
-        marginBottom: 22
-      }}>
-        <Card>
-          <div style={{ fontSize: 24 }}>🏖️</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#0891b2" }}>{vacaciones.length}</div>
-          <div style={{ fontWeight: 700 }}>Vacaciones</div>
-        </Card>
-
-        <Card>
-          <div style={{ fontSize: 24 }}>📝</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#f59e0b" }}>{permisos.length}</div>
-          <div style={{ fontWeight: 700 }}>Permisos</div>
-        </Card>
-
-        <Card>
-          <div style={{ fontSize: 24 }}>💰</div>
-          <div style={{ fontSize: 26, fontWeight: 800, color: "#00897B" }}>{money(totalDescuentosActivos)}</div>
-          <div style={{ fontWeight: 700 }}>Descuentos activos</div>
-        </Card>
+      <div className="admin-stat-grid">
+        <StatCard iconName="vacation" value={vacaciones.length} label="Vacaciones" valueClass="admin-stat-value--blue" />
+        <StatCard iconName="clipboard" value={permisos.length} label="Permisos" valueClass="admin-stat-value--amber" />
+        <StatCard iconName="dollar" value={money(totalDescuentosActivos)} label="Descuentos activos" valueClass="admin-stat-value--green" />
       </div>
 
       <div style={{
@@ -82,7 +61,7 @@ const ReportesRH = ({ vacaciones, permisos, descuentos }) => {
         gap: 16
       }}>
         <Card>
-          <h3 style={{ marginTop: 0, color: "#004D40" }}>📊 Resumen por sucursal</h3>
+          <SectionTitle icon="chart">Resumen por sucursal</SectionTitle>
           <div style={{ display: "grid", gap: 10 }}>
             {resumenSucursal.map(s => (
               <div key={s.sucursal} style={{
@@ -94,8 +73,10 @@ const ReportesRH = ({ vacaciones, permisos, descuentos }) => {
                 <div style={{ fontWeight: 800, color: "#0f172a", marginBottom: 6 }}>
                   {s.sucursal}
                 </div>
-                <div style={{ color: "#64748b", fontSize: 13 }}>
-                  🏖️ {s.vacaciones} vacaciones · 📝 {s.permisos} permisos · 💸 {s.descuentos} descuentos
+                <div style={{ color: "#64748b", fontSize: 13, display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="vacation" size={14} /> {s.vacaciones} vacaciones</span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="clipboard" size={14} /> {s.permisos} permisos</span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="dollar" size={14} /> {s.descuentos} descuentos</span>
                 </div>
               </div>
             ))}
@@ -103,7 +84,7 @@ const ReportesRH = ({ vacaciones, permisos, descuentos }) => {
         </Card>
 
         <Card>
-          <h3 style={{ marginTop: 0, color: "#004D40" }}>👥 Empleados con más movimientos</h3>
+          <SectionTitle icon="users">Empleados con más movimientos</SectionTitle>
           <div style={{ display: "grid", gap: 10 }}>
             {ranking.map((e, index) => (
               <div key={e.empleado} style={{
@@ -137,7 +118,7 @@ const ReportesRH = ({ vacaciones, permisos, descuentos }) => {
         </Card>
 
         <Card>
-          <h3 style={{ marginTop: 0, color: "#004D40" }}>📌 Lectura administrativa</h3>
+          <SectionTitle icon="pin">Lectura administrativa</SectionTitle>
           <div style={{ color: "#334155", lineHeight: 1.7 }}>
             <p>
               RH tiene registrados {vacaciones.length} movimientos de vacaciones,

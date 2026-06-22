@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
+import Icon from "../ui/Icon";
+import SectionTitle from "../common/SectionTitle";
 
 import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
@@ -73,7 +75,9 @@ const score = Math.round(
   if (yaContesto || enviada) {
     return (
       <Card style={{ maxWidth: 560, margin: "0 auto", textAlign: "center", padding: 40 }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
+        <div className="admin-stat-icon-wrap" style={{ margin: "0 auto 16px" }}>
+          <Icon name="check" size={32} />
+        </div>
 
         <h3 style={{ color: "#004D40", margin: "0 0 8px" }}>
           ¡Encuesta completada!
@@ -89,9 +93,7 @@ const score = Math.round(
   return (
     <div style={{ maxWidth: 720, margin: "0 auto" }}>
       <div style={{ marginBottom: 24, textAlign: "center" }}>
-        <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: "#004D40" }}>
-          📝 Mi Encuesta
-        </h2>
+        <SectionTitle icon="clipboard" className="encuesta-page-title">Mi Encuesta</SectionTitle>
 
         <p style={{ margin: "6px 0 0", color: "#6b7280", fontSize: 13 }}>
           Semana {semanaActual} · Tus respuestas son confidenciales.

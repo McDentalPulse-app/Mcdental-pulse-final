@@ -1,15 +1,9 @@
-import React, { useState } from "react";
+import React from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
-import Badge from "../common/Badge";
-import Avatar from "../ui/Avatar";
-import PulseScoreBadge from "../common/PulseScoreBadge";
-import RiskBar from "../common/RiskBar";
-import { semaforoColor, semaforoBg, semaforoLabel } from "../../config/theme";
-
-import { semanaActual } from "../../utils/constants";
-import { calcularAntiguedad } from "../../utils/helpers";
-import { calcPulseScore, getPulseStatus, calcRiesgos } from "../../utils/pulseScore";
+import StatCard from "../common/StatCard";
+import SectionTitle from "../common/SectionTitle";
+import Icon from "../ui/Icon";
 
 const ReconocimientosEmpleado = ({ user, reconocimientos }) => {
   const { usuarios: USERS } = useGlobal();
@@ -25,23 +19,12 @@ const ReconocimientosEmpleado = ({ user, reconocimientos }) => {
         Historial de reconocimientos recibidos dentro de McDental.
       </p>
 
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-        gap: 14,
-        marginBottom: 22
-      }}>
-        <Card>
-          <div style={{ fontSize: 24 }}>🏅</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#00897B" }}>
-            {misReconocimientos.length}
-          </div>
-          <div style={{ fontWeight: 700 }}>Reconocimientos recibidos</div>
-        </Card>
+      <div className="admin-stat-grid">
+        <StatCard iconName="award" value={misReconocimientos.length} label="Reconocimientos recibidos" valueClass="admin-stat-value--green" />
       </div>
 
       <Card>
-        <h3 style={{ marginTop: 0, color: "#004D40" }}>🏅 Historial</h3>
+        <SectionTitle icon="award">Historial</SectionTitle>
 
         {misReconocimientos.length === 0 ? (
           <p style={{ color: "#64748b" }}>Aún no tienes reconocimientos registrados.</p>
@@ -57,8 +40,8 @@ const ReconocimientosEmpleado = ({ user, reconocimientos }) => {
                   background: "#f8fafc"
                 }}
               >
-                <div style={{ fontSize: 18, fontWeight: 900, color: "#004D40" }}>
-                  🏅 {r.categoria}
+                <div style={{ fontSize: 18, fontWeight: 900, color: "#004D40", display: "flex", alignItems: "center", gap: 8 }}>
+                  <Icon name="award" size={18} /> {r.categoria}
                 </div>
                 <div style={{ color: "#64748b", fontSize: 13, margin: "4px 0 10px" }}>
                   {r.fecha} · Otorgado por {r.otorgadoPor}

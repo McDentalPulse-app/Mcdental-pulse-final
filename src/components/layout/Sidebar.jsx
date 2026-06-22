@@ -3,6 +3,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import logoSmall from "../../assets/logos/logo-small.png";
 import Avatar from "../ui/Avatar";
+import Icon from "../ui/Icon";
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
@@ -12,46 +13,46 @@ const Sidebar = () => {
 
   const navItems = {
     admin: [
-      { key: "dashboard", icon: "📊", label: "Dashboard" },
-      { key: "ai", icon: "🤖", label: "AI Engine", badge: "NEW" },
-      { key: "empleados", icon: "👥", label: "Empleados" },
-      { key: "usuarios", icon: "⚙️", label: "Gestión de Personal" },
-      { key: "expedientes", icon: "📁", label: "Expedientes" },
-      { key: "reconocimientos", icon: "🏅", label: "Reconocimientos" },
-      { key: "eventospersonal", icon: "🎂", label: "Cumpleaños y Aniversarios" },
-      { key: "encuestas", icon: "📋", label: "Encuestas" },
-      { key: "reportes", icon: "📈", label: "Reportes" },
-      { key: "confidenciales", icon: "🔒", label: "Reportes Confidenciales" },
-      { key: "config", icon: "⚙️", label: "Config" },
+      { key: "dashboard", icon: "dashboard", label: "Dashboard" },
+      { key: "ai", icon: "ai", label: "AI Engine", badge: "NEW" },
+      { key: "empleados", icon: "users", label: "Empleados" },
+      { key: "usuarios", icon: "userCog", label: "Gestión de Personal" },
+      { key: "expedientes", icon: "folder", label: "Expedientes" },
+      { key: "reconocimientos", icon: "award", label: "Reconocimientos" },
+      { key: "eventospersonal", icon: "cake", label: "Cumpleaños y Aniversarios" },
+      { key: "encuestas", icon: "clipboard", label: "Encuestas" },
+      { key: "reportes", icon: "trending", label: "Reportes" },
+      { key: "confidenciales", icon: "lock", label: "Reportes Confidenciales" },
+      { key: "config", icon: "settings", label: "Config" },
     ],
     psicologa: [
-      { key: "dashboard", icon: "📊", label: "Dashboard" },
-      { key: "ai", icon: "🤖", label: "AI Engine", badge: "NEW" },
-      { key: "seguimiento", icon: "🎯", label: "Seguimiento" },
-      { key: "confidenciales", icon: "🔒", label: "Reportes Confidenciales" },
-      { key: "empleados", icon: "👥", label: "Empleados" },
-      { key: "expedientes", icon: "📁", label: "Expedientes" },
-      { key: "mensajes", icon: "💬", label: "Mensajes" },
+      { key: "dashboard", icon: "dashboard", label: "Dashboard" },
+      { key: "ai", icon: "ai", label: "AI Engine", badge: "NEW" },
+      { key: "seguimiento", icon: "target", label: "Seguimiento" },
+      { key: "confidenciales", icon: "lock", label: "Reportes Confidenciales" },
+      { key: "empleados", icon: "users", label: "Empleados" },
+      { key: "expedientes", icon: "folder", label: "Expedientes" },
+      { key: "mensajes", icon: "message", label: "Mensajes" },
     ],
     rh: [
-      { key: "dashboard", icon: "📊", label: "Dashboard RH" },
-      { key: "usuarios", icon: "⚙️", label: "Gestión de Personal" },
-      { key: "empleados", icon: "👥", label: "Empleados" },
-      { key: "vacaciones", icon: "🏖️", label: "Vacaciones" },
-      { key: "descuentos", icon: "💸", label: "Descuentos" },
-      { key: "calendario", icon: "📅", label: "Calendario" },
-      { key: "eventospersonal", icon: "🎂", label: "Cumpleaños y Aniversarios" },
-      { key: "reconocimientos", icon: "🏅", label: "Reconocimientos" },
-      { key: "reportesrh", icon: "📈", label: "Reportes RH" },
+      { key: "dashboard", icon: "dashboard", label: "Dashboard RH" },
+      { key: "usuarios", icon: "userCog", label: "Gestión de Personal" },
+      { key: "empleados", icon: "users", label: "Empleados" },
+      { key: "vacaciones", icon: "vacation", label: "Vacaciones" },
+      { key: "descuentos", icon: "dollar", label: "Descuentos" },
+      { key: "calendario", icon: "calendar", label: "Calendario" },
+      { key: "eventospersonal", icon: "cake", label: "Cumpleaños y Aniversarios" },
+      { key: "reconocimientos", icon: "award", label: "Reconocimientos" },
+      { key: "reportesrh", icon: "trending", label: "Reportes RH" },
     ],
     empleado: [
-      { key: "inicio", icon: "🏠", label: "Inicio" },
-      { key: "encuesta", icon: "📝", label: "Mi Encuesta" },
-      { key: "historial", icon: "▦", label: "Historial" },
-      { key: "permisosempleado", icon: "🏖️", label: "Vacaciones" },
-      { key: "reconocimientos", icon: "🏅", label: "Reconocimientos" },
-      { key: "reporteconfidencial", icon: "🔒", label: "Reporte Confidencial" },
-      { key: "mensajes", icon: "💬", label: "Mensajes" },
+      { key: "inicio", icon: "home", label: "Inicio" },
+      { key: "encuesta", icon: "clipboardCheck", label: "Mi Encuesta" },
+      { key: "historial", icon: "history", label: "Historial" },
+      { key: "permisosempleado", icon: "vacation", label: "Vacaciones" },
+      { key: "reconocimientos", icon: "award", label: "Reconocimientos" },
+      { key: "reporteconfidencial", icon: "lock", label: "Reporte Confidencial" },
+      { key: "mensajes", icon: "message", label: "Mensajes" },
     ],
   };
 
@@ -63,7 +64,10 @@ const Sidebar = () => {
         <div className="sidebar-logo-wrap">
           <img src={logoSmall} alt="McDental Pulse" className="sidebar-logo" />
         </div>
-        <div className="sidebar-ai-badge">✨ AI Engine Activo</div>
+        <div className="sidebar-ai-badge">
+          <Icon name="sparkles" size={12} />
+          AI Engine Activo
+        </div>
       </div>
 
       <nav className="sidebar-nav">
@@ -75,7 +79,9 @@ const Sidebar = () => {
               onClick={() => navigate(`/${user.role}/${item.key}`)}
               className={`sidebar-nav-btn${isActive ? " sidebar-nav-btn--active" : ""}`}
             >
-              <span className="sidebar-nav-icon">{item.icon}</span>
+              <span className="sidebar-nav-icon">
+                <Icon name={item.icon} size={17} />
+              </span>
               <span className="sidebar-nav-label">{item.label}</span>
               {item.badge && <span className="sidebar-nav-badge">{item.badge}</span>}
             </button>
@@ -85,13 +91,14 @@ const Sidebar = () => {
 
       <div className="sidebar-footer">
         <div className="sidebar-user">
-          <Avatar name={user?.name || ""} size={36} color="#00A88F" />
+          <Avatar name={user?.name || ""} size={36} color="#3D8B7E" />
           <div style={{ minWidth: 0 }}>
             <div className="sidebar-user-name">{user?.name?.split(" ")[0] || ""}</div>
             <div className="sidebar-user-role">{user?.role || ""}</div>
           </div>
         </div>
         <button className="sidebar-logout" onClick={logout}>
+          <Icon name="logout" size={14} />
           Cerrar sesión
         </button>
       </div>

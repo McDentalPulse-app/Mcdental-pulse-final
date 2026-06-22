@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
+import SectionTitle from "../common/SectionTitle";
+import StatCard from "../common/StatCard";
+import Icon from "../ui/Icon";
 
 const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) => {
   const { usuarios: USERS } = useGlobal();
@@ -46,21 +49,13 @@ const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) 
       </div>
 
       <div className="admin-stat-grid">
-        <Card className="admin-stat-card">
-          <div className="admin-stat-icon">🏅</div>
-          <div className="admin-stat-value admin-stat-value--green">{reconocimientos.length}</div>
-          <div className="admin-stat-label">Reconocimientos totales</div>
-        </Card>
-        <Card className="admin-stat-card">
-          <div className="admin-stat-icon">👥</div>
-          <div className="admin-stat-value admin-stat-value--blue">{new Set(reconocimientos.map(r => r.empleadoId)).size}</div>
-          <div className="admin-stat-label">Empleados reconocidos</div>
-        </Card>
+        <StatCard iconName="award" value={reconocimientos.length} label="Reconocimientos totales" valueClass="admin-stat-value--green" />
+        <StatCard iconName="users" value={new Set(reconocimientos.map(r => r.empleadoId)).size} label="Empleados reconocidos" valueClass="admin-stat-value--blue" />
       </div>
 
       <div className="admin-grid-2">
         <Card>
-          <h3 className="admin-section-title">➕ Otorgar reconocimiento</h3>
+          <SectionTitle icon="plus">Otorgar reconocimiento</SectionTitle>
           <div className="mc-form-grid">
             <div className="mc-form-group">
               <label className="mc-form-label">Empleado</label>
@@ -99,13 +94,13 @@ const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) 
         </Card>
 
         <Card>
-          <h3 className="admin-section-title">📋 Historial reciente</h3>
+          <SectionTitle icon="clipboard">Historial reciente</SectionTitle>
           <div className="admin-list-scroll admin-list-scroll--tall">
             {reconocimientos.slice().reverse().map(r => (
               <div key={r.id} className="admin-list-item">
                 <div className="admin-list-item-title">{r.empleado}</div>
-                <div className="admin-list-item-meta" style={{ color: "var(--mc-verde-medio)", fontWeight: 700 }}>
-                  🏅 {r.categoria}
+                <div className="admin-list-item-meta" style={{ color: "var(--mc-verde-medio)", fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+                  <Icon name="award" size={14} /> {r.categoria}
                 </div>
                 <div className="admin-list-item-meta">{r.fecha} · {r.sucursal} · Otorgado por {r.otorgadoPor}</div>
                 <div className="admin-list-item-body">{r.comentario}</div>

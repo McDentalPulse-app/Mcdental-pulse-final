@@ -1,15 +1,8 @@
 import React, { useState } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
-import Badge from "../common/Badge";
-import Avatar from "../ui/Avatar";
-import PulseScoreBadge from "../common/PulseScoreBadge";
-import RiskBar from "../common/RiskBar";
-import { semaforoColor, semaforoBg, semaforoLabel } from "../../config/theme";
-
-import { semanaActual } from "../../utils/constants";
-import { calcularAntiguedad } from "../../utils/helpers";
-import { calcPulseScore, getPulseStatus, calcRiesgos } from "../../utils/pulseScore";
+import SectionTitle from "../common/SectionTitle";
+import Icon from "../ui/Icon";
 
 const ReporteConfidencialEmpleado = ({ user, onSubmit }) => {
   const { usuarios: USERS } = useGlobal();
@@ -68,7 +61,7 @@ const ReporteConfidencialEmpleado = ({ user, onSubmit }) => {
 
       {enviado ? (
         <Card>
-          <h3 style={{ color: "#004D40", marginTop: 0 }}>✅ Reporte enviado</h3>
+          <SectionTitle icon="check">Reporte enviado</SectionTitle>
           <p style={{ color: "#334155" }}>
             Tu reporte fue registrado de forma confidencial para seguimiento.
           </p>
@@ -89,7 +82,7 @@ const ReporteConfidencialEmpleado = ({ user, onSubmit }) => {
         </Card>
       ) : (
         <Card>
-          <h3 style={{ marginTop: 0, color: "#004D40" }}>🔒 Nuevo reporte</h3>
+          <SectionTitle icon="lock">Nuevo reporte</SectionTitle>
 
           <div style={{ display: "grid", gap: 14 }}>
             <label style={{ fontWeight: 800, color: "#0f172a" }}>

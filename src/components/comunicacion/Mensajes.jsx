@@ -10,6 +10,7 @@ import { semaforoColor, semaforoBg, semaforoLabel } from "../../config/theme";
 import { semanaActual } from "../../utils/constants";
 import { calcularAntiguedad } from "../../utils/helpers";
 import { calcPulseScore, getPulseStatus, calcRiesgos } from "../../utils/pulseScore";
+import Icon from "../ui/Icon";
 
 const Mensajes = ({ user, mensajes, onSend }) => {
   const { usuarios: USERS } = useGlobal();
@@ -211,7 +212,7 @@ const Mensajes = ({ user, mensajes, onSend }) => {
                   borderRadius: 999,
                   border: "1px solid #e5e7eb"
                 }}>
-                  🔒 Privado
+                  <Icon name="lock" size={12} /> Privado
                 </div>
               </div>
 
