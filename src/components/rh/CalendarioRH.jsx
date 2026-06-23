@@ -3,6 +3,7 @@ import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
+import { normalizeSucursal } from "../../utils/constants";
 
 const tipoPillClass = (tipo) => {
   if (tipo === "Vacaciones") return "mc-status-pill--vacaciones";
@@ -83,7 +84,7 @@ const CalendarioRH = ({ vacaciones, permisos, eventosExtra }) => {
                 <div className="rh-calendar-title">
                   <Icon name={e.icon} size={16} /> {e.titulo}
                 </div>
-                <div className="rh-calendar-detail">{e.sucursal} · {e.detalle}</div>
+                <div className="rh-calendar-detail">{normalizeSucursal(e.sucursal)} · {e.detalle}</div>
               </div>
 
               <div className="rh-calendar-badge">

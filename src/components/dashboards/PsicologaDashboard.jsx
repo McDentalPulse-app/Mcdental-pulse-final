@@ -5,7 +5,7 @@ import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
 import Badge from "../common/Badge";
 import Icon from "../ui/Icon";
-import { semanaActual } from "../../utils/constants";
+import { semanaActual, normalizeSucursal } from "../../utils/constants";
 
 const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }) => {
   const { usuarios: USERS } = useGlobal();
@@ -83,7 +83,7 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
                 <div className="psico-priority-top">
                   <div>
                     <div className="psico-priority-name">{emp.name}</div>
-                    <div className="psico-priority-meta">{emp.sucursal} · {emp.puesto}</div>
+                    <div className="psico-priority-meta">{normalizeSucursal(emp.sucursal)} · {emp.puesto}</div>
                   </div>
                   <Badge tipo={sem} />
                 </div>

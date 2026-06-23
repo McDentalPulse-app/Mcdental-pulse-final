@@ -3,6 +3,7 @@ import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
+import { normalizeSucursal } from "../../utils/constants";
 
 const Mensajes = ({ user, mensajes, onSend }) => {
   const { usuarios: USERS } = useGlobal();
@@ -150,7 +151,7 @@ const Mensajes = ({ user, mensajes, onSend }) => {
                     <div className="mensajes-conv-main">
                       <div className="mensajes-conv-name">{c.usuario.name}</div>
                       <div className="mensajes-conv-meta">
-                        {c.usuario.puesto} · {c.usuario.sucursal}
+                        {c.usuario.puesto} · {normalizeSucursal(c.usuario.sucursal)}
                       </div>
                     </div>
 
@@ -180,7 +181,7 @@ const Mensajes = ({ user, mensajes, onSend }) => {
                   <Avatar name={selected.usuario.name} size={40} color="#00897B" />
                   <div>
                     <div className="mensajes-chat-name">{selected.usuario.name}</div>
-                    <div className="mensajes-chat-meta">{selected.usuario.puesto} · {selected.usuario.sucursal}</div>
+                    <div className="mensajes-chat-meta">{selected.usuario.puesto} · {normalizeSucursal(selected.usuario.sucursal)}</div>
                   </div>
                   <span className="mensajes-private-pill">
                     <Icon name="lock" size={12} /> Privado

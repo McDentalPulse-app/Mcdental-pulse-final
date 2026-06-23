@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
-import { semanaActual } from "../../utils/constants";
+import { semanaActual, normalizeSucursal, sucursalMatches } from "../../utils/constants";
 
 const Reportes = ({ users = [], encuestas = [] }) => {
   const [sucursalReporte, setSucursalReporte] = useState("Todas");
@@ -13,7 +13,7 @@ const Reportes = ({ users = [], encuestas = [] }) => {
       new Set(
         users
           .filter((u) => u.role === "empleado")
-          .map((u) => u.sucursal)
+          .map((u) => normalizeSucursal(u.sucursal))
           .filter(Boolean)
       )
     ).sort()
@@ -34,7 +34,7 @@ const Reportes = ({ users = [], encuestas = [] }) => {
       const ultima = getUltimaEncuesta(emp.id);
       return {
         nombre: emp.name || "",
-        sucursal: emp.sucursal || "",
+        sucursal: normalizeSucursal(emp.sucursal) || "",
         puesto: emp.puesto || "",
         usuario: emp.user || "",
         estatus: "Activo",
@@ -82,7 +82,7 @@ const Reportes = ({ users = [], encuestas = [] }) => {
         ? Math.round(encEmpleado.reduce((sum, e) => sum + Number(e.score), 0) / encEmpleado.length)
         : "Sin datos";
       return {
-        nombre: emp.name || "", sucursal: emp.sucursal || "", puesto: emp.puesto || "",
+        nombre: emp.name || "", sucursal: normalizeSucursal(emp.sucursal) || "", puesto: emp.puesto || "",
         encuestasContestadas: encEmpleado.length, ultimaSemana: ultima?.semana || "Sin datos",
         scorePromedioMes: promedio,
         scoreActual: Number.isFinite(Number(ultima?.score)) ? Number(ultima.score) : "Sin datos",
@@ -111,7 +111,7 @@ const Reportes = ({ users = [], encuestas = [] }) => {
   const descargarReporteSucursalExcel = () => {
     const empleados = users
       .filter((u) => u.role === "empleado")
-      .filter((u) => sucursalReporte === "Todas" || u.sucursal === sucursalReporte);
+      .filter((u) => sucursalReporte === "Todas" || sucursalMatches(u.sucursal, sucursalReporte));
     const limpiarCSV = (valor) => {
       const texto = String(valor ?? "").replace(/"/g, '""');
       return `"${texto}"`;
@@ -124,7 +124,7 @@ const Reportes = ({ users = [], encuestas = [] }) => {
     const filas = empleados.map((emp) => {
       const ultima = getUltimaEncuesta(emp.id);
       return {
-        nombre: emp.name || "", sucursal: emp.sucursal || "", puesto: emp.puesto || "",
+        nombre: emp.name || "", sucursal: normalizeSucursal(emp.sucursal) || "", puesto: emp.puesto || "",
         ultimaSemana: ultima?.semana || "Sin datos",
         scoreActual: Number.isFinite(Number(ultima?.score)) ? Number(ultima.score) : "Sin datos",
         semaforo: ultima?.semaforo || "Sin datos"
@@ -163,7 +163,7 @@ const Reportes = ({ users = [], encuestas = [] }) => {
     const filas = encuestasSemana.map((encuesta) => {
       const emp = getEmpleado(encuesta.empleadoId);
       return {
-        nombre: emp?.name || "Empleado no encontrado", sucursal: emp?.sucursal || "Sin sucursal",
+        nombre: emp?.name || "Empleado no encontrado", sucursal: normalizeSucursal(emp?.sucursal) || "Sin sucursal",
         puesto: emp?.puesto || "Sin puesto", semana: encuesta.semana || "", fecha: encuesta.fecha || "",
         score: encuesta.score, semaforo: encuesta.semaforo || "Sin datos",
         riesgoRenuncia: encuesta.respuestas?.[9] || encuesta.respuestas?.p9 || "",

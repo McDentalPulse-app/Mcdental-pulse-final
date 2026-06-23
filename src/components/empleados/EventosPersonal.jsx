@@ -4,6 +4,7 @@ import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
 import StatCard from "../common/StatCard";
 import Icon from "../ui/Icon";
+import { normalizeSucursal } from "../../utils/constants";
 
 const EventosPersonal = ({ users }) => {
   const { usuarios: USERS } = useGlobal();
@@ -36,12 +37,12 @@ const EventosPersonal = ({ users }) => {
   const eventos = [
     ...empleados.map(u => ({
       id: `cumple-${u.id}`, tipo: "Cumpleaños", icon: "cake", empleado: u.name,
-      puesto: u.puesto, sucursal: u.sucursal, fechaTexto: formatDate(u.fechaNacimiento),
+      puesto: u.puesto, sucursal: normalizeSucursal(u.sucursal), fechaTexto: formatDate(u.fechaNacimiento),
       dias: daysUntil(u.fechaNacimiento), detalle: "Cumpleaños del colaborador"
     })),
     ...empleados.map(u => ({
       id: `aniv-${u.id}`, tipo: "Aniversario laboral", icon: "party", empleado: u.name,
-      puesto: u.puesto, sucursal: u.sucursal, fechaTexto: formatDate(u.fechaIngreso),
+      puesto: u.puesto, sucursal: normalizeSucursal(u.sucursal), fechaTexto: formatDate(u.fechaIngreso),
       dias: daysUntil(u.fechaIngreso), detalle: `${yearsSince(u.fechaIngreso)} año(s) en McDental`
     }))
   ].filter(e => e.dias <= 30).sort((a, b) => a.dias - b.dias);
@@ -91,7 +92,7 @@ const EventosPersonal = ({ users }) => {
                   <div className="admin-list-item-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <Icon name={e.icon} size={16} /> {e.empleado}
                   </div>
-                  <div className="admin-list-item-meta">{e.sucursal} · {e.puesto}</div>
+                  <div className="admin-list-item-meta">{normalizeSucursal(e.sucursal)} · {e.puesto}</div>
                   <div className="admin-list-item-body" style={{ marginTop: 6 }}>
                     <b>{e.tipo}</b> · {e.fechaTexto}
                   </div>

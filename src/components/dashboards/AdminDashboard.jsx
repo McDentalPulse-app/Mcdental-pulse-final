@@ -7,7 +7,7 @@ import LineChart from "../common/LineChart";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
 import SectionTitle from "../common/SectionTitle";
-import { SUCURSALES, semanaActual } from "../../utils/constants";
+import { SUCURSALES, semanaActual, normalizeSucursal, sucursalMatches } from "../../utils/constants";
 import { calcPulseScore, getPulseStatus } from "../../utils/pulseScore";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 
@@ -26,7 +26,7 @@ const sucursalScoreColor = (val) => {
 };
 
 const buildSucursalDetalle = (nombreSucursal, empleados, encuestas, semanaEnc) => {
-  const empsSucursal = empleados.filter((e) => e.sucursal === nombreSucursal);
+  const empsSucursal = empleados.filter((e) => sucursalMatches(e.sucursal, nombreSucursal));
 
   const filas = empsSucursal
     .map((emp) => {
@@ -119,7 +119,7 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
   const datosTendencia = semanasConScore.map(({ label, v }) => ({ label, v }));
 
   const porSucursal = SUCURSALES.map((s) => {
-    const emps = empleados.filter((e) => e.sucursal === s).map((e) => e.id);
+    const emps = empleados.filter((e) => sucursalMatches(e.sucursal, s)).map((e) => e.id);
     const encValidas = semanaEnc.filter(
       (e) => emps.includes(e.empleadoId) && Number.isFinite(Number(e.score))
     );
@@ -422,7 +422,7 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
                   <div className="dashboard-employee-info">
                     <div className="dashboard-employee-name">{emp.name}</div>
                     <div className="dashboard-employee-meta">
-                      {emp.sucursal} · {emp.puesto}
+                      {normalizeSucursal(emp.sucursal)} · {emp.puesto}
                     </div>
                   </div>
                   <Badge tipo="rojo" />

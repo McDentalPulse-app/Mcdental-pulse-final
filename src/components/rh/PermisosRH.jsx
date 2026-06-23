@@ -3,6 +3,7 @@ import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
+import { normalizeSucursal } from "../../utils/constants";
 import { useNotification } from "../../contexts/NotificationContext";
 
 const PermisosRH = ({ permisos, onUpdateEstado }) => {
@@ -46,7 +47,7 @@ const PermisosRH = ({ permisos, onUpdateEstado }) => {
             <div key={p.id} className="rh-data-row">
               <div className="rh-data-row-main">
                 <div className="rh-data-row-title">{p.empleado}</div>
-                <div className="rh-data-row-sub">{p.sucursal} · {p.puesto}</div>
+                <div className="rh-data-row-sub">{normalizeSucursal(p.sucursal)} · {p.puesto}</div>
                 <div className="rh-data-row-detail">{p.tipo}</div>
                 <div className="rh-data-row-note">Motivo: {p.motivo}</div>
                 {p.comentarioRH && (

@@ -3,6 +3,7 @@ import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
+import { normalizeSucursal } from "../../utils/constants";
 import { useNotification } from "../../contexts/NotificationContext";
 
 const DescuentosRH = ({ descuentos, empleados, user, onUpdateEstado, onAddDescuento }) => {
@@ -61,7 +62,7 @@ const DescuentosRH = ({ descuentos, empleados, user, onUpdateEstado, onAddDescue
               const nuevoDescuento = {
                 empleadoId: empleadoSeleccionado.id,
                 empleado: empleadoSeleccionado.name,
-                sucursal: empleadoSeleccionado.sucursal || "Sin sucursal",
+                sucursal: normalizeSucursal(empleadoSeleccionado.sucursal) || "Sin sucursal",
                 puesto: empleadoSeleccionado.puesto || empleadoSeleccionado.categoria || "Empleado",
                 tipo: form.tipo.value,
                 motivo: form.motivo.value,
@@ -86,7 +87,7 @@ const DescuentosRH = ({ descuentos, empleados, user, onUpdateEstado, onAddDescue
                   .filter(emp => emp.role === "empleado")
                   .map(emp => (
                     <option key={emp.id} value={emp.id}>
-                      {emp.name} - {emp.sucursal}
+                      {emp.name} - {normalizeSucursal(emp.sucursal)}
                     </option>
                   ))}
               </select>
@@ -146,7 +147,7 @@ const DescuentosRH = ({ descuentos, empleados, user, onUpdateEstado, onAddDescue
             <div key={d.id} className="rh-data-row">
               <div className="rh-data-row-main">
                 <div className="rh-data-row-title">{d.empleado}</div>
-                <div className="rh-data-row-sub">{d.sucursal} · {d.puesto}</div>
+                <div className="rh-data-row-sub">{normalizeSucursal(d.sucursal)} · {d.puesto}</div>
                 <div className="rh-data-row-detail">{d.tipo} · {d.motivo}</div>
                 <div className="rh-data-row-note">Observaciones: {d.observaciones}</div>
               </div>

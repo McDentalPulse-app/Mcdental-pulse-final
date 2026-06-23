@@ -10,7 +10,7 @@ import PulseScoreBadge from "../common/PulseScoreBadge";
 import RiskBar from "../common/RiskBar";
 import { semaforoColor, semaforoBg, semaforoLabel } from "../../config/theme";
 
-import { semanaActual } from "../../utils/constants";
+import { semanaActual, normalizeSucursal } from "../../utils/constants";
 import { calcularAntiguedad } from "../../utils/helpers";
 import { calcPulseScore, getPulseStatus, calcRiesgos } from "../../utils/pulseScore";
 import { callAI } from "../../utils/analysisEngine";
@@ -196,7 +196,7 @@ const RESUMEN_LIMITE = 8;
       const pulse = calcPulseScore(emp.id, encuestas);
       const riesgos = calcRiesgos(emp.id, encuestas);
       const enc = encuestas.filter(e => e.empleadoId === emp.id).sort((a,b)=>b.semana.localeCompare(a.semana)).slice(0,3);
-      return `- ${emp.name} (${emp.sucursal}, ${emp.puesto}): Pulse Score ${pulse.score} (${pulse.nivel}), tendencia ${pulse.tendencia}, riesgo renuncia ${riesgos.renuncia}%, burnout ${riesgos.burnout}%, emocional ${riesgos.emocional}%, últimos scores: ${enc.map(e=>e.score).join(",")}`;
+      return `- ${emp.name} (${normalizeSucursal(emp.sucursal)}, ${emp.puesto}): Pulse Score ${pulse.score} (${pulse.nivel}), tendencia ${pulse.tendencia}, riesgo renuncia ${riesgos.renuncia}%, burnout ${riesgos.burnout}%, emocional ${riesgos.emocional}%, últimos scores: ${enc.map(e=>e.score).join(",")}`;
     }).join("\n");
     const msgsRecientes = mensajes.slice(-5).map(m => {
       const de = USERS.find(u=>u.id===m.de);
@@ -211,7 +211,7 @@ const RESUMEN_LIMITE = 8;
     const riesgos = calcRiesgos(emp.id, encuestas);
     const notasEmp = notas.filter(n => n.empleadoId === emp.id);
     const msgsEmp = mensajes.filter(m => m.de === emp.id || m.para === emp.id).slice(-6);
-    return `EXPEDIENTE: ${emp.name} | ${emp.sucursal} | ${emp.puesto} | Antigüedad: ${calcularAntiguedad(emp.fechaIngreso)}Tendencia: ${pulse.tendencia}\nRiesgos: Renuncia ${riesgos.renuncia}%, Burnout ${riesgos.burnout}%, Emocional ${riesgos.emocional}%\nEncuestas (${enc.length} semanas): ${enc.slice(0,5).map(e=>`${e.semana}: emocional=${e.respuestas.emocional}, estres=${e.respuestas.estres}, mot=${e.respuestas.motivacion}, score=${e.score}`).join(" | ")}\nNotas psicóloga: ${notasEmp.map(n=>n.texto).join(" | ") || "Ninguna"}\nMensajes: ${msgsEmp.map(m=>{const u=USERS.find(x=>x.id===m.de);return `${u?.name}: "${m.texto.slice(0,60)}"`;}).join(" | ") || "Ninguno"}`;
+    return `EXPEDIENTE: ${emp.name} | ${normalizeSucursal(emp.sucursal)} | ${emp.puesto} | Antigüedad: ${calcularAntiguedad(emp.fechaIngreso)}Tendencia: ${pulse.tendencia}\nRiesgos: Renuncia ${riesgos.renuncia}%, Burnout ${riesgos.burnout}%, Emocional ${riesgos.emocional}%\nEncuestas (${enc.length} semanas): ${enc.slice(0,5).map(e=>`${e.semana}: emocional=${e.respuestas.emocional}, estres=${e.respuestas.estres}, mot=${e.respuestas.motivacion}, score=${e.score}`).join(" | ")}\nNotas psicóloga: ${notasEmp.map(n=>n.texto).join(" | ") || "Ninguna"}\nMensajes: ${msgsEmp.map(m=>{const u=USERS.find(x=>x.id===m.de);return `${u?.name}: "${m.texto.slice(0,60)}"`;}).join(" | ") || "Ninguno"}`;
   };
 
   const generarResumen = async () => {
@@ -353,7 +353,7 @@ const RESUMEN_LIMITE = 8;
             <div className="ai-resumen-item-head">
               <div>
                 <div className="ai-resumen-name">{a.empleado.name}</div>
-                <div className="ai-resumen-meta">{a.empleado.sucursal} · {a.empleado.puesto}</div>
+                <div className="ai-resumen-meta">{normalizeSucursal(a.empleado.sucursal)} · {a.empleado.puesto}</div>
               </div>
               <span className={`ai-priority-pill ai-priority-pill--${a.prioridad.toLowerCase().replace("í", "i")}`}>
                 {a.prioridad}
@@ -427,7 +427,7 @@ const RESUMEN_LIMITE = 8;
                   {a.empleado.name}
                 </div>
                 <div style={{ color: "#64748b", fontSize: 13 }}>
-                  {a.empleado.sucursal} · {a.empleado.puesto}
+                  {normalizeSucursal(a.empleado.sucursal)} · {a.empleado.puesto}
                 </div>
               </div>
 
@@ -583,7 +583,7 @@ const RESUMEN_LIMITE = 8;
                     {a.empleado.name}
                   </div>
                   <div style={{ color: "#64748b", fontSize: 13 }}>
-                    {a.empleado.sucursal} · {a.empleado.puesto}
+                    {normalizeSucursal(a.empleado.sucursal)} · {a.empleado.puesto}
                   </div>
                 </div>
 
@@ -698,7 +698,7 @@ const RESUMEN_LIMITE = 8;
                 {idx + 1}. {a.empleado.name} — Prioridad {a.prioridad}
               </div>
               <div style={{ color: "#475569", fontSize: 13 }}>
-                {a.empleado.sucursal} · {a.empleado.puesto} · Pulse Score {a.pulse}
+                {normalizeSucursal(a.empleado.sucursal)} · {a.empleado.puesto} · Pulse Score {a.pulse}
               </div>
               <div style={{ color: "#004D40", fontWeight: 800, marginTop: 4 }}>
                 {a.recomendacion}
@@ -811,7 +811,7 @@ const RESUMEN_LIMITE = 8;
                   {a.empleado.name}
                 </div>
                 <div style={{ color: "#64748b", fontSize: 13 }}>
-                  {a.empleado.sucursal} · {a.empleado.puesto}
+                  {normalizeSucursal(a.empleado.sucursal)} · {a.empleado.puesto}
                 </div>
               </div>
 

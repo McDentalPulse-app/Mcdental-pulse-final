@@ -5,6 +5,7 @@ import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
 import StatCard from "../common/StatCard";
 import Icon from "../ui/Icon";
+import { normalizeSucursal } from "../../utils/constants";
 
 const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) => {
   const { usuarios: USERS } = useGlobal();
@@ -35,7 +36,7 @@ const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) 
       if (!continuar) return;
     }
     onAdd({
-      empleadoId: empleado.id, empleado: empleado.name, sucursal: empleado.sucursal,
+      empleadoId: empleado.id, empleado: empleado.name, sucursal: normalizeSucursal(empleado.sucursal),
       puesto: empleado.puesto, categoria, otorgadoPor: currentUser.name, comentario
     });
     setCategoria("Excelente actitud");
@@ -66,7 +67,7 @@ const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) 
               <label className="mc-form-label">Empleado</label>
               <select className="mc-form-select" value={empleadoId} onChange={(e) => setEmpleadoId(e.target.value)}>
                 {empleados.map(e => (
-                  <option key={e.id} value={e.id}>{e.name} · {e.sucursal} · {e.puesto}</option>
+                  <option key={e.id} value={e.id}>{e.name} · {normalizeSucursal(e.sucursal)} · {e.puesto}</option>
                 ))}
               </select>
             </div>
@@ -120,7 +121,7 @@ const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) 
                 <div className="admin-list-item-meta" style={{ color: "var(--mc-verde-medio)", fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
                   <Icon name="award" size={14} /> {r.categoria}
                 </div>
-                <div className="admin-list-item-meta">{r.fecha} · {r.sucursal} · Otorgado por {r.otorgadoPor}</div>
+                <div className="admin-list-item-meta">{r.fecha} · {normalizeSucursal(r.sucursal)} · Otorgado por {r.otorgadoPor}</div>
                 <div className="admin-list-item-body">{r.comentario}</div>
               </div>
             ))}

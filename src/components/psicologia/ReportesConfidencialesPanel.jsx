@@ -3,6 +3,7 @@ import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
 import StatCard from "../common/StatCard";
 import Icon from "../ui/Icon";
+import { normalizeSucursal } from "../../utils/constants";
 
 const ReportesConfidencialesPanel = ({ reportes }) => {
   const nuevos = reportes.filter(r => r.estado === "nuevo").length;
@@ -53,7 +54,7 @@ const ReportesConfidencialesPanel = ({ reportes }) => {
               <div className="psico-inbox-head">
                 <div>
                   <div className="admin-list-item-title">{r.empleado}</div>
-                  <div className="admin-list-item-meta">{r.sucursal} · {r.puesto} · {r.fecha}</div>
+                  <div className="admin-list-item-meta">{normalizeSucursal(r.sucursal)} · {r.puesto} · {r.fecha}</div>
                 </div>
                 <div className="psico-inbox-badges">
                   <span className={urgenciaClass(r.urgencia)}>{r.urgencia}</span>

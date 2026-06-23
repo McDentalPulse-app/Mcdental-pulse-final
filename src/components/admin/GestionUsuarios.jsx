@@ -6,7 +6,7 @@ import { collection, addDoc, updateDoc, doc, serverTimestamp } from "firebase/fi
 import { db } from "../../config/firebase";
 import Card from "../common/Card";
 import Icon from "../ui/Icon";
-import { SUCURSALES } from "../../utils/constants";
+import { SUCURSALES, normalizeSucursal } from "../../utils/constants";
 
 const DEFAULT_SUCURSAL = SUCURSALES[0];
 
@@ -43,7 +43,7 @@ const GestionUsuarios = () => {
       setFormData({
         name: empleado.name || "",
         user: empleado.user || "",
-        sucursal: empleado.sucursal || DEFAULT_SUCURSAL,
+        sucursal: normalizeSucursal(empleado.sucursal) || DEFAULT_SUCURSAL,
         puesto: empleado.puesto || "Asistente Dental",
         role: empleado.role || "empleado",
         email: empleado.email || "",
@@ -167,7 +167,7 @@ const GestionUsuarios = () => {
                 <tr key={emp.id}>
                   <td className="mc-table-name">{emp.name}</td>
                   <td className="mc-table-muted">{emp.user}</td>
-                  <td>{emp.sucursal}</td>
+                  <td>{normalizeSucursal(emp.sucursal)}</td>
                   <td>
                     <span className={`mc-tag ${emp.role !== "empleado" ? "mc-tag--role-privileged" : ""}`}>
                       {emp.role}

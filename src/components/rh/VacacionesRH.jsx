@@ -3,6 +3,7 @@ import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
+import { normalizeSucursal } from "../../utils/constants";
 import { useNotification } from "../../contexts/NotificationContext";
 
 const VacacionesRH = ({ vacaciones, onUpdateEstado }) => {
@@ -46,7 +47,7 @@ const VacacionesRH = ({ vacaciones, onUpdateEstado }) => {
             <div key={v.id} className="rh-data-row">
               <div className="rh-data-row-main">
                 <div className="rh-data-row-title">{v.empleado}</div>
-                <div className="rh-data-row-sub">{v.sucursal} · {v.puesto}</div>
+                <div className="rh-data-row-sub">{normalizeSucursal(v.sucursal)} · {v.puesto}</div>
                 <div className="rh-data-row-note">Motivo: {v.motivo}</div>
               </div>
 

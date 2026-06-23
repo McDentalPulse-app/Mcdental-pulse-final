@@ -4,7 +4,7 @@ import Badge from "../common/Badge";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
 import PulseScoreBadge from "../common/PulseScoreBadge";
-import { semanaActual } from "../../utils/constants";
+import { semanaActual, normalizeSucursal } from "../../utils/constants";
 import { calcPulseScore } from "../../utils/pulseScore";
 
 const InicioEmpleado = ({ user, encuestas, mensajes, setActive }) => {
@@ -60,7 +60,7 @@ const InicioEmpleado = ({ user, encuestas, mensajes, setActive }) => {
         <div>
           <span className="dashboard-eyebrow">McDental Pulse · Mi espacio</span>
           <h1 className="admin-page-title">Hola, {user.name.split(" ")[0]}</h1>
-          <p className="admin-page-subtitle">{user.sucursal} · {user.puesto}</p>
+          <p className="admin-page-subtitle">{normalizeSucursal(user.sucursal)} · {user.puesto}</p>
         </div>
         <span className="dashboard-week-badge">
           <Icon name="calendar" size={14} /> Semana {semanaActual}

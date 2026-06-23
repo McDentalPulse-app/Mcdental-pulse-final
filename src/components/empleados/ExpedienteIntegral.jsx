@@ -7,7 +7,7 @@ import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
-import { SUCURSALES, semanaActual } from "../../utils/constants";
+import { SUCURSALES, semanaActual, normalizeSucursal, sucursalMatches } from "../../utils/constants";
 
 import { calcPulseScore, getPulseStatus } from "../../utils/pulseScore";
 import { useNotification } from "../../contexts/NotificationContext";
@@ -37,7 +37,7 @@ const [archivoExpediente, setArchivoExpediente] = useState(null);
 const [tipoArchivoExpediente, setTipoArchivoExpediente] = useState("General");
 
 const empleadosFiltrados = empleados.filter(emp =>
-  filtroSucursalExp === "Todas" || emp.sucursal === filtroSucursalExp
+  filtroSucursalExp === "Todas" || sucursalMatches(emp.sucursal, filtroSucursalExp)
 );
 
 const empleado =
@@ -100,13 +100,13 @@ const empleado =
                 const nuevaSucursal = e.target.value;
                 setFiltroSucursalExp(nuevaSucursal);
                 const lista = empleados.filter(emp =>
-                  nuevaSucursal === "Todas" || emp.sucursal === nuevaSucursal
+                  nuevaSucursal === "Todas" || sucursalMatches(emp.sucursal, nuevaSucursal)
                 );
                 setEmpleadoId(lista[0]?.id || "");
               }}
             >
               <option value="Todas">Todas las sucursales</option>
-              {[...new Set(empleados.map(emp => emp.sucursal))].map(s => (
+              {[...new Set(empleados.map((emp) => normalizeSucursal(emp.sucursal)))].map((s) => (
                 <option key={s} value={s}>{s}</option>
               ))}
             </select>
@@ -120,7 +120,7 @@ const empleado =
             >
               {empleadosFiltrados.map(emp => (
                 <option key={emp.id} value={emp.id}>
-                  {emp.name} · {emp.sucursal} · {emp.puesto}
+                  {emp.name} · {normalizeSucursal(emp.sucursal)} · {emp.puesto}
                 </option>
               ))}
             </select>
@@ -136,7 +136,7 @@ const empleado =
           <div className="admin-stat-icon-wrap"><Icon name="user" size={20} /></div>
           <div className="admin-stat-value admin-stat-value--green" style={{ fontSize: 20 }}>{empleado.name}</div>
           <div className="admin-stat-label">{empleado.puesto}</div>
-          <div className="admin-stat-label">{empleado.sucursal}</div>
+          <div className="admin-stat-label">{normalizeSucursal(empleado.sucursal)}</div>
         </Card>
         <Card className="admin-stat-card">
           <div className="admin-stat-icon-wrap"><Icon name="heart" size={20} /></div>
@@ -162,7 +162,7 @@ const empleado =
           <div className="expediente-data-row">
             <div><b>Nombre:</b> {empleado.name}</div>
             <div><b>Puesto:</b> {empleado.puesto}</div>
-            <div><b>Sucursal:</b> {empleado.sucursal}</div>
+            <div><b>Sucursal:</b> {normalizeSucursal(empleado.sucursal)}</div>
             <div><b>Antigüedad:</b> {empleado.antiguedad || "No registrada"}</div>
             <div><b>Teléfono:</b> {empleado.telefono || "No registrado"}</div>
             <div><b>Estatus:</b> Activo</div>

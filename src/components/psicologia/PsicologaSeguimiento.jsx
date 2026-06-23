@@ -8,7 +8,7 @@ import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import { semaforoColor } from "../../config/theme";
-import { semanaActual } from "../../utils/constants";
+import { semanaActual, normalizeSucursal } from "../../utils/constants";
 import { calcPulseScore, getPulseStatus } from "../../utils/pulseScore";
 
 const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
@@ -62,7 +62,7 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
                   <Avatar name={emp.name} size={36} color={semaforoColor[sem] || semaforoColor.verde} />
                   <div className="psico-emp-info">
                     <div className="psico-emp-name">{emp.name}</div>
-                    <div className="psico-emp-meta">{emp.sucursal}</div>
+                    <div className="psico-emp-meta">{normalizeSucursal(emp.sucursal)}</div>
                   </div>
                   <Badge tipo={sem} />
                 </div>
@@ -141,7 +141,7 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
                 <div>
                   <h2 className="mc-modal-title">{empleadoDetalle.name || empleadoDetalle.nombre}</h2>
                   <p className="admin-page-subtitle psico-detail-sub">
-                    {empleadoDetalle.sucursal} · {empleadoDetalle.puesto}
+                    {normalizeSucursal(empleadoDetalle.sucursal)} · {empleadoDetalle.puesto}
                   </p>
                 </div>
                 <button type="button" className="psico-detail-close" onClick={() => setEmpleadoDetalle(null)}>
@@ -159,7 +159,7 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
                 <div className="psico-detail-panel">
                   <h4 className="psico-detail-panel-title">Datos generales</h4>
                   <div className="psico-detail-panel-body">
-                    <div><strong>Sucursal:</strong> {empleadoDetalle.sucursal}</div>
+                    <div><strong>Sucursal:</strong> {normalizeSucursal(empleadoDetalle.sucursal)}</div>
                     <div><strong>Puesto:</strong> {empleadoDetalle.puesto}</div>
                     <div><strong>ID:</strong> {empleadoDetalle.id}</div>
                     <div><strong>Semana actual:</strong> {ultima?.semana || "Sin registro"}</div>

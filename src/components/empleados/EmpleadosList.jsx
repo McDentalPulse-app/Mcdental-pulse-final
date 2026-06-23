@@ -5,7 +5,7 @@ import Badge from "../common/Badge";
 import KPI from "../common/KPI";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
-import { SUCURSALES, semanaActual } from "../../utils/constants";
+import { SUCURSALES, semanaActual, normalizeSucursal, sucursalMatches } from "../../utils/constants";
 
 import { calcPulseScore, getPulseStatus } from "../../utils/pulseScore";
 
@@ -51,10 +51,10 @@ const EmpleadosList = ({
     const coincideBusqueda =
       e.name.toLowerCase().includes(texto) ||
       e.puesto.toLowerCase().includes(texto) ||
-      e.sucursal.toLowerCase().includes(texto);
+      normalizeSucursal(e.sucursal).toLowerCase().includes(texto);
 
     const coincideSucursal =
-      filtroSucursal === "Todas" || e.sucursal === filtroSucursal;
+      filtroSucursal === "Todas" || sucursalMatches(e.sucursal, filtroSucursal);
 
     const coincideSemaforo =
       filtroSemaforo === "Todos" || getUltimoSemaforo(e.id) === filtroSemaforo;
@@ -103,7 +103,7 @@ const EmpleadosList = ({
                 </div>
 
                 <div style={{ fontSize: 13, color: "#6b7280" }}>
-                  {selected.puesto} · {selected.sucursal}
+                  {selected.puesto} · {normalizeSucursal(selected.sucursal)}
                 </div>
 
                 {role !== "rh" && (
@@ -134,7 +134,7 @@ const EmpleadosList = ({
             }}>
               <div><span style={{ color: "#9ca3af" }}>Nombre:</span> {selected.name}</div>
               <div><span style={{ color: "#9ca3af" }}>Puesto:</span> {selected.puesto}</div>
-              <div><span style={{ color: "#9ca3af" }}>Sucursal:</span> {selected.sucursal}</div>
+              <div><span style={{ color: "#9ca3af" }}>Sucursal:</span> {normalizeSucursal(selected.sucursal)}</div>
               <div><span style={{ color: "#9ca3af" }}>Antigüedad:</span> {calcularAntiguedad(selected.fechaIngreso)}</div>
               <div><span style={{ color: "#9ca3af" }}>ID empleado:</span> {selected.id}</div>
               <div><span style={{ color: "#9ca3af" }}>Estado:</span> Activo</div>
@@ -413,7 +413,7 @@ const EmpleadosList = ({
             onChange={(e) => setFiltroSucursal(e.target.value)}
           >
             <option value="Todas">Todas las sucursales</option>
-            {[...new Set(empleados.map(e => e.sucursal))].map(s => (
+            {[...new Set(empleados.map((e) => normalizeSucursal(e.sucursal)))].map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
@@ -473,7 +473,7 @@ const EmpleadosList = ({
                 )}
 
                 <div className="emp-card-footer">
-                  <span>{emp.sucursal}</span>
+                  <span>{normalizeSucursal(emp.sucursal)}</span>
                   {role !== "rh" && (
                     <span className="emp-card-status">
                       {contestoEsta ? (

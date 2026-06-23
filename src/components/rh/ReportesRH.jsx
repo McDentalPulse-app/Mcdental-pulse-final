@@ -3,7 +3,7 @@ import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
-import { SUCURSALES } from "../../utils/constants";
+import { SUCURSALES, normalizeSucursal, sucursalMatches } from "../../utils/constants";
 
 const ReportesRH = ({ vacaciones, permisos, descuentos }) => {
   const totalDescuentosActivos = descuentos
@@ -16,7 +16,7 @@ const ReportesRH = ({ vacaciones, permisos, descuentos }) => {
     if (!movimientosPorEmpleado[item.empleado]) {
       movimientosPorEmpleado[item.empleado] = {
         empleado: item.empleado,
-        sucursal: item.sucursal,
+        sucursal: normalizeSucursal(item.sucursal),
         total: 0
       };
     }
@@ -35,9 +35,9 @@ const ReportesRH = ({ vacaciones, permisos, descuentos }) => {
 
   const resumenSucursal = SUCURSALES.map(sucursal => ({
     sucursal,
-    vacaciones: vacaciones.filter(v => v.sucursal === sucursal).length,
-    permisos: permisos.filter(p => p.sucursal === sucursal).length,
-    descuentos: descuentos.filter(d => d.sucursal === sucursal).length
+    vacaciones: vacaciones.filter((v) => sucursalMatches(v.sucursal, sucursal)).length,
+    permisos: permisos.filter((p) => sucursalMatches(p.sucursal, sucursal)).length,
+    descuentos: descuentos.filter((d) => sucursalMatches(d.sucursal, sucursal)).length,
   }));
 
   return (
@@ -61,7 +61,7 @@ const ReportesRH = ({ vacaciones, permisos, descuentos }) => {
           <div className="rh-sucursal-list rh-report-scroll-list">
             {resumenSucursal.map(s => (
               <div key={s.sucursal} className="rh-sucursal-item">
-                <div className="rh-sucursal-name">{s.sucursal}</div>
+                <div className="rh-sucursal-name">{normalizeSucursal(s.sucursal)}</div>
                 <div className="rh-sucursal-stats">
                   <span className="rh-sucursal-stat"><Icon name="vacation" size={14} /> {s.vacaciones} vacaciones</span>
                   <span className="rh-sucursal-stat"><Icon name="clipboard" size={14} /> {s.permisos} permisos</span>
@@ -79,7 +79,7 @@ const ReportesRH = ({ vacaciones, permisos, descuentos }) => {
               <div key={e.empleado} className="rh-ranking-row">
                 <div className="rh-ranking-main">
                   <div className="rh-ranking-name">{index + 1}. {e.empleado}</div>
-                  <div className="rh-ranking-sub">{e.sucursal}</div>
+                  <div className="rh-ranking-sub">{normalizeSucursal(e.sucursal)}</div>
                 </div>
                 <span className="rh-ranking-badge">{e.total} movimientos</span>
               </div>
