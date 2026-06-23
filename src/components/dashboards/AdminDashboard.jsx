@@ -51,29 +51,37 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
   const amarillos = empleadosConDatos.filter(e => e.status.semaforo === "Amarillo").length;
   const rojos = empleadosConDatos.filter(e => e.status.semaforo === "Rojo").length;
 
-  const tendencia = ["W10","W11","W12","W13","W14"].map(w => {
+  const tendencia = ["W10", "W11", "W12", "W13", "W14"].map((w) => {
     const encValidas = encuestas.filter(
-      e => e.semana === `2025-${w}` && Number.isFinite(Number(e.score))
+      (e) => e.semana === `2025-${w}` && Number.isFinite(Number(e.score))
     );
+    const hasData = encValidas.length > 0;
     return {
       label: w,
-      v: encValidas.length
-        ? Math.round(encValidas.reduce((s,e)=>s+Number(e.score),0) / encValidas.length)
-        : 0
+      hasData,
+      v: hasData
+        ? Math.round(encValidas.reduce((s, e) => s + Number(e.score), 0) / encValidas.length)
+        : null,
     };
   });
 
-  const porSucursal = SUCURSALES.map(s => {
-    const emps = empleados.filter(e=>e.sucursal===s).map(e=>e.id);
+  const semanasConScore = tendencia.filter((t) => t.hasData && Number.isFinite(t.v));
+  const tieneHistorialSuficiente = semanasConScore.length >= 2;
+  const datosTendencia = semanasConScore.map(({ label, v }) => ({ label, v }));
+
+  const porSucursal = SUCURSALES.map((s) => {
+    const emps = empleados.filter((e) => e.sucursal === s).map((e) => e.id);
     const encValidas = semanaEnc.filter(
-      e => emps.includes(e.empleadoId) && Number.isFinite(Number(e.score))
+      (e) => emps.includes(e.empleadoId) && Number.isFinite(Number(e.score))
     );
+    const hasData = encValidas.length > 0;
     return {
       label: s,
       shortLabel: abbrevSucursal(s),
-      v: encValidas.length
-        ? Math.round(encValidas.reduce((sum,e)=>sum+Number(e.score),0) / encValidas.length)
-        : 0
+      hasData,
+      v: hasData
+        ? Math.round(encValidas.reduce((sum, e) => sum + Number(e.score), 0) / encValidas.length)
+        : null,
     };
   });
 
@@ -146,7 +154,21 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
       <div className="dashboard-grid-2">
         <Card className="dashboard-chart-card">
           <SectionTitle icon="trending">Tendencia Semanal</SectionTitle>
-          <LineChart data={tendencia} color="#2D6A5F" />
+          {tieneHistorialSuficiente ? (
+            <LineChart data={datosTendencia} color="#2D6A5F" height={128} />
+          ) : (
+            <div className="dashboard-trend-empty">
+              <div className="dashboard-trend-empty-icon">
+                <Icon name="trending" size={22} />
+              </div>
+              <p className="dashboard-trend-empty-text">
+                Aún no hay historial suficiente para calcular la evolución semanal.
+              </p>
+              <p className="dashboard-trend-empty-sub">
+                La tendencia se activará conforme se registren nuevas encuestas.
+              </p>
+            </div>
+          )}
         </Card>
         <Card className="dashboard-chart-card">
           <SectionTitle icon="building">Score por Sucursal</SectionTitle>
@@ -154,9 +176,11 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
           <MiniBar
             data={porSucursal}
             labelKey="shortLabel"
-            colorFn={d => {
+            colorFn={(d) => {
               const val = d.value ?? d.v ?? 0;
-              return val >= 70 ? "#2F7D5A" : val >= 45 ? "#9A6B1F" : "#A84444";
+              if (val >= 70) return "#2F7D5A";
+              if (val >= 45) return "#9A6B1F";
+              return "#A84444";
             }}
           />
         </Card>

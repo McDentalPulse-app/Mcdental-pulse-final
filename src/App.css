@@ -482,12 +482,72 @@
 
 .dashboard-chart-card.mc-card {
   margin-bottom: 0;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
 }
 
 .dashboard-chart-hint {
   margin: -8px 0 12px;
   font-size: 11px;
   color: var(--mc-gris-texto);
+}
+
+.dashboard-trend-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 28px 20px 24px;
+  min-height: 148px;
+  border-radius: 14px;
+  background: var(--mc-gris-perla);
+  border: 1px dashed var(--mc-gris-suave);
+}
+
+.dashboard-trend-empty-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--mc-verde-claro);
+  color: var(--mc-verde-medio);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.dashboard-trend-empty-text {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--mc-verde-oscuro);
+  line-height: 1.5;
+  max-width: 320px;
+}
+
+.dashboard-trend-empty-sub {
+  margin: 0;
+  font-size: 13px;
+  color: var(--mc-gris-texto);
+  line-height: 1.55;
+  max-width: 340px;
+}
+
+.dashboard-line-chart-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-height: 148px;
+  padding: 8px 4px 4px;
+}
+
+.dashboard-line-chart {
+  width: 100%;
+  height: 128px;
+  display: block;
 }
 
 .dashboard-section-title {
@@ -829,6 +889,33 @@
   overflow-x: auto;
   overflow-y: hidden;
   padding-bottom: 4px;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 109, 91, 0.22) transparent;
+}
+
+.mc-minibar--dashboard {
+  min-height: 108px;
+  padding-bottom: 8px;
+}
+
+.mc-minibar--dashboard::-webkit-scrollbar {
+  height: 5px;
+}
+
+.mc-minibar--dashboard::-webkit-scrollbar-thumb {
+  background: rgba(0, 109, 91, 0.22);
+  border-radius: 999px;
+}
+
+.mc-minibar-col--empty .mc-minibar-bar {
+  background: #e2e8f0 !important;
+}
+
+.mc-minibar-val--empty {
+  color: #94a3b8;
+  font-weight: 600;
 }
 
 .mc-minibar-col {
@@ -868,6 +955,8 @@
   white-space: nowrap;
   font-weight: 600;
   letter-spacing: 0.2px;
+  line-height: 1.25;
+  padding: 0 2px;
 }
 
 .mc-avatar {

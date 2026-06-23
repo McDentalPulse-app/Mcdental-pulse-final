@@ -1,20 +1,85 @@
 import React from "react";
 
-const LineChart = ({ data, color = "#006D5B", height = 80 }) => {
+const LineChart = ({ data, color = "#006D5B", height = 120 }) => {
   if (!data || data.length < 2) return null;
-  const w = 300, h = height;
-  const max = Math.max(...data.map(d => d.v), 1); const min = Math.min(...data.map(d => d.v));
-  const pts = data.map((d, i) => ({ x: (i / (data.length - 1)) * (w - 20) + 10, y: h - 10 - ((d.v - min) / (max - min + 1)) * (h - 20) }));
+
+  const values = data.map((d) => Number(d.v)).filter((v) => Number.isFinite(v));
+  if (values.length < 2) return null;
+
+  const w = 320;
+  const h = height;
+  const topPad = 22;
+  const bottomPad = 26;
+  const chartH = h - topPad - bottomPad;
+
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  const padMin = max === min ? min - 8 : min;
+  const padMax = max === min ? max + 8 : max;
+  const range = padMax - padMin || 1;
+
+  const pts = data.map((d, i) => ({
+    x: (i / (data.length - 1)) * (w - 24) + 12,
+    y: topPad + chartH - ((Number(d.v) - padMin) / range) * chartH,
+    v: d.v,
+    label: d.label,
+  }));
+
   const path = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
-  const area = `${path} L${pts[pts.length - 1].x},${h} L${pts[0].x},${h} Z`;
+  const area = `${path} L${pts[pts.length - 1].x},${h - 8} L${pts[0].x},${h - 8} Z`;
+  const gradId = `lineGrad${color.replace("#", "")}`;
+
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} style={{ width: "100%", height }} preserveAspectRatio="none">
-      <defs><linearGradient id={`g${color.replace("#","")}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity="0.18" /><stop offset="100%" stopColor={color} stopOpacity="0" /></linearGradient></defs>
-      <path d={area} fill={`url(#g${color.replace("#","")})`} />
-      <path d={path} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      {pts.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r="4" fill={color} stroke="#fff" strokeWidth="2" />)}
-      {data.map((d, i) => <text key={i} x={pts[i].x} y={h} textAnchor="middle" fontSize="9" fill="#9ca3af">{d.label}</text>)}
-    </svg>
+    <div className="dashboard-line-chart-wrap">
+      <svg
+        viewBox={`0 0 ${w} ${h}`}
+        className="dashboard-line-chart"
+        preserveAspectRatio="xMidYMid meet"
+        role="img"
+        aria-label="Gráfica de tendencia semanal"
+      >
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.22" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={area} fill={`url(#${gradId})`} />
+        <path
+          d={path}
+          fill="none"
+          stroke={color}
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        {pts.map((p, i) => (
+          <g key={i}>
+            <circle cx={p.x} cy={p.y} r="5.5" fill={color} stroke="#fff" strokeWidth="2.5" />
+            <text
+              x={p.x}
+              y={p.y - 10}
+              textAnchor="middle"
+              fontSize="10"
+              fontWeight="700"
+              fill="#334155"
+            >
+              {p.v}
+            </text>
+            <text
+              x={p.x}
+              y={h - 4}
+              textAnchor="middle"
+              fontSize="10"
+              fontWeight="600"
+              fill="#64748b"
+            >
+              {p.label}
+            </text>
+          </g>
+        ))}
+      </svg>
+    </div>
   );
 };
 
