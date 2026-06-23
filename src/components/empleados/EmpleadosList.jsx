@@ -69,7 +69,6 @@ const EmpleadosList = ({
 
     const notasEmp = notas.filter(n => n.empleadoId === selected.id);
     const vacacionesEmp = vacaciones.filter(v => v.empleadoId === selected.id);
-    const permisosEmp = permisos.filter(p => p.empleadoId === selected.id);
     const descuentosEmp = descuentos.filter(d => d.empleadoId === selected.id);
     const reconocimientosEmp = reconocimientos.filter(r =>
   Number(r.empleadoId) === Number(selected.id) ||
@@ -272,33 +271,6 @@ const EmpleadosList = ({
                       <br />
                       <span style={{ color: "#64748b" }}>
                         Comentario RH: {v.comentarioRH}
-                      </span>
-                    </>
-                  )}
-                </div>
-              ))
-            )}
-            </div>
-          </Card>
-
-          <Card>
-            <div className="detail-section-title">Permisos</div>
-            <div className="detail-list-scroll">
-            {permisosEmp.length === 0 ? (
-              <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin permisos registrados</div>
-            ) : (
-              permisosEmp.map(p => (
-                <div key={p.id} className="detail-list-item-block">
-                  <strong>{p.estado}</strong> · {p.fecha || p.fechaInicio} {p.hora || ""}
-                  <br />
-                  <span style={{ color: "#64748b" }}>
-                    {p.motivo}
-                  </span>
-                  {p.comentarioRH && (
-                    <>
-                      <br />
-                      <span style={{ color: "#64748b" }}>
-                        Comentario RH: {p.comentarioRH}
                       </span>
                     </>
                   )}

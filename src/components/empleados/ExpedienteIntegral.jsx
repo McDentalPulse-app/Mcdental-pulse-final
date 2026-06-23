@@ -63,7 +63,6 @@ const empleado =
   const encuestasEmpleado = encuestas.filter(e => e.empleadoId === empleado.id);
   const mensajesEmpleado = mensajes.filter(m => m.de === empleado.id || m.para === empleado.id);
   const vacacionesEmpleado = vacaciones.filter(v => v.empleadoId === empleado.id);
-  const permisosEmpleado = permisos.filter(p => p.empleadoId === empleado.id);
   const descuentosEmpleado = descuentos.filter(d => d.empleadoId === empleado.id);
   const reconocimientosEmpleado = reconocimientos.filter(r => r.empleadoId === empleado.id);
   const reportesEmpleado = reportesConfidenciales.filter(r => r.empleadoId === empleado.id);
