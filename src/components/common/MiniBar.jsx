@@ -1,6 +1,12 @@
 import React from "react";
 
-const MiniBar = ({ data, colorFn, labelKey = "label" }) => {
+const MiniBar = ({
+  data,
+  colorFn,
+  labelKey = "label",
+  onBarClick,
+  interactive = false,
+}) => {
   const getVal = (d) => {
     if (d.hasData === false) return null;
     const raw = d.value ?? d.v;
@@ -11,6 +17,10 @@ const MiniBar = ({ data, colorFn, labelKey = "label" }) => {
   const values = data.map(getVal).filter((v) => v != null && Number.isFinite(v));
   const max = Math.max(...values, 1);
 
+  const handleActivate = (d, i) => {
+    if (interactive && onBarClick) onBarClick(d, i);
+  };
+
   return (
     <div className="mc-minibar mc-minibar--dashboard">
       {data.map((d, i) => {
@@ -18,28 +28,38 @@ const MiniBar = ({ data, colorFn, labelKey = "label" }) => {
         const sinDatos = val == null || !Number.isFinite(val);
         const displayVal = sinDatos ? "—" : val;
         const barColor = sinDatos
-          ? "#cbd5e1"
+          ? "#e2e8f0"
           : colorFn
             ? colorFn({ ...d, value: val, v: val, hasData: !sinDatos })
             : "#006D5B";
         const fullLabel = d.label ?? "";
         const displayLabel = d[labelKey] ?? fullLabel;
+        const clickable = interactive && typeof onBarClick === "function";
 
         return (
           <div
-            key={i}
-            className={`mc-minibar-col${sinDatos ? " mc-minibar-col--empty" : ""}`}
+            key={d.label ?? i}
+            className={`mc-minibar-col${sinDatos ? " mc-minibar-col--empty" : ""}${clickable ? " mc-minibar-col--clickable" : ""}`}
             title={fullLabel}
+            onClick={() => handleActivate(d, i)}
+            onKeyDown={(e) => {
+              if (clickable && (e.key === "Enter" || e.key === " ")) {
+                e.preventDefault();
+                handleActivate(d, i);
+              }
+            }}
+            role={clickable ? "button" : undefined}
+            tabIndex={clickable ? 0 : undefined}
+            aria-label={clickable ? `Ver detalle de ${fullLabel}` : undefined}
           >
             <div className={`mc-minibar-val${sinDatos ? " mc-minibar-val--empty" : ""}`}>
               {displayVal}
             </div>
             <div
-              className="mc-minibar-bar"
+              className={`mc-minibar-bar${sinDatos ? " mc-minibar-bar--empty" : ""}`}
               style={{
-                height: sinDatos ? 10 : Math.max(10, (val / max) * 64),
+                height: sinDatos ? 12 : Math.max(12, (val / max) * 68),
                 background: barColor,
-                opacity: sinDatos ? 0.55 : 1,
               }}
             />
             <div className="mc-minibar-label" title={fullLabel}>
