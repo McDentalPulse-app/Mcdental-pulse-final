@@ -296,76 +296,102 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
               </div>
               <div className="dashboard-sucursal-kpi-card">
                 <span className="dashboard-sucursal-kpi-label">Promedio Pulse</span>
-                <span
-                  className="dashboard-sucursal-kpi-value"
-                  style={{ color: detalleSucursal.promedioStatus.color }}
-                >
-                  {detalleSucursal.promedio ?? "Sin datos"}
-                </span>
-                <span className="dashboard-sucursal-kpi-sub">Bienestar promedio</span>
+                {detalleSucursal.promedio == null ? (
+                  <>
+                    <span className="dashboard-sucursal-kpi-value dashboard-sucursal-kpi-value--empty">—</span>
+                    <span className="dashboard-sucursal-kpi-sub">Sin datos</span>
+                  </>
+                ) : (
+                  <>
+                    <span
+                      className="dashboard-sucursal-kpi-value"
+                      style={{ color: detalleSucursal.promedioStatus.color }}
+                    >
+                      {detalleSucursal.promedio}
+                    </span>
+                    <span className="dashboard-sucursal-kpi-sub">Bienestar promedio</span>
+                  </>
+                )}
               </div>
               <div className="dashboard-sucursal-kpi-card">
                 <span className="dashboard-sucursal-kpi-label">Semáforo promedio</span>
-                <div className="dashboard-sucursal-kpi-value dashboard-sucursal-kpi-value--badge">
-                  {detalleSucursal.promedio == null ? (
-                    <span className="dashboard-sucursal-pill dashboard-sucursal-pill--muted">Sin datos</span>
-                  ) : semaforoToBadge(detalleSucursal.promedioStatus.semaforo) ? (
-                    <Badge tipo={semaforoToBadge(detalleSucursal.promedioStatus.semaforo)} />
-                  ) : (
-                    <span className="dashboard-sucursal-muted">{detalleSucursal.promedioStatus.label}</span>
-                  )}
-                </div>
-                <span className="dashboard-sucursal-kpi-sub">Clasificación del equipo</span>
+                {detalleSucursal.promedio == null ? (
+                  <>
+                    <span className="dashboard-sucursal-kpi-value dashboard-sucursal-kpi-value--empty">—</span>
+                    <span className="dashboard-sucursal-kpi-sub">Sin evaluación</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="dashboard-sucursal-kpi-value dashboard-sucursal-kpi-value--badge">
+                      {semaforoToBadge(detalleSucursal.promedioStatus.semaforo) ? (
+                        <Badge tipo={semaforoToBadge(detalleSucursal.promedioStatus.semaforo)} />
+                      ) : (
+                        <span className="dashboard-sucursal-kpi-value dashboard-sucursal-kpi-value--text">
+                          {detalleSucursal.promedioStatus.label}
+                        </span>
+                      )}
+                    </div>
+                    <span className="dashboard-sucursal-kpi-sub">Clasificación del equipo</span>
+                  </>
+                )}
               </div>
             </div>
 
             <div className="dashboard-sucursal-list-wrap">
-              <h3 className="dashboard-sucursal-list-title">Colaboradores de la sucursal</h3>
               {detalleSucursal.filas.length === 0 ? (
                 <p className="dashboard-sucursal-empty">No hay colaboradores registrados en esta sucursal.</p>
               ) : (
-                <div className="dashboard-sucursal-list">
-                  {detalleSucursal.filas.map(({ empleado, pulse, sinDatos, status, contestoSemana }) => (
-                    <div key={empleado.id} className="dashboard-sucursal-emp-row">
-                      <Avatar name={empleado.name} size={42} color={sinDatos ? "#94a3b8" : pulse.color} />
-                      <div className="dashboard-sucursal-emp-main">
-                        <div className="dashboard-sucursal-emp-name">{empleado.name}</div>
-                        <div className="dashboard-sucursal-emp-puesto">{empleado.puesto || "Sin puesto"}</div>
-                      </div>
-                      <div className="dashboard-sucursal-emp-aside">
-                        <div className="dashboard-sucursal-emp-score">
-                          {sinDatos ? (
-                            <span className="dashboard-sucursal-muted">Sin datos</span>
-                          ) : (
-                            <>
+                <div className="dashboard-sucursal-list-scroll">
+                  <h3 className="dashboard-sucursal-list-title">Colaboradores de la sucursal</h3>
+                  <div className="dashboard-sucursal-list">
+                    {detalleSucursal.filas.map(({ empleado, pulse, sinDatos, status, contestoSemana }) => (
+                      <div key={empleado.id} className="dashboard-sucursal-emp-row">
+                        <div className="dashboard-sucursal-emp-left">
+                          <Avatar name={empleado.name} size={44} color={sinDatos ? "#94a3b8" : pulse.color} />
+                          <div className="dashboard-sucursal-emp-main">
+                            <div className="dashboard-sucursal-emp-name">{empleado.name}</div>
+                            <div className="dashboard-sucursal-emp-meta">
+                              {empleado.puesto || "Sin puesto"} · {detalleSucursal.nombre}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="dashboard-sucursal-emp-metrics">
+                          <div className="dashboard-sucursal-emp-metric">
+                            <span className="dashboard-sucursal-emp-metric-label">Pulse Score</span>
+                            {sinDatos ? (
+                              <span className="dashboard-sucursal-emp-metric-empty">Sin datos</span>
+                            ) : (
                               <span className="dashboard-sucursal-emp-score-num" style={{ color: pulse.color }}>
                                 {pulse.score}
                               </span>
-                              <span className="dashboard-sucursal-emp-score-label">Pulse</span>
-                            </>
-                          )}
-                        </div>
-                        <div className="dashboard-sucursal-emp-badges">
-                          {sinDatos ? (
-                            <span className="dashboard-sucursal-pill dashboard-sucursal-pill--muted">
-                              Sin evaluación
+                            )}
+                          </div>
+                          <div className="dashboard-sucursal-emp-metric">
+                            <span className="dashboard-sucursal-emp-metric-label">Semáforo</span>
+                            {sinDatos ? (
+                              <span className="dashboard-sucursal-pill dashboard-sucursal-pill--muted">
+                                Sin evaluación
+                              </span>
+                            ) : semaforoToBadge(status.semaforo) ? (
+                              <Badge tipo={semaforoToBadge(status.semaforo)} />
+                            ) : (
+                              <span className="dashboard-sucursal-pill dashboard-sucursal-pill--muted">
+                                {status.label}
+                              </span>
+                            )}
+                          </div>
+                          <div className="dashboard-sucursal-emp-metric">
+                            <span className="dashboard-sucursal-emp-metric-label">Encuesta</span>
+                            <span
+                              className={`dashboard-sucursal-pill dashboard-sucursal-pill--${contestoSemana ? "ok" : "pending"}`}
+                            >
+                              {contestoSemana ? "Completada" : "Pendiente"}
                             </span>
-                          ) : semaforoToBadge(status.semaforo) ? (
-                            <Badge tipo={semaforoToBadge(status.semaforo)} />
-                          ) : (
-                            <span className="dashboard-sucursal-pill dashboard-sucursal-pill--muted">
-                              {status.label}
-                            </span>
-                          )}
-                          <span
-                            className={`dashboard-sucursal-pill dashboard-sucursal-pill--${contestoSemana ? "ok" : "pending"}`}
-                          >
-                            {contestoSemana ? "Completada" : "Pendiente"}
-                          </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

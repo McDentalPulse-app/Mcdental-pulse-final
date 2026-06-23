@@ -35,7 +35,7 @@ const MiniBar = ({
         const fullLabel = d.label ?? "";
         const displayLabel = d[labelKey] ?? fullLabel;
         const clickable = interactive && typeof onBarClick === "function";
-        const barHeight = sinDatos ? 14 : Math.max(14, (val / max) * 72);
+        const barHeight = sinDatos ? 16 : Math.max(18, (val / max) * 92);
 
         return (
           <div
