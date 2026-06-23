@@ -22,19 +22,20 @@ const MiniBar = ({
   };
 
   return (
-    <div className="mc-minibar mc-minibar--dashboard">
+    <div className="mc-minibar mc-minibar--dashboard mc-minibar--premium">
       {data.map((d, i) => {
         const val = getVal(d);
         const sinDatos = val == null || !Number.isFinite(val);
         const displayVal = sinDatos ? "—" : val;
         const barColor = sinDatos
-          ? "#e2e8f0"
+          ? "#e8edf2"
           : colorFn
             ? colorFn({ ...d, value: val, v: val, hasData: !sinDatos })
             : "#006D5B";
         const fullLabel = d.label ?? "";
         const displayLabel = d[labelKey] ?? fullLabel;
         const clickable = interactive && typeof onBarClick === "function";
+        const barHeight = sinDatos ? 14 : Math.max(14, (val / max) * 72);
 
         return (
           <div
@@ -55,13 +56,15 @@ const MiniBar = ({
             <div className={`mc-minibar-val${sinDatos ? " mc-minibar-val--empty" : ""}`}>
               {displayVal}
             </div>
-            <div
-              className={`mc-minibar-bar${sinDatos ? " mc-minibar-bar--empty" : ""}`}
-              style={{
-                height: sinDatos ? 12 : Math.max(12, (val / max) * 68),
-                background: barColor,
-              }}
-            />
+            <div className="mc-minibar-bar-track">
+              <div
+                className={`mc-minibar-bar${sinDatos ? " mc-minibar-bar--empty" : ""}`}
+                style={{
+                  height: barHeight,
+                  background: barColor,
+                }}
+              />
+            </div>
             <div className="mc-minibar-label" title={fullLabel}>
               {displayLabel}
             </div>

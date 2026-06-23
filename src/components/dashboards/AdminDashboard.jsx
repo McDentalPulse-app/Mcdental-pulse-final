@@ -227,23 +227,27 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
             </div>
           )}
         </Card>
-        <Card className="dashboard-chart-card">
-          <SectionTitle icon="building">Score por Sucursal</SectionTitle>
-          <p className="dashboard-chart-hint dashboard-chart-hint--action">
-            Haz clic en una sucursal para ver el detalle de colaboradores.
-          </p>
-          <MiniBar
-            data={porSucursal}
-            labelKey="shortLabel"
-            interactive
-            onBarClick={(d) => setSucursalModal(d.label)}
-            colorFn={(d) => {
-              const val = d.value ?? d.v ?? 0;
-              if (val >= 70) return "#2F7D5A";
-              if (val >= 45) return "#9A6B1F";
-              return "#A84444";
-            }}
-          />
+        <Card className="dashboard-chart-card dashboard-chart-card--sucursal">
+          <div className="dashboard-sucursal-card-head">
+            <SectionTitle icon="building">Score por Sucursal</SectionTitle>
+            <p className="dashboard-chart-hint dashboard-chart-hint--action">
+              Haz clic en una sucursal para ver colaboradores.
+            </p>
+          </div>
+          <div className="dashboard-sucursal-chart-shell">
+            <MiniBar
+              data={porSucursal}
+              labelKey="shortLabel"
+              interactive
+              onBarClick={(d) => setSucursalModal(d.label)}
+              colorFn={(d) => {
+                const val = d.value ?? d.v ?? 0;
+                if (val >= 70) return "#2F7D5A";
+                if (val >= 45) return "#9A6B1F";
+                return "#A84444";
+              }}
+            />
+          </div>
         </Card>
       </div>
 
@@ -280,15 +284,17 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
             </div>
 
             <div className="dashboard-sucursal-kpis">
-              <div className="dashboard-sucursal-kpi">
-                <span className="dashboard-sucursal-kpi-label">Colaboradores</span>
+              <div className="dashboard-sucursal-kpi-card">
+                <span className="dashboard-sucursal-kpi-label">Total colaboradores</span>
                 <span className="dashboard-sucursal-kpi-value">{detalleSucursal.total}</span>
+                <span className="dashboard-sucursal-kpi-sub">Registrados en sucursal</span>
               </div>
-              <div className="dashboard-sucursal-kpi">
+              <div className="dashboard-sucursal-kpi-card">
                 <span className="dashboard-sucursal-kpi-label">Contestaron</span>
                 <span className="dashboard-sucursal-kpi-value">{detalleSucursal.contestaron}</span>
+                <span className="dashboard-sucursal-kpi-sub">Encuesta semana actual</span>
               </div>
-              <div className="dashboard-sucursal-kpi">
+              <div className="dashboard-sucursal-kpi-card">
                 <span className="dashboard-sucursal-kpi-label">Promedio Pulse</span>
                 <span
                   className="dashboard-sucursal-kpi-value"
@@ -296,52 +302,50 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
                 >
                   {detalleSucursal.promedio ?? "Sin datos"}
                 </span>
+                <span className="dashboard-sucursal-kpi-sub">Bienestar promedio</span>
               </div>
-              <div className="dashboard-sucursal-kpi">
+              <div className="dashboard-sucursal-kpi-card">
                 <span className="dashboard-sucursal-kpi-label">Semáforo promedio</span>
-                <span className="dashboard-sucursal-kpi-value dashboard-sucursal-kpi-value--sm">
+                <div className="dashboard-sucursal-kpi-value dashboard-sucursal-kpi-value--badge">
                   {detalleSucursal.promedio == null ? (
-                    <span className="dashboard-sucursal-muted">Sin datos</span>
+                    <span className="dashboard-sucursal-pill dashboard-sucursal-pill--muted">Sin datos</span>
+                  ) : semaforoToBadge(detalleSucursal.promedioStatus.semaforo) ? (
+                    <Badge tipo={semaforoToBadge(detalleSucursal.promedioStatus.semaforo)} />
                   ) : (
-                    semaforoToBadge(detalleSucursal.promedioStatus.semaforo) ? (
-                      <Badge tipo={semaforoToBadge(detalleSucursal.promedioStatus.semaforo)} />
-                    ) : (
-                      detalleSucursal.promedioStatus.label
-                    )
+                    <span className="dashboard-sucursal-muted">{detalleSucursal.promedioStatus.label}</span>
                   )}
-                </span>
+                </div>
+                <span className="dashboard-sucursal-kpi-sub">Clasificación del equipo</span>
               </div>
             </div>
 
-            <div className="dashboard-sucursal-table-wrap">
+            <div className="dashboard-sucursal-list-wrap">
+              <h3 className="dashboard-sucursal-list-title">Colaboradores de la sucursal</h3>
               {detalleSucursal.filas.length === 0 ? (
                 <p className="dashboard-sucursal-empty">No hay colaboradores registrados en esta sucursal.</p>
               ) : (
-                <table className="mc-table dashboard-sucursal-table">
-                  <thead>
-                    <tr>
-                      <th>Colaborador</th>
-                      <th>Puesto</th>
-                      <th>Pulse Score</th>
-                      <th>Semáforo</th>
-                      <th>Estado encuesta</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {detalleSucursal.filas.map(({ empleado, pulse, sinDatos, status, contestoSemana }) => (
-                      <tr key={empleado.id}>
-                        <td className="mc-table-name">{empleado.name}</td>
-                        <td>{empleado.puesto || "—"}</td>
-                        <td>
+                <div className="dashboard-sucursal-list">
+                  {detalleSucursal.filas.map(({ empleado, pulse, sinDatos, status, contestoSemana }) => (
+                    <div key={empleado.id} className="dashboard-sucursal-emp-row">
+                      <Avatar name={empleado.name} size={42} color={sinDatos ? "#94a3b8" : pulse.color} />
+                      <div className="dashboard-sucursal-emp-main">
+                        <div className="dashboard-sucursal-emp-name">{empleado.name}</div>
+                        <div className="dashboard-sucursal-emp-puesto">{empleado.puesto || "Sin puesto"}</div>
+                      </div>
+                      <div className="dashboard-sucursal-emp-aside">
+                        <div className="dashboard-sucursal-emp-score">
                           {sinDatos ? (
                             <span className="dashboard-sucursal-muted">Sin datos</span>
                           ) : (
-                            <span style={{ fontWeight: 800, color: pulse.color }}>
-                              {pulse.score}
-                            </span>
+                            <>
+                              <span className="dashboard-sucursal-emp-score-num" style={{ color: pulse.color }}>
+                                {pulse.score}
+                              </span>
+                              <span className="dashboard-sucursal-emp-score-label">Pulse</span>
+                            </>
                           )}
-                        </td>
-                        <td>
+                        </div>
+                        <div className="dashboard-sucursal-emp-badges">
                           {sinDatos ? (
                             <span className="dashboard-sucursal-pill dashboard-sucursal-pill--muted">
                               Sin evaluación
@@ -349,20 +353,20 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
                           ) : semaforoToBadge(status.semaforo) ? (
                             <Badge tipo={semaforoToBadge(status.semaforo)} />
                           ) : (
-                            status.label
+                            <span className="dashboard-sucursal-pill dashboard-sucursal-pill--muted">
+                              {status.label}
+                            </span>
                           )}
-                        </td>
-                        <td>
                           <span
                             className={`dashboard-sucursal-pill dashboard-sucursal-pill--${contestoSemana ? "ok" : "pending"}`}
                           >
                             {contestoSemana ? "Completada" : "Pendiente"}
                           </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
 
