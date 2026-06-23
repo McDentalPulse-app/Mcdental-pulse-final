@@ -7,7 +7,7 @@ import { db } from "../../config/firebase";
 import Card from "../common/Card";
 import Icon from "../ui/Icon";
 import { SUCURSALES, normalizeSucursal } from "../../utils/constants";
-import { resolveFechaCumpleanos, resolveFechaIngreso, normalizeFechaCumpleanosInput } from "../../utils/helpers";
+import { resolveFechaCumpleanos, resolveFechaIngreso, normalizeFechaCumpleanosInput, getNextEmpleadoId } from "../../utils/helpers";
 
 const DEFAULT_SUCURSAL = SUCURSALES[0];
 
@@ -89,10 +89,11 @@ const GestionUsuarios = () => {
         setUsuarios(prev => prev.map(u => u.id === usuarioEditando.id ? { ...u, ...newData } : u));
         toast.success("Usuario actualizado con éxito.");
       } else {
-        const nuevoId = Date.now();
+        const nuevoId = getNextEmpleadoId(usuarios);
         const newUser = {
           ...payload,
           id: nuevoId,
+          idOriginal: nuevoId,
           createdAt: serverTimestamp()
         };
 
