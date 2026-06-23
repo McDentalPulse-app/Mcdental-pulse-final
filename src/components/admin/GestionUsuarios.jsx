@@ -7,6 +7,7 @@ import { db } from "../../config/firebase";
 import Card from "../common/Card";
 import Icon from "../ui/Icon";
 import { SUCURSALES, normalizeSucursal } from "../../utils/constants";
+import { resolveFechaCumpleanos, resolveFechaIngreso, normalizeFechaCumpleanosInput } from "../../utils/helpers";
 
 const DEFAULT_SUCURSAL = SUCURSALES[0];
 
@@ -28,8 +29,9 @@ const GestionUsuarios = () => {
     puesto: "Asistente Dental",
     role: "empleado",
     email: "",
-    antiguedad: "",
-    telefono: ""
+    telefono: "",
+    fechaIngreso: "",
+    fechaCumpleanos: "",
   });
 
   const empleados = usuarios.filter(u =>
@@ -47,8 +49,9 @@ const GestionUsuarios = () => {
         puesto: empleado.puesto || "Asistente Dental",
         role: empleado.role || "empleado",
         email: empleado.email || "",
-        antiguedad: empleado.antiguedad || "",
-        telefono: empleado.telefono || ""
+        telefono: empleado.telefono || "",
+        fechaIngreso: resolveFechaIngreso(empleado),
+        fechaCumpleanos: resolveFechaCumpleanos(empleado),
       });
     } else {
       setUsuarioEditando(null);
@@ -59,8 +62,9 @@ const GestionUsuarios = () => {
         puesto: "Asistente Dental",
         role: "empleado",
         email: "",
-        antiguedad: "",
-        telefono: ""
+        telefono: "",
+        fechaIngreso: "",
+        fechaCumpleanos: "",
       });
     }
     setMostrarModal(true);
@@ -71,9 +75,15 @@ const GestionUsuarios = () => {
     setLoading(true);
 
     try {
+      const payload = {
+        ...formData,
+        fechaIngreso: formData.fechaIngreso || "",
+        fechaCumpleanos: normalizeFechaCumpleanosInput(formData.fechaCumpleanos),
+      };
+
       if (usuarioEditando) {
         const docRef = doc(db, "usuarios", usuarioEditando.firebaseId || usuarioEditando.id);
-        const newData = { ...formData, updatedAt: serverTimestamp() };
+        const newData = { ...payload, updatedAt: serverTimestamp() };
         await updateDoc(docRef, newData);
 
         setUsuarios(prev => prev.map(u => u.id === usuarioEditando.id ? { ...u, ...newData } : u));
@@ -81,7 +91,7 @@ const GestionUsuarios = () => {
       } else {
         const nuevoId = Date.now();
         const newUser = {
-          ...formData,
+          ...payload,
           id: nuevoId,
           createdAt: serverTimestamp()
         };
@@ -265,8 +275,30 @@ const GestionUsuarios = () => {
                   <input type="text" className="mc-form-input" value={formData.telefono} onChange={(e) => setFormData({...formData, telefono: e.target.value})} />
                 </div>
                 <div className="mc-form-group">
-                  <label className="mc-form-label">Fecha Ingreso (Antigüedad)</label>
-                  <input type="date" className="mc-form-input" value={formData.antiguedad} onChange={(e) => setFormData({...formData, antiguedad: e.target.value})} />
+                  <label className="mc-form-label">Puesto</label>
+                  <input type="text" className="mc-form-input" value={formData.puesto} onChange={(e) => setFormData({...formData, puesto: e.target.value})} />
+                </div>
+              </div>
+              <div className="mc-form-row-2">
+                <div className="mc-form-group">
+                  <label className="mc-form-label">Fecha de ingreso</label>
+                  <input
+                    type="date"
+                    className="mc-form-input"
+                    value={formData.fechaIngreso}
+                    onChange={(e) => setFormData({ ...formData, fechaIngreso: e.target.value })}
+                  />
+                </div>
+                <div className="mc-form-group">
+                  <label className="mc-form-label">Fecha de cumpleaños (MM-DD)</label>
+                  <input
+                    type="text"
+                    className="mc-form-input"
+                    placeholder="08-25"
+                    pattern="\d{2}-\d{2}"
+                    value={formData.fechaCumpleanos}
+                    onChange={(e) => setFormData({ ...formData, fechaCumpleanos: e.target.value })}
+                  />
                 </div>
               </div>
               <div className="mc-form-actions">

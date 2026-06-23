@@ -1,51 +1,54 @@
 import React from "react";
-import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
 import StatCard from "../common/StatCard";
 import Icon from "../ui/Icon";
 import { normalizeSucursal } from "../../utils/constants";
+import {
+  daysUntilCumpleanos,
+  daysUntilDate,
+  formatFechaCumpleanos,
+  formatFechaIngreso,
+  resolveFechaCumpleanos,
+  resolveFechaIngreso,
+  yearsSinceIngreso,
+} from "../../utils/helpers";
 
 const EventosPersonal = ({ users }) => {
-  const { usuarios: USERS } = useGlobal();
-
   const empleados = users.filter(u => ["empleado", "rh", "psicologa", "admin"].includes(u.role));
-  const today = new Date();
-  const currentYear = today.getFullYear();
-
-  const daysUntil = (dateString) => {
-    if (!dateString) return 999;
-    const original = new Date(dateString);
-    let next = new Date(currentYear, original.getMonth(), original.getDate());
-    if (next < new Date(today.getFullYear(), today.getMonth(), today.getDate())) {
-      next = new Date(currentYear + 1, original.getMonth(), original.getDate());
-    }
-    const diff = next - new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "Sin fecha";
-    return new Date(dateString).toLocaleDateString("es-MX", { day: "2-digit", month: "long" });
-  };
-
-  const yearsSince = (dateString) => {
-    if (!dateString) return 0;
-    return currentYear - new Date(dateString).getFullYear();
-  };
 
   const eventos = [
-    ...empleados.map(u => ({
-      id: `cumple-${u.id}`, tipo: "Cumpleaños", icon: "cake", empleado: u.name,
-      puesto: u.puesto, sucursal: normalizeSucursal(u.sucursal), fechaTexto: formatDate(u.fechaNacimiento),
-      dias: daysUntil(u.fechaNacimiento), detalle: "Cumpleaños del colaborador"
-    })),
-    ...empleados.map(u => ({
-      id: `aniv-${u.id}`, tipo: "Aniversario laboral", icon: "party", empleado: u.name,
-      puesto: u.puesto, sucursal: normalizeSucursal(u.sucursal), fechaTexto: formatDate(u.fechaIngreso),
-      dias: daysUntil(u.fechaIngreso), detalle: `${yearsSince(u.fechaIngreso)} año(s) en McDental`
-    }))
-  ].filter(e => e.dias <= 30).sort((a, b) => a.dias - b.dias);
+    ...empleados.map(u => {
+      const cumple = resolveFechaCumpleanos(u);
+      return {
+        id: `cumple-${u.id}`,
+        tipo: "Cumpleaños",
+        icon: "cake",
+        empleado: u.name,
+        puesto: u.puesto,
+        sucursal: normalizeSucursal(u.sucursal),
+        fechaTexto: formatFechaCumpleanos(cumple),
+        dias: daysUntilCumpleanos(cumple),
+        detalle: "Cumpleaños del colaborador",
+      };
+    }),
+    ...empleados.map(u => {
+      const ingreso = resolveFechaIngreso(u);
+      return {
+        id: `aniv-${u.id}`,
+        tipo: "Aniversario laboral",
+        icon: "party",
+        empleado: u.name,
+        puesto: u.puesto,
+        sucursal: normalizeSucursal(u.sucursal),
+        fechaTexto: formatFechaIngreso(ingreso),
+        dias: daysUntilDate(ingreso),
+        detalle: ingreso ? `${yearsSinceIngreso(ingreso)} año(s) en McDental` : "Sin fecha de ingreso",
+      };
+    }),
+  ]
+    .filter(e => e.dias <= 30)
+    .sort((a, b) => a.dias - b.dias);
 
   const hoy = eventos.filter(e => e.dias === 0).length;
   const proximos3 = eventos.filter(e => e.dias > 0 && e.dias <= 3).length;

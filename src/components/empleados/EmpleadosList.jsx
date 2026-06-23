@@ -12,7 +12,7 @@ import { calcPulseScore, getPulseStatus } from "../../utils/pulseScore";
 import { semaforoColor } from "../../config/theme";
 import LineChart from "../common/LineChart";
 import RiskBar from "../common/RiskBar";
-import { calcularAntiguedad } from "../../utils/helpers";
+import { formatAntiguedadEmpleado, resolveFechaIngreso } from "../../utils/helpers";
 import Icon from "../ui/Icon";
 import { calcRiesgos } from "../../utils/pulseScore";
 const EmpleadosList = ({
@@ -135,7 +135,7 @@ const EmpleadosList = ({
               <div><span style={{ color: "#9ca3af" }}>Nombre:</span> {selected.name}</div>
               <div><span style={{ color: "#9ca3af" }}>Puesto:</span> {selected.puesto}</div>
               <div><span style={{ color: "#9ca3af" }}>Sucursal:</span> {normalizeSucursal(selected.sucursal)}</div>
-              <div><span style={{ color: "#9ca3af" }}>Antigüedad:</span> {calcularAntiguedad(selected.fechaIngreso)}</div>
+              <div><span style={{ color: "#9ca3af" }}>Antigüedad:</span> {formatAntiguedadEmpleado(selected)}</div>
               <div><span style={{ color: "#9ca3af" }}>ID empleado:</span> {selected.id}</div>
               <div><span style={{ color: "#9ca3af" }}>Estado:</span> Activo</div>
             </div>
@@ -474,6 +474,9 @@ const EmpleadosList = ({
 
                 <div className="emp-card-footer">
                   <span>{normalizeSucursal(emp.sucursal)}</span>
+                  {resolveFechaIngreso(emp) ? (
+                    <span className="emp-card-antiguedad">{formatAntiguedadEmpleado(emp)}</span>
+                  ) : null}
                   {role !== "rh" && (
                     <span className="emp-card-status">
                       {contestoEsta ? (

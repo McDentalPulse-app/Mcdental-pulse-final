@@ -1,6 +1,8 @@
 // Usuarios del sistema
 // Migrar a Firebase Auth y eliminar contraseñas
-export const USERS = [
+import { applyCanonicalAdminDates } from "../utils/adminEmployeeDates";
+
+const USERS_RAW = [
   { id: 1, name: "Mario Rodríguez", role: "admin", user: "mario", pass: "admin123", sucursal: "Central", puesto: "Director", fechaNacimiento: "1985-04-12", fechaIngreso: "2020-01-15" },
   { id: 2, name: "Dra. Laura Vega", role: "psicologa", user: "laura", pass: "psico123", sucursal: "Central", puesto: "Psicóloga", fechaNacimiento: "1990-09-22", fechaIngreso: "2021-03-10" },
   { id: 9, name: "Patricia Ramírez", role: "rh", user: "patricia", pass: "rh123", sucursal: "Central", puesto: "Administrativo RH", fechaNacimiento: "1988-06-18", fechaIngreso: "2022-02-01" },
@@ -90,21 +92,24 @@ export const USERS = [
   { id: 83, name: "MIREYA HERNANDEZ FLORES", role: "empleado", user: "mireya hernandez", pass: "emp123", sucursal: "Martinez De La Torre", puesto: "Doctora", fechaNacimiento: "2000-02-08", fechaIngreso: "2025-10-20" },
   { id: 84, name: "FABIOLA BELEN MARIANO", role: "empleado", user: "fabiola mariano", pass: "emp123", sucursal: "Martinez De La Torre", puesto: "Doctora", fechaNacimiento: "2000-05-09", fechaIngreso: "2025-10-20" },
   { id: 85, name: "ALIA MARICRUZ LOPEZ GUZMAN", role: "empleado", user: "alia lopez", pass: "emp123", sucursal: "Martinez De La Torre", puesto: "Recepcionista", fechaNacimiento: "2000-05-03", fechaIngreso: "2026-04-08" },
-  { id: 86, name: "ANA KAREN MEZA GONZALEZ", role: "empleado", user: "ana meza", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Servicio al cliente/Aux Lic. Mario", fechaNacimiento: "", fechaIngreso: "" },
-  { id: 87, name: "NOEMI TAMAR HERNANDEZ REYES", role: "empleado", user: "noemi hernandez", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Aux. Gerencia", fechaNacimiento: "", fechaIngreso: "" },
-  { id: 88, name: "ELIZABETH MARTINEZ FERRETIZ", role: "empleado", user: "elizabeth martinez", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Coordinadora", fechaNacimiento: "", fechaIngreso: "" },
-  { id: 89, name: "MARIA CONCEPCION ANDRADE GARCIA", role: "empleado", user: "maria concepcion", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Doctora/Especialista", fechaNacimiento: "2000-05-13", fechaIngreso: "2019-02-05" },
-  { id: 90, name: "JESUS ARMANDO BAUTISTA DEL ANGEL", role: "empleado", user: "jesus bautista", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Mantenimiento", fechaNacimiento: "", fechaIngreso: "" },
-  { id: 91, name: "MARIA COVARRUVIAS TORRES", role: "empleado", user: "maria covarruvias", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Limpieza", fechaNacimiento: "", fechaIngreso: "" },
-  { id: 92, name: "ANA ROSA GOMEZ PEREZ", role: "empleado", user: "ana gomez", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Coordinadora", fechaNacimiento: "", fechaIngreso: "" },
-  { id: 93, name: "MINERVA GEORGINA SANCHEZ SILVA", role: "empleado", user: "minerva sanchez", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Marketing", fechaNacimiento: "", fechaIngreso: "" },
-  { id: 94, name: "SAMANTA PEREZ CARREÑO", role: "empleado", user: "samanta perez", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Convenios", fechaNacimiento: "", fechaIngreso: "" },
-  { id: 95, name: "ALEXIS ALAN RAFAEL CASTAN", role: "empleado", user: "alexis castan", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Mantenimiento", fechaNacimiento: "", fechaIngreso: "" },
-  { id: 96, name: "ALFREDO EDUARDO BURGOS REYES", role: "empleado", user: "alfredo burgos", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Ing. Sistemas", fechaNacimiento: "", fechaIngreso: "" },
-  { id: 97, name: "FRIDA VIRIDIANA MOGOLLON TELLEZ", role: "empleado", user: "frida mogollon", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Psicométricos", fechaNacimiento: "", fechaIngreso: "" },
-  { id: 98, name: "ANA GORETTY SALAS", role: "psicologa", user: "ana salas", pass: "psico123", sucursal: "Oficina Administrativa", puesto: "Gerente Recursos Humanos", fechaNacimiento: "", fechaIngreso: "" },
-  { id: 99, name: "MARICRUZ IZAGUIRRE OLLERVIDES", role: "rh", user: "maricruz izaguirre", pass: "rh123", sucursal: "Oficina Administrativa", puesto: "Aux. Recursos Humanos", fechaNacimiento: "", fechaIngreso: "" }
+  { id: 86, name: "ANA KAREN MEZA GONZALEZ", role: "empleado", user: "ana meza", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Servicio al cliente/Aux Lic. Mario", fechaIngreso: "2025-10-01", fechaCumpleanos: "08-25" },
+  { id: 87, name: "NOEMI TAMAR HERNANDEZ REYES", role: "empleado", user: "noemi hernandez", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Aux. Gerencia", fechaIngreso: "2018-08-01", fechaCumpleanos: "01-08" },
+  { id: 88, name: "ELIZABETH MARTINEZ FERRETIZ", role: "empleado", user: "elizabeth martinez", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Coordinadora", fechaIngreso: "2022-02-12", fechaCumpleanos: "09-28" },
+  { id: 89, name: "MARIA CONCEPCION ANDRADE GARCIA", role: "empleado", user: "maria concepcion", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Doctora/Especialista", fechaIngreso: "2019-02-05", fechaCumpleanos: "05-13" },
+  { id: 90, name: "JESUS ARMANDO BAUTISTA DEL ANGEL", role: "empleado", user: "jesus bautista", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Mantenimiento", fechaIngreso: "2024-01-12", fechaCumpleanos: "08-06" },
+  { id: 91, name: "MARIA COVARRUVIAS TORRES", role: "empleado", user: "maria covarruvias", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Limpieza", fechaIngreso: "2024-01-20", fechaCumpleanos: "10-02" },
+  { id: 92, name: "ANA ROSA GOMEZ PEREZ", role: "empleado", user: "ana gomez", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Coordinadora", fechaIngreso: "2014-03-30", fechaCumpleanos: "12-04" },
+  { id: 93, name: "MINERVA GEORGINA SANCHEZ SILVA", role: "empleado", user: "minerva sanchez", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Marketing", fechaIngreso: "2025-02-03", fechaCumpleanos: "10-05" },
+  { id: 94, name: "SAMANTA PEREZ CARREÑO", role: "empleado", user: "samanta perez", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Convenios", fechaIngreso: "2025-12-03", fechaCumpleanos: "07-20" },
+  { id: 95, name: "ALEXIS ALAN RAFAEL CASTAN", role: "empleado", user: "alexis castan", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Mantenimiento", fechaIngreso: "2026-02-23", fechaCumpleanos: "02-16" },
+  { id: 96, name: "ALFREDO EDUARDO BURGOS REYES", role: "empleado", user: "alfredo burgos", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Ingeniero IA", fechaIngreso: "2026-05-26", fechaCumpleanos: "09-05" },
+  { id: 97, name: "FRIDA VIRIDIANA MOGOLLON TELLEZ", role: "empleado", user: "frida mogollon", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Psicométricos", fechaIngreso: "2025-11-27", fechaCumpleanos: "03-27" },
+  { id: 98, name: "LIC. ANA GORETTY SALAS", role: "psicologa", user: "ana salas", pass: "psico123", sucursal: "Oficina Administrativa", puesto: "Gerente Recursos Humanos", fechaIngreso: "2026-03-30", fechaCumpleanos: "07-15" },
+  { id: 99, name: "MARICRUZ IZAGUIRRE OLLERVIDES", role: "rh", user: "maricruz izaguirre", pass: "rh123", sucursal: "Oficina Administrativa", puesto: "Aux. Recursos Humanos", fechaIngreso: "2024-09-01", fechaCumpleanos: "05-03" }
 ];
+
+/** Fechas administrativas aplicadas por nombre (no por índice/id). */
+export const USERS = USERS_RAW.map(applyCanonicalAdminDates);
 
 // Arrays de fallback estado inicial antes de cargar Firestore
 export const VACACIONES_INIT = [];

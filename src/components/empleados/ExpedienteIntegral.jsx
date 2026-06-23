@@ -10,6 +10,13 @@ import PulseScoreBadge from "../common/PulseScoreBadge";
 import { SUCURSALES, semanaActual, normalizeSucursal, sucursalMatches } from "../../utils/constants";
 
 import { calcPulseScore, getPulseStatus } from "../../utils/pulseScore";
+import {
+  formatAntiguedadEmpleado,
+  formatFechaCumpleanos,
+  formatFechaIngreso,
+  resolveFechaCumpleanos,
+  resolveFechaIngreso,
+} from "../../utils/helpers";
 import { useNotification } from "../../contexts/NotificationContext";
 
 const ExpedienteIntegral = ({
@@ -163,7 +170,9 @@ const empleado =
             <div><b>Nombre:</b> {empleado.name}</div>
             <div><b>Puesto:</b> {empleado.puesto}</div>
             <div><b>Sucursal:</b> {normalizeSucursal(empleado.sucursal)}</div>
-            <div><b>Antigüedad:</b> {empleado.antiguedad || "No registrada"}</div>
+            <div><b>Fecha de ingreso:</b> {formatFechaIngreso(resolveFechaIngreso(empleado))}</div>
+            <div><b>Antigüedad:</b> {formatAntiguedadEmpleado(empleado)}</div>
+            <div><b>Fecha de cumpleaños:</b> {formatFechaCumpleanos(resolveFechaCumpleanos(empleado))}</div>
             <div><b>Teléfono:</b> {empleado.telefono || "No registrado"}</div>
             <div><b>Estatus:</b> Activo</div>
           </div>
