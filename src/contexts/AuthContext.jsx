@@ -4,10 +4,53 @@ import { db } from "../config/firebase";
 import { collection, getDocs, updateDoc, doc, serverTimestamp, addDoc } from "firebase/firestore";
 import { notify } from "../utils/notify";
 
+const SESSION_STORAGE_KEY = "mcdental_current_user";
+const VALID_ROLES = new Set(["admin", "rh", "psicologa", "empleado"]);
+
+const pickSessionUser = (usuario) => ({
+  id: usuario.id,
+  name: usuario.name,
+  user: usuario.user,
+  role: usuario.role,
+  sucursal: usuario.sucursal,
+  puesto: usuario.puesto,
+  ...(usuario.firebaseId ? { firebaseId: usuario.firebaseId } : {}),
+  ...(usuario.idOriginal != null ? { idOriginal: usuario.idOriginal } : {}),
+});
+
+const readStoredSession = () => {
+  try {
+    const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (!data?.id || !data?.user || !VALID_ROLES.has(data.role)) return null;
+    return data;
+  } catch {
+    return null;
+  }
+};
+
+const persistSession = (usuario) => {
+  localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(pickSessionUser(usuario)));
+};
+
+const clearStoredSession = () => {
+  localStorage.removeItem(SESSION_STORAGE_KEY);
+};
+
+const sanitizeAccesoFirebase = (accesoFirebase) => {
+  if (!accesoFirebase) return undefined;
+  return {
+    id: accesoFirebase.id,
+    userId: accesoFirebase.userId,
+    debeCambiarPassword: !!accesoFirebase.debeCambiarPassword,
+  };
+};
+
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => readStoredSession());
   const [loadingAuth, setLoadingAuth] = useState(false);
   const [usuariosPassword, setUsuariosPassword] = useState([]);
   const [requiereCambioPassword, setRequiereCambioPassword] = useState(false);
@@ -28,6 +71,24 @@ export const AuthProvider = ({ children }) => {
     cargarUsuariosPassword();
   }, []);
 
+  useEffect(() => {
+    if (!user?.id || usuariosPassword.length === 0) return;
+
+    const accesoFirebase = usuariosPassword.find(
+      (item) => item.userId === user.id || item.userId === user.idOriginal
+    );
+    if (!accesoFirebase) return;
+
+    setUser((prev) => {
+      if (!prev) return prev;
+      const sanitized = sanitizeAccesoFirebase(accesoFirebase);
+      if (prev.accesoFirebase?.id === sanitized?.id) return prev;
+      return { ...prev, accesoFirebase: sanitized };
+    });
+
+    setRequiereCambioPassword(!!accesoFirebase.debeCambiarPassword);
+  }, [user?.id, user?.idOriginal, usuariosPassword]);
+
   const login = async (username, password) => {
     setLoadingAuth(true);
     try {
@@ -46,10 +107,12 @@ export const AuthProvider = ({ children }) => {
         : usuarioBase.pass === password;
 
       if (passwordValida) {
-        setUser({
+        const sessionUser = {
           ...usuarioBase,
-          accesoFirebase
-        });
+          accesoFirebase: sanitizeAccesoFirebase(accesoFirebase),
+        };
+        setUser(sessionUser);
+        persistSession(usuarioBase);
         
         if (accesoFirebase?.debeCambiarPassword) {
           setRequiereCambioPassword(true);
@@ -71,6 +134,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     setRequiereCambioPassword(false);
+    clearStoredSession();
   };
 
   const cambiarPasswordActual = async (nuevaPassword) => {
@@ -94,14 +158,17 @@ export const AuthProvider = ({ children }) => {
         )
       );
 
-      setUser((prev) => ({
-        ...prev,
-        accesoFirebase: {
-          ...prev.accesoFirebase,
-          password: nuevaPassword,
-          debeCambiarPassword: false
-        }
-      }));
+      setUser((prev) => {
+        const updated = {
+          ...prev,
+          accesoFirebase: {
+            ...prev.accesoFirebase,
+            debeCambiarPassword: false,
+          },
+        };
+        if (prev?.id) persistSession(updated);
+        return updated;
+      });
 
       setRequiereCambioPassword(false);
       notify.toast.success("Contraseña actualizada correctamente.");
