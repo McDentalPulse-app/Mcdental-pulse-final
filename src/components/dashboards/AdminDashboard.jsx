@@ -3,31 +3,26 @@ import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import Badge from "../common/Badge";
 import KPI from "../common/KPI";
-import MiniBar from "../common/MiniBar";
 import LineChart from "../common/LineChart";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
 import SectionTitle from "../common/SectionTitle";
-import { SUCURSALES } from "../../utils/constants";
+import { SUCURSALES, semanaActual } from "../../utils/constants";
 import { calcPulseScore, getPulseStatus } from "../../utils/pulseScore";
 import PulseScoreBadge from "../common/PulseScoreBadge";
-import { semanaActual } from "../../utils/constants";
-
-const abbrevSucursal = (name) => {
-  if (!name) return "—";
-  const parts = name.trim().split(/\s+/);
-  if (name.length <= 12) return name;
-  if (parts.length >= 2) {
-    return parts.map((p) => p[0]?.toUpperCase() || "").join("") + ".";
-  }
-  return `${name.slice(0, 9)}…`;
-};
 
 const semaforoToBadge = (semaforo) => {
   if (semaforo === "Verde") return "verde";
   if (semaforo === "Amarillo") return "amarillo";
   if (semaforo === "Rojo") return "rojo";
   return null;
+};
+
+const sucursalScoreColor = (val) => {
+  if (val == null || !Number.isFinite(Number(val))) return "#e2e8f0";
+  if (val >= 70) return "#2F7D5A";
+  if (val >= 45) return "#9A6B1F";
+  return "#A84444";
 };
 
 const buildSucursalDetalle = (nombreSucursal, empleados, encuestas, semanaEnc) => {
@@ -131,7 +126,6 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
     const hasData = encValidas.length > 0;
     return {
       label: s,
-      shortLabel: abbrevSucursal(s),
       hasData,
       v: hasData
         ? Math.round(encValidas.reduce((sum, e) => sum + Number(e.score), 0) / encValidas.length)
@@ -234,19 +228,37 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
               Haz clic en una sucursal para ver colaboradores.
             </p>
           </div>
-          <div className="dashboard-sucursal-chart-shell">
-            <MiniBar
-              data={porSucursal}
-              labelKey="shortLabel"
-              interactive
-              onBarClick={(d) => setSucursalModal(d.label)}
-              colorFn={(d) => {
-                const val = d.value ?? d.v ?? 0;
-                if (val >= 70) return "#2F7D5A";
-                if (val >= 45) return "#9A6B1F";
-                return "#A84444";
-              }}
-            />
+          <div className="dashboard-sucursal-rank-shell">
+            <div className="dashboard-sucursal-rank-list">
+              {porSucursal.map((s) => {
+                const sinDatos = !s.hasData || s.v == null || !Number.isFinite(Number(s.v));
+                const score = sinDatos ? null : Number(s.v);
+                const barPct = sinDatos ? 8 : Math.max(12, Math.min(100, score));
+                return (
+                  <button
+                    key={s.label}
+                    type="button"
+                    className={`dashboard-sucursal-rank-row${sinDatos ? " dashboard-sucursal-rank-row--empty" : ""}`}
+                    onClick={() => setSucursalModal(s.label)}
+                    title={s.label}
+                  >
+                    <span className="dashboard-sucursal-rank-name">{s.label}</span>
+                    <span className="dashboard-sucursal-rank-bar-wrap">
+                      <span
+                        className="dashboard-sucursal-rank-bar"
+                        style={{
+                          width: `${barPct}%`,
+                          background: sucursalScoreColor(score),
+                        }}
+                      />
+                    </span>
+                    <span className="dashboard-sucursal-rank-score">
+                      {sinDatos ? "Sin datos" : score}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </Card>
       </div>
@@ -318,7 +330,7 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
                 {detalleSucursal.promedio == null ? (
                   <>
                     <span className="dashboard-sucursal-kpi-value dashboard-sucursal-kpi-value--empty">—</span>
-                    <span className="dashboard-sucursal-kpi-sub">Sin evaluación</span>
+                    <span className="dashboard-sucursal-kpi-sub">Sin datos</span>
                   </>
                 ) : (
                   <>
@@ -327,71 +339,51 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
                         <Badge tipo={semaforoToBadge(detalleSucursal.promedioStatus.semaforo)} />
                       ) : (
                         <span className="dashboard-sucursal-kpi-value dashboard-sucursal-kpi-value--text">
-                          {detalleSucursal.promedioStatus.label}
+                          {detalleSucursal.promedioStatus.semaforo}
                         </span>
                       )}
                     </div>
-                    <span className="dashboard-sucursal-kpi-sub">Clasificación del equipo</span>
+                    <span className="dashboard-sucursal-kpi-sub">Clasificación</span>
                   </>
                 )}
               </div>
             </div>
 
             <div className="dashboard-sucursal-list-wrap">
+              <h3 className="dashboard-sucursal-list-title">Colaboradores de la sucursal</h3>
               {detalleSucursal.filas.length === 0 ? (
                 <p className="dashboard-sucursal-empty">No hay colaboradores registrados en esta sucursal.</p>
               ) : (
-                <div className="dashboard-sucursal-list-scroll">
-                  <h3 className="dashboard-sucursal-list-title">Colaboradores de la sucursal</h3>
-                  <div className="dashboard-sucursal-list">
-                    {detalleSucursal.filas.map(({ empleado, pulse, sinDatos, status, contestoSemana }) => (
-                      <div key={empleado.id} className="dashboard-sucursal-emp-row">
-                        <div className="dashboard-sucursal-emp-left">
-                          <Avatar name={empleado.name} size={44} color={sinDatos ? "#94a3b8" : pulse.color} />
-                          <div className="dashboard-sucursal-emp-main">
-                            <div className="dashboard-sucursal-emp-name">{empleado.name}</div>
-                            <div className="dashboard-sucursal-emp-meta">
-                              {empleado.puesto || "Sin puesto"} · {detalleSucursal.nombre}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="dashboard-sucursal-emp-metrics">
-                          <div className="dashboard-sucursal-emp-metric">
-                            <span className="dashboard-sucursal-emp-metric-label">Pulse Score</span>
-                            {sinDatos ? (
-                              <span className="dashboard-sucursal-emp-metric-empty">Sin datos</span>
-                            ) : (
-                              <span className="dashboard-sucursal-emp-score-num" style={{ color: pulse.color }}>
-                                {pulse.score}
-                              </span>
-                            )}
-                          </div>
-                          <div className="dashboard-sucursal-emp-metric">
-                            <span className="dashboard-sucursal-emp-metric-label">Semáforo</span>
-                            {sinDatos ? (
-                              <span className="dashboard-sucursal-pill dashboard-sucursal-pill--muted">
-                                Sin evaluación
-                              </span>
-                            ) : semaforoToBadge(status.semaforo) ? (
-                              <Badge tipo={semaforoToBadge(status.semaforo)} />
-                            ) : (
-                              <span className="dashboard-sucursal-pill dashboard-sucursal-pill--muted">
-                                {status.label}
-                              </span>
-                            )}
-                          </div>
-                          <div className="dashboard-sucursal-emp-metric">
-                            <span className="dashboard-sucursal-emp-metric-label">Encuesta</span>
-                            <span
-                              className={`dashboard-sucursal-pill dashboard-sucursal-pill--${contestoSemana ? "ok" : "pending"}`}
-                            >
-                              {contestoSemana ? "Completada" : "Pendiente"}
-                            </span>
-                          </div>
+                <div className="dashboard-sucursal-list">
+                  {detalleSucursal.filas.map(({ empleado, pulse, sinDatos, status, contestoSemana }) => (
+                    <div key={empleado.id} className="dashboard-sucursal-emp-row">
+                      <div className="dashboard-sucursal-emp-info">
+                        <Avatar name={empleado.name} size={40} color={sinDatos ? "#94a3b8" : pulse.color} />
+                        <div className="dashboard-sucursal-emp-text">
+                          <div className="dashboard-sucursal-emp-name">{empleado.name}</div>
+                          <div className="dashboard-sucursal-emp-puesto">{empleado.puesto || "Sin puesto"}</div>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                      <div className="dashboard-sucursal-emp-badges">
+                        <span className="dashboard-sucursal-tag dashboard-sucursal-tag--muted">
+                          Pulse: {sinDatos ? "Sin datos" : pulse.score}
+                        </span>
+                        <span className="dashboard-sucursal-tag dashboard-sucursal-tag--muted">
+                          Semáforo:{" "}
+                          {sinDatos
+                            ? "Sin evaluación"
+                            : semaforoToBadge(status.semaforo)
+                              ? status.semaforo
+                              : status.label}
+                        </span>
+                        <span
+                          className={`dashboard-sucursal-tag dashboard-sucursal-tag--${contestoSemana ? "ok" : "pending"}`}
+                        >
+                          Encuesta: {contestoSemana ? "Completada" : "Pendiente"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
