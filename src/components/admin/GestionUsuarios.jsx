@@ -161,7 +161,7 @@ const GestionUsuarios = () => {
           onChange={(e) => setBusqueda(e.target.value)}
         />
 
-        <div className="table-scroll-wrap gestion-personal-table-wrap">
+        <div className="table-scroll-wrap gestion-personal-table-wrap gestion-personal-desktop-only">
           <table className={`mc-table gestion-personal-table${esAdmin ? " gestion-personal-table--admin" : ""}`}>
             <thead>
               <tr>
@@ -236,11 +236,70 @@ const GestionUsuarios = () => {
             </tbody>
           </table>
         </div>
+
+        <div className="gestion-personal-mobile-list">
+          {empleados.length === 0 ? (
+            <p className="gestion-personal-mobile-empty">No se encontraron empleados.</p>
+          ) : (
+            empleados.map((emp) => (
+              <div key={emp.id} className="gestion-personal-mobile-card">
+                <div className="gestion-personal-mobile-head">
+                  <div className="gestion-personal-mobile-main">
+                    <div className="gestion-personal-mobile-name">{emp.name}</div>
+                    <div className="gestion-personal-mobile-user">@{emp.user}</div>
+                  </div>
+                  <span className={`mc-status-pill ${emp.inactivo ? "mc-status-pill--inactivo" : "mc-status-pill--activo"}`}>
+                    {emp.inactivo ? "Inactivo" : "Activo"}
+                  </span>
+                </div>
+                <div className="gestion-personal-mobile-meta">
+                  <span className={`mc-tag ${emp.role !== "empleado" ? "mc-tag--role-privileged" : ""}`}>{emp.role}</span>
+                  <span className="gestion-personal-mobile-sucursal">{normalizeSucursal(emp.sucursal)}</span>
+                </div>
+                <div className="gestion-personal-mobile-actions">
+                  <button
+                    type="button"
+                    className="mc-btn-outline mc-btn-outline--edit"
+                    onClick={() => abrirModal(emp)}
+                  >
+                    Editar
+                  </button>
+                  {esAdmin && (
+                    <button
+                      type="button"
+                      className="mc-btn-outline mc-btn-outline--amber"
+                      onClick={() => restablecerPasswordUsuario(emp)}
+                    >
+                      Contraseña
+                    </button>
+                  )}
+                  {emp.inactivo ? (
+                    <button
+                      type="button"
+                      className="mc-btn-outline mc-btn-outline--edit"
+                      onClick={() => cambiarEstado(emp, true)}
+                    >
+                      Activar
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="mc-btn-outline mc-btn-outline--danger"
+                      onClick={() => cambiarEstado(emp, false)}
+                    >
+                      Desactivar
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </Card>
 
       {mostrarModal && (
         <div className="mc-modal-overlay">
-          <div className="mc-modal">
+          <div className="mc-modal gestion-personal-modal">
             <h2 className="mc-modal-title">{usuarioEditando ? "Editar Empleado" : "Añadir Empleado"}</h2>
             <form onSubmit={guardarUsuario} className="mc-form-grid">
               <div className="mc-form-group">

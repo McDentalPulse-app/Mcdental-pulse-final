@@ -289,34 +289,38 @@ const RESUMEN_LIMITE = 8;
         <StatCard iconName="trendingDown" value={cambiosComportamiento} label="Cambios detectados" valueClass="admin-stat-value--blue" />
       </div>
       {/* Pulse Scores resumen */}
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
+      <div className="ai-engine-pulse-chips">
         {USERS.filter(u=>u.role==="empleado").map(emp => {
           const ps = calcPulseScore(emp.id, encuestas);
           if (ps.sinDatos) return null;
           return (
-            <div key={emp.id} style={{ background: "#fff", borderRadius: 12, padding: "10px 14px", border: `1.5px solid ${ps.color}30`, display: "flex", alignItems: "center", gap: 10, cursor: "pointer", minWidth: 180 }}
-              onClick={() => { setTab("expedientes"); analizarEmpleado(emp); }}>
+            <button
+              key={emp.id}
+              type="button"
+              className="ai-engine-pulse-chip"
+              style={{ borderColor: `${ps.color}40` }}
+              onClick={() => { setTab("expedientes"); analizarEmpleado(emp); }}
+            >
               <Avatar name={emp.name} size={32} color={ps.color} />
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#111827" }}>{emp.name.split(" ")[0]}</div>
+              <div className="ai-engine-pulse-chip-text">
+                <div className="ai-engine-pulse-chip-name">{emp.name.split(" ")[0]}</div>
                 <PulseScoreBadge score={ps.score} nivel={ps.nivel} color={ps.color} tendencia={ps.tendencia} size="sm" />
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 20, flexWrap: "wrap" }}>
+      <div className="ai-engine-tabs">
         {tabs.map(t => (
-          <button key={t.key} onClick={() => { setTab(t.key); setOutput(""); setSelectedEmp(null); }} style={{
-            padding: "8px 14px", borderRadius: 20, border: "1.5px solid",
-            borderColor: tab === t.key ? "#006D5B" : "#e5e7eb",
-            background: tab === t.key ? "#006D5B" : "#fff",
-            color: tab === t.key ? "#fff" : "#374151",
-            fontSize: 12, fontWeight: 600, cursor: "pointer",
-            display: "inline-flex", alignItems: "center", gap: 6
-          }}><Icon name={t.icon} size={14} color={tab === t.key ? "#fff" : undefined} /> {t.label}</button>
+          <button
+            key={t.key}
+            type="button"
+            className={`ai-engine-tab${tab === t.key ? " ai-engine-tab--active" : ""}`}
+            onClick={() => { setTab(t.key); setOutput(""); setSelectedEmp(null); }}
+          >
+            <Icon name={t.icon} size={14} color={tab === t.key ? "#fff" : undefined} /> {t.label}
+          </button>
         ))}
       </div>
 

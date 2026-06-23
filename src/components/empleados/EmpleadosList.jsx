@@ -92,8 +92,8 @@ const EmpleadosList = ({
         </button>
 
         <div className="detail-grid-top">
-          <Card style={{ flex: 2, minWidth: 280 }}>
-            <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 20 }}>
+          <Card className="detail-card-main">
+            <div className="detail-emp-header">
               <Avatar name={selected.name} size={56} color={semaforoColor[sem]} />
 
               <div>
@@ -124,13 +124,7 @@ const EmpleadosList = ({
     <Icon name="key" size={16} /> Restablecer contraseña
   </button>
 )}
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 10,
-              fontSize: 13,
-              marginBottom: 16
-            }}>
+            <div className="detail-info-grid">
               <div><span style={{ color: "#9ca3af" }}>Nombre:</span> {selected.name}</div>
               <div><span style={{ color: "#9ca3af" }}>Puesto:</span> {selected.puesto}</div>
               <div><span style={{ color: "#9ca3af" }}>Sucursal:</span> {normalizeSucursal(selected.sucursal)}</div>
@@ -141,31 +135,26 @@ const EmpleadosList = ({
 
             {role !== "rh" && (
               <>
-                <div style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3,1fr)",
-                  gap: 10,
-                  marginBottom: 16
-                }}>
-                  <div style={{ background: "#f9fafb", padding: 12, borderRadius: 12 }}>
-                    <div style={{ fontSize: 11, color: "#9ca3af" }}>Promedio</div>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: "#004D40" }}>
+                <div className="detail-stats-grid">
+                  <div className="detail-stat-box">
+                    <div className="detail-stat-label">Promedio</div>
+                    <div className="detail-stat-value">
                       {encEmp.length
                         ? Math.round(encEmp.reduce((a, e) => a + e.score, 0) / encEmp.length)
                         : 0}
                     </div>
                   </div>
 
-                  <div style={{ background: "#f9fafb", padding: 12, borderRadius: 12 }}>
-                    <div style={{ fontSize: 11, color: "#9ca3af" }}>Encuestas</div>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: "#004D40" }}>
+                  <div className="detail-stat-box">
+                    <div className="detail-stat-label">Encuestas</div>
+                    <div className="detail-stat-value">
                       {encEmp.length}
                     </div>
                   </div>
 
-                  <div style={{ background: "#f9fafb", padding: 12, borderRadius: 12 }}>
-                    <div style={{ fontSize: 11, color: "#9ca3af" }}>Notas</div>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: "#004D40" }}>
+                  <div className="detail-stat-box">
+                    <div className="detail-stat-label">Notas</div>
+                    <div className="detail-stat-value">
                       {notasEmp.length}
                     </div>
                   </div>
@@ -187,7 +176,7 @@ const EmpleadosList = ({
           </Card>
 
           {role !== "rh" && (
-            <Card style={{ flex: 1, minWidth: 220 }}>
+            <Card className="detail-card-side">
               <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 14 }}>
                 Riesgos IA
               </div>

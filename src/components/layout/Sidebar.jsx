@@ -80,6 +80,10 @@ const Sidebar = () => {
           return (
             <button
               key={item.key}
+              type="button"
+              title={item.label}
+              aria-label={item.label}
+              aria-current={isActive ? "page" : undefined}
               onClick={() => navigate(`/${user.role}/${item.key}`)}
               className={`sidebar-nav-btn${isActive ? " sidebar-nav-btn--active" : ""}`}
             >
@@ -101,7 +105,7 @@ const Sidebar = () => {
             <div className="sidebar-user-role">{user?.role || ""}</div>
           </div>
         </div>
-        <button className="sidebar-logout" onClick={logout}>
+        <button type="button" className="sidebar-logout" onClick={logout} title="Cerrar sesión" aria-label="Cerrar sesión">
           <Icon name="logout" size={14} />
           Cerrar sesión
         </button>

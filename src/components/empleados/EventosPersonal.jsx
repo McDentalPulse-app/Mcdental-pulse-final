@@ -68,7 +68,7 @@ const EventosPersonal = ({ users }) => {
   };
 
   return (
-    <div className="admin-page">
+    <div className="admin-page eventos-personal-page">
       <div className="admin-page-header">
         <h1 className="admin-page-title">Cumpleaños y Aniversarios</h1>
         <p className="admin-page-subtitle">
@@ -90,13 +90,13 @@ const EventosPersonal = ({ users }) => {
         ) : (
           <div className="admin-list-scroll admin-list-scroll--tall">
             {eventos.map(e => (
-              <div key={e.id} className="admin-list-item" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "center" }}>
+              <div key={e.id} className="admin-list-item eventos-list-item">
                 <div>
-                  <div className="admin-list-item-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div className="admin-list-item-title eventos-list-item-title">
                     <Icon name={e.icon} size={16} /> {e.empleado}
                   </div>
                   <div className="admin-list-item-meta">{normalizeSucursal(e.sucursal)} · {e.puesto}</div>
-                  <div className="admin-list-item-body" style={{ marginTop: 6 }}>
+                  <div className="admin-list-item-body eventos-list-item-body">
                     <b>{e.tipo}</b> · {e.fechaTexto}
                   </div>
                   <div className="admin-list-item-meta">{e.detalle}</div>

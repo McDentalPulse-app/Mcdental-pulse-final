@@ -87,7 +87,7 @@ const empleado =
   );
 
   return (
-    <div className="admin-page">
+    <div className="admin-page expediente-page">
       <div className="admin-page-header">
         <h1 className="admin-page-title">Expediente Integral</h1>
         <p className="admin-page-subtitle">
