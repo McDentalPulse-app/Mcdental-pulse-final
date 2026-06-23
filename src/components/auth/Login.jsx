@@ -24,7 +24,7 @@ const Login = () => {
       const demoPasswords = {
         mario: "admin123",
         "ana salas": "psico123",
-        patricia: "rh123",
+        "maricruz izaguirre": "rh123",
         ana: "emp123"
       };
       await login(user, demoPasswords[user]);
@@ -83,7 +83,7 @@ const Login = () => {
             {[
               { label: "Admin", u: "mario" },
               { label: "Psicóloga", u: "ana salas" },
-              { label: "RH", u: "patricia" },
+              { label: "RH", u: "maricruz izaguirre" },
               { label: "Empleado", u: "ana" },
             ].map(d => (
               <button

@@ -4,7 +4,6 @@ import { applyCanonicalAdminDates } from "../utils/adminEmployeeDates";
 
 const USERS_RAW = [
   { id: 1, name: "Mario Rodríguez", role: "admin", user: "mario", pass: "admin123", sucursal: "Oficina Administrativa", puesto: "Director", fechaNacimiento: "1985-04-12", fechaIngreso: "2020-01-15" },
-  { id: 9, name: "Patricia Ramírez", role: "rh", user: "patricia", pass: "rh123", sucursal: "Oficina Administrativa", puesto: "Administrativo RH", fechaNacimiento: "1988-06-18", fechaIngreso: "2022-02-01" },
   { id: 3, name: "Ana García", role: "empleado", user: "ana", pass: "emp123", sucursal: "Norte", puesto: "Asistente Dental", antiguedad: "2 años", telefono: "555-1001", fechaNacimiento: "1998-06-15", fechaIngreso: "2023-06-20" },
   { id: 10, name: "SANDRA LETICIA GALVAN", role: "empleado", user: "sandra galvan", pass: "emp123", sucursal: "McDental Palmas", puesto: "Recepcionista", fechaNacimiento: "2000-09-26", fechaIngreso: "2025-03-31" },
   { id: 11, name: "ALEXIS YAMIL LOPEZ", role: "empleado", user: "alexis lopez", pass: "emp123", sucursal: "McDental Palmas", puesto: "Doctor", fechaNacimiento: "2000-06-03", fechaIngreso: "" },
@@ -99,7 +98,7 @@ const USERS_RAW = [
   { id: 96, name: "ALFREDO EDUARDO BURGOS REYES", role: "empleado", user: "alfredo burgos", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Ingeniero IA", fechaIngreso: "2026-05-26", fechaCumpleanos: "09-05" },
   { id: 97, name: "FRIDA VIRIDIANA MOGOLLON TELLEZ", role: "empleado", user: "frida mogollon", pass: "emp123", sucursal: "Oficina Administrativa", puesto: "Psicométricos", fechaIngreso: "2025-11-27", fechaCumpleanos: "03-27" },
   { id: 98, name: "LIC. ANA GORETTY SALAS", role: "psicologa", user: "ana salas", pass: "psico123", sucursal: "Oficina Administrativa", puesto: "Gerente Recursos Humanos", fechaIngreso: "2026-03-30", fechaCumpleanos: "07-15" },
-  { id: 99, name: "MARICRUZ IZAGUIRRE OLLERVIDES", role: "rh", user: "maricruz izaguirre", pass: "rh123", sucursal: "Oficina Administrativa", puesto: "Aux. Recursos Humanos", fechaIngreso: "2024-09-01", fechaCumpleanos: "05-03" }
+  { id: 99, name: "MARICRUZ IZAGUIRRE OLLERVIDES", role: "rh", user: "maricruz izaguirre", pass: "rh123", sucursal: "Oficina Administrativa", puesto: "AUX RECURSOS HUMANOS", fechaIngreso: "2024-09-01", fechaCumpleanos: "05-03" }
 ];
 
 /** Fechas administrativas aplicadas por nombre (no por índice/id). */
