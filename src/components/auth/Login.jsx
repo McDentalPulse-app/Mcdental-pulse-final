@@ -18,21 +18,6 @@ const Login = () => {
     }
   };
 
-  const demo = async (user) => {
-    setErr("");
-    try {
-      const demoPasswords = {
-        mario: "admin123",
-        "ana salas": "psico123",
-        "maricruz izaguirre": "rh123",
-        ana: "emp123"
-      };
-      await login(user, demoPasswords[user]);
-    } catch (error) {
-      setErr("Error en demo: " + error.message);
-    }
-  };
-
   return (
     <div className="auth-page">
       <div className="auth-card">
@@ -76,28 +61,6 @@ const Login = () => {
         <button className="auth-btn" onClick={handle} disabled={loadingAuth}>
           {loadingAuth ? "Iniciando..." : "Iniciar sesión"}
         </button>
-
-        <div className="auth-demo">
-          <div className="auth-demo-label">Acceso demo</div>
-          <div className="auth-demo-grid">
-            {[
-              { label: "Admin", u: "mario" },
-              { label: "Psicóloga", u: "ana salas" },
-              { label: "RH", u: "maricruz izaguirre" },
-              { label: "Empleado", u: "ana" },
-            ].map(d => (
-              <button
-                key={d.u}
-                className="auth-demo-btn"
-                onClick={() => demo(d.u)}
-                disabled={loadingAuth}
-                type="button"
-              >
-                {d.label}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );
