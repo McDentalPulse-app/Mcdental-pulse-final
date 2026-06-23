@@ -4,7 +4,6 @@ import { applyCanonicalAdminDates } from "../utils/adminEmployeeDates";
 
 const USERS_RAW = [
   { id: 1, name: "Mario Rodríguez", role: "admin", user: "mario", pass: "admin123", sucursal: "Oficina Administrativa", puesto: "Director", fechaNacimiento: "1985-04-12", fechaIngreso: "2020-01-15" },
-  { id: 2, name: "Dra. Laura Vega", role: "psicologa", user: "laura", pass: "psico123", sucursal: "Oficina Administrativa", puesto: "Psicóloga", fechaNacimiento: "1990-09-22", fechaIngreso: "2021-03-10" },
   { id: 9, name: "Patricia Ramírez", role: "rh", user: "patricia", pass: "rh123", sucursal: "Oficina Administrativa", puesto: "Administrativo RH", fechaNacimiento: "1988-06-18", fechaIngreso: "2022-02-01" },
   { id: 3, name: "Ana García", role: "empleado", user: "ana", pass: "emp123", sucursal: "Norte", puesto: "Asistente Dental", antiguedad: "2 años", telefono: "555-1001", fechaNacimiento: "1998-06-15", fechaIngreso: "2023-06-20" },
   { id: 10, name: "SANDRA LETICIA GALVAN", role: "empleado", user: "sandra galvan", pass: "emp123", sucursal: "McDental Palmas", puesto: "Recepcionista", fechaNacimiento: "2000-09-26", fechaIngreso: "2025-03-31" },

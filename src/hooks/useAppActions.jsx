@@ -1,6 +1,7 @@
 import { collection, addDoc, updateDoc, doc, serverTimestamp, getDocs } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../config/firebase";
+import { getPsicologaPrincipal } from "../utils/psicologa";
 import { notify } from "../utils/notify";
 import { useGlobal } from "../contexts/GlobalContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -67,7 +68,7 @@ export const useAppActions = () => {
       empleadoId,
       texto,
       fecha: new Date().toISOString().slice(0, 10),
-      autor: user?.name || "Dra. Laura Vega",
+      autor: user?.name || getPsicologaPrincipal(USERS)?.name || "Psicóloga",
       autorId: user?.id || null,
       createdAt: serverTimestamp()
     };

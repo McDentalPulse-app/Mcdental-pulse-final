@@ -10,6 +10,8 @@ import ReconocimientosEmpleado from '../empleados/ReconocimientosEmpleado';
 import ReporteConfidencialEmpleado from '../empleados/ReporteConfidencialEmpleado';
 import Mensajes from '../comunicacion/Mensajes';
 
+import { getPsicologaPrincipal } from '../../utils/psicologa';
+
 export default function EmpleadoLayout({ user, globals, actions }) {
   const { usuarios: USERS } = useGlobal();
 
@@ -18,7 +20,7 @@ export default function EmpleadoLayout({ user, globals, actions }) {
   const navigate = useNavigate();
 
   const userMensajes = mensajes.filter((m) => m.de === user?.id || m.para === user?.id);
-  const psicologaId = USERS.find((u) => u.role === "psicologa")?.id || null;
+  const psicologaId = getPsicologaPrincipal(USERS)?.id || null;
 
   return (
     <div className="app-shell">

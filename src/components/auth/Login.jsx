@@ -23,7 +23,7 @@ const Login = () => {
     try {
       const demoPasswords = {
         mario: "admin123",
-        laura: "psico123",
+        "ana salas": "psico123",
         patricia: "rh123",
         ana: "emp123"
       };
@@ -82,7 +82,7 @@ const Login = () => {
           <div className="auth-demo-grid">
             {[
               { label: "Admin", u: "mario" },
-              { label: "Psicóloga", u: "laura" },
+              { label: "Psicóloga", u: "ana salas" },
               { label: "RH", u: "patricia" },
               { label: "Empleado", u: "ana" },
             ].map(d => (
