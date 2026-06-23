@@ -6206,3 +6206,419 @@
     flex: 1 1 100%;
   }
 }
+
+/* ── PWA mobile polish: Mensajes, Nav, Sucursal modal ── */
+@media (max-width: 768px) {
+  .sidebar {
+    box-shadow:
+      0 4px 18px rgba(26, 61, 55, 0.2),
+      0 1px 0 rgba(255, 255, 255, 0.06) inset;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .sidebar-brand {
+    padding: 8px 12px;
+  }
+
+  .sidebar-brand-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+  }
+
+  .sidebar-logo {
+    width: 34px;
+    height: 34px;
+  }
+
+  .sidebar-nav {
+    padding: 6px 10px 8px;
+    gap: 8px;
+    scroll-snap-type: x mandatory;
+  }
+
+  .sidebar-nav-btn {
+    border-radius: 999px;
+    min-width: 42px;
+    min-height: 42px;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .sidebar-nav-btn--active {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(0, 168, 143, 0.65);
+    box-shadow:
+      0 0 0 1px rgba(0, 168, 143, 0.35),
+      0 0 14px rgba(0, 168, 143, 0.22),
+      inset 0 -2px 0 var(--mc-aqua);
+  }
+
+  .sidebar-nav-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+  }
+
+  .sidebar-nav-btn--active .sidebar-nav-icon {
+    background: rgba(0, 168, 143, 0.55);
+    box-shadow: 0 0 10px rgba(0, 168, 143, 0.35);
+  }
+
+  .sidebar-footer {
+    padding: 8px 10px 8px 0;
+  }
+
+  .sidebar-logout {
+    min-width: 42px;
+    min-height: 42px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .mensajes-page {
+    gap: 8px;
+    overflow: visible;
+    max-height: none;
+  }
+
+  .mensajes-page-header .admin-page-subtitle {
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  .mensajes-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    flex: 1;
+    min-height: min(calc(100dvh - 148px), 720px);
+    height: auto;
+    max-height: none;
+    border: 1px solid var(--mc-gris-suave);
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--mc-blanco);
+    box-shadow: var(--mc-sombra-suave);
+  }
+
+  .mensajes-sidebar-card.mc-card,
+  .mensajes-chat-card.mc-card {
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+  }
+
+  .mensajes-sidebar-card {
+    flex: 0 0 auto;
+    max-height: min(128px, 18vh) !important;
+    height: auto !important;
+    min-height: 0 !important;
+    border-bottom: 1px solid var(--mc-gris-suave);
+  }
+
+  .mensajes-sidebar-head {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
+  .mensajes-active-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+
+  .mensajes-conv-list {
+    max-height: 72px;
+    flex: 0 0 auto;
+  }
+
+  .mensajes-conv-item {
+    padding: 10px 12px;
+    min-height: 56px;
+  }
+
+  .mensajes-layout--single .mensajes-sidebar-card {
+    max-height: none !important;
+  }
+
+  .mensajes-layout--single .mensajes-sidebar-head {
+    display: none;
+  }
+
+  .mensajes-layout--single .mensajes-conv-list {
+    max-height: none;
+  }
+
+  .mensajes-layout--single .mensajes-conv-item {
+    border-bottom: none;
+  }
+
+  .mensajes-chat-card {
+    flex: 1 1 auto;
+    min-height: min(360px, calc(100dvh - 260px)) !important;
+    height: auto !important;
+    max-height: none !important;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mensajes-chat-head {
+    padding: 10px 12px;
+    gap: 10px;
+    border-bottom: 1px solid var(--mc-gris-suave);
+  }
+
+  .mensajes-chat-name {
+    font-size: 14px;
+  }
+
+  .mensajes-chat-meta {
+    font-size: 11px;
+  }
+
+  .mensajes-private-pill {
+    display: none;
+  }
+
+  .mensajes-chat-body {
+    flex: 1;
+    min-height: 0;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mensajes-bubble-row {
+    width: 100%;
+  }
+
+  .mensajes-bubble-row--mine {
+    justify-content: flex-end;
+    padding-left: 14%;
+  }
+
+  .mensajes-bubble-row:not(.mensajes-bubble-row--mine) {
+    justify-content: flex-start;
+    padding-right: 14%;
+  }
+
+  .mensajes-bubble {
+    max-width: 78%;
+    padding: 10px 12px;
+  }
+
+  .mensajes-bubble-text {
+    font-size: 14px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .mensajes-composer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+    border-top: 1px solid var(--mc-gris-suave);
+    background: var(--mc-blanco);
+    flex-shrink: 0;
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+  }
+
+  .mensajes-composer-input {
+    flex: 1;
+    min-width: 0;
+    min-height: 42px;
+    padding: 10px 12px;
+    border-radius: 12px;
+  }
+
+  .mensajes-composer .mc-btn-primary {
+    width: auto;
+    flex-shrink: 0;
+    min-height: 42px;
+    padding: 10px 14px;
+    font-size: 13px;
+    border-radius: 12px;
+  }
+
+  .dashboard-sucursal-modal {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    max-height: calc(100dvh - 32px) !important;
+    border-radius: 18px !important;
+  }
+
+  .dashboard-sucursal-modal-head {
+    padding: 16px 18px 12px;
+  }
+
+  .dashboard-sucursal-modal-title {
+    font-size: 20px;
+  }
+
+  .dashboard-sucursal-modal-sub {
+    font-size: 13px;
+  }
+
+  .dashboard-sucursal-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding: 14px 16px;
+  }
+
+  .dashboard-sucursal-kpi-card {
+    padding: 12px 14px;
+  }
+
+  .dashboard-sucursal-kpi-label {
+    font-size: 10px;
+  }
+
+  .dashboard-sucursal-kpi-value {
+    font-size: 22px;
+  }
+
+  .dashboard-sucursal-list-wrap {
+    padding: 12px 16px 8px;
+  }
+
+  .dashboard-sucursal-list-title {
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+
+  .dashboard-sucursal-list {
+    max-height: min(52vh, 440px);
+    gap: 10px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dashboard-sucursal-emp-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(26, 61, 55, 0.06);
+  }
+
+  .dashboard-sucursal-emp-info {
+    align-items: center;
+    gap: 14px;
+  }
+
+  .dashboard-sucursal-emp-name {
+    font-size: 15px;
+    font-weight: 800;
+    -webkit-line-clamp: 3;
+    overflow: visible;
+    display: block;
+  }
+
+  .dashboard-sucursal-emp-puesto {
+    font-size: 13px;
+    margin-top: 4px;
+  }
+
+  .dashboard-sucursal-emp-badges {
+    max-width: none;
+    width: 100%;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .dashboard-sucursal-tag {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 12px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .dashboard-sucursal-modal-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    padding: 12px 16px max(12px, env(safe-area-inset-bottom));
+    background: #fff;
+    border-top: 1px solid var(--mc-gris-suave);
+    box-shadow: 0 -4px 16px rgba(26, 61, 55, 0.06);
+  }
+
+  .dashboard-sucursal-modal-footer .mc-btn-secondary {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 430px) {
+  .sidebar-nav {
+    gap: 6px;
+    padding: 6px 8px 8px;
+  }
+
+  .sidebar-nav-btn {
+    min-width: 40px;
+    min-height: 40px;
+    padding: 9px 11px;
+  }
+
+  .sidebar-nav-icon {
+    width: 26px;
+    height: 26px;
+  }
+
+  .sidebar-logout {
+    width: 40px;
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  .mensajes-layout {
+    min-height: min(calc(100dvh - 136px), 680px);
+  }
+
+  .mensajes-sidebar-card {
+    max-height: min(112px, 16vh) !important;
+  }
+
+  .mensajes-layout--single .mensajes-sidebar-card {
+    max-height: none !important;
+  }
+
+  .mensajes-chat-card {
+    min-height: min(340px, calc(100dvh - 248px)) !important;
+  }
+
+  .mensajes-bubble {
+    max-width: 82%;
+  }
+
+  .dashboard-sucursal-modal {
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: calc(100dvh - 20px) !important;
+    border-radius: 16px !important;
+  }
+
+  .dashboard-sucursal-emp-name {
+    font-size: 14px;
+  }
+
+  .dashboard-sucursal-tag {
+    flex: 1 1 calc(50% - 4px);
+    min-width: calc(50% - 4px);
+  }
+}

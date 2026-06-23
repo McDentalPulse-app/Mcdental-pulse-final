@@ -117,7 +117,7 @@ const Mensajes = ({ user, mensajes, onSend }) => {
           </p>
         </Card>
       ) : (
-        <div className="mensajes-layout">
+        <div className={`mensajes-layout${conversacionesActivas.length === 1 ? " mensajes-layout--single" : ""}`}>
           <Card className="mensajes-sidebar-card">
             <div className="mensajes-sidebar-head">
               <span className="mensajes-sidebar-head-main">
