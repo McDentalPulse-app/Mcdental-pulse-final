@@ -7,14 +7,13 @@ import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import { SUCURSALES, semanaActual, normalizeSucursal, sucursalMatches } from "../../utils/constants";
 
-import { calcPulseScore, getPulseStatus } from "../../utils/pulseScore";
-
+import { calcPulseScore, getPulseStatus, calcRiesgos, getEmployeeAverageScore } from "../../utils/pulseScore";
 import { semaforoColor } from "../../config/theme";
 import LineChart from "../common/LineChart";
 import RiskBar from "../common/RiskBar";
 import { formatAntiguedadEmpleado, resolveFechaIngreso, formatEmpleadoIdForDisplay } from "../../utils/helpers";
 import Icon from "../ui/Icon";
-import { calcRiesgos } from "../../utils/pulseScore";
+
 const EmpleadosList = ({
   encuestas,
   notas,
@@ -79,6 +78,7 @@ const EmpleadosList = ({
 
     const sem = getUltimoSemaforo(selected.id);
     const ps = calcPulseScore(selected.id, encuestas);
+    const promedioScore = getEmployeeAverageScore(selected.id, encuestas);
     const trend = encEmp.map(e => ({
       label: e.semana.replace("2025-", ""),
       v: e.score
@@ -139,9 +139,7 @@ const EmpleadosList = ({
                   <div className="detail-stat-box">
                     <div className="detail-stat-label">Promedio</div>
                     <div className="detail-stat-value">
-                      {encEmp.length
-                        ? Math.round(encEmp.reduce((a, e) => a + e.score, 0) / encEmp.length)
-                        : 0}
+                      {promedioScore ?? "—"}
                     </div>
                   </div>
 
@@ -181,23 +179,31 @@ const EmpleadosList = ({
                 Riesgos IA
               </div>
 
-              <RiskBar
-                label="Riesgo Renuncia"
-                value={riesgos.renuncia}
-                color={riesgos.renuncia > 60 ? "#ef4444" : riesgos.renuncia > 30 ? "#f97316" : "#22c55e"}
-              />
+              {riesgos.sinDatos ? (
+                <p className="admin-empty" style={{ margin: 0, fontSize: 13 }}>
+                  Sin datos suficientes para estimar riesgos.
+                </p>
+              ) : (
+                <>
+                  <RiskBar
+                    label="Riesgo Renuncia"
+                    value={riesgos.renuncia}
+                    color={riesgos.renuncia > 60 ? "#ef4444" : riesgos.renuncia > 30 ? "#f97316" : "#22c55e"}
+                  />
 
-              <RiskBar
-                label="Riesgo Burnout"
-                value={riesgos.burnout}
-                color={riesgos.burnout > 60 ? "#ef4444" : riesgos.burnout > 30 ? "#f97316" : "#22c55e"}
-              />
+                  <RiskBar
+                    label="Riesgo Burnout"
+                    value={riesgos.burnout}
+                    color={riesgos.burnout > 60 ? "#ef4444" : riesgos.burnout > 30 ? "#f97316" : "#22c55e"}
+                  />
 
-              <RiskBar
-                label="Riesgo Emocional"
-                value={riesgos.emocional}
-                color={riesgos.emocional > 60 ? "#ef4444" : riesgos.emocional > 30 ? "#f97316" : "#22c55e"}
-              />
+                  <RiskBar
+                    label="Riesgo Emocional"
+                    value={riesgos.emocional}
+                    color={riesgos.emocional > 60 ? "#ef4444" : riesgos.emocional > 30 ? "#f97316" : "#22c55e"}
+                  />
+                </>
+              )}
             </Card>
           )}
         </div>

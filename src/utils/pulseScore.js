@@ -1,135 +1,171 @@
-export const calcRiesgos = (empId, encuestas) => {
-  const enc = encuestas.filter(e => e.empleadoId === empId).sort((a, b) => b.semana.localeCompare(a.semana));
-  if (!enc.length) return { renuncia: 10, burnout: 10, emocional: 10, conflicto: 10 };
-
-  const rec = enc.slice(0, 3);
-  const avgEstres = rec.reduce((s, e) => s + (e.respuestas?.estres || 5), 0) / rec.length;
-  const avgMot = rec.reduce((s, e) => s + (e.respuestas?.motivacion || 5), 0) / rec.length;
-  const avgEmoc = rec.reduce((s, e) => s + (e.respuestas?.emocional || 5), 0) / rec.length;
-
-  const renuncia = Math.min(95, Math.round(
-    (rec.some(e => e.respuestas?.riesgoRenuncia === "Sí, seriamente") ? 60 : rec.some(e => e.respuestas?.riesgoRenuncia === "Algo") ? 30 : 10) +
-    (10 - avgMot) * 3 + (10 - avgEmoc) * 2
-  ));
-
-  const burnout = Math.min(95, Math.round((avgEstres / 10) * 50 + (10 - avgMot) * 4 + (rec.some(e => !e.respuestas?.cargaManejable) ? 20 : 0)));
-  const emocional = Math.min(95, Math.round((10 - avgEmoc) * 8 + (rec.some(e => e.respuestas?.problemasPersonales) ? 20 : 0)));
-  const conflicto = Math.min(95, Math.round((10 - (rec.reduce((s, e) => s + (e.respuestas?.satisfaccion || 5), 0) / rec.length)) * 5 + avgEstres * 3));
-
-  return { renuncia, burnout, emocional, conflicto };
+const SCORE_SIN_DATOS = {
+  score: null,
+  promedio: null,
+  nivel: "Sin datos",
+  color: "#94a3b8",
+  tendencia: "→",
+  sinDatos: true,
 };
 
-export const calcPulseScore = (empId, encuestas) => {
-  const enc = encuestas
-    .filter((e) => e.empleadoId === empId)
-    .filter((e) => Number.isFinite(Number(e.score)));
+const RIESGOS_SIN_DATOS = {
+  sinDatos: true,
+  renuncia: null,
+  burnout: null,
+  emocional: null,
+  conflicto: null,
+};
 
-  if (!enc.length) {
-    return {
-      score: null,
-      nivel: "Sin datos",
-      color: "#94a3b8",
-      tendencia: "→",
-      sinDatos: true
-    };
+export const getEmployeeSurveys = (employeeId, encuestas) =>
+  encuestas
+    .filter((e) => e.empleadoId === employeeId)
+    .filter((e) => Number.isFinite(Number(e.score)))
+    .sort((a, b) => b.semana.localeCompare(a.semana));
+
+export const getLatestEmployeeScore = (employeeId, encuestas) => {
+  const surveys = getEmployeeSurveys(employeeId, encuestas);
+  if (!surveys.length) return null;
+  return Math.round(Number(surveys[0].score));
+};
+
+export const getEmployeeAverageScore = (employeeId, encuestas) => {
+  const surveys = getEmployeeSurveys(employeeId, encuestas);
+  if (!surveys.length) return null;
+  const total = surveys.reduce((sum, e) => sum + Number(e.score), 0);
+  return Math.round(total / surveys.length);
+};
+
+const riskFromBand = (score, bandMin, bandMax, riskMin, riskMax) => {
+  const clamped = Math.max(bandMin, Math.min(bandMax, score));
+  const ratio = (bandMax - clamped) / (bandMax - bandMin);
+  return Math.round(riskMin + ratio * (riskMax - riskMin));
+};
+
+export const getEmployeeAIRisks = (score, encuestasEmpleado = []) => {
+  if (score == null || !Number.isFinite(Number(score))) {
+    return { ...RIESGOS_SIN_DATOS };
   }
 
-  const recientes = [...enc]
-    .sort((a, b) => b.semana.localeCompare(a.semana))
-    .slice(0, 3);
+  const s = Number(score);
+  let renuncia;
+  let burnout;
+  let emocional;
 
-  const avgScore = Math.round(
-    recientes.reduce((s, e) => s + Number(e.score), 0) / recientes.length
-  );
-
-  const participacion = Math.min(100, Math.round((enc.length / 5) * 100));
-
-  const riesgoRenuncia = recientes.some(
-    (e) =>
-      e.respuestas?.[9] === "Sí, seriamente" ||
-      e.respuestas?.p9 === "Sí, seriamente"
-  )
-    ? -15
-    : recientes.some(
-        (e) => e.respuestas?.[9] === "Algo" || e.respuestas?.p9 === "Algo"
-      )
-    ? -5
-    : 0;
-
-  const problemasPersonales = recientes.some(
-    (e) => e.respuestas?.[7] === "Sí" || e.respuestas?.p7 === "Sí"
-  )
-    ? -5
-    : 0;
-
-  const pulse = Math.max(
-    0,
-    Math.min(
-      100,
-      Math.round(
-        avgScore * 0.7 +
-          participacion * 0.2 +
-          10 +
-          riesgoRenuncia +
-          problemasPersonales
-      )
-    )
-  );
-
-  let nivel = "Rojo";
-  let color = "#ef4444";
-
-  if (pulse >= 80) {
-    nivel = "Verde";
-    color = "#22c55e";
-  } else if (pulse >= 60) {
-    nivel = "Amarillo";
-    color = "#f59e0b";
+  if (s >= 85) {
+    renuncia = riskFromBand(s, 85, 100, 5, 15);
+    burnout = riskFromBand(s, 85, 100, 5, 20);
+    emocional = riskFromBand(s, 85, 100, 5, 20);
+  } else if (s >= 70) {
+    renuncia = riskFromBand(s, 70, 84, 15, 30);
+    burnout = riskFromBand(s, 70, 84, 20, 40);
+    emocional = riskFromBand(s, 70, 84, 20, 40);
+  } else if (s >= 50) {
+    renuncia = riskFromBand(s, 50, 69, 30, 55);
+    burnout = riskFromBand(s, 50, 69, 40, 65);
+    emocional = riskFromBand(s, 50, 69, 40, 65);
+  } else {
+    renuncia = riskFromBand(s, 0, 49, 55, 85);
+    burnout = riskFromBand(s, 0, 49, 65, 90);
+    emocional = riskFromBand(s, 0, 49, 65, 90);
   }
 
-  const ultDos = [...enc]
-    .sort((a, b) => b.semana.localeCompare(a.semana))
-    .slice(0, 2);
+  const latest = encuestasEmpleado[0];
+  const riesgoRenunciaResp =
+    latest?.respuestas?.[9] ??
+    latest?.respuestas?.p9 ??
+    latest?.respuestas?.riesgoRenuncia;
 
-  const tendencia =
-    ultDos.length < 2
-      ? "→"
-      : Number(ultDos[0].score) > Number(ultDos[1].score)
-      ? "↑"
-      : Number(ultDos[0].score) < Number(ultDos[1].score)
-      ? "↓"
-      : "→";
+  if (riesgoRenunciaResp === "Sí, seriamente") {
+    renuncia = Math.min(95, renuncia + 15);
+  } else if (riesgoRenunciaResp === "Algo") {
+    renuncia = Math.min(95, renuncia + 8);
+  }
 
-  return { score: pulse, nivel, color, tendencia, sinDatos: false };
+  const conflicto = Math.round((renuncia + burnout + emocional) / 3);
+
+  return {
+    sinDatos: false,
+    renuncia,
+    burnout,
+    emocional,
+    conflicto,
+  };
+};
+
+export const calcRiesgos = (empId, encuestas) => {
+  const surveys = getEmployeeSurveys(empId, encuestas);
+  const latestScore = getLatestEmployeeScore(empId, encuestas);
+  return getEmployeeAIRisks(latestScore, surveys);
 };
 
 export const getPulseStatus = (score) => {
+  if (score == null || !Number.isFinite(Number(score))) {
+    return {
+      label: "Sin datos",
+      semaforo: "Sin evaluación",
+      color: "#94a3b8",
+      bg: "#f1f5f9",
+      nivel: "sin-datos",
+    };
+  }
+
   if (score >= 80) {
     return {
-      label: "Verde",
+      label: "Estable",
       semaforo: "Verde",
       color: "#22c55e",
       bg: "#dcfce7",
-      nivel: "verde"
+      nivel: "verde",
     };
   }
 
   if (score >= 60) {
     return {
-      label: "Amarillo",
+      label: "Atención",
       semaforo: "Amarillo",
       color: "#f59e0b",
       bg: "#fef3c7",
-      nivel: "amarillo"
+      nivel: "amarillo",
     };
   }
 
   return {
-    label: "Rojo",
+    label: "Crítico",
     semaforo: "Rojo",
     color: "#ef4444",
     bg: "#fee2e2",
-    nivel: "rojo"
+    nivel: "rojo",
   };
 };
 
+export const getEmployeeStatus = getPulseStatus;
+
+export const calcPulseScore = (empId, encuestas) => {
+  const surveys = getEmployeeSurveys(empId, encuestas);
+
+  if (!surveys.length) {
+    return { ...SCORE_SIN_DATOS };
+  }
+
+  const score = getLatestEmployeeScore(empId, encuestas);
+  const promedio = getEmployeeAverageScore(empId, encuestas);
+  const status = getPulseStatus(score);
+
+  const ultDos = surveys.slice(0, 2);
+  const tendencia =
+    ultDos.length < 2
+      ? "→"
+      : Number(ultDos[0].score) > Number(ultDos[1].score)
+        ? "↑"
+        : Number(ultDos[0].score) < Number(ultDos[1].score)
+          ? "↓"
+          : "→";
+
+  return {
+    score,
+    promedio,
+    nivel: status.label,
+    color: status.color,
+    tendencia,
+    sinDatos: false,
+  };
+};

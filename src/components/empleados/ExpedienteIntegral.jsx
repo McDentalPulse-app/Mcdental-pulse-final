@@ -67,10 +67,8 @@ const empleado =
   const reconocimientosEmpleado = reconocimientos.filter(r => r.empleadoId === empleado.id);
   const reportesEmpleado = reportesConfidenciales.filter(r => r.empleadoId === empleado.id);
 
-  const ultimoScore = encuestasEmpleado.length
-    ? encuestasEmpleado[encuestasEmpleado.length - 1].score
-    : calcPulseScore(empleado.id, encuestas).score;
-
+  const ps = calcPulseScore(empleado.id, encuestas);
+  const ultimoScore = ps.score;
   const pulseStatus = getPulseStatus(ultimoScore);
   const semaforo = pulseStatus.semaforo;
   const semaforoColor = pulseStatus.color;
