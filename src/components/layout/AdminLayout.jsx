@@ -12,14 +12,12 @@ import Reportes from '../rh/Reportes';
 import ReportesConfidencialesPanel from '../psicologia/ReportesConfidencialesPanel';
 import Config from '../settings/Config';
 import Card from '../common/Card';
-import SectionTitle from '../common/SectionTitle';
 import Icon from '../ui/Icon';
 import GestionUsuarios from '../admin/GestionUsuarios';
-
-import { semanaActual, isSemanaActual } from '../../utils/constants';
+import GestionEncuestas from '../admin/GestionEncuestas';
 
 export default function AdminLayout({ user, globals, actions }) {
-  const { usuarios: USERS, encuestaPreguntas: ENCUESTA_PREGUNTAS } = useGlobal();
+  const { usuarios: USERS } = useGlobal();
 
   const { encuestas, mensajes, notas, permisos, descuentos, reconocimientos, reportesConfidenciales, vacaciones, archivosExpediente } = globals;
   const { restablecerPasswordUsuario, subirArchivoExpediente, addReconocimiento, inicializarUsuariosPassword } = actions;
@@ -40,36 +38,7 @@ export default function AdminLayout({ user, globals, actions }) {
             <Route path="reportes" element={<Reportes users={USERS} encuestas={encuestas} />} />
             <Route path="confidenciales" element={<ReportesConfidencialesPanel reportes={reportesConfidenciales} />} />
             <Route path="config" element={<Config inicializarUsuariosPassword={inicializarUsuariosPassword} />} />
-            <Route path="encuestas" element={
-              <div className="admin-page">
-                <div className="admin-page-header">
-                  <h1 className="admin-page-title">Gestión de Encuestas</h1>
-                  <p className="admin-page-subtitle">Encuesta activa y preguntas del periodo actual.</p>
-                </div>
-                <Card className="encuesta-page-card">
-                  <SectionTitle icon="clipboard">Encuesta semanal activa</SectionTitle>
-                  <div className="encuesta-meta">
-                    <span className="encuesta-meta-item"><Icon name="calendar" size={14} /> Semana {semanaActual}</span>
-                    <span className="encuesta-meta-item"><Icon name="clipboard" size={14} /> {ENCUESTA_PREGUNTAS.length} preguntas</span>
-                    <span className="encuesta-meta-item"><Icon name="users" size={14} /> {new Set(encuestas.filter(e=>isSemanaActual(e.semana)).map(e=>e.empleadoId)).size} respuestas</span>
-                  </div>
-                  <div className="encuesta-list">
-                    {ENCUESTA_PREGUNTAS.map((p,i)=>(
-                      <div key={p.id} className="encuesta-item">
-                        <span className="encuesta-num">{String(i + 1).padStart(2, "0")}</span>
-                        <span className="encuesta-text">{p.texto}</span>
-                        <span className="encuesta-tipo">{p.tipo}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="encuesta-footer">
-                    <button type="button" className="mc-btn-primary mc-btn-with-icon">
-                      <Icon name="plus" size={16} /> Crear encuesta
-                    </button>
-                  </div>
-                </Card>
-              </div>
-            } />
+            <Route path="encuestas" element={<GestionEncuestas encuestas={encuestas} />} />
             <Route path="mensajes" element={
               <Card className="admin-restricted">
                 <div className="admin-restricted-icon"><Icon name="lock" size={32} /></div>

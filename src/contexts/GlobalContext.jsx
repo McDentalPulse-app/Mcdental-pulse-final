@@ -3,7 +3,8 @@ import {
   MENSAJES_INIT, 
   NOTAS_INIT, 
   REPORTES_CONFIDENCIALES_INIT,
-  CALENDARIO_EXTRA_INIT
+  CALENDARIO_EXTRA_INIT,
+  ENCUESTA_PREGUNTAS,
 } from "../data/initialData";
 
 import { useAuth } from "./AuthContext";
@@ -14,6 +15,7 @@ import { getReportesConfidenciales } from "../services/firestore/reportesService
 import { getReconocimientos } from "../services/firestore/reconocimientosService";
 import { getArchivosExpediente, getVacaciones, getPermisos, getDescuentos } from "../services/firestore/expedientesService";
 import { getUsuarios, getEncuestaPreguntas } from "../services/firestore/usuariosService";
+import { normalizePreguntasList } from "../utils/encuestaPreguntas";
 
 const GlobalContext = createContext();
 
@@ -21,7 +23,9 @@ export const GlobalProvider = ({ children }) => {
   const { user } = useAuth();
   // Estados iniciales
   const [usuarios, setUsuarios] = useState([]);
-  const [encuestaPreguntas, setEncuestaPreguntas] = useState([]);
+  const [encuestaPreguntas, setEncuestaPreguntas] = useState(() =>
+    normalizePreguntasList(ENCUESTA_PREGUNTAS)
+  );
   const [encuestas, setEncuestas] = useState([]);
   const [mensajes, setMensajes] = useState(MENSAJES_INIT);
   const [reportesConfidenciales, setReportesConfidenciales] = useState(REPORTES_CONFIDENCIALES_INIT);
@@ -99,7 +103,11 @@ export const GlobalProvider = ({ children }) => {
         await Promise.all(promises);
 
         if (fbUsuarios.length > 0) setUsuarios(fbUsuarios);
-        if (fbPreguntas.length > 0) setEncuestaPreguntas(fbPreguntas);
+        if (fbPreguntas.length > 0) {
+          setEncuestaPreguntas(normalizePreguntasList(fbPreguntas));
+        } else {
+          setEncuestaPreguntas(normalizePreguntasList(ENCUESTA_PREGUNTAS));
+        }
         if (fbEncuestas.length > 0) setEncuestas(fbEncuestas);
         if (fbMensajes.length > 0) setMensajes(fbMensajes);
         if (fbReportes.length > 0) setReportesConfidenciales(fbReportes);
@@ -124,7 +132,7 @@ export const GlobalProvider = ({ children }) => {
     <GlobalContext.Provider 
       value={{ 
         usuarios, setUsuarios,
-        encuestaPreguntas,
+        encuestaPreguntas, setEncuestaPreguntas,
         encuestas, setEncuestas,
         mensajes, setMensajes,
         reportesConfidenciales, setReportesConfidenciales,

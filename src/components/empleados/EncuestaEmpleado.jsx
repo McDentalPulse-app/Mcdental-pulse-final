@@ -3,6 +3,7 @@ import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import Icon from "../ui/Icon";
 import { useNotification } from "../../contexts/NotificationContext";
+import { getPreguntasActivas, DEFAULT_OPCIONES_RIESGO } from "../../utils/encuestaPreguntas";
 import { semanaActual, isSemanaActual } from "../../utils/constants";
 
 const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
@@ -16,7 +17,7 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
   const [respuestas, setRespuestas] = useState({});
   const [enviada, setEnviada] = useState(false);
 
-  const preguntas = ENCUESTA_PREGUNTAS;
+  const preguntas = getPreguntasActivas(ENCUESTA_PREGUNTAS);
 
   const setR = (id, val) => {
     setRespuestas((prev) => ({
@@ -153,7 +154,7 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
 
           {p.tipo === "opcion" && (
             <div className="empleado-options-row empleado-options-row--wrap">
-              {p.opciones.map((opcion) => (
+              {(p.opciones?.length ? p.opciones : DEFAULT_OPCIONES_RIESGO).map((opcion) => (
                 <button
                   key={opcion}
                   type="button"
