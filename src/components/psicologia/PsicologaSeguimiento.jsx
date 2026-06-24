@@ -8,14 +8,14 @@ import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import { semaforoColor } from "../../config/theme";
-import { semanaActual, normalizeSucursal } from "../../utils/constants";
+import { semanaActual, normalizeSucursal, isSemanaActual, formatSemanaDisplay } from "../../utils/constants";
 import { calcPulseScore, getPulseStatus } from "../../utils/pulseScore";
 
 const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
   const { usuarios: USERS } = useGlobal();
 
   const empleados = USERS.filter(u => u.role === "empleado");
-  const semanaEnc = encuestas.filter(e => e.semana === semanaActual);
+  const semanaEnc = encuestas.filter(e => isSemanaActual(e.semana));
   const [nuevaNota, setNuevaNota] = useState({ empId: null, texto: "" });
   const [empleadoDetalle, setEmpleadoDetalle] = useState(null);
 
@@ -162,7 +162,7 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
                     <div><strong>Sucursal:</strong> {normalizeSucursal(empleadoDetalle.sucursal)}</div>
                     <div><strong>Puesto:</strong> {empleadoDetalle.puesto}</div>
                     <div><strong>ID:</strong> {empleadoDetalle.id}</div>
-                    <div><strong>Semana actual:</strong> {ultima?.semana || "Sin registro"}</div>
+                    <div><strong>Semana actual:</strong> {formatSemanaDisplay(ultima?.semana) || "Sin registro"}</div>
                   </div>
                 </div>
 
@@ -189,7 +189,7 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
                         return (
                           <div key={`${e.empleadoId}-${e.semana}`} className="psico-history-item">
                             <div>
-                              <div className="psico-history-week">{e.semana}</div>
+                              <div className="psico-history-week">{formatSemanaDisplay(e.semana)}</div>
                               <div className="psico-history-label">Medición semanal</div>
                             </div>
                             <div className="psico-history-score">

@@ -3,14 +3,14 @@ import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import Icon from "../ui/Icon";
 import { useNotification } from "../../contexts/NotificationContext";
-import { semanaActual } from "../../utils/constants";
+import { semanaActual, isSemanaActual } from "../../utils/constants";
 
 const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
   const { encuestaPreguntas: ENCUESTA_PREGUNTAS } = useGlobal();
   const { toast, confirm } = useNotification();
 
   const yaContesto = encuestas.some(
-    (e) => e.empleadoId === user.id && e.semana === semanaActual
+    (e) => e.empleadoId === user.id && isSemanaActual(e.semana)
   );
 
   const [respuestas, setRespuestas] = useState({});

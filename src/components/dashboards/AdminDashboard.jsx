@@ -7,7 +7,7 @@ import LineChart from "../common/LineChart";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
 import SectionTitle from "../common/SectionTitle";
-import { SUCURSALES, semanaActual, normalizeSucursal, sucursalMatches } from "../../utils/constants";
+import { SUCURSALES, semanaActual, normalizeSucursal, sucursalMatches, isSemanaActual } from "../../utils/constants";
 import { calcPulseScore, getPulseStatus } from "../../utils/pulseScore";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 
@@ -76,7 +76,7 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
   const [sucursalModal, setSucursalModal] = useState(null);
 
   const empleados = USERS.filter((u) => u.role === "empleado");
-  const semanaEnc = encuestas.filter((e) => e.semana === semanaActual);
+  const semanaEnc = encuestas.filter((e) => isSemanaActual(e.semana));
   const contestaron = new Set(semanaEnc.map((e) => e.empleadoId)).size;
 
   const pulsePorEmpleado = empleados.map((emp) => {

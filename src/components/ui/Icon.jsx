@@ -54,6 +54,7 @@ import {
   Lightbulb,
   Wrench,
   TrendingDown,
+  Eye,
 } from "lucide-react";
 
 const ICON_MAP = {
@@ -115,6 +116,7 @@ const ICON_MAP = {
   lightbulb: Lightbulb,
   wrench: Wrench,
   trendingDown: TrendingDown,
+  eye: Eye,
 };
 
 const Icon = ({ name, size = 18, className = "", strokeWidth = 1.75, color }) => {

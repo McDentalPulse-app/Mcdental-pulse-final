@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
-import { semanaActual, normalizeSucursal, sucursalMatches } from "../../utils/constants";
+import { semanaActual, normalizeSucursal, sucursalMatches, isSemanaActual, formatSemanaDisplay } from "../../utils/constants";
 
 const Reportes = ({ users = [], encuestas = [] }) => {
   const [sucursalReporte, setSucursalReporte] = useState("Todas");
@@ -38,7 +38,7 @@ const Reportes = ({ users = [], encuestas = [] }) => {
         puesto: emp.puesto || "",
         usuario: emp.user || "",
         estatus: "Activo",
-        semana: ultima?.semana || "Sin datos",
+        semana: ultima?.semana ? formatSemanaDisplay(ultima.semana) : "Sin datos",
         score: Number.isFinite(Number(ultima?.score)) ? Number(ultima.score) : "Sin datos",
         semaforo: ultima?.semaforo || "Sin datos"
       };
@@ -83,7 +83,7 @@ const Reportes = ({ users = [], encuestas = [] }) => {
         : "Sin datos";
       return {
         nombre: emp.name || "", sucursal: normalizeSucursal(emp.sucursal) || "", puesto: emp.puesto || "",
-        encuestasContestadas: encEmpleado.length, ultimaSemana: ultima?.semana || "Sin datos",
+        encuestasContestadas: encEmpleado.length, ultimaSemana: ultima?.semana ? formatSemanaDisplay(ultima.semana) : "Sin datos",
         scorePromedioMes: promedio,
         scoreActual: Number.isFinite(Number(ultima?.score)) ? Number(ultima.score) : "Sin datos",
         semaforo: ultima?.semaforo || "Sin datos"
@@ -125,7 +125,7 @@ const Reportes = ({ users = [], encuestas = [] }) => {
       const ultima = getUltimaEncuesta(emp.id);
       return {
         nombre: emp.name || "", sucursal: normalizeSucursal(emp.sucursal) || "", puesto: emp.puesto || "",
-        ultimaSemana: ultima?.semana || "Sin datos",
+        ultimaSemana: ultima?.semana ? formatSemanaDisplay(ultima.semana) : "Sin datos",
         scoreActual: Number.isFinite(Number(ultima?.score)) ? Number(ultima.score) : "Sin datos",
         semaforo: ultima?.semaforo || "Sin datos"
       };
@@ -157,14 +157,14 @@ const Reportes = ({ users = [], encuestas = [] }) => {
       return `"${texto}"`;
     };
     const encuestasSemana = encuestas.filter(
-      (e) => e.semana === semanaActual && Number.isFinite(Number(e.score))
+      (e) => isSemanaActual(e.semana) && Number.isFinite(Number(e.score))
     );
     const getEmpleado = (empleadoId) => empleados.find((emp) => emp.id === empleadoId);
     const filas = encuestasSemana.map((encuesta) => {
       const emp = getEmpleado(encuesta.empleadoId);
       return {
         nombre: emp?.name || "Empleado no encontrado", sucursal: normalizeSucursal(emp?.sucursal) || "Sin sucursal",
-        puesto: emp?.puesto || "Sin puesto", semana: encuesta.semana || "", fecha: encuesta.fecha || "",
+        puesto: emp?.puesto || "Sin puesto", semana: formatSemanaDisplay(encuesta.semana) || "", fecha: encuesta.fecha || "",
         score: encuesta.score, semaforo: encuesta.semaforo || "Sin datos",
         riesgoRenuncia: encuesta.respuestas?.[9] || encuesta.respuestas?.p9 || "",
         problemaPersonal: encuesta.respuestas?.[7] || encuesta.respuestas?.p7 || "",

@@ -5,7 +5,7 @@ import Badge from "../common/Badge";
 import KPI from "../common/KPI";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
-import { SUCURSALES, semanaActual, normalizeSucursal, sucursalMatches } from "../../utils/constants";
+import { SUCURSALES, semanaActual, normalizeSucursal, sucursalMatches, formatSemanaDisplay, isSemanaActual } from "../../utils/constants";
 
 import { calcPulseScore, getPulseStatus, calcRiesgos, getEmployeeAverageScore } from "../../utils/pulseScore";
 import { semaforoColor } from "../../config/theme";
@@ -80,7 +80,7 @@ const EmpleadosList = ({
     const ps = calcPulseScore(selected.id, encuestas);
     const promedioScore = getEmployeeAverageScore(selected.id, encuestas);
     const trend = encEmp.map(e => ({
-      label: e.semana.replace("2025-", ""),
+      label: formatSemanaDisplay(e.semana).replace("2026-", ""),
       v: e.score
     }));
     const riesgos = calcRiesgos(selected.id, encuestas);
@@ -218,7 +218,7 @@ const EmpleadosList = ({
               ) : (
                 encEmp.map(e => (
                   <div key={e.id} className="detail-list-item">
-                    <span>{e.semana}</span>
+                    <span>{formatSemanaDisplay(e.semana)}</span>
                     <Badge tipo={e.semaforo} />
                     <span style={{ fontWeight: 800 }}>{e.score}</span>
                   </div>
@@ -407,7 +407,7 @@ const EmpleadosList = ({
         {filtered.map(emp => {
           const sem = getUltimoSemaforo(emp.id);
           const ps = calcPulseScore(emp.id, encuestas);
-          const contestoEsta = encuestas.some(e => e.empleadoId === emp.id && e.semana === semanaActual);
+          const contestoEsta = encuestas.some(e => e.empleadoId === emp.id && isSemanaActual(e.semana));
 
           return (
             <div

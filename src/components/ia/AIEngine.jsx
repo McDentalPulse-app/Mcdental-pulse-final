@@ -10,7 +10,7 @@ import PulseScoreBadge from "../common/PulseScoreBadge";
 import RiskBar from "../common/RiskBar";
 import { semaforoColor, semaforoBg, semaforoLabel } from "../../config/theme";
 
-import { semanaActual, normalizeSucursal } from "../../utils/constants";
+import { semanaActual, normalizeSucursal, isSemanaActual, formatSemanaDisplay } from "../../utils/constants";
 import { calcularAntiguedad, resolveFechaIngreso } from "../../utils/helpers";
 import { calcPulseScore, getPulseStatus, calcRiesgos } from "../../utils/pulseScore";
 import { callAI } from "../../utils/analysisEngine";
@@ -191,7 +191,7 @@ const pendientesEvaluacion = analisisIA.filter(a => a.sinDatos).length;
 
 const RESUMEN_LIMITE = 8;
   const buildContexto = () => {
-    const semanaEnc = encuestas.filter(e => e.semana === semanaActual);
+    const semanaEnc = encuestas.filter(e => isSemanaActual(e.semana));
     const resumen = empleados.map(emp => {
       const pulse = calcPulseScore(emp.id, encuestas);
       const riesgos = calcRiesgos(emp.id, encuestas);

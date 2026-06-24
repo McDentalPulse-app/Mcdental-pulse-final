@@ -5,12 +5,12 @@ import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
 import Badge from "../common/Badge";
 import Icon from "../ui/Icon";
-import { semanaActual, normalizeSucursal } from "../../utils/constants";
+import { semanaActual, normalizeSucursal, isSemanaActual } from "../../utils/constants";
 
 const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }) => {
   const { usuarios: USERS } = useGlobal();
   const empleados = USERS.filter(u => u.role === "empleado");
-  const semanaEnc = encuestas.filter(e => e.semana === semanaActual);
+  const semanaEnc = encuestas.filter(e => isSemanaActual(e.semana));
   const contestaron = new Set(semanaEnc.map(e => e.empleadoId)).size;
   const pendientes = empleados.length - contestaron;
   const focoRojo = semanaEnc.filter(e => String(e.semaforo || "").toLowerCase() === "rojo").length;

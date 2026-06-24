@@ -3,13 +3,14 @@ import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
+import { formatSemanaDisplay, normalizeWeek } from "../../utils/constants";
 import { getPulseStatus } from "../../utils/pulseScore";
 
 const HistorialEmpleado = ({ user, encuestas }) => {
   const historial = encuestas
     .filter(e => e.empleadoId === user.id)
     .slice()
-    .sort((a, b) => b.semana.localeCompare(a.semana));
+    .sort((a, b) => normalizeWeek(b.semana).localeCompare(normalizeWeek(a.semana)));
 
   const promedio = historial.length
     ? Math.round(historial.reduce((sum, e) => sum + e.score, 0) / historial.length)
@@ -34,7 +35,7 @@ const HistorialEmpleado = ({ user, encuestas }) => {
         <StatCard iconName="chart" value={historial.length} label="Encuestas registradas" valueClass="admin-stat-value--green" />
         <StatCard iconName="heart" value={promedio} label="Promedio personal" valueClass="admin-stat-value--blue" />
         <StatCard iconName="star" value={mejor} label="Mejor score" valueClass="admin-stat-value--green" />
-        <StatCard iconName="calendarDays" value={ultima?.semana || "N/A"} label="Última medición" valueClass="admin-stat-value--amber" />
+        <StatCard iconName="calendarDays" value={ultima?.semana ? formatSemanaDisplay(ultima.semana) : "N/A"} label="Última medición" valueClass="admin-stat-value--amber" />
       </div>
 
       <Card>
@@ -51,7 +52,7 @@ const HistorialEmpleado = ({ user, encuestas }) => {
                 <div key={`${e.empleadoId}-${e.semana}`} className="empleado-timeline-item">
                   <div className="empleado-timeline-main">
                     <div className="empleado-timeline-week">
-                      <Icon name="calendarDays" size={16} /> {e.semana}
+                      <Icon name="calendarDays" size={16} /> {formatSemanaDisplay(e.semana)}
                     </div>
                     <div className="empleado-timeline-label">Resultado semanal de bienestar</div>
                   </div>

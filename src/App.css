@@ -6622,3 +6622,249 @@
     min-width: calc(50% - 4px);
   }
 }
+
+/* ── Expediente Integral — Encuestas ── */
+.expediente-encuesta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.expediente-encuesta-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.expediente-encuesta-week {
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--mc-verde-oscuro);
+}
+
+.expediente-encuesta-date {
+  font-weight: 600;
+  color: #64748b;
+}
+
+.expediente-encuesta-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.expediente-encuesta-semaforo .mc-badge {
+  font-size: 11px;
+}
+
+.expediente-encuesta-btn {
+  flex-shrink: 0;
+  font-size: 12px;
+  padding: 8px 12px;
+}
+
+.encuesta-detalle-overlay {
+  z-index: 10000;
+}
+
+.encuesta-detalle-modal {
+  width: min(760px, 96vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 22px 24px;
+}
+
+.encuesta-detalle-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.encuesta-detalle-sub {
+  margin-top: 4px;
+}
+
+.encuesta-detalle-close {
+  border: none;
+  background: #f1f5f9;
+  color: #0f172a;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.encuesta-detalle-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.encuesta-detalle-pulse {
+  padding: 18px;
+  border-radius: 14px;
+  border: 1px solid;
+  text-align: center;
+}
+
+.encuesta-detalle-pulse-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.encuesta-detalle-pulse-value {
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1.1;
+  margin: 4px 0;
+}
+
+.encuesta-detalle-pulse-status {
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.encuesta-detalle-meta-box {
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: var(--mc-gris-perla);
+  border: 1px solid var(--mc-gris-suave);
+  color: #334155;
+  line-height: 1.85;
+  font-size: 13px;
+  display: grid;
+  gap: 4px;
+}
+
+.encuesta-detalle-section {
+  margin-bottom: 18px;
+}
+
+.encuesta-detalle-section-title {
+  margin: 0 0 12px;
+  color: var(--mc-verde-oscuro);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.encuesta-detalle-list {
+  display: grid;
+  gap: 10px;
+}
+
+.encuesta-detalle-item {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--mc-blanco);
+  border: 1px solid var(--mc-gris-suave);
+}
+
+.encuesta-detalle-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.encuesta-detalle-area {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.encuesta-detalle-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #b45309;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.encuesta-detalle-pregunta {
+  font-weight: 700;
+  font-size: 13px;
+  color: #0f172a;
+  line-height: 1.45;
+  margin-bottom: 6px;
+}
+
+.encuesta-detalle-respuesta {
+  font-size: 14px;
+  color: #334155;
+  font-weight: 600;
+}
+
+.encuesta-detalle-comentario-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.encuesta-detalle-comentario-head .encuesta-detalle-section-title {
+  margin: 0;
+}
+
+.encuesta-detalle-comentario-box {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #fffdf8;
+  border: 1px solid #fde68a;
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.encuesta-detalle-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid #f1f5f9;
+}
+
+@media (max-width: 768px) {
+  .expediente-encuesta-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .expediente-encuesta-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .encuesta-detalle-modal {
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: calc(100dvh - 20px) !important;
+    padding: 18px 16px;
+    border-radius: 16px !important;
+  }
+
+  .encuesta-detalle-footer .mc-btn-secondary {
+    width: 100%;
+  }
+}

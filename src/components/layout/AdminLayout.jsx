@@ -16,7 +16,7 @@ import SectionTitle from '../common/SectionTitle';
 import Icon from '../ui/Icon';
 import GestionUsuarios from '../admin/GestionUsuarios';
 
-import { semanaActual } from '../../utils/constants';
+import { semanaActual, isSemanaActual } from '../../utils/constants';
 
 export default function AdminLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas: ENCUESTA_PREGUNTAS } = useGlobal();
@@ -51,7 +51,7 @@ export default function AdminLayout({ user, globals, actions }) {
                   <div className="encuesta-meta">
                     <span className="encuesta-meta-item"><Icon name="calendar" size={14} /> Semana {semanaActual}</span>
                     <span className="encuesta-meta-item"><Icon name="clipboard" size={14} /> {ENCUESTA_PREGUNTAS.length} preguntas</span>
-                    <span className="encuesta-meta-item"><Icon name="users" size={14} /> {new Set(encuestas.filter(e=>e.semana===semanaActual).map(e=>e.empleadoId)).size} respuestas</span>
+                    <span className="encuesta-meta-item"><Icon name="users" size={14} /> {new Set(encuestas.filter(e=>isSemanaActual(e.semana)).map(e=>e.empleadoId)).size} respuestas</span>
                   </div>
                   <div className="encuesta-list">
                     {ENCUESTA_PREGUNTAS.map((p,i)=>(

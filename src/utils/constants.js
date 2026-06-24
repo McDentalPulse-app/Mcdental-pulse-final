@@ -14,4 +14,24 @@ export const normalizeSucursal = (sucursal) => {
 /** Comparar sucursales tratando alias legacy como la misma. */
 export const sucursalMatches = (a, b) => normalizeSucursal(a) === normalizeSucursal(b);
 
-export const semanaActual = "2025-W15";
+/** Semana oficial de lanzamiento de McDental Pulse. */
+export const OFFICIAL_WEEK = "2026-W01";
+
+/** Semana legacy del piloto; se trata como OFFICIAL_WEEK en lectura y cálculos. */
+export const LEGACY_LAUNCH_WEEK = "2025-W15";
+
+/** Semana activa del sistema (encuestas nuevas, badges, KPIs de la semana). */
+export const semanaActual = OFFICIAL_WEEK;
+
+/** Normaliza semana guardada (legacy → oficial) sin modificar Firestore. */
+export const normalizeWeek = (week) => {
+  if (week == null || String(week).trim() === "") return OFFICIAL_WEEK;
+  if (week === LEGACY_LAUNCH_WEEK) return OFFICIAL_WEEK;
+  return week;
+};
+
+/** ¿La encuesta pertenece a la semana activa del sistema? */
+export const isSemanaActual = (week) => normalizeWeek(week) === OFFICIAL_WEEK;
+
+/** Semana para mostrar en UI (badges, modales, historial). */
+export const formatSemanaDisplay = (week) => normalizeWeek(week);

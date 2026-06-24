@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import Badge from "../common/Badge";
@@ -7,9 +7,11 @@ import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
-import { SUCURSALES, semanaActual, normalizeSucursal, sucursalMatches } from "../../utils/constants";
+import { normalizeSucursal, sucursalMatches, formatSemanaDisplay } from "../../utils/constants";
 
 import { calcPulseScore, getPulseStatus } from "../../utils/pulseScore";
+import { getEncuestasEmpleado, getEncuestaSemaforo } from "../../utils/encuestaDetail";
+import EncuestaDetalleModal from "./EncuestaDetalleModal";
 import {
   formatAntiguedadEmpleado,
   formatFechaCumpleanos,
@@ -33,7 +35,7 @@ const ExpedienteIntegral = ({
   archivosExpediente = [],
   onSubirArchivoExpediente
 }) => {
-  const { usuarios: USERS } = useGlobal();
+  const { usuarios: USERS, encuestaPreguntas } = useGlobal();
   const { toast, confirm } = useNotification();
 
  const empleados = users.filter(u => u.role === "empleado");
@@ -42,6 +44,7 @@ const [empleadoId, setEmpleadoId] = useState(empleados[0]?.id || "");
 const [mostrarSubirArchivo, setMostrarSubirArchivo] = useState(false);
 const [archivoExpediente, setArchivoExpediente] = useState(null);
 const [tipoArchivoExpediente, setTipoArchivoExpediente] = useState("General");
+const [encuestaDetalle, setEncuestaDetalle] = useState(null);
 
 const empleadosFiltrados = empleados.filter(emp =>
   filtroSucursalExp === "Todas" || sucursalMatches(emp.sucursal, filtroSucursalExp)
@@ -52,6 +55,10 @@ const empleado =
   empleadosFiltrados[0] ||
   empleados[0];
 
+  useEffect(() => {
+    setEncuestaDetalle(null);
+  }, [empleado?.id]);
+
   if (!empleado) {
     return (
       <div className="admin-page">
@@ -60,7 +67,7 @@ const empleado =
     );
   }
 
-  const encuestasEmpleado = encuestas.filter(e => e.empleadoId === empleado.id);
+  const encuestasEmpleado = getEncuestasEmpleado(encuestas, empleado.id);
   const mensajesEmpleado = mensajes.filter(m => m.de === empleado.id || m.para === empleado.id);
   const vacacionesEmpleado = vacaciones.filter(v => v.empleadoId === empleado.id);
   const descuentosEmpleado = descuentos.filter(d => d.empleadoId === empleado.id);
@@ -76,6 +83,7 @@ const empleado =
   const esAdmin = currentUser?.role === "admin";
   const esRH = currentUser?.role === "rh" || currentUser?.role === "recursos humanos";
   const esPsicologa = currentUser?.role === "psicologa";
+  const puedeVerEncuestas = esAdmin || esPsicologa;
 
   // Notas psicológicas: Solo la psicóloga que la escribió puede verla (o por nombre para notas previas)
   const notasEmpleado = notas.filter(n => 
@@ -340,6 +348,45 @@ const empleado =
           </div>
         </Card>
 
+        {puedeVerEncuestas && (
+          <Card className="expediente-encuestas-card">
+            <SectionTitle icon="clipboard">Encuestas</SectionTitle>
+            <div className="expediente-list-scroll">
+              {encuestasEmpleado.length === 0 ? (
+                <p className="admin-list-item-meta">Sin encuestas registradas.</p>
+              ) : (
+                encuestasEmpleado.map((enc) => {
+                  const sem = getEncuestaSemaforo(enc);
+                  const encScore = Number.isFinite(Number(enc.score)) ? Number(enc.score) : "—";
+                  return (
+                    <div key={`${enc.empleadoId}-${enc.semana}-${enc.fecha || ""}`} className="expediente-encuesta-row">
+                      <div className="expediente-encuesta-main">
+                        <div className="expediente-encuesta-week">
+                          {formatSemanaDisplay(enc.semana) || "Semana sin registro"}
+                          {enc.fecha ? <span className="expediente-encuesta-date"> · {enc.fecha}</span> : null}
+                        </div>
+                        <div className="expediente-encuesta-meta">
+                          <span><b>Pulse Score:</b> {encScore}</span>
+                          <span className="expediente-encuesta-semaforo">
+                            <Badge tipo={sem} />
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="mc-btn-outline mc-btn-with-icon expediente-encuesta-btn"
+                        onClick={() => setEncuestaDetalle(enc)}
+                      >
+                        <Icon name="eye" size={15} /> Ver detalles
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </Card>
+        )}
+
         <Card>
           <SectionTitle icon="lock">Reportes confidenciales</SectionTitle>
           <div className="expediente-list-scroll">
@@ -355,6 +402,15 @@ const empleado =
           </div>
         </Card>
       </div>
+
+      {encuestaDetalle && (
+        <EncuestaDetalleModal
+          encuesta={encuestaDetalle}
+          empleado={empleado}
+          preguntas={encuestaPreguntas}
+          onClose={() => setEncuestaDetalle(null)}
+        />
+      )}
     </div>
   );
 };

@@ -4,12 +4,12 @@ import Badge from "../common/Badge";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
 import PulseScoreBadge from "../common/PulseScoreBadge";
-import { semanaActual, normalizeSucursal } from "../../utils/constants";
+import { semanaActual, normalizeSucursal, isSemanaActual, formatSemanaDisplay } from "../../utils/constants";
 import { calcPulseScore } from "../../utils/pulseScore";
 
 const InicioEmpleado = ({ user, encuestas, mensajes, setActive }) => {
   const mis = encuestas.filter(e => e.empleadoId === user.id);
-  const yaContesto = mis.some(e => e.semana === semanaActual);
+  const yaContesto = mis.some(e => isSemanaActual(e.semana));
   const ultimo = mis.sort((a, b) => b.semana.localeCompare(a.semana))[0];
   const noLeidos = mensajes.filter(m => m.para === user.id && !m.leido).length;
   const ps = calcPulseScore(user.id, encuestas);
@@ -119,7 +119,7 @@ const InicioEmpleado = ({ user, encuestas, mensajes, setActive }) => {
             {mis.sort((a, b) => b.semana.localeCompare(a.semana)).slice(0, 5).map(e => (
               <div key={e.id} className="empleado-history-row">
                 <span className="empleado-history-week">
-                  <Icon name="clipboard" size={14} /> {e.semana}
+                  <Icon name="clipboard" size={14} /> {formatSemanaDisplay(e.semana)}
                 </span>
                 <Badge tipo={Number.isFinite(Number(e.score)) ? e.semaforo : "amarillo"} />
                 <span className="empleado-history-score">
