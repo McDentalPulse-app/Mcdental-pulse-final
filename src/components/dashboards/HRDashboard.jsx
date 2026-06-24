@@ -15,7 +15,7 @@ const HRDashboard = ({ users }) => {
   ];
 
   const pendientes = [
-    { icon: "vacation", text: "Ana García solicitó vacaciones del 15 al 19 de julio." },
+    { icon: "vacation", text: "Hay solicitudes de vacaciones pendientes de revisión." },
     { icon: "dollar", text: "Luis Torres tiene descuento pendiente de revisión." },
     { icon: "clock", text: "Luis Torres acumula 2 retardos este mes." },
   ];
