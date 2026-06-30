@@ -25,7 +25,8 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
   };
 
   const contestaron = new Set(semanaEnc.map(e => e.empleadoId)).size;
-  const focoRojo = semanaEnc.filter(e => String(e.semaforo || "").toLowerCase() === "rojo").length;
+  // Cuenta empleados en rojo (mismo criterio que las tarjetas del grid), no filas de encuesta.
+  const focoRojo = empleados.filter(emp => getUltimoSemaforo(emp.id) === "rojo").length;
 
   return (
     <div className="admin-page psico-seguimiento-page">

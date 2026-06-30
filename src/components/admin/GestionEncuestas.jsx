@@ -4,7 +4,7 @@ import { useNotification } from "../../contexts/NotificationContext";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
-import { semanaActual, isSemanaActual } from "../../utils/constants";
+import { semanaDisplay, isSemanaActual } from "../../utils/constants";
 import {
   normalizePreguntasList,
   normalizePregunta,
@@ -181,7 +181,7 @@ const GestionEncuestas = ({ encuestas = [] }) => {
         <SectionTitle icon="clipboard">Encuesta semanal activa</SectionTitle>
         <div className="encuesta-meta">
           <span className="encuesta-meta-item">
-            <Icon name="calendar" size={14} /> Semana {semanaActual}
+            <Icon name="calendar" size={14} /> Semana {semanaDisplay}
           </span>
           <span className="encuesta-meta-item">
             <Icon name="clipboard" size={14} /> {preguntasOrdenadas.length} preguntas
@@ -229,7 +229,7 @@ const GestionEncuestas = ({ encuestas = [] }) => {
               <div>
                 <h2 id="encuesta-edit-title" className="mc-modal-title">Editar preguntas</h2>
                 <p className="admin-page-subtitle encuesta-edit-sub">
-                  Semana {semanaActual} · {draftPreguntas.length} preguntas
+                  Semana {semanaDisplay} · {draftPreguntas.length} preguntas
                 </p>
               </div>
               <button type="button" className="encuesta-edit-close" onClick={cerrarEditor} aria-label="Cerrar">

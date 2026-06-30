@@ -4,7 +4,7 @@ import Card from "../common/Card";
 import Icon from "../ui/Icon";
 import { useNotification } from "../../contexts/NotificationContext";
 import { getPreguntasActivas, DEFAULT_OPCIONES_RIESGO } from "../../utils/encuestaPreguntas";
-import { semanaActual, isSemanaActual } from "../../utils/constants";
+import { getISOWeek, semanaDisplay, isSemanaActual } from "../../utils/constants";
 
 const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
   const { encuestaPreguntas: ENCUESTA_PREGUNTAS } = useGlobal();
@@ -70,7 +70,7 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
 
     onSubmit({
       empleadoId: user.id,
-      semana: semanaActual,
+      semana: getISOWeek(),
       respuestas,
       score,
       semaforo,
@@ -89,7 +89,7 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
           </div>
           <h2 className="empleado-success-title">Encuesta completada</h2>
           <p className="admin-page-subtitle empleado-success-text">
-            Tu encuesta fue registrada para {semanaActual}.
+            Tu encuesta fue registrada para {semanaDisplay}.
           </p>
         </Card>
       </div>
@@ -101,7 +101,7 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
       <div className="admin-page-header">
         <h1 className="admin-page-title">Mi encuesta</h1>
         <p className="admin-page-subtitle">
-          Semana {semanaActual} · Tus respuestas son confidenciales.
+          Semana {semanaDisplay} · Tus respuestas son confidenciales.
         </p>
       </div>
 

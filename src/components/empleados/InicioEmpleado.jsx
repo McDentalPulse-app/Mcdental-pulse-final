@@ -4,7 +4,7 @@ import Badge from "../common/Badge";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
 import PulseScoreBadge from "../common/PulseScoreBadge";
-import { semanaActual, normalizeSucursal, isSemanaActual, formatSemanaDisplay } from "../../utils/constants";
+import { semanaDisplay, normalizeSucursal, isSemanaActual, formatSemanaDisplay } from "../../utils/constants";
 import { calcPulseScore } from "../../utils/pulseScore";
 
 const InicioEmpleado = ({ user, encuestas, mensajes, setActive }) => {
@@ -20,7 +20,7 @@ const InicioEmpleado = ({ user, encuestas, mensajes, setActive }) => {
       key: "encuesta",
       icon: yaContesto ? "check" : "clipboard",
       title: yaContesto ? "Encuesta completada" : "Encuesta pendiente",
-      meta: `Semana ${semanaActual}`,
+      meta: `Semana ${semanaDisplay}`,
       variant: yaContesto ? "ok" : "pending",
       action: !yaContesto ? "Contestar ahora" : null,
       onClick: () => setActive("encuesta"),
@@ -63,7 +63,7 @@ const InicioEmpleado = ({ user, encuestas, mensajes, setActive }) => {
           <p className="admin-page-subtitle">{normalizeSucursal(user.sucursal)} · {user.puesto}</p>
         </div>
         <span className="dashboard-week-badge">
-          <Icon name="calendar" size={14} /> Semana {semanaActual}
+          <Icon name="calendar" size={14} /> Semana {semanaDisplay}
         </span>
       </header>
 

@@ -1,11 +1,34 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// Plugin dev-only: sirve /api/gemini en `npm run dev` reusando api/gemini.js
+// (en producción lo sirve Vercel). Carga GEMINI_API_KEY de .env.local.
+function devApiProxy(mode) {
+  return {
+    name: 'dev-api-gemini',
+    apply: 'serve',
+    configureServer(server) {
+      const env = loadEnv(mode, process.cwd(), '')
+      process.env.GEMINI_API_KEY = env.GEMINI_API_KEY
+      server.middlewares.use('/api/gemini', async (req, res) => {
+        let body = ''
+        for await (const chunk of req) body += chunk
+        req.body = body ? JSON.parse(body) : {}
+        res.status = (c) => { res.statusCode = c; return res }
+        res.json = (o) => { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(o)) }
+        const { default: handler } = await import('./api/gemini.js')
+        await handler(req, res)
+      })
+    },
+  }
+}
+
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
+    devApiProxy(mode),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: [
@@ -64,4 +87,4 @@ export default defineConfig({
       },
     }),
   ],
-})
+}))

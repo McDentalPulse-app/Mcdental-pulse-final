@@ -7,7 +7,7 @@ import LineChart from "../common/LineChart";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
 import SectionTitle from "../common/SectionTitle";
-import { SUCURSALES, semanaActual, normalizeSucursal, sucursalMatches, isSemanaActual } from "../../utils/constants";
+import { SUCURSALES, semanaDisplay, normalizeSucursal, sucursalMatches, isSemanaActual } from "../../utils/constants";
 import { calcPulseScore, getPulseStatus } from "../../utils/pulseScore";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 
@@ -165,7 +165,7 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
         <div className="dashboard-executive-meta">
           <span className="dashboard-week-badge">
             <Icon name="calendar" size={14} />
-            Semana {semanaActual}
+            Semana {semanaDisplay}
           </span>
           <span className="dashboard-participation-badge">
             <Icon name="clipboardCheck" size={14} />

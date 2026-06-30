@@ -1,5 +1,6 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useState, useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { refreshSemana } from "./utils/constants";
 import { useAuth } from "./contexts/AuthContext";
 import { useGlobal } from "./contexts/GlobalContext";
 import { useAppActions } from "./hooks/useAppActions";
@@ -25,6 +26,15 @@ export default function App() {
   const globals = useGlobal();
   const actions = useAppActions();
   const location = useLocation();
+
+  // Refresca la semana activa al cruzar el lunes 00:00 sin recargar la página.
+  const [, setWeekTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (refreshSemana()) setWeekTick((t) => t + 1);
+    }, 60000);
+    return () => clearInterval(id);
+  }, []);
 
   if (!user) {
     return (

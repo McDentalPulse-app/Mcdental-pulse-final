@@ -5,7 +5,7 @@ import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
 import Badge from "../common/Badge";
 import Icon from "../ui/Icon";
-import { semanaActual, normalizeSucursal, isSemanaActual } from "../../utils/constants";
+import { semanaDisplay, normalizeSucursal, isSemanaActual } from "../../utils/constants";
 
 const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }) => {
   const { usuarios: USERS } = useGlobal();
@@ -49,7 +49,7 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
         <div className="dashboard-executive-meta">
           <span className="dashboard-week-badge">
             <Icon name="calendar" size={14} />
-            Semana {semanaActual}
+            Semana {semanaDisplay}
           </span>
           {reportesNuevos > 0 && (
             <span className="dashboard-participation-badge psico-meta-badge--conf">
