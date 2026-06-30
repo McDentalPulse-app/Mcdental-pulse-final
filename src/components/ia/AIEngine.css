@@ -1,0 +1,244 @@
+/* ============================================================
+   AI Engine — dark-glass dramático + motion (piloto UI)
+   Scoped bajo .ai-engine-page. Reusa tokens de marca.
+   ============================================================ */
+
+/* ── HERO oscuro glass + aura ── */
+.ai-engine-page .ai-engine-header {
+  position: relative;
+  z-index: 5;                /* su WeekSelect debe desplegarse sobre lo de abajo */
+  overflow: visible;
+  background: var(--grad-brand);
+  border: 1px solid rgba(20, 200, 182, 0.28);
+  border-radius: var(--mc-radio-xl, 22px);
+  box-shadow: 0 26px 64px -30px rgba(4, 35, 31, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: #fff;
+  padding: 22px 24px;
+}
+.ai-hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  overflow: hidden;          /* recorta la aura sin recortar el dropdown del header */
+  pointer-events: none;
+  /* Vida por opacity (no mueve geometría → el clip redondeado no re-rasteriza →
+     sin jitter en las esquinas). Las auras quedan estáticas. */
+  animation: aiBreathe 9s ease-in-out infinite;
+}
+.ai-hero-bg::before,
+.ai-hero-bg::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+}
+.ai-hero-bg::before {
+  width: 300px; height: 300px;
+  top: -130px; right: -60px;
+  background: radial-gradient(circle, rgba(20, 200, 182, 0.5), transparent 70%);
+}
+.ai-hero-bg::after {
+  width: 220px; height: 220px;
+  bottom: -120px; left: 18%;
+  background: radial-gradient(circle, rgba(16, 116, 99, 0.55), transparent 70%);
+}
+@keyframes aiBreathe {
+  0%, 100% { opacity: 0.78; }
+  50% { opacity: 1; }
+}
+.ai-engine-page .ai-engine-header > *:not(.ai-hero-bg) { position: relative; z-index: 1; }
+
+.ai-engine-page .ai-engine-header-icon {
+  background: rgba(20, 200, 182, 0.2);
+  color: #EAFFFB;
+  border: 1px solid rgba(20, 200, 182, 0.35);
+  box-shadow: 0 0 32px -6px rgba(20, 200, 182, 0.6);
+}
+.ai-engine-page .ai-engine-header .admin-page-title { color: #fff; }
+.ai-engine-page .ai-engine-header .admin-page-subtitle { color: rgba(255, 255, 255, 0.7); }
+
+.ai-engine-page .ai-engine-status-badge {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(20, 200, 182, 0.4);
+  color: #EAFFFB;
+}
+.ai-status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--mc-aqua);
+  box-shadow: 0 0 0 0 rgba(20, 200, 182, 0.6);
+  animation: aiPulseDot 2s ease-out infinite;
+}
+@keyframes aiPulseDot {
+  0% { box-shadow: 0 0 0 0 rgba(20, 200, 182, 0.55); }
+  70% { box-shadow: 0 0 0 8px rgba(20, 200, 182, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(20, 200, 182, 0); }
+}
+
+/* ── Stat cards + pulse chips: entrada + hover ── */
+@keyframes aiUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; } }
+.ai-engine-page .admin-stat-grid > * { animation: aiUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.ai-engine-page .admin-stat-grid > *:nth-child(1) { animation-delay: 0.06s; }
+.ai-engine-page .admin-stat-grid > *:nth-child(2) { animation-delay: 0.12s; }
+.ai-engine-page .admin-stat-grid > *:nth-child(3) { animation-delay: 0.18s; }
+.ai-engine-page .admin-stat-grid > *:nth-child(4) { animation-delay: 0.24s; }
+.ai-engine-page .admin-stat-grid > * {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease;
+}
+.ai-engine-page .admin-stat-grid > *:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 34px -20px rgba(4, 35, 31, 0.4);
+}
+
+.ai-engine-page .ai-engine-pulse-chip {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.ai-engine-page .ai-engine-pulse-chip:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px -18px rgba(4, 35, 31, 0.45);
+}
+
+/* ── Tabs: segmented control con pill deslizante ── */
+.ai-engine-page .ai-engine-tab { position: relative; }
+.ai-tab-pill {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: var(--grad-accent);
+  box-shadow: 0 8px 22px -10px rgba(20, 200, 182, 0.7);
+}
+.ai-engine-page .ai-engine-tab > svg,
+.ai-engine-page .ai-engine-tab { /* texto del tab por encima del pill */ }
+.ai-engine-page .ai-engine-tab > * { position: relative; z-index: 1; }
+.ai-engine-page .ai-engine-tab--active { color: #04231F; }
+/* el fondo activo lo pinta el pill, no la clase base */
+.ai-engine-page .ai-engine-tab--active { background: transparent; }
+
+/* ── Botón Generar con IA: gradiente accent ── */
+.ai-engine-page .ai-gen-btn {
+  background: var(--grad-accent);
+  color: #04231F;
+  border: none;
+  box-shadow: 0 12px 28px -12px rgba(20, 200, 182, 0.6);
+  transition: filter 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+.ai-engine-page .ai-gen-btn:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); }
+.ai-engine-page .ai-gen-btn:active:not(:disabled) { transform: translateY(0) scale(0.99); }
+.ai-engine-page .ai-gen-btn:disabled { opacity: 0.7; }
+
+/* ── Panel de salida IA: loading shimmer + reveal ── */
+.ai-output-reveal { animation: aiUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+.ai-skeleton { display: grid; gap: 10px; padding: 4px 0; }
+.ai-skeleton-line {
+  height: 12px;
+  border-radius: 7px;
+  background: linear-gradient(100deg, #eef2f1 30%, #dcebe7 0, #e7efee 40%, #eef2f1 50%);
+  background-size: 200% 100%;
+  animation: aiShimmer 1.3s linear infinite;
+}
+.ai-skeleton-line:nth-child(1) { width: 92%; }
+.ai-skeleton-line:nth-child(2) { width: 78%; }
+.ai-skeleton-line:nth-child(3) { width: 85%; }
+.ai-skeleton-line:nth-child(4) { width: 64%; }
+@keyframes aiShimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+.ai-loading-head {
+  display: inline-flex; align-items: center; gap: 8px;
+  color: var(--mc-verde-medio, #0E8C7A); font-weight: 600; margin-bottom: 12px;
+}
+.ai-loading-head .ai-spark { animation: aiSparkSpin 1.4s ease-in-out infinite; }
+@keyframes aiSparkSpin {
+  0%, 100% { transform: rotate(0) scale(1); opacity: 0.8; }
+  50% { transform: rotate(180deg) scale(1.2); opacity: 1; }
+}
+
+/* ============================================================
+   Refactor de cards inline (alertas / predicciones / expedientes)
+   ============================================================ */
+.ai-section-hint { color: #64748b; margin-top: 0; }
+.ai-case-empty { color: #64748b; text-align: center; padding: 30px; }
+
+.ai-case-grid { display: grid; gap: 12px; }
+
+.ai-case-card {
+  position: relative;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  border-left: 4px solid #cbd5e1;
+  animation: aiUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition: box-shadow 0.22s ease, transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ai-case-card:hover { box-shadow: 0 16px 36px -24px rgba(15, 23, 42, 0.4); transform: translateY(-2px); }
+.ai-case-card--critica { background: #fef2f2; border-left-color: #ef4444; }
+.ai-case-card--alta    { background: #fff7ed; border-left-color: #f97316; }
+.ai-case-card--media   { background: #fffbeb; border-left-color: #f59e0b; }
+.ai-case-card--baja    { background: #f8fafc; border-left-color: #94a3b8; }
+
+.ai-case-head {
+  display: flex; justify-content: space-between; gap: 12px;
+  align-items: flex-start; margin-bottom: 12px;
+}
+.ai-case-name { font-weight: 800; color: #0f172a; font-size: 17px; }
+.ai-case-sub { color: #64748b; font-size: 13px; }
+.ai-case-score { margin-bottom: 10px; color: #334155; }
+
+.ai-risk-list { display: grid; gap: 8px; }
+.ai-risk-item { padding: 10px; border-radius: 10px; background: #fff; border: 1px solid #e5e7eb; }
+.ai-risk-title { font-weight: 800; color: #0f172a; display: inline-flex; align-items: center; gap: 4px; }
+.ai-risk-nivel { color: #64748b; font-size: 13px; }
+.ai-risk-detalle { color: #334155; margin-top: 4px; }
+
+.ai-action-banner {
+  margin-top: 12px; padding: 12px; border-radius: 12px;
+  background: #ecfeff; color: #04534A; font-weight: 700;
+}
+
+/* Predicciones */
+.ai-pred-grid {
+  display: grid; gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.ai-pred-item { padding: 12px; border-radius: 12px; background: #fff; border: 1px solid #e5e7eb; }
+.ai-pred-name { font-weight: 800; color: #04534A; margin-bottom: 4px; }
+.ai-pred-val { font-weight: 800; color: #0f172a; margin-bottom: 6px; }
+.ai-pred-detalle { color: #64748b; font-size: 13px; line-height: 1.5; }
+
+/* Expedientes IA */
+.ai-exp-metrics {
+  display: grid; gap: 10px; margin-bottom: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+.ai-exp-metric {
+  padding: 12px; border-radius: 12px; background: #fff;
+  border: 1px solid #e5e7eb; text-align: center;
+}
+.ai-exp-metric-label { color: #64748b; font-size: 12px; font-weight: 800; }
+.ai-exp-metric-value { font-size: 26px; font-weight: 800; }
+.ai-exp-metric-value--sm { font-size: 22px; }
+.ai-exp-metric-sub { color: #334155; font-size: 13px; }
+.ai-exp-block {
+  padding: 12px; border-radius: 12px; background: #fff;
+  border: 1px solid #e5e7eb; margin-bottom: 12px;
+}
+.ai-exp-block--soft { background: #f8fafc; }
+.ai-exp-block-title {
+  font-weight: 800; color: #04534A; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.ai-exp-text { color: #334155; line-height: 1.7; }
+.ai-exp-risk-line { color: #475569; font-size: 13px; }
+
+/* ── Accesibilidad ── */
+@media (prefers-reduced-motion: reduce) {
+  .ai-hero-bg,
+  .ai-status-dot, .ai-loading-head .ai-spark { animation: none; }
+  .ai-engine-page .admin-stat-grid > *,
+  .ai-output-reveal, .ai-case-card { animation: none; }
+  .ai-engine-page .admin-stat-grid > *:hover,
+  .ai-engine-page .ai-engine-pulse-chip:hover,
+  .ai-case-card:hover { transform: none; }
+}

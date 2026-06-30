@@ -1,0 +1,147 @@
+/* ============================================================
+   AdminDashboard — refinamiento visual + motion (piloto UI)
+   Scoped bajo .dashboard-page para no chocar con App.css global.
+   Reusa tokens de marca (teal/glass) de la landing.
+   ============================================================ */
+
+/* ── Entrada orquestada: stagger de secciones al montar ── */
+@keyframes dashSectionIn {
+  from { opacity: 0; transform: translateY(18px); }
+  /* el frame final NO declara transform → en reposo no queda stacking context
+     (si quedara translateY(0), el dropdown del header se vería tras los widgets) */
+  to   { opacity: 1; }
+}
+
+.dashboard-page > *:not(.mc-modal-overlay) {
+  animation: dashSectionIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.dashboard-page > *:not(.mc-modal-overlay):nth-child(1) { animation-delay: 0.02s; }
+.dashboard-page > *:not(.mc-modal-overlay):nth-child(2) { animation-delay: 0.09s; }
+.dashboard-page > *:not(.mc-modal-overlay):nth-child(3) { animation-delay: 0.16s; }
+.dashboard-page > *:not(.mc-modal-overlay):nth-child(4) { animation-delay: 0.23s; }
+.dashboard-page > *:not(.mc-modal-overlay):nth-child(5) { animation-delay: 0.30s; }
+.dashboard-page > *:not(.mc-modal-overlay):nth-child(n+6) { animation-delay: 0.36s; }
+
+/* KPIs entran con stagger propio dentro de su grid */
+@keyframes dashKpiIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to   { opacity: 1; }
+}
+.dashboard-page .dashboard-kpi-grid > * {
+  animation: dashKpiIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.dashboard-page .dashboard-kpi-grid > *:nth-child(1) { animation-delay: 0.10s; }
+.dashboard-page .dashboard-kpi-grid > *:nth-child(2) { animation-delay: 0.16s; }
+.dashboard-page .dashboard-kpi-grid > *:nth-child(3) { animation-delay: 0.22s; }
+.dashboard-page .dashboard-kpi-grid > *:nth-child(4) { animation-delay: 0.28s; }
+.dashboard-page .dashboard-kpi-grid > *:nth-child(5) { animation-delay: 0.34s; }
+
+/* El header (con el WeekSelect) por encima de los widgets: su dropdown debe
+   poder desplegarse sobre las cards siguientes. */
+.dashboard-page .dashboard-executive-header {
+  position: relative;
+  z-index: 5;
+}
+
+/* ── Refinamiento: eyebrow con acento teal ── */
+.dashboard-page .dashboard-eyebrow {
+  position: relative;
+  padding-left: 14px;
+}
+.dashboard-page .dashboard-eyebrow::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 50%;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--mc-aqua);
+  transform: translateY(-50%);
+  box-shadow: 0 0 0 3px rgba(20, 200, 182, 0.18), 0 0 12px rgba(20, 200, 182, 0.55);
+}
+
+/* ── KPI cards: lift + acento superior en hover ── */
+.dashboard-page .dashboard-kpi-grid .mc-kpi.mc-card {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s ease, border-color 0.22s ease;
+}
+.dashboard-page .dashboard-kpi-grid .mc-kpi.mc-card::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--grad-accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dashboard-page .dashboard-kpi-grid .mc-kpi.mc-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 38px -20px rgba(4, 35, 31, 0.45);
+}
+.dashboard-page .dashboard-kpi-grid .mc-kpi.mc-card:hover::after {
+  transform: scaleX(1);
+}
+
+/* ── Pulse hero: glass + glow de marca (eco de la landing) ── */
+.dashboard-page .pulse-hero-card.dashboard-pulse-feature {
+  position: relative;
+  overflow: hidden;
+  background: var(--grad-brand);
+  border: 1px solid rgba(20, 200, 182, 0.28);
+  box-shadow: 0 24px 60px -28px rgba(4, 35, 31, 0.7),
+              inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.dashboard-page .pulse-hero-card.dashboard-pulse-feature::before {
+  content: "";
+  position: absolute;
+  width: 220px; height: 220px;
+  top: -90px; right: -70px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(20, 200, 182, 0.45), transparent 70%);
+  pointer-events: none;
+}
+
+/* ── Cards: sombra/borde más refinados + hover sutil ── */
+.dashboard-page .mc-card {
+  transition: box-shadow 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dashboard-page .dashboard-chart-card:hover {
+  box-shadow: 0 20px 44px -26px rgba(4, 35, 31, 0.4);
+}
+
+/* ── Filas clicables (sucursal / riesgo): desplazamiento al hover ── */
+.dashboard-page .dashboard-sucursal-rank-row,
+.dashboard-page .psico-suc-row--clickable {
+  transition: background 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dashboard-page .dashboard-sucursal-rank-row:hover,
+.dashboard-page .psico-suc-row--clickable:hover {
+  transform: translateX(4px);
+  background: rgba(20, 200, 182, 0.07);
+}
+.dashboard-page .dashboard-sucursal-rank-row:active,
+.dashboard-page .psico-suc-row--clickable:active {
+  transform: translateX(2px) scale(0.995);
+}
+
+/* Barras de score: crecen suave al entrar */
+.dashboard-page .dashboard-sucursal-rank-bar,
+.dashboard-page .psico-suc-fill {
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Accesibilidad: respeta prefers-reduced-motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-page > *:not(.mc-modal-overlay),
+  .dashboard-page .dashboard-kpi-grid > * {
+    animation: none;
+  }
+  .dashboard-page .dashboard-kpi-grid .mc-kpi.mc-card:hover,
+  .dashboard-page .dashboard-sucursal-rank-row:hover,
+  .dashboard-page .psico-suc-row--clickable:hover {
+    transform: none;
+  }
+}
+

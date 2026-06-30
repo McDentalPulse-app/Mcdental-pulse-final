@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import StatCard from "../common/StatCard";
@@ -17,6 +18,7 @@ import { callAI } from "../../utils/analysisEngine";
 import WeekSelect from "../common/WeekSelect";
 import { db } from "../../config/firebase";
 import { collection, addDoc, getDocs, updateDoc, doc, serverTimestamp } from "firebase/firestore";
+import "./AIEngine.css";
 
 const STATUS_SIN_DATOS = {
   label: "Sin datos",
@@ -205,13 +207,21 @@ const AIOutput = ({ text, loading, placeholder }) => {
   if (loading) {
     return (
       <div className="ai-output ai-output--loading">
-        <span className="ai-spinner" /> Generando análisis con IA…
+        <span className="ai-loading-head">
+          <Icon name="sparkles" size={15} className="ai-spark" /> Generando análisis con IA…
+        </span>
+        <div className="ai-skeleton" aria-hidden="true">
+          <span className="ai-skeleton-line" />
+          <span className="ai-skeleton-line" />
+          <span className="ai-skeleton-line" />
+          <span className="ai-skeleton-line" />
+        </div>
       </div>
     );
   }
   if (!text) return <div className="ai-output ai-output--empty">{placeholder}</div>;
   return (
-    <div className="ai-output">
+    <div className="ai-output ai-output-reveal">
       <MarkdownLite text={text} />
     </div>
   );
@@ -238,6 +248,8 @@ const AICard = ({ icon = "ai", title, desc, onGenerate, output, loading }) => (
 
 const AIEngine = ({ encuestas, mensajes, notas, userRole, permisos = [], descuentos = [], reconocimientos = [], reportesConfidenciales = [] }) => {
   const { usuarios: USERS } = useGlobal();
+  const reduce = useReducedMotion();
+  const pillTransition = reduce ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 32 };
   const [tab, setTab] = useState("resumen");
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -379,6 +391,7 @@ const RESUMEN_LIMITE = 8;
   return (
     <div className="admin-page ai-engine-page">
       <div className="ai-engine-header">
+        <div className="ai-hero-bg" aria-hidden="true" />
         <div className="admin-stat-icon-wrap ai-engine-header-icon">
           <Icon name="ai" size={22} />
         </div>
@@ -396,7 +409,7 @@ const RESUMEN_LIMITE = 8;
           }))}
         />
         <div className="ai-engine-status-badge">
-          <Icon name="sparkles" size={14} /> Activo
+          <span className="ai-status-dot" aria-hidden="true" /> Activo
         </div>
       </div>
       <div className="admin-stat-grid">
@@ -429,18 +442,37 @@ const RESUMEN_LIMITE = 8;
       </div>
 
       <div className="ai-engine-tabs">
-        {tabs.map(t => (
-          <button
-            key={t.key}
-            type="button"
-            className={`ai-engine-tab${tab === t.key ? " ai-engine-tab--active" : ""}`}
-            onClick={() => { setTab(t.key); setOutput(""); setSelectedEmp(null); }}
-          >
-            <Icon name={t.icon} size={14} color={tab === t.key ? "#fff" : undefined} /> {t.label}
-          </button>
-        ))}
+        {tabs.map(t => {
+          const isActive = tab === t.key;
+          return (
+            <button
+              key={t.key}
+              type="button"
+              className={`ai-engine-tab${isActive ? " ai-engine-tab--active" : ""}`}
+              onClick={() => { setTab(t.key); setOutput(""); setSelectedEmp(null); }}
+            >
+              {isActive && (
+                <motion.span
+                  layoutId="aiTabPill"
+                  className="ai-tab-pill"
+                  transition={pillTransition}
+                  aria-hidden="true"
+                />
+              )}
+              <Icon name={t.icon} size={14} color={isActive ? "#04231F" : undefined} /> {t.label}
+            </button>
+          );
+        })}
       </div>
 
+      <AnimatePresence mode="wait">
+      <motion.div
+        key={tab}
+        initial={reduce ? false : { opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={reduce ? { opacity: 0 } : { opacity: 0, y: -8 }}
+        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+      >
       {/* Capa IA (Gemini) — resumen / alertas / predicciones */}
       {["resumen", "alertas", "prediccion"].includes(tab) && (
         <AICard
@@ -527,112 +559,50 @@ const RESUMEN_LIMITE = 8;
 {tab === "alertas" && (
   <Card>
     <SectionTitle icon="shieldAlert">Alertas IA</SectionTitle>
-    <p style={{ color: "#64748b", marginTop: 0 }}>
+    <p className="ai-section-hint">
       Alertas generadas automáticamente por el motor local de reglas.
     </p>
 
-    <div style={{ display: "grid", gap: 12 }}>
+    <div className="ai-case-grid">
       {analisisConRiesgo
         .slice()
         .sort((a, b) => {
           const orden = { "Crítica": 0, "Alta": 1, "Media": 2, "Baja": 3 };
           return orden[a.prioridad] - orden[b.prioridad];
         })
-        .map(a => (
-          <div
-            key={a.empleado.id}
-            style={{
-              padding: 16,
-              borderRadius: 14,
-              border: "1px solid #e5e7eb",
-              background:
-                a.prioridad === "Crítica" ? "#fef2f2" :
-                a.prioridad === "Alta" ? "#fff7ed" :
-                a.prioridad === "Media" ? "#fffbeb" :
-                "#f8fafc"
-            }}
-          >
-            <div style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 12,
-              alignItems: "flex-start",
-              marginBottom: 10
-            }}>
-              <div>
-                <div style={{ fontWeight: 900, color: "#0f172a", fontSize: 17 }}>
-                  {a.empleado.name}
+        .map((a, i) => {
+          const pri = a.prioridad.toLowerCase().replace("í", "i");
+          return (
+            <div key={a.empleado.id} className={`ai-case-card ai-case-card--${pri}`} style={{ animationDelay: `${i * 0.05}s` }}>
+              <div className="ai-case-head">
+                <div>
+                  <div className="ai-case-name">{a.empleado.name}</div>
+                  <div className="ai-case-sub">{normalizeSucursal(a.empleado.sucursal)} · {a.empleado.puesto}</div>
                 </div>
-                <div style={{ color: "#64748b", fontSize: 13 }}>
-                  {normalizeSucursal(a.empleado.sucursal)} · {a.empleado.puesto}
-                </div>
+                <span className={`ai-priority-pill ai-priority-pill--${pri}`}>{a.prioridad}</span>
               </div>
 
-              <div style={{
-                padding: "6px 10px",
-                borderRadius: 999,
-                fontWeight: 900,
-                fontSize: 13,
-                background:
-                  a.prioridad === "Crítica" ? "#fee2e2" :
-                  a.prioridad === "Alta" ? "#ffedd5" :
-                  a.prioridad === "Media" ? "#fef3c7" :
-                  "#dcfce7",
-                color:
-                  a.prioridad === "Crítica" ? "#991b1b" :
-                  a.prioridad === "Alta" ? "#c2410c" :
-                  a.prioridad === "Media" ? "#92400e" :
-                  "#166534"
-              }}>
-                {a.prioridad}
+              <div className="ai-case-score">
+                <b>Pulse Score:</b> {a.pulse} · {a.status.label} · Semáforo {a.status.semaforo}
               </div>
-            </div>
 
-            <div style={{ marginBottom: 10, color: "#334155" }}>
-              <b>Pulse Score:</b> {a.pulse} · {a.status.label} · Semáforo {a.status.semaforo}
-            </div>
+              <div className="ai-risk-list">
+                {a.riesgos.map((r, idx) => (
+                  <div key={idx} className="ai-risk-item">
+                    <div className="ai-risk-title"><Icon name="alert" size={14} /> {r.tipo}</div>
+                    <div className="ai-risk-nivel">Nivel: {r.nivel}</div>
+                    <div className="ai-risk-detalle">{r.detalle}</div>
+                  </div>
+                ))}
+              </div>
 
-            <div style={{ display: "grid", gap: 8 }}>
-              {a.riesgos.map((r, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    padding: 10,
-                    borderRadius: 10,
-                    background: "#fff",
-                    border: "1px solid #e5e7eb"
-                  }}
-                >
-                  <div style={{ fontWeight: 900, color: "#0f172a" }}>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="alert" size={14} /> {r.tipo}</span>
-                  </div>
-                  <div style={{ color: "#64748b", fontSize: 13 }}>
-                    Nivel: {r.nivel}
-                  </div>
-                  <div style={{ color: "#334155", marginTop: 4 }}>
-                    {r.detalle}
-                  </div>
-                </div>
-              ))}
+              <div className="ai-action-banner">Acción sugerida: {a.recomendacion}</div>
             </div>
-
-            <div style={{
-              marginTop: 12,
-              padding: 12,
-              borderRadius: 12,
-              background: "#ecfeff",
-              color: "#004D40",
-              fontWeight: 900
-            }}>
-              Acción sugerida: {a.recomendacion}
-            </div>
-          </div>
-        ))}
+          );
+        })}
 
       {analisisConRiesgo.length === 0 && (
-        <div style={{ color: "#64748b", textAlign: "center", padding: 30 }}>
-          No hay alertas activas por el momento.
-        </div>
+        <div className="ai-case-empty">No hay alertas activas por el momento.</div>
       )}
     </div>
   </Card>
@@ -642,18 +612,19 @@ const RESUMEN_LIMITE = 8;
 {tab === "prediccion" && (
   <Card>
     <SectionTitle icon="wand">Predicciones IA</SectionTitle>
-    <p style={{ color: "#64748b", marginTop: 0 }}>
+    <p className="ai-section-hint">
       Predicciones generadas localmente a partir de Pulse Score, tendencias, incidencias y señales administrativas.
     </p>
 
-    <div style={{ display: "grid", gap: 12 }}>
+    <div className="ai-case-grid">
       {analisisConDatos
         .slice()
         .sort((a, b) => {
           const orden = { "Crítica": 0, "Alta": 1, "Media": 2, "Baja": 3 };
           return orden[a.prioridad] - orden[b.prioridad];
         })
-        .map(a => {
+        .map((a, i) => {
+          const pri = a.prioridad.toLowerCase().replace("í", "i");
           const tieneAusentismo = a.riesgos.some(r => r.tipo === "Riesgo de ausentismo");
           const tieneCambio = a.riesgos.some(r => r.tipo === "Cambio de comportamiento" || r.tipo === "Tendencia negativa");
           const tieneEmocional = a.riesgos.some(r => r.tipo === "Riesgo emocional" || r.tipo === "Intervención inmediata" || r.tipo === "Atención preventiva");
@@ -699,89 +670,26 @@ const RESUMEN_LIMITE = 8;
           ];
 
           return (
-            <div
-              key={a.empleado.id}
-              style={{
-                padding: 16,
-                borderRadius: 14,
-                border: "1px solid #e5e7eb",
-                background: "#f8fafc"
-              }}
-            >
-              <div style={{
-                display: "flex",
-                justifyContent: "space-between",
-                gap: 12,
-                alignItems: "flex-start",
-                marginBottom: 12
-              }}>
+            <div key={a.empleado.id} className={`ai-case-card ai-case-card--${pri}`} style={{ animationDelay: `${i * 0.05}s` }}>
+              <div className="ai-case-head">
                 <div>
-                  <div style={{ fontWeight: 900, color: "#0f172a", fontSize: 17 }}>
-                    {a.empleado.name}
-                  </div>
-                  <div style={{ color: "#64748b", fontSize: 13 }}>
-                    {normalizeSucursal(a.empleado.sucursal)} · {a.empleado.puesto}
-                  </div>
+                  <div className="ai-case-name">{a.empleado.name}</div>
+                  <div className="ai-case-sub">{normalizeSucursal(a.empleado.sucursal)} · {a.empleado.puesto}</div>
                 </div>
-
-                <div style={{
-                  padding: "6px 10px",
-                  borderRadius: 999,
-                  fontWeight: 900,
-                  fontSize: 13,
-                  background:
-                    a.prioridad === "Crítica" ? "#fee2e2" :
-                    a.prioridad === "Alta" ? "#ffedd5" :
-                    a.prioridad === "Media" ? "#fef3c7" :
-                    "#dcfce7",
-                  color:
-                    a.prioridad === "Crítica" ? "#991b1b" :
-                    a.prioridad === "Alta" ? "#c2410c" :
-                    a.prioridad === "Media" ? "#92400e" :
-                    "#166534"
-                }}>
-                  Prioridad {a.prioridad}
-                </div>
+                <span className={`ai-priority-pill ai-priority-pill--${pri}`}>Prioridad {a.prioridad}</span>
               </div>
 
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                gap: 10
-              }}>
+              <div className="ai-pred-grid">
                 {predicciones.map(p => (
-                  <div
-                    key={p.nombre}
-                    style={{
-                      padding: 12,
-                      borderRadius: 12,
-                      background: "white",
-                      border: "1px solid #e5e7eb"
-                    }}
-                  >
-                    <div style={{ fontWeight: 900, color: "#004D40", marginBottom: 4 }}>
-                      {p.nombre}
-                    </div>
-                    <div style={{ fontWeight: 900, color: "#0f172a", marginBottom: 6 }}>
-                      {p.valor}
-                    </div>
-                    <div style={{ color: "#64748b", fontSize: 13, lineHeight: 1.5 }}>
-                      {p.detalle}
-                    </div>
+                  <div key={p.nombre} className="ai-pred-item">
+                    <div className="ai-pred-name">{p.nombre}</div>
+                    <div className="ai-pred-val">{p.valor}</div>
+                    <div className="ai-pred-detalle">{p.detalle}</div>
                   </div>
                 ))}
               </div>
 
-              <div style={{
-                marginTop: 12,
-                padding: 12,
-                borderRadius: 12,
-                background: "#ecfeff",
-                color: "#004D40",
-                fontWeight: 900
-              }}>
-                Predicción general: {a.recomendacion}
-              </div>
+              <div className="ai-action-banner">Predicción general: {a.recomendacion}</div>
             </div>
           );
         })}
@@ -870,185 +778,77 @@ const RESUMEN_LIMITE = 8;
 {tab === "expedientes" && (
   <Card>
     <SectionTitle icon="folderSearch">Expedientes IA</SectionTitle>
-    <p style={{ color: "#64748b", marginTop: 0 }}>
+    <p className="ai-section-hint">
       Resumen inteligente por colaborador para acelerar la revisión de casos y expedientes integrales.
     </p>
 
-    <div style={{ display: "grid", gap: 14 }}>
+    <div className="ai-case-grid">
       {analisisConDatos
         .slice()
         .sort((a, b) => {
           const orden = { "Crítica": 0, "Alta": 1, "Media": 2, "Baja": 3 };
           return orden[a.prioridad] - orden[b.prioridad];
         })
-        .map(a => (
-          <div
-            key={a.empleado.id}
-            id={`ai-exp-${a.empleado.id}`}
-            className={selectedEmp?.id === a.empleado.id ? "ai-exp-card ai-exp-card--selected" : "ai-exp-card"}
-            style={{
-              padding: 16,
-              borderRadius: 14,
-              border: "1px solid #e5e7eb",
-              background:
-                a.prioridad === "Crítica" ? "#fef2f2" :
-                a.prioridad === "Alta" ? "#fff7ed" :
-                a.prioridad === "Media" ? "#fffbeb" :
-                "#f8fafc"
-            }}
-          >
-            <div style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 12,
-              alignItems: "flex-start",
-              marginBottom: 12
-            }}>
-              <div>
-                <div style={{ fontWeight: 900, color: "#0f172a", fontSize: 18 }}>
-                  {a.empleado.name}
+        .map((a, i) => {
+          const pri = a.prioridad.toLowerCase().replace("í", "i");
+          return (
+            <div
+              key={a.empleado.id}
+              id={`ai-exp-${a.empleado.id}`}
+              className={`ai-exp-card ai-case-card ai-case-card--${pri}${selectedEmp?.id === a.empleado.id ? " ai-exp-card--selected" : ""}`}
+              style={{ animationDelay: `${i * 0.05}s` }}
+            >
+              <div className="ai-case-head">
+                <div>
+                  <div className="ai-case-name" style={{ fontSize: 18 }}>{a.empleado.name}</div>
+                  <div className="ai-case-sub">{normalizeSucursal(a.empleado.sucursal)} · {a.empleado.puesto}</div>
                 </div>
-                <div style={{ color: "#64748b", fontSize: 13 }}>
-                  {normalizeSucursal(a.empleado.sucursal)} · {a.empleado.puesto}
+                <span className={`ai-priority-pill ai-priority-pill--${pri}`}>Prioridad {a.prioridad}</span>
+              </div>
+
+              <div className="ai-exp-metrics">
+                <div className="ai-exp-metric">
+                  <div className="ai-exp-metric-label">Pulse Score™</div>
+                  <div className="ai-exp-metric-value" style={{ color: a.status.color }}>{a.pulse}</div>
+                  <div className="ai-exp-metric-sub">{a.status.label}</div>
+                </div>
+                <div className="ai-exp-metric">
+                  <div className="ai-exp-metric-label">Semáforo</div>
+                  <div className="ai-exp-metric-value ai-exp-metric-value--sm" style={{ color: a.status.color }}>{a.status.semaforo}</div>
+                  <div className="ai-exp-metric-sub">Estado actual</div>
+                </div>
+                <div className="ai-exp-metric">
+                  <div className="ai-exp-metric-label">Señales detectadas</div>
+                  <div className="ai-exp-metric-value" style={{ color: "#00897B" }}>{a.riesgos.length}</div>
+                  <div className="ai-exp-metric-sub">Riesgos / alertas</div>
                 </div>
               </div>
 
-              <div style={{
-                padding: "6px 10px",
-                borderRadius: 999,
-                fontWeight: 900,
-                fontSize: 13,
-                background:
-                  a.prioridad === "Crítica" ? "#fee2e2" :
-                  a.prioridad === "Alta" ? "#ffedd5" :
-                  a.prioridad === "Media" ? "#fef3c7" :
-                  "#dcfce7",
-                color:
-                  a.prioridad === "Crítica" ? "#991b1b" :
-                  a.prioridad === "Alta" ? "#c2410c" :
-                  a.prioridad === "Media" ? "#92400e" :
-                  "#166534"
-              }}>
-                Prioridad {a.prioridad}
-              </div>
-            </div>
-
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-              gap: 10,
-              marginBottom: 12
-            }}>
-              <div style={{
-                padding: 12,
-                borderRadius: 12,
-                background: "white",
-                border: "1px solid #e5e7eb",
-                textAlign: "center"
-              }}>
-                <div style={{ color: "#64748b", fontSize: 12, fontWeight: 800 }}>
-                  Pulse Score™
-                </div>
-                <div style={{ fontSize: 26, fontWeight: 900, color: a.status.color }}>
-                  {a.pulse}
-                </div>
-                <div style={{ color: "#334155", fontSize: 13 }}>
-                  {a.status.label}
+              <div className="ai-exp-block">
+                <div className="ai-exp-block-title"><Icon name="brain" size={16} /> Resumen IA del expediente</div>
+                <div className="ai-exp-text">
+                  {a.empleado.name} se encuentra en estado <b>{a.status.label}</b> con semáforo{" "}
+                  <b>{a.status.semaforo}</b> y prioridad <b>{a.prioridad}</b>.
+                  {a.riesgos.length > 0
+                    ? ` El motor detectó ${a.riesgos.length} señal(es) que requieren seguimiento.`
+                    : " No se detectan señales críticas en este momento."}
                 </div>
               </div>
 
-              <div style={{
-                padding: 12,
-                borderRadius: 12,
-                background: "white",
-                border: "1px solid #e5e7eb",
-                textAlign: "center"
-              }}>
-                <div style={{ color: "#64748b", fontSize: 12, fontWeight: 800 }}>
-                  Semáforo
-                </div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: a.status.color }}>
-                  {a.status.semaforo}
-                </div>
-                <div style={{ color: "#334155", fontSize: 13 }}>
-                  Estado actual
-                </div>
+              <div className="ai-exp-block ai-exp-block--soft">
+                <div className="ai-exp-block-title"><Icon name="alert" size={16} /> Riesgos principales</div>
+                {a.riesgos.length > 0 ? (
+                  <div className="ai-risk-list">
+                    {a.riesgos.map((r, idx) => (
+                      <div key={idx} className="ai-exp-risk-line">• <b>{r.tipo}</b> ({r.nivel}): {r.detalle}</div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="ai-risk-nivel">Sin riesgos relevantes detectados.</div>
+                )}
               </div>
 
-              <div style={{
-                padding: 12,
-                borderRadius: 12,
-                background: "white",
-                border: "1px solid #e5e7eb",
-                textAlign: "center"
-              }}>
-                <div style={{ color: "#64748b", fontSize: 12, fontWeight: 800 }}>
-                  Señales detectadas
-                </div>
-                <div style={{ fontSize: 26, fontWeight: 900, color: "#00897B" }}>
-                  {a.riesgos.length}
-                </div>
-                <div style={{ color: "#334155", fontSize: 13 }}>
-                  Riesgos / alertas
-                </div>
-              </div>
-            </div>
-
-            <div style={{
-              padding: 12,
-              borderRadius: 12,
-              background: "white",
-              border: "1px solid #e5e7eb",
-              marginBottom: 12
-            }}>
-              <div style={{ fontWeight: 900, color: "#004D40", marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
-                <Icon name="brain" size={16} /> Resumen IA del expediente
-              </div>
-
-              <div style={{ color: "#334155", lineHeight: 1.7 }}>
-                {a.empleado.name} se encuentra en estado <b>{a.status.label}</b> con semáforo{" "}
-                <b>{a.status.semaforo}</b> y prioridad <b>{a.prioridad}</b>.
-                {a.riesgos.length > 0
-                  ? ` El motor detectó ${a.riesgos.length} señal(es) que requieren seguimiento.`
-                  : " No se detectan señales críticas en este momento."}
-              </div>
-            </div>
-
-            <div style={{
-              padding: 12,
-              borderRadius: 12,
-              background: "#f8fafc",
-              border: "1px solid #e5e7eb",
-              marginBottom: 12
-            }}>
-              <div style={{ fontWeight: 900, color: "#004D40", marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
-                <Icon name="alert" size={16} /> Riesgos principales
-              </div>
-
-              {a.riesgos.length > 0 ? (
-                <div style={{ display: "grid", gap: 6 }}>
-                  {a.riesgos.map((r, idx) => (
-                    <div key={idx} style={{ color: "#475569", fontSize: 13 }}>
-                      • <b>{r.tipo}</b> ({r.nivel}): {r.detalle}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{ color: "#64748b", fontSize: 13 }}>
-                  Sin riesgos relevantes detectados.
-                </div>
-              )}
-            </div>
-
-            <div style={{
-              padding: 12,
-              borderRadius: 12,
-              background: "#ecfeff",
-              color: "#004D40",
-              fontWeight: 900
-            }}>
-              Recomendación IA: {a.recomendacion}
-            </div>
+              <div className="ai-action-banner">Recomendación IA: {a.recomendacion}</div>
 
             <div className="ai-exp-actions">
               <button
@@ -1062,18 +862,21 @@ const RESUMEN_LIMITE = 8;
               </button>
             </div>
 
-            {selectedEmp?.id === a.empleado.id && (output || loading) && (
-              <AIOutput
-                text={output}
-                loading={loading}
-                placeholder="Pulsa “Analizar con IA” para el diagnóstico de Gemini."
-              />
-            )}
-          </div>
-        ))}
+              {selectedEmp?.id === a.empleado.id && (output || loading) && (
+                <AIOutput
+                  text={output}
+                  loading={loading}
+                  placeholder="Pulsa “Analizar con IA” para el diagnóstico de Gemini."
+                />
+              )}
+            </div>
+          );
+        })}
     </div>
   </Card>
 )}
+      </motion.div>
+      </AnimatePresence>
     </div>
   );
 };

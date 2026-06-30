@@ -1,15 +1,32 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
+import { notify } from "../../utils/notify";
 import logoSmall from "../../assets/logos/logo-small.png";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
+import "./Sidebar.css";
+
+const RAIL_KEY = "mcdental_sidebar_rail";
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const active = location.pathname.split("/").pop() || "dashboard";
+
+  const reduce = useReducedMotion();
+  const pillTransition = reduce
+    ? { duration: 0 }
+    : { type: "spring", stiffness: 380, damping: 32 };
+
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem(RAIL_KEY) === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(RAIL_KEY, collapsed ? "1" : "0"); } catch { /* ignore */ }
+  }, [collapsed]);
 
   const navItems = {
     admin: [
@@ -65,9 +82,30 @@ const Sidebar = () => {
   const irA = (key) => { setMasOpen(false); navigate(`/${user.role}/${key}`); };
   const extraActivo = tabsExtra.some((i) => i.key === active);
 
+  const handleLogout = async () => {
+    const ok = await notify.confirm({
+      title: "Cerrar sesión",
+      description: "¿Seguro que quieres cerrar tu sesión?",
+      variant: "warning",
+      confirmText: "Cerrar sesión",
+    });
+    if (ok) logout();
+  };
+
   return (
     <>
-    <aside className="sidebar">
+    <aside className={`sidebar${collapsed ? " sidebar--rail" : ""}`}>
+      <button
+        type="button"
+        className="sidebar-rail-toggle"
+        onClick={() => setCollapsed((v) => !v)}
+        title={collapsed ? "Expandir menú" : "Colapsar menú"}
+        aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
+        aria-pressed={collapsed}
+      >
+        <span className="sidebar-rail-chevron" aria-hidden="true" />
+      </button>
+
       <div className="sidebar-brand">
         <div className="sidebar-brand-row">
           <img src={logoSmall} alt="McDental Pulse" className="sidebar-logo" />
@@ -83,7 +121,7 @@ const Sidebar = () => {
       </div>
 
       <nav className="sidebar-nav">
-        {items.map((item) => {
+        {items.map((item, i) => {
           const isActive = active === item.key;
           return (
             <button
@@ -94,7 +132,16 @@ const Sidebar = () => {
               aria-current={isActive ? "page" : undefined}
               onClick={() => navigate(`/${user.role}/${item.key}`)}
               className={`sidebar-nav-btn${isActive ? " sidebar-nav-btn--active" : ""}`}
+              style={{ "--i": i }}
             >
+              {isActive && (
+                <motion.span
+                  layoutId="sidebarActivePill"
+                  className="sidebar-pill"
+                  transition={pillTransition}
+                  aria-hidden="true"
+                />
+              )}
               <span className="sidebar-nav-icon">
                 <Icon name={item.icon} size={17} />
               </span>
@@ -108,14 +155,14 @@ const Sidebar = () => {
       <div className="sidebar-footer">
         <div className="sidebar-user">
           <Avatar name={user?.name || ""} size={36} color="#3D8B7E" />
-          <div style={{ minWidth: 0 }}>
+          <div className="sidebar-user-text" style={{ minWidth: 0 }}>
             <div className="sidebar-user-name">{user?.name?.split(" ")[0] || ""}</div>
             <div className="sidebar-user-role">{user?.role || ""}</div>
           </div>
         </div>
-        <button type="button" className="sidebar-logout" onClick={logout} title="Cerrar sesión" aria-label="Cerrar sesión">
+        <button type="button" className="sidebar-logout" onClick={handleLogout} title="Cerrar sesión" aria-label="Cerrar sesión">
           <Icon name="logout" size={14} />
-          Cerrar sesión
+          <span className="sidebar-logout-label">Cerrar sesión</span>
         </button>
       </div>
     </aside>
@@ -132,6 +179,14 @@ const Sidebar = () => {
             onClick={() => irA(item.key)}
             aria-current={isActive ? "page" : undefined}
           >
+            {isActive && (
+              <motion.span
+                layoutId="mobileTabPill"
+                className="mobile-tab-pill"
+                transition={pillTransition}
+                aria-hidden="true"
+              />
+            )}
             <Icon name={item.icon} size={20} />
             <span className="mobile-tab-label">{item.label}</span>
           </button>
@@ -151,39 +206,55 @@ const Sidebar = () => {
     </nav>
 
     {/* Hoja "Más": resto de secciones + usuario + cerrar sesión */}
-    {masOpen && (
-      <div className="mobile-sheet-overlay" onClick={() => setMasOpen(false)}>
-        <div className="mobile-sheet" onClick={(e) => e.stopPropagation()}>
-          <div className="mobile-sheet-handle" />
-          <div className="mobile-sheet-user">
-            <Avatar name={user?.name || ""} size={40} color="#3D8B7E" />
-            <div style={{ minWidth: 0 }}>
-              <div className="sidebar-user-name">{user?.name?.split(" ")[0] || ""}</div>
-              <div className="sidebar-user-role">{user?.role || ""}</div>
+    <AnimatePresence>
+      {masOpen && (
+        <motion.div
+          className="mobile-sheet-overlay"
+          onClick={() => setMasOpen(false)}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <motion.div
+            className="mobile-sheet"
+            onClick={(e) => e.stopPropagation()}
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 32 }}
+          >
+            <div className="mobile-sheet-handle" />
+            <div className="mobile-sheet-user">
+              <Avatar name={user?.name || ""} size={40} color="#3D8B7E" />
+              <div style={{ minWidth: 0 }}>
+                <div className="sidebar-user-name">{user?.name?.split(" ")[0] || ""}</div>
+                <div className="sidebar-user-role">{user?.role || ""}</div>
+              </div>
             </div>
-          </div>
-          <div className="mobile-sheet-list">
-            {tabsExtra.map((item) => {
-              const isActive = active === item.key;
-              return (
-                <button
-                  key={item.key}
-                  type="button"
-                  className={`mobile-sheet-item${isActive ? " mobile-sheet-item--active" : ""}`}
-                  onClick={() => irA(item.key)}
-                >
-                  <span className="mobile-sheet-icon"><Icon name={item.icon} size={18} /></span>
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
-          <button type="button" className="mobile-sheet-logout" onClick={logout}>
-            <Icon name="logout" size={16} /> Cerrar sesión
-          </button>
-        </div>
-      </div>
-    )}
+            <div className="mobile-sheet-list">
+              {tabsExtra.map((item) => {
+                const isActive = active === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    className={`mobile-sheet-item${isActive ? " mobile-sheet-item--active" : ""}`}
+                    onClick={() => irA(item.key)}
+                  >
+                    <span className="mobile-sheet-icon"><Icon name={item.icon} size={18} /></span>
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <button type="button" className="mobile-sheet-logout" onClick={handleLogout}>
+              <Icon name="logout" size={16} /> Cerrar sesión
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
     </>
   );
 };

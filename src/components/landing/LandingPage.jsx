@@ -1,12 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Fingerprint, Activity, Clock, ShieldCheck, HeartPulse } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ArrowRight, ArrowLeft, Fingerprint, Activity, Clock, ShieldCheck, HeartPulse } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 import logoMed from '../../assets/logos/logo-med.png';
 import './LandingPage.css';
 
 export default function LandingPage() {
-  const navigate = useNavigate();
+  const { login, loadingAuth } = useAuth();
   const [time, setTime] = useState(new Date());
+
+  // Flip card landing ↔ login
+  const [flipped, setFlipped] = useState(false);
+  const [u, setU] = useState('');
+  const [p, setP] = useState('');
+  const [err, setErr] = useState('');
+  const userRef = useRef(null);
+
+  const handleLogin = async () => {
+    setErr('');
+    try {
+      await login(u, p); // éxito → AuthContext set user → App salta al dashboard
+    } catch (error) {
+      setErr(error.message);
+    }
+  };
+
+  // Al voltear hacia el login, foco en el input usuario
+  useEffect(() => {
+    if (flipped) userRef.current?.focus();
+  }, [flipped]);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -48,7 +69,7 @@ export default function LandingPage() {
           <div className="gw-badge">
             <span className="gw-badge-dot" />
             <Activity size={13} />
-            <span>SISTEMA EN LÍNEA · v2.1</span>
+            <span>Bienvenido</span>
           </div>
 
           <img src={logoMed} alt="McDental Pulse" className="gw-logo" />
@@ -60,8 +81,7 @@ export default function LandingPage() {
 
           <p className="gw-subtext">
             Plataforma operativa de bienestar organizacional, exclusiva para el
-            personal de McDental. Tus turnos, encuestas, expediente y nómina en
-            un solo lugar.
+            personal de DEMARU.
           </p>
 
           <div className="gw-features">
@@ -76,38 +96,92 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* DERECHA: tarjeta glass de acceso */}
+        {/* DERECHA: tarjeta glass de acceso (flip: portal ↔ login) */}
         <div className="gw-right">
-          <div className="gw-card">
-            <div className="gw-card-header">
-              <div className="gw-clock">
-                <Clock size={18} />
-                <div>
-                  <div className="gw-clock-time">{formattedTime}</div>
-                  <div className="gw-clock-date">{formattedDate}</div>
+          <div className="gw-card-flip">
+            <div className={`gw-card-inner${flipped ? ' is-flipped' : ''}`}>
+
+              {/* CARA FRONTAL: portal */}
+              <div className="gw-card gw-card-face gw-card-face--front" inert={flipped || undefined}>
+                <div className="gw-card-header">
+                  <div className="gw-clock">
+                    <Clock size={18} />
+                    <div>
+                      <div className="gw-clock-time">{formattedTime}</div>
+                      <div className="gw-clock-date">{formattedDate}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="gw-card-body">
+                  <div className="gw-auth-icon">
+                    <Fingerprint size={30} />
+                  </div>
+                  <h2 className="gw-card-title">Autenticación requerida</h2>
+                  <p className="gw-card-text">
+                    Verifica tu identidad para acceder a tu área de trabajo.
+                  </p>
+
+                  <button className="gw-btn" onClick={() => setFlipped(true)}>
+                    <span>Iniciar sesión</span>
+                    <div className="gw-btn-icon">
+                      <ArrowRight size={18} />
+                    </div>
+                  </button>
+                </div>
+
+                <div className="gw-card-footer">
+                  <span>McDental Pulse · Uso interno autorizado</span>
                 </div>
               </div>
-            </div>
 
-            <div className="gw-card-body">
-              <div className="gw-auth-icon">
-                <Fingerprint size={30} />
-              </div>
-              <h2 className="gw-card-title">Autenticación requerida</h2>
-              <p className="gw-card-text">
-                Verifica tu identidad para acceder a tu área de trabajo.
-              </p>
+              {/* CARA TRASERA: login */}
+              <div className="gw-card gw-card-face gw-card-face--back" inert={!flipped || undefined}>
+                <div className="gw-card-body gw-login-body">
+                  <div className="gw-auth-icon">
+                    <ShieldCheck size={28} />
+                  </div>
+                  <h2 className="gw-card-title">Iniciar sesión</h2>
+                  <p className="gw-card-text">Ingresa tus credenciales McDental.</p>
 
-              <button className="gw-btn" onClick={() => navigate('/login')}>
-                <span>Iniciar sesión</span>
-                <div className="gw-btn-icon">
-                  <ArrowRight size={18} />
+                  <div className="auth-field">
+                    <label className="auth-label" htmlFor="gw-user">Usuario</label>
+                    <input
+                      id="gw-user"
+                      ref={userRef}
+                      className="auth-input"
+                      placeholder="Tu usuario"
+                      value={u}
+                      onChange={e => setU(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="auth-field">
+                    <label className="auth-label" htmlFor="gw-pass">Contraseña</label>
+                    <input
+                      id="gw-pass"
+                      type="password"
+                      className="auth-input"
+                      placeholder="Tu contraseña"
+                      value={p}
+                      onChange={e => setP(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                    />
+                  </div>
+
+                  {err && <div className="auth-error">{err}</div>}
+
+                  <button className="auth-btn" onClick={handleLogin} disabled={loadingAuth}>
+                    {loadingAuth ? 'Iniciando...' : 'Iniciar sesión'}
+                  </button>
+
+                  <button type="button" className="gw-flip-back" onClick={() => setFlipped(false)}>
+                    <ArrowLeft size={15} />
+                    Volver al portal
+                  </button>
                 </div>
-              </button>
-            </div>
+              </div>
 
-            <div className="gw-card-footer">
-              <span>McDental Pulse · Uso interno autorizado</span>
             </div>
           </div>
         </div>

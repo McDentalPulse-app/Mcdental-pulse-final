@@ -27,3 +27,8 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+
+# Tooling local (Claude / autoskills) — no va al repo de la app
+.claude/
+.agents/
+skills-lock.json

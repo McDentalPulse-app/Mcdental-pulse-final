@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import Badge from "../common/Badge";
 import KPI from "../common/KPI";
-import LineChart from "../common/LineChart";
+import GroupedBarChart from "../common/GroupedBarChart";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
 import SectionTitle from "../common/SectionTitle";
@@ -11,6 +12,30 @@ import WeekSelect from "../common/WeekSelect";
 import { SUCURSALES, semanaActual, normalizeSucursal, sucursalMatches, formatSemanaDisplay } from "../../utils/constants";
 import { getPulseStatus } from "../../utils/pulseScore";
 import PulseScoreBadge from "../common/PulseScoreBadge";
+import "./AdminDashboard.css";
+
+// Variantes compartidas para la entrada/salida de modales (Motion library)
+const overlayMotion = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 },
+  transition: { duration: 0.2 },
+};
+const modalMotion = {
+  initial: { opacity: 0, y: 24, scale: 0.96 },
+  animate: { opacity: 1, y: 0, scale: 1 },
+  exit: { opacity: 0, y: 16, scale: 0.97 },
+  transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
+};
+
+// Igual que el dashboard de Psicóloga (mismos colores/etiquetas)
+const SEMAFORO_META = {
+  verde: { label: "Estable", color: "#22c55e" },
+  amarillo: { label: "Atención", color: "#f59e0b" },
+  rojo: { label: "Foco rojo", color: "#ef4444" },
+  "sin-datos": { label: "Sin datos", color: "#94a3b8" },
+};
+const TREND_COLORS = ["#0E8C7A", "#2563eb", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#65a30d"];
 
 const semaforoToBadge = (semaforo) => {
   if (semaforo === "Verde") return "verde";
@@ -131,22 +156,6 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
   const amarillos = empleadosConDatos.filter((e) => e.status.semaforo === "Amarillo").length;
   const rojos = empleadosConDatos.filter((e) => e.status.semaforo === "Rojo").length;
 
-  // Tendencia real: Pulse Score promedio organizacional por bucket de semana.
-  const porBucket = {};
-  encuestas.forEach((e) => {
-    const s = Number(e.score);
-    if (!Number.isFinite(s)) return;
-    (porBucket[formatSemanaDisplay(String(e.semana))] ||= []).push(s);
-  });
-  const datosTendencia = Object.keys(porBucket)
-    .sort((a, b) => a.localeCompare(b))
-    .slice(-6)
-    .map((b) => ({
-      label: b.replace("2026-", ""),
-      v: Math.round(porBucket[b].reduce((s, c) => s + c, 0) / porBucket[b].length),
-    }));
-  const tieneHistorialSuficiente = datosTendencia.length >= 2;
-
   const porSucursal = SUCURSALES.map((s) => {
     const empsIds = empleados.filter((e) => sucursalMatches(e.sucursal, s)).map((e) => e.id);
     const scores = empsIds.map((id) => { const enc = encDelBucket(id); return enc ? Number(enc.score) : null; })
@@ -198,6 +207,44 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
 
   const enFocoRojo = empleadosConDatos.filter((e) => e.status.semaforo === "Rojo");
   const participacion = empleados.length ? Math.round((contestaron / empleados.length) * 100) : 0;
+  const pendientes = empleados.length - contestaron;
+
+  // Distribución de semáforo del equipo (igual que Psicóloga)
+  const dist = { verde: 0, amarillo: 0, rojo: 0, "sin-datos": 0 };
+  pulsePorEmpleado.forEach(({ status, sinDatos }) => {
+    const nivel = sinDatos ? "sin-datos" : status.nivel;
+    if (nivel in dist) dist[nivel] += 1;
+  });
+  const conDatos = empleados.length - dist["sin-datos"];
+
+  // Tendencia del bienestar por oficina: Pulse Score promedio por sucursal y semana.
+  const empSucursal = {};
+  USERS.forEach((u) => { empSucursal[u.id] = normalizeSucursal(u.sucursal) || "Sin sucursal"; });
+  const officeWeek = {};
+  const bucketSet = new Set();
+  encuestas.forEach((e) => {
+    const s = Number(e.score);
+    if (!Number.isFinite(s)) return;
+    const suc = empSucursal[e.empleadoId];
+    if (!suc) return;
+    const b = formatSemanaDisplay(String(e.semana));
+    bucketSet.add(b);
+    (officeWeek[suc] ||= {});
+    (officeWeek[suc][b] ||= []).push(s);
+  });
+  const trendLabels = [...bucketSet].sort((a, b) => a.localeCompare(b)).slice(-6);
+  const trendSeries = Object.keys(officeWeek)
+    .filter((suc) => trendLabels.some((b) => officeWeek[suc][b]))
+    .map((suc, i) => ({
+      label: suc,
+      color: TREND_COLORS[i % TREND_COLORS.length],
+      values: trendLabels.map((b) => {
+        const arr = officeWeek[suc][b];
+        return arr ? Math.round(arr.reduce((a, c) => a + c, 0) / arr.length) : null;
+      }),
+    }))
+    .slice(0, 8);
+  const trendPorOficinaHayDatos = trendLabels.length >= 2 && trendSeries.length > 0;
 
   return (
     <div className="admin-page dashboard-page">
@@ -253,22 +300,81 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
         </Card>
       </div>
 
-      <Card className="dashboard-chart-card">
-        <SectionTitle icon="trending">Tendencia Semanal</SectionTitle>
-        {tieneHistorialSuficiente ? (
-          <LineChart data={datosTendencia} color="#2D6A5F" height={150} />
-        ) : (
-          <div className="dashboard-trend-empty">
-            <div className="dashboard-trend-empty-icon">
-              <Icon name="trending" size={22} />
+      <div className="admin-grid-2 psico-dash-grid">
+        {/* Distribución del equipo */}
+        <Card>
+          <SectionTitle icon="activity">Distribución del equipo</SectionTitle>
+          {conDatos === 0 ? (
+            <p className="admin-empty">Aún no hay encuestas para evaluar el semáforo.</p>
+          ) : (
+            <>
+              <div className="psico-dist-bar" role="img" aria-label="Distribución de semáforo del equipo">
+                {["verde", "amarillo", "rojo", "sin-datos"].map((k) =>
+                  dist[k] > 0 ? (
+                    <div
+                      key={k}
+                      className="psico-dist-seg"
+                      style={{ flexGrow: dist[k], background: SEMAFORO_META[k].color }}
+                      title={`${SEMAFORO_META[k].label}: ${dist[k]}`}
+                    />
+                  ) : null
+                )}
+              </div>
+              <div className="psico-dist-legend">
+                {["verde", "amarillo", "rojo", "sin-datos"].map((k) => (
+                  <div key={k} className="psico-dist-item">
+                    <span className="psico-dist-dot" style={{ background: SEMAFORO_META[k].color }} />
+                    <span className="psico-dist-label">{SEMAFORO_META[k].label}</span>
+                    <span className="psico-dist-count">{dist[k]}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </Card>
+
+        {/* Participación semanal */}
+        <Card>
+          <SectionTitle icon="clipboardCheck">Participación · Semana {weekSel}</SectionTitle>
+          <div className="psico-part">
+            <div className="psico-part-ring" style={{ "--pct": participacion }}>
+              <span className="psico-part-pct">{participacion}%</span>
             </div>
-            <p className="dashboard-trend-empty-text">
-              Aún no hay historial suficiente para calcular la evolución semanal.
-            </p>
-            <p className="dashboard-trend-empty-sub">
-              La tendencia se activará conforme se registren nuevas encuestas.
-            </p>
+            <div className="psico-part-info">
+              <div className="psico-part-row">
+                <Icon name="clipboardCheck" size={15} />
+                <strong>{contestaron}</strong> de {empleados.length} contestaron
+              </div>
+              <div className="psico-part-row psico-part-row--pending">
+                <Icon name="clock" size={15} />
+                <strong>{pendientes}</strong> pendientes esta semana
+              </div>
+              <div className="psico-part-track">
+                <div className="psico-part-fill" style={{ width: `${participacion}%` }} />
+              </div>
+            </div>
           </div>
+        </Card>
+      </div>
+
+      {/* Tendencia del bienestar por oficina (igual que Psicóloga) */}
+      <Card>
+        <SectionTitle icon="trending">Tendencia del bienestar por oficina</SectionTitle>
+        {!trendPorOficinaHayDatos ? (
+          <p className="admin-empty">Se necesitan al menos 2 semanas con datos para la tendencia.</p>
+        ) : (
+          <>
+            <GroupedBarChart labels={trendLabels} series={trendSeries} height={200} />
+            <div className="psico-trend-legend">
+              {trendSeries.map((s) => (
+                <span key={s.label} className="psico-trend-legend-item">
+                  <span className="psico-trend-dot" style={{ background: s.color }} />
+                  {s.label}
+                </span>
+              ))}
+            </div>
+            <p className="psico-chart-foot">Pulse Score promedio por sucursal y semana.</p>
+          </>
         )}
       </Card>
 
@@ -342,18 +448,21 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
         </Card>
       </div>
 
+      <AnimatePresence>
       {detalleSucursal && (
-        <div
+        <motion.div
           className="mc-modal-overlay dashboard-sucursal-overlay"
           onClick={() => setSucursalModal(null)}
           role="presentation"
+          {...overlayMotion}
         >
-          <div
+          <motion.div
             className="mc-modal dashboard-sucursal-modal"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-labelledby="dashboard-sucursal-modal-title"
+            {...modalMotion}
           >
             <div className="dashboard-sucursal-modal-head">
               <div>
@@ -472,13 +581,15 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
                 Cerrar
               </button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
+      <AnimatePresence>
       {sucRiesgoModal && (
-        <div className="mc-modal-overlay" onClick={() => setSucRiesgoModal(null)}>
-          <div className="mc-modal psico-suc-modal" onClick={(e) => e.stopPropagation()}>
+        <motion.div className="mc-modal-overlay" onClick={() => setSucRiesgoModal(null)} {...overlayMotion}>
+          <motion.div className="mc-modal psico-suc-modal" onClick={(e) => e.stopPropagation()} {...modalMotion}>
             <div className="psico-suc-modal-head">
               <div>
                 <h2 className="mc-modal-title">
@@ -506,9 +617,10 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
                 </div>
               ))}
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
       <Card className={`dashboard-foco-card${enFocoRojo.length ? " dashboard-foco-card--active" : ""}`}>
         <div className="dashboard-foco-header">

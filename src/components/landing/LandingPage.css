@@ -184,6 +184,54 @@
   animation: gwFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
 }
 
+/* ── Flip card: portal (frente) ↔ login (atrás) ── */
+.gw-card-flip {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  perspective: 1200px;           /* menos = más profundidad/volumen en el giro */
+  perspective-origin: center;
+}
+.gw-card-inner {
+  display: grid;                 /* ambas caras en la misma celda → altura = cara más alta */
+  transform-style: preserve-3d;
+  transform-origin: center;
+  will-change: transform;        /* compositing en GPU → giro más fluido */
+  /* easeInOutQuart: arranque y cierre suaves, sin tirón */
+  transition: transform 0.8s cubic-bezier(0.76, 0, 0.24, 1);
+}
+.gw-card-inner.is-flipped { transform: rotateY(180deg); }
+
+.gw-card-face {
+  grid-area: 1 / 1;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  /* backdrop-filter aplana el 3D y rompe backface-visibility → ocultamos la cara
+     inactiva con visibility, conmutada en el punto medio del giro (carta de canto). */
+  transition: visibility 0s linear 0.4s;
+}
+.gw-card-face--back { transform: rotateY(180deg); visibility: hidden; }
+.gw-card-inner.is-flipped .gw-card-face--front { visibility: hidden; }
+.gw-card-inner.is-flipped .gw-card-face--back { visibility: visible; }
+
+.gw-login-body { text-align: center; }
+.gw-login-body .auth-field { text-align: left; margin-top: 14px; }
+
+.gw-flip-back {
+  margin-top: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.gw-flip-back:hover { color: var(--mc-aqua); }
+
 .gw-card {
   position: relative;
   width: 100%;
@@ -331,4 +379,5 @@
   .gw-orb, .gw-pulse-line, .gw-badge-dot,
   .gw-left, .gw-right { animation: none; }
   .gw-pulse-line { stroke-dashoffset: 0; }
+  .gw-card-inner, .gw-card-face { transition: none; }   /* flip y swap instantáneos */
 }
