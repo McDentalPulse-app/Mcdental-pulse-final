@@ -1,0 +1,75 @@
+import React, { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
+import { registerSW } from 'virtual:pwa-register'
+import './index.css'
+import './App.css'
+import App from './App.jsx'
+import { AuthProvider } from './contexts/AuthContext.jsx'
+import { GlobalProvider } from './contexts/GlobalContext.jsx'
+import { NotificationProvider } from './contexts/NotificationContext.jsx'
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("ErrorBoundary caught:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f8fafc', padding: 20, fontFamily: 'system-ui, sans-serif' }}>
+          <div style={{ background: '#ffffff', padding: 40, borderRadius: 16, boxShadow: '0 10px 25px rgba(0,0,0,0.05)', maxWidth: 450, textAlign: 'center', border: '1px solid #e2e8f0' }}>
+            <h2 style={{ color: '#0f172a', margin: '0 0 16px 0', fontSize: 22, fontWeight: 600 }}>
+              Algo no salió como esperábamos
+            </h2>
+            <p style={{ color: '#64748b', margin: '0 0 32px 0', fontSize: 15, lineHeight: 1.6 }}>
+              Ha ocurrido un inconveniente inesperado en la plataforma. Por favor, intenta cargar la página de nuevo o cierra la sesión para volver a entrar.
+            </p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <button 
+                onClick={() => window.location.reload()}
+                style={{ background: '#006D5B', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: 8, fontWeight: 500, cursor: 'pointer', fontSize: 14 }}
+              >
+                Volver a intentar
+              </button>
+              <button 
+                onClick={() => { window.location.href = '/'; }}
+                style={{ background: '#f1f5f9', color: '#475569', border: 'none', padding: '10px 20px', borderRadius: 8, fontWeight: 500, cursor: 'pointer', fontSize: 14 }}
+              >
+                Salir
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children; 
+  }
+}
+
+if ('serviceWorker' in navigator) {
+  registerSW({ immediate: true })
+}
+
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <BrowserRouter>
+      <AuthProvider>
+        <GlobalProvider>
+          <NotificationProvider>
+            <ErrorBoundary><App /></ErrorBoundary>
+          </NotificationProvider>
+        </GlobalProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  </StrictMode>,
+)
