@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import logoSmall from "../../assets/logos/logo-small.png";
@@ -58,7 +58,15 @@ const Sidebar = () => {
 
   const items = navItems[user?.role] || [];
 
+  const [masOpen, setMasOpen] = useState(false);
+  const PRIMARIOS = 4;
+  const tabsPrincipales = items.slice(0, PRIMARIOS);
+  const tabsExtra = items.slice(PRIMARIOS);
+  const irA = (key) => { setMasOpen(false); navigate(`/${user.role}/${key}`); };
+  const extraActivo = tabsExtra.some((i) => i.key === active);
+
   return (
+    <>
     <aside className="sidebar">
       <div className="sidebar-brand">
         <div className="sidebar-brand-row">
@@ -111,6 +119,72 @@ const Sidebar = () => {
         </button>
       </div>
     </aside>
+
+    {/* Navegación móvil: barra inferior con tabs + "Más" */}
+    <nav className="mobile-tabbar" aria-label="Navegación principal">
+      {tabsPrincipales.map((item) => {
+        const isActive = active === item.key;
+        return (
+          <button
+            key={item.key}
+            type="button"
+            className={`mobile-tab${isActive ? " mobile-tab--active" : ""}`}
+            onClick={() => irA(item.key)}
+            aria-current={isActive ? "page" : undefined}
+          >
+            <Icon name={item.icon} size={20} />
+            <span className="mobile-tab-label">{item.label}</span>
+          </button>
+        );
+      })}
+      {tabsExtra.length > 0 && (
+        <button
+          type="button"
+          className={`mobile-tab${masOpen || extraActivo ? " mobile-tab--active" : ""}`}
+          onClick={() => setMasOpen((v) => !v)}
+          aria-expanded={masOpen}
+        >
+          <Icon name="settings" size={20} />
+          <span className="mobile-tab-label">Más</span>
+        </button>
+      )}
+    </nav>
+
+    {/* Hoja "Más": resto de secciones + usuario + cerrar sesión */}
+    {masOpen && (
+      <div className="mobile-sheet-overlay" onClick={() => setMasOpen(false)}>
+        <div className="mobile-sheet" onClick={(e) => e.stopPropagation()}>
+          <div className="mobile-sheet-handle" />
+          <div className="mobile-sheet-user">
+            <Avatar name={user?.name || ""} size={40} color="#3D8B7E" />
+            <div style={{ minWidth: 0 }}>
+              <div className="sidebar-user-name">{user?.name?.split(" ")[0] || ""}</div>
+              <div className="sidebar-user-role">{user?.role || ""}</div>
+            </div>
+          </div>
+          <div className="mobile-sheet-list">
+            {tabsExtra.map((item) => {
+              const isActive = active === item.key;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={`mobile-sheet-item${isActive ? " mobile-sheet-item--active" : ""}`}
+                  onClick={() => irA(item.key)}
+                >
+                  <span className="mobile-sheet-icon"><Icon name={item.icon} size={18} /></span>
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+          <button type="button" className="mobile-sheet-logout" onClick={logout}>
+            <Icon name="logout" size={16} /> Cerrar sesión
+          </button>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 

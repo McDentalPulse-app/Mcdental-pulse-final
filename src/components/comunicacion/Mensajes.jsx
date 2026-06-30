@@ -1,49 +1,61 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
 import { getPsicologaPrincipal, formatUsuarioMensajesMeta } from "../../utils/psicologa";
 
+// Orden cronológico estable: usa id (Date.now al crear); cae a fecha como respaldo.
+const porTiempo = (a, b) =>
+  (Number(a.id) || 0) - (Number(b.id) || 0) ||
+  String(a.fecha || "").localeCompare(String(b.fecha || ""));
+
+// "2026-06-30 14:05" -> "14:05" (si trae hora); si solo fecha, la muestra.
+const formatHora = (fecha) => {
+  const s = String(fecha || "");
+  const partes = s.split(" ");
+  return partes[1] ? partes[1] : s;
+};
+
 const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
   const { usuarios: USERS } = useGlobal();
 
   const [selectedId, setSelectedId] = useState(null);
   const [texto, setTexto] = useState("");
-  const [readCounts, setReadCounts] = useState({});
+  const bodyRef = useRef(null);
 
   const psicologa = getPsicologaPrincipal(USERS);
   const empleados = USERS.filter(u => u.role === "empleado");
-
   const getUserById = (id) => USERS.find(u => u.id === id);
 
   const conversaciones = user.role === "psicologa"
     ? empleados.map(emp => {
-        const convMensajes = mensajes.filter(m =>
-          (m.de === user.id && m.para === emp.id) ||
-          (m.de === emp.id && m.para === user.id)
-        );
-
-        const ultimo = convMensajes[convMensajes.length - 1];
-
+        const convMensajes = mensajes
+          .filter(m =>
+            (m.de === user.id && m.para === emp.id) ||
+            (m.de === emp.id && m.para === user.id)
+          )
+          .sort(porTiempo);
         return {
           usuario: emp,
           mensajes: convMensajes,
-          ultimo,
-          noLeidos: convMensajes.filter(m => m.para === user.id && !m.leido).length
+          ultimo: convMensajes[convMensajes.length - 1],
+          noLeidos: convMensajes.filter(m => m.para === user.id && !m.leido).length,
         };
       })
-    : psicologa ? [{
-        usuario: psicologa,
-        mensajes,
-        ultimo: mensajes[mensajes.length - 1],
-        noLeidos: mensajes.filter(m => m.para === user.id && !m.leido).length
-      }] : [];
+    : psicologa
+      ? [{
+          usuario: psicologa,
+          mensajes: [...mensajes].sort(porTiempo),
+          ultimo: [...mensajes].sort(porTiempo).slice(-1)[0],
+          noLeidos: mensajes.filter(m => m.para === user.id && !m.leido).length,
+        }]
+      : [];
 
   const conversacionesActivas = user.role === "psicologa"
     ? conversaciones
         .filter(c => c.mensajes.length > 0)
-        .sort((a, b) => String(b.ultimo?.fecha || "").localeCompare(String(a.ultimo?.fecha || "")))
+        .sort((a, b) => (Number(b.ultimo?.id) || 0) - (Number(a.ultimo?.id) || 0))
     : conversaciones;
 
   const selected =
@@ -53,47 +65,23 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
 
   const mensajesChat = selected?.mensajes || [];
 
-  const marcarComoLeida = (convId, messageCount) => {
-    setReadCounts(prev => ({ ...prev, [convId]: messageCount }));
-  };
-
+  // Al abrir/actualizar una conversación: marcar recibidos como leídos + bajar al final.
   useEffect(() => {
     if (!selected) return;
-    marcarComoLeida(selected.usuario.id, selected.mensajes.length);
     const pendientes = selected.mensajes.filter(m => m.para === user.id && !m.leido);
     if (pendientes.length) onMarkRead(pendientes);
+    if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
   }, [selected?.usuario.id, selected?.mensajes.length]);
-
-  const getBadgeCount = (c) => {
-    if (selected?.usuario.id === c.usuario.id) return 0;
-
-    const readAt = readCounts[c.usuario.id];
-    if (readAt === undefined) {
-      if (c.noLeidos > 0) return c.noLeidos;
-      const entrantes = c.mensajes.filter(m => m.para === user.id).length;
-      return entrantes > 0 ? entrantes : 0;
-    }
-
-    const nuevosDesdeLeida = c.mensajes.length - readAt;
-    return nuevosDesdeLeida > 0 ? nuevosDesdeLeida : 0;
-  };
-
-  const seleccionarConversacion = (c) => {
-    setSelectedId(c.usuario.id);
-    marcarComoLeida(c.usuario.id, c.mensajes.length);
-  };
 
   const enviar = () => {
     if (!selected || !texto.trim()) return;
-
     onSend({
       de: user.id,
       para: selected.usuario.id,
       texto: texto.trim(),
       fecha: new Date().toISOString().slice(0, 16).replace("T", " "),
-      leido: false
+      leido: false,
     });
-
     setTexto("");
   };
 
@@ -134,15 +122,17 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
             <div className="mensajes-conv-list">
               {conversacionesActivas.map(c => {
                 const activo = selected?.usuario.id === c.usuario.id;
-                const badgeCount = getBadgeCount(c);
-                const showBadge = badgeCount > 0;
+                const badgeCount = activo ? 0 : c.noLeidos;
+                const preview = c.ultimo
+                  ? `${c.ultimo.de === user.id ? "Tú: " : ""}${c.ultimo.texto}`
+                  : "";
 
                 return (
                   <button
                     key={c.usuario.id}
                     type="button"
                     className={`mensajes-conv-item${activo ? " mensajes-conv-item--active" : ""}`}
-                    onClick={() => seleccionarConversacion(c)}
+                    onClick={() => setSelectedId(c.usuario.id)}
                   >
                     <Avatar
                       name={c.usuario.name}
@@ -153,18 +143,18 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
                     <div className="mensajes-conv-main">
                       <div className="mensajes-conv-name">{c.usuario.name}</div>
                       <div className="mensajes-conv-meta">
-                        {formatUsuarioMensajesMeta(c.usuario)}
+                        {preview || formatUsuarioMensajesMeta(c.usuario)}
                       </div>
                     </div>
 
-                    {showBadge && (
-                      <span
-                        className="mensajes-conv-badge mensajes-conv-badge--unread"
-                        title={`${badgeCount} no leídos`}
-                      >
-                        {badgeCount}
-                      </span>
-                    )}
+                    <div className="mensajes-conv-side">
+                      {c.ultimo && <span className="mensajes-conv-time">{formatHora(c.ultimo.fecha)}</span>}
+                      {badgeCount > 0 && (
+                        <span className="mensajes-conv-badge mensajes-conv-badge--unread" title={`${badgeCount} no leídos`}>
+                          {badgeCount}
+                        </span>
+                      )}
+                    </div>
                   </button>
                 );
               })}
@@ -190,7 +180,7 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
                   </span>
                 </div>
 
-                <div className="mensajes-chat-body">
+                <div className="mensajes-chat-body" ref={bodyRef}>
                   {mensajesChat.length === 0 ? (
                     <div className="mensajes-chat-body-empty">
                       No hay mensajes todavía. Inicia la conversación.
@@ -206,7 +196,7 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
                             {mio ? "Tú" : autor?.name || "Usuario"}
                           </div>
                           <div className="mensajes-bubble-text">{m.texto}</div>
-                          <div className="mensajes-bubble-time">{m.fecha}</div>
+                          <div className="mensajes-bubble-time">{formatHora(m.fecha)}</div>
                         </div>
                       </div>
                     );
@@ -223,7 +213,12 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
                     }}
                     placeholder="Escribe un mensaje privado..."
                   />
-                  <button type="button" className="mc-btn-primary mc-btn-with-icon" onClick={enviar}>
+                  <button
+                    type="button"
+                    className="mc-btn-primary mc-btn-with-icon"
+                    onClick={enviar}
+                    disabled={!texto.trim()}
+                  >
                     <Icon name="message" size={16} /> Enviar
                   </button>
                 </div>

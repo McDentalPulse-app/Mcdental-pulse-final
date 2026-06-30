@@ -45,7 +45,8 @@ export const useAppActions = () => {
     const nuevoMensaje = {
       ...msg,
       id: Date.now(),
-      fecha: new Date().toISOString().slice(0, 10),
+      // Conserva fecha+hora si el componente la envió; si no, la genera con hora.
+      fecha: msg.fecha || new Date().toISOString().slice(0, 16).replace("T", " "),
       createdAt: serverTimestamp()
     };
 
