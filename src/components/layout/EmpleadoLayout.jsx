@@ -16,7 +16,7 @@ export default function EmpleadoLayout({ user, globals, actions }) {
   const { usuarios: USERS } = useGlobal();
 
   const { encuestas, mensajes, vacaciones, permisos, reconocimientos } = globals;
-  const { addEncuesta, sendMensaje, addSolicitudEmpleadoRH, addReporteConfidencial } = actions;
+  const { addEncuesta, sendMensaje, addSolicitudEmpleadoRH, addReporteConfidencial, marcarMensajesLeidos } = actions;
   const navigate = useNavigate();
 
   const userMensajes = mensajes.filter((m) => m.de === user?.id || m.para === user?.id);
@@ -34,7 +34,7 @@ export default function EmpleadoLayout({ user, globals, actions }) {
             <Route path="permisosempleado" element={<PermisosEmpleado user={user} vacaciones={vacaciones} permisos={permisos} onEnviarSolicitudEmpleado={addSolicitudEmpleadoRH}/>} />
             <Route path="reconocimientos" element={<ReconocimientosEmpleado user={user} reconocimientos={reconocimientos} />} />
             <Route path="reporteconfidencial" element={<ReporteConfidencialEmpleado user={user} onSubmit={addReporteConfidencial} />} />
-            <Route path="mensajes" element={<Mensajes user={user} mensajes={userMensajes} onSend={(msg)=>sendMensaje({...msg,para:psicologaId})}/>} />
+            <Route path="mensajes" element={<Mensajes user={user} mensajes={userMensajes} onSend={(msg)=>sendMensaje({...msg,para:psicologaId})} onMarkRead={marcarMensajesLeidos}/>} />
             <Route path="*" element={<Navigate to="inicio" replace />} />
           </Routes>
         </div>

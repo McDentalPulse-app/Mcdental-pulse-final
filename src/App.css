@@ -7083,3 +7083,223 @@
     width: 100%;
   }
 }
+
+/* ── Dashboard Psicóloga: widgets ── */
+.psico-dash-grid { align-items: stretch; }
+.psico-dash-grid > .mc-card { display: flex; flex-direction: column; }
+
+/* Distribución de semáforo */
+.psico-dist-bar {
+  display: flex;
+  height: 16px;
+  border-radius: 999px;
+  overflow: hidden;
+  gap: 2px;
+  background: var(--mc-gris-suave);
+  margin: 4px 0 16px;
+}
+.psico-dist-seg { transition: flex-grow 0.3s ease; }
+.psico-dist-legend {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 16px;
+}
+.psico-dist-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--mc-gris-texto);
+}
+.psico-dist-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.psico-dist-label { flex: 1; }
+.psico-dist-count { font-weight: 800; color: var(--mc-texto); }
+
+/* Participación */
+.psico-part { display: flex; align-items: center; gap: 20px; }
+.psico-part-ring {
+  --pct: 0;
+  position: relative;
+  width: 96px; height: 96px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: conic-gradient(var(--mc-aqua) calc(var(--pct) * 1%), var(--mc-gris-suave) 0);
+}
+.psico-part-ring::before {
+  content: "";
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: var(--mc-blanco);
+}
+.psico-part-pct {
+  position: relative;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--mc-verde-oscuro);
+}
+.psico-part-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.psico-part-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--mc-gris-texto);
+}
+.psico-part-row strong { color: var(--mc-texto); font-size: 16px; }
+.psico-part-row svg { color: var(--mc-aqua); }
+.psico-part-row--pending svg { color: var(--mc-semaforo-amarillo); }
+.psico-part-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--mc-gris-suave);
+  overflow: hidden;
+  margin-top: 2px;
+}
+.psico-part-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--grad-accent);
+  transition: width 0.4s ease;
+}
+
+.psico-chart-foot {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--mc-gris-texto);
+  text-align: center;
+}
+
+/* Sucursales en riesgo */
+.psico-suc-list { display: flex; flex-direction: column; gap: 14px; }
+.psico-suc-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+.psico-suc-name { font-weight: 700; color: var(--mc-texto); font-size: 14px; }
+.psico-suc-count { font-weight: 800; color: var(--mc-semaforo-rojo); font-size: 13px; }
+.psico-suc-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--mc-gris-suave);
+  overflow: hidden;
+}
+.psico-suc-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--mc-semaforo-amarillo), var(--mc-semaforo-rojo));
+  transition: width 0.4s ease;
+}
+
+@media (max-width: 768px) {
+  .psico-dash-grid { grid-template-columns: 1fr; }
+  .psico-dist-legend { grid-template-columns: 1fr 1fr; }
+}
+
+/* Sucursal en riesgo: fila clickeable + modal */
+.psico-suc-row--clickable {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 8px;
+  margin: -8px -8px 0;
+  border-radius: 10px;
+  transition: background 0.18s;
+}
+.psico-suc-row--clickable:hover { background: rgba(20, 200, 182, 0.08); }
+.psico-suc-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.psico-suc-count svg { color: var(--mc-gris-texto); }
+
+.psico-suc-modal { max-width: 460px; width: 100%; }
+.psico-suc-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.psico-suc-modal-head .mc-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.psico-suc-modal-sub { margin: 4px 0 0; }
+.psico-suc-modal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+.psico-suc-emp {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--mc-gris-perla);
+  border: 1px solid var(--mc-gris-suave);
+  border-left: 4px solid var(--mc-gris-suave);
+}
+.psico-suc-emp--rojo { border-left-color: var(--mc-semaforo-rojo); }
+.psico-suc-emp--amarillo { border-left-color: var(--mc-semaforo-amarillo); }
+.psico-suc-emp-name { font-weight: 700; color: var(--mc-texto); }
+.psico-suc-emp-meta { font-size: 12px; color: var(--mc-gris-texto); }
+.psico-suc-emp-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.psico-suc-emp-score {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mc-gris-texto);
+  white-space: nowrap;
+}
+
+/* Tendencia por oficina: leyenda */
+.psico-trend-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 12px;
+  justify-content: center;
+}
+.psico-trend-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mc-gris-texto);
+}
+.psico-trend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+/* Gráfica de barras agrupadas */
+.dashboard-bar-chart-wrap {
+  width: 100%;
+  overflow-x: auto;
+  display: flex;
+  justify-content: center;
+}
+.dashboard-bar-chart {
+  display: block;
+  height: 220px;
+  width: auto;
+  max-width: 100%;
+}

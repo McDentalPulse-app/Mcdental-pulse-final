@@ -60,6 +60,29 @@ export const useAppActions = () => {
     }
   };
 
+  // Marca como leídos (persistente) los mensajes recibidos al abrir la conversación.
+  const marcarMensajesLeidos = async (msgs) => {
+    const pendientes = (msgs || []).filter(m => !m.leido);
+    if (!pendientes.length) return;
+
+    const ids = new Set(pendientes.map(m => m.id));
+    setMensajes(prev => prev.map(m => ids.has(m.id) ? { ...m, leido: true } : m));
+
+    try {
+      let snapshot = null;
+      for (const m of pendientes) {
+        let firebaseId = m.firebaseId;
+        if (!firebaseId) {
+          snapshot ||= await getDocs(collection(db, "mensajes"));
+          firebaseId = snapshot.docs.find(d => d.data().id === m.id)?.id;
+        }
+        if (firebaseId) await updateDoc(doc(db, "mensajes", firebaseId), { leido: true });
+      }
+    } catch (error) {
+      console.error("Error marcando mensajes como leídos:", error);
+    }
+  };
+
   const addNota = async (empleadoId, texto) => {
     if (!texto.trim()) return;
 
@@ -328,6 +351,7 @@ export const useAppActions = () => {
   return {
     addEncuesta,
     sendMensaje,
+    marcarMensajesLeidos,
     addNota,
     updateVacacionEstado,
     updatePermisoEstado,

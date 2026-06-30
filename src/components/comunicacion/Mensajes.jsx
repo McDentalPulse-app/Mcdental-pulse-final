@@ -5,7 +5,7 @@ import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
 import { getPsicologaPrincipal, formatUsuarioMensajesMeta } from "../../utils/psicologa";
 
-const Mensajes = ({ user, mensajes, onSend }) => {
+const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
   const { usuarios: USERS } = useGlobal();
 
   const [selectedId, setSelectedId] = useState(null);
@@ -60,6 +60,8 @@ const Mensajes = ({ user, mensajes, onSend }) => {
   useEffect(() => {
     if (!selected) return;
     marcarComoLeida(selected.usuario.id, selected.mensajes.length);
+    const pendientes = selected.mensajes.filter(m => m.para === user.id && !m.leido);
+    if (pendientes.length) onMarkRead(pendientes);
   }, [selected?.usuario.id, selected?.mensajes.length]);
 
   const getBadgeCount = (c) => {
