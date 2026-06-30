@@ -7,13 +7,13 @@ const GroupedBarChart = ({ labels = [], series = [], height = 200 }) => {
   if (!labels.length || !hasData) return null;
 
   const n = series.length;
-  const barW = n > 5 ? 12 : 16;
-  const barGap = 3;
-  const groupGap = 24;
-  const leftPad = 30;
-  const rightPad = 10;
-  const topPad = 16;
-  const bottomPad = 24;
+  const barW = n > 5 ? 18 : 24;
+  const barGap = 6;
+  const groupGap = 48;
+  const leftPad = 36;
+  const rightPad = 16;
+  const topPad = 24;
+  const bottomPad = 28;
 
   const groupW = n * barW + (n - 1) * barGap;
   const w = leftPad + labels.length * groupW + (labels.length - 1) * groupGap + rightPad;
@@ -54,13 +54,13 @@ const GroupedBarChart = ({ labels = [], series = [], height = 200 }) => {
                     <rect x={bx} y={by} width={barW} height={bh} rx="3" fill={s.color}>
                       <title>{`${s.label} · ${lab}: ${v}`}</title>
                     </rect>
-                    <text x={bx + barW / 2} y={by - 4} textAnchor="middle" fontSize="8.5" fontWeight="700" fill={s.color}>
+                    <text x={bx + barW / 2} y={by - 5} textAnchor="middle" fontSize="10" fontWeight="700" fill={s.color}>
                       {v}
                     </text>
                   </g>
                 );
               })}
-              <text x={gx + groupW / 2} y={h - 6} textAnchor="middle" fontSize="10" fontWeight="600" fill="#64748b">
+              <text x={gx + groupW / 2} y={h - 8} textAnchor="middle" fontSize="11" fontWeight="600" fill="#64748b">
                 {lab}
               </text>
             </g>

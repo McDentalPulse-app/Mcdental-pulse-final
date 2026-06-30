@@ -77,11 +77,12 @@ export const isSemanaActual = (week) => String(week ?? "").trim() === getISOWeek
 const LAUNCH_YEAR = LAUNCH_WEEK.slice(0, 4);
 
 /** Semana para mostrar en UI: del lanzamiento en adelante numera "2026-W01",
- *  "2026-W02", … Las semanas anteriores (legacy 2025) se muestran tal cual. */
+ *  "2026-W02", … Todas las semanas anteriores al lanzamiento (legacy 2025 y
+ *  pilotos 2026 previos) se juntan bajo una sola etiqueta "2026-W00". */
 export const formatSemanaDisplay = (week) => {
   const w = normalizeWeek(week);
   const n = semanaNumero(w);
-  return n ? `${LAUNCH_YEAR}-W${String(n).padStart(2, "0")}` : w;
+  return n ? `${LAUNCH_YEAR}-W${String(n).padStart(2, "0")}` : `${LAUNCH_YEAR}-W00`;
 };
 
 /** Etiqueta de la semana activa para encabezados ("2026-W01", …). Live binding. */

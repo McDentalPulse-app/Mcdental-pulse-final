@@ -8,7 +8,7 @@ import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import { semaforoColor } from "../../config/theme";
-import { semanaActual, normalizeSucursal, isSemanaActual, formatSemanaDisplay } from "../../utils/constants";
+import { semanaActual, normalizeSucursal, sucursalMatches, isSemanaActual, formatSemanaDisplay } from "../../utils/constants";
 import { calcPulseScore, getPulseStatus } from "../../utils/pulseScore";
 
 const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
@@ -18,6 +18,9 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
   const semanaEnc = encuestas.filter(e => isSemanaActual(e.semana));
   const [nuevaNota, setNuevaNota] = useState({ empId: null, texto: "" });
   const [empleadoDetalle, setEmpleadoDetalle] = useState(null);
+  const [filtroSucursal, setFiltroSucursal] = useState("Todas");
+  const [filtroSemaforo, setFiltroSemaforo] = useState("Todos");
+  const [busqueda, setBusqueda] = useState("");
 
   const getUltimoSemaforo = (empId) => {
     const enc = encuestas.filter(e => e.empleadoId === empId).sort((a, b) => b.semana.localeCompare(a.semana));
@@ -27,6 +30,18 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
   const contestaron = new Set(semanaEnc.map(e => e.empleadoId)).size;
   // Cuenta empleados en rojo (mismo criterio que las tarjetas del grid), no filas de encuesta.
   const focoRojo = empleados.filter(emp => getUltimoSemaforo(emp.id) === "rojo").length;
+
+  // Filtros (mismo patrón que /psicologa/empleados): texto, sucursal y semáforo.
+  const filtered = empleados.filter(emp => {
+    const texto = busqueda.toLowerCase();
+    const coincideBusqueda =
+      emp.name.toLowerCase().includes(texto) ||
+      String(emp.puesto || "").toLowerCase().includes(texto) ||
+      normalizeSucursal(emp.sucursal).toLowerCase().includes(texto);
+    const coincideSucursal = filtroSucursal === "Todas" || sucursalMatches(emp.sucursal, filtroSucursal);
+    const coincideSemaforo = filtroSemaforo === "Todos" || getUltimoSemaforo(emp.id) === filtroSemaforo;
+    return coincideBusqueda && coincideSucursal && coincideSemaforo;
+  });
 
   return (
     <div className="admin-page psico-seguimiento-page">
@@ -46,8 +61,43 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
 
       <Card>
         <SectionTitle icon="users">Semáforo por colaborador</SectionTitle>
+
+        <div className="list-filters-grid">
+          <input
+            className="list-filter-input"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar por nombre, puesto o sucursal..."
+          />
+          <select
+            className="list-filter-select"
+            value={filtroSucursal}
+            onChange={(e) => setFiltroSucursal(e.target.value)}
+          >
+            <option value="Todas">Todas las sucursales</option>
+            {[...new Set(empleados.map((e) => normalizeSucursal(e.sucursal)))].sort().map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+          <select
+            className="list-filter-select"
+            value={filtroSemaforo}
+            onChange={(e) => setFiltroSemaforo(e.target.value)}
+          >
+            <option value="Todos">Todos los semáforos</option>
+            <option value="verde">Verde</option>
+            <option value="amarillo">Amarillo</option>
+            <option value="rojo">Rojo</option>
+          </select>
+        </div>
+        <div className="list-filter-count">
+          Mostrando {filtered.length} de {empleados.length} colaboradores
+        </div>
+
         <div className="psico-emp-grid">
-          {empleados.map(emp => {
+          {filtered.length === 0 ? (
+            <p className="admin-empty">Ningún colaborador coincide con los filtros.</p>
+          ) : filtered.map(emp => {
             const sem = getUltimoSemaforo(emp.id);
             const ps = calcPulseScore(emp.id, encuestas);
             const contesto = semanaEnc.some(e => e.empleadoId === emp.id);

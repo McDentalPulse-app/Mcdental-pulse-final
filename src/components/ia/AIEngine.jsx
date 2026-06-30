@@ -10,7 +10,7 @@ import PulseScoreBadge from "../common/PulseScoreBadge";
 import RiskBar from "../common/RiskBar";
 import { semaforoColor, semaforoBg, semaforoLabel } from "../../config/theme";
 
-import { semanaActual, normalizeSucursal, isSemanaActual, formatSemanaDisplay } from "../../utils/constants";
+import { semanaActual, normalizeSucursal, formatSemanaDisplay } from "../../utils/constants";
 import { calcularAntiguedad, resolveFechaIngreso } from "../../utils/helpers";
 import { calcPulseScore, getPulseStatus, calcRiesgos } from "../../utils/pulseScore";
 import { callAI } from "../../utils/analysisEngine";
@@ -150,6 +150,91 @@ const analyzeEmployeeAI = (empleado, encuestas, permisos = [], descuentos = [], 
 };
 
 
+// Inline markdown: **negrita**, *cursiva*, `código`.
+const parseInlineMD = (text) => {
+  const nodes = [];
+  const re = /(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g;
+  let last = 0, m, key = 0;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) nodes.push(text.slice(last, m.index));
+    const t = m[0];
+    if (t.startsWith("**")) nodes.push(<strong key={key++}>{t.slice(2, -2)}</strong>);
+    else if (t.startsWith("`")) nodes.push(<code key={key++} className="ai-md-code">{t.slice(1, -1)}</code>);
+    else nodes.push(<em key={key++}>{t.slice(1, -1)}</em>);
+    last = m.index + t.length;
+  }
+  if (last < text.length) nodes.push(text.slice(last));
+  return nodes;
+};
+
+// Render markdown-lite por bloques: encabezados, listas (•/numéricas), párrafos, separadores.
+const MarkdownLite = ({ text }) => {
+  const blocks = [];
+  let list = null;
+  const flush = () => { if (list) { blocks.push(list); list = null; } };
+
+  String(text || "").split("\n").forEach(raw => {
+    const line = raw.trim();
+    if (!line) { flush(); return; }
+    const h = /^(#{1,4})\s+(.*)$/.exec(line);
+    const ul = /^[-*]\s+(.*)$/.exec(line);
+    const ol = /^\d+[.)]\s+(.*)$/.exec(line);
+    if (/^[-*_]{3,}$/.test(line)) { flush(); blocks.push({ type: "hr" }); }
+    else if (h) { flush(); blocks.push({ type: "h", level: h[1].length, text: h[2] }); }
+    else if (ul) { if (!list || list.type !== "ul") { flush(); list = { type: "ul", items: [] }; } list.items.push(ul[1]); }
+    else if (ol) { if (!list || list.type !== "ol") { flush(); list = { type: "ol", items: [] }; } list.items.push(ol[1]); }
+    else { flush(); blocks.push({ type: "p", text: line }); }
+  });
+  flush();
+
+  return (
+    <div className="ai-md">
+      {blocks.map((b, i) => {
+        if (b.type === "hr") return <hr key={i} className="ai-md-hr" />;
+        if (b.type === "h") return <p key={i} className={`ai-md-h ai-md-h${b.level}`}>{parseInlineMD(b.text)}</p>;
+        if (b.type === "ul") return <ul key={i} className="ai-md-ul">{b.items.map((it, j) => <li key={j}>{parseInlineMD(it)}</li>)}</ul>;
+        if (b.type === "ol") return <ol key={i} className="ai-md-ol">{b.items.map((it, j) => <li key={j}>{parseInlineMD(it)}</li>)}</ol>;
+        return <p key={i} className="ai-md-p">{parseInlineMD(b.text)}</p>;
+      })}
+    </div>
+  );
+};
+
+const AIOutput = ({ text, loading, placeholder }) => {
+  if (loading) {
+    return (
+      <div className="ai-output ai-output--loading">
+        <span className="ai-spinner" /> Generando análisis con IA…
+      </div>
+    );
+  }
+  if (!text) return <div className="ai-output ai-output--empty">{placeholder}</div>;
+  return (
+    <div className="ai-output">
+      <MarkdownLite text={text} />
+    </div>
+  );
+};
+
+const AICard = ({ icon = "ai", title, desc, onGenerate, output, loading }) => (
+  <Card className="ai-gen-card" style={{ marginTop: 16 }}>
+    <div className="ai-gen-head">
+      <div className="ai-gen-head-main">
+        <SectionTitle icon={icon}>{title}</SectionTitle>
+        <p className="ai-gen-desc">{desc}</p>
+      </div>
+      <button type="button" className="ai-gen-btn" onClick={onGenerate} disabled={loading}>
+        <Icon name="sparkles" size={15} /> {loading ? "Generando…" : "Generar con IA"}
+      </button>
+    </div>
+    <AIOutput
+      text={output}
+      loading={loading}
+      placeholder="Pulsa “Generar con IA” para una síntesis redactada por Gemini a partir de los datos actuales."
+    />
+  </Card>
+);
+
 const AIEngine = ({ encuestas, mensajes, notas, userRole, permisos = [], descuentos = [], reconocimientos = [], reportesConfidenciales = [] }) => {
   const { usuarios: USERS } = useGlobal();
   const [tab, setTab] = useState("resumen");
@@ -161,10 +246,32 @@ const AIEngine = ({ encuestas, mensajes, notas, userRole, permisos = [], descuen
   const [chatLoading, setChatLoading] = useState(false);
 
   const empleados = USERS.filter(u => u.role === "empleado");
+
+  // Filtro por semana (buckets): pre-lanzamiento juntas en "2026-W00", lanzamiento+ "2026-W01"…
+  const semanasRaw = [...new Set(
+    encuestas.filter(e => Number.isFinite(Number(e.score))).map(e => String(e.semana))
+  )];
+  const bucketWeeks = {};
+  semanasRaw.forEach(w => { (bucketWeeks[formatSemanaDisplay(w)] ||= []).push(w); });
+  const labelActual = formatSemanaDisplay(semanaActual);
+  const opcionesSemana = [...new Set([labelActual, ...Object.keys(bucketWeeks)])].sort((a, b) => b.localeCompare(a));
+  const defaultWeek = bucketWeeks[labelActual] ? labelActual : (opcionesSemana.find(o => bucketWeeks[o]) || labelActual);
+  const [weekSel, setWeekSel] = useState(defaultWeek);
+  const selRawWeeks = bucketWeeks[weekSel] || (weekSel === labelActual ? [semanaActual] : []);
+  const encuestasSemana = encuestas.filter(e => selRawWeeks.includes(String(e.semana)));
+
+  // Al seleccionar un empleado (chip o botón), baja a su tarjeta de expediente.
+  useEffect(() => {
+    if (tab === "expedientes" && selectedEmp) {
+      const el = document.getElementById(`ai-exp-${selectedEmp.id}`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [tab, selectedEmp]);
+
 const analisisIA = empleados.map(emp =>
   analyzeEmployeeAI(
     emp,
-    encuestas,
+    encuestasSemana,
     permisos,
     descuentos,
     reconocimientos,
@@ -191,24 +298,24 @@ const pendientesEvaluacion = analisisIA.filter(a => a.sinDatos).length;
 
 const RESUMEN_LIMITE = 8;
   const buildContexto = () => {
-    const semanaEnc = encuestas.filter(e => isSemanaActual(e.semana));
     const resumen = empleados.map(emp => {
-      const pulse = calcPulseScore(emp.id, encuestas);
-      const riesgos = calcRiesgos(emp.id, encuestas);
-      const enc = encuestas.filter(e => e.empleadoId === emp.id).sort((a,b)=>b.semana.localeCompare(a.semana)).slice(0,3);
+      const pulse = calcPulseScore(emp.id, encuestasSemana);
+      const riesgos = calcRiesgos(emp.id, encuestasSemana);
+      const enc = encuestasSemana.filter(e => e.empleadoId === emp.id).sort((a,b)=>String(b.semana).localeCompare(String(a.semana))).slice(0,3);
       return `- ${emp.name} (${normalizeSucursal(emp.sucursal)}, ${emp.puesto}): Pulse Score ${pulse.score} (${pulse.nivel}), tendencia ${pulse.tendencia}, riesgo renuncia ${riesgos.renuncia}%, burnout ${riesgos.burnout}%, emocional ${riesgos.emocional}%, últimos scores: ${enc.map(e=>e.score).join(",")}`;
     }).join("\n");
     const msgsRecientes = mensajes.slice(-5).map(m => {
       const de = USERS.find(u=>u.id===m.de);
       return `${de?.name}: "${m.texto.slice(0,80)}"`;
     }).join("\n");
-    return `DATOS MCDENTAL PULSE - Semana ${semanaActual}\nEmpleados: ${empleados.length} | Contestaron esta semana: ${new Set(semanaEnc.map(e=>e.empleadoId)).size}/${empleados.length}\n\nPULSE SCORES Y RIESGOS:\n${resumen}\n\nMENSAJES RECIENTES:\n${msgsRecientes}`;
+    const contestaronSem = new Set(encuestasSemana.map(e=>e.empleadoId)).size;
+    return `DATOS MCDENTAL PULSE - Semana ${weekSel}\nEmpleados: ${empleados.length} | Contestaron: ${contestaronSem}/${empleados.length}\n\nPULSE SCORES Y RIESGOS:\n${resumen}\n\nMENSAJES RECIENTES:\n${msgsRecientes}`;
   };
 
   const buildEmpContexto = (emp) => {
-    const enc = encuestas.filter(e => e.empleadoId === emp.id).sort((a,b)=>b.semana.localeCompare(a.semana));
-    const pulse = calcPulseScore(emp.id, encuestas);
-    const riesgos = calcRiesgos(emp.id, encuestas);
+    const enc = encuestasSemana.filter(e => e.empleadoId === emp.id).sort((a,b)=>String(b.semana).localeCompare(String(a.semana)));
+    const pulse = calcPulseScore(emp.id, encuestasSemana);
+    const riesgos = calcRiesgos(emp.id, encuestasSemana);
     const notasEmp = notas.filter(n => n.empleadoId === emp.id);
     const msgsEmp = mensajes.filter(m => m.de === emp.id || m.para === emp.id).slice(-6);
     return `EXPEDIENTE: ${emp.name} | ${normalizeSucursal(emp.sucursal)} | ${emp.puesto} | Antigüedad: ${calcularAntiguedad(resolveFechaIngreso(emp))}Tendencia: ${pulse.tendencia}\nRiesgos: Renuncia ${riesgos.renuncia}%, Burnout ${riesgos.burnout}%, Emocional ${riesgos.emocional}%\nEncuestas (${enc.length} semanas): ${enc.slice(0,5).map(e=>`${e.semana}: emocional=${e.respuestas.emocional}, estres=${e.respuestas.estres}, mot=${e.respuestas.motivacion}, score=${e.score}`).join(" | ")}\nNotas psicóloga: ${notasEmp.map(n=>n.texto).join(" | ") || "Ninguna"}\nMensajes: ${msgsEmp.map(m=>{const u=USERS.find(x=>x.id===m.de);return `${u?.name}: "${m.texto.slice(0,60)}"`;}).join(" | ") || "Ninguno"}`;
@@ -278,6 +385,17 @@ const RESUMEN_LIMITE = 8;
           <h1 className="admin-page-title">McDental Pulse AI Engine</h1>
           <p className="admin-page-subtitle">Motor de inteligencia artificial · análisis en tiempo real</p>
         </div>
+        <label className="psico-week-select ai-engine-week-select">
+          <Icon name="calendar" size={14} />
+          <span className="psico-week-select-label">Semana</span>
+          <select value={weekSel} onChange={e => setWeekSel(e.target.value)}>
+            {opcionesSemana.map(w => (
+              <option key={w} value={w}>
+                {w}{w === labelActual ? " · actual" : ""}{w === `${w.slice(0, 4)}-W00` ? " · anterior" : ""}
+              </option>
+            ))}
+          </select>
+        </label>
         <div className="ai-engine-status-badge">
           <Icon name="sparkles" size={14} /> Activo
         </div>
@@ -291,7 +409,7 @@ const RESUMEN_LIMITE = 8;
       {/* Pulse Scores resumen */}
       <div className="ai-engine-pulse-chips">
         {USERS.filter(u=>u.role==="empleado").map(emp => {
-          const ps = calcPulseScore(emp.id, encuestas);
+          const ps = calcPulseScore(emp.id, encuestasSemana);
           if (ps.sinDatos) return null;
           return (
             <button
@@ -323,6 +441,22 @@ const RESUMEN_LIMITE = 8;
           </button>
         ))}
       </div>
+
+      {/* Capa IA (Gemini) — resumen / alertas / predicciones */}
+      {["resumen", "alertas", "prediccion"].includes(tab) && (
+        <AICard
+          icon={tab === "resumen" ? "clipboard" : tab === "alertas" ? "shieldAlert" : "wand"}
+          title={tab === "resumen" ? "Resumen ejecutivo IA" : tab === "alertas" ? "Alertas inteligentes IA" : "Predicciones organizacionales IA"}
+          desc={
+            tab === "resumen" ? "Síntesis semanal del clima organizacional redactada por Gemini."
+            : tab === "alertas" ? "Alertas priorizadas con acción recomendada, redactadas por Gemini."
+            : "Proyección de renuncia, burnout y ausentismo por Gemini."
+          }
+          onGenerate={tab === "resumen" ? generarResumen : tab === "alertas" ? generarAlertas : generarPrediccion}
+          output={output}
+          loading={loading}
+        />
+      )}
 
       {/* Resumen Semanal */}
      {tab === "resumen" && (
@@ -660,117 +794,76 @@ const RESUMEN_LIMITE = 8;
 {tab === "copiloto" && (
   <Card>
     <SectionTitle icon="ai">Copiloto de Bienestar Organizacional</SectionTitle>
-    <p style={{ color: "#64748b", marginTop: 0 }}>
-      Recomendaciones automáticas para priorizar seguimiento humano, psicológico y organizacional.
+    <p className="ai-gen-desc">
+      Pregunta lo que necesites; el copiloto responde con Gemini usando el contexto real del equipo.
     </p>
 
-    <div className="admin-stat-grid" style={{ marginBottom: 18 }}>
+    <div className="admin-stat-grid" style={{ marginBottom: 16 }}>
       <StatCard iconName="shieldAlert" value={prioridadCritica} label="Casos urgentes" valueClass="admin-stat-value--red" />
       <StatCard iconName="critical" value={prioridadAlta} label="Casos de alta prioridad" valueClass="admin-stat-value--red" />
       <StatCard iconName="clipboard" value={analisisConRiesgo.length} label="Casos con señales" valueClass="admin-stat-value--green" />
     </div>
 
-    <div style={{ display: "grid", gap: 14 }}>
-      <div style={{
-        padding: 16,
-        borderRadius: 14,
-        background: "#ecfeff",
-        border: "1px solid #bae6fd"
-      }}>
-        <h4 style={{ margin: "0 0 10px", color: "#004D40", display: "flex", alignItems: "center", gap: 8 }}>
-          <Icon name="target" size={16} /> Prioridad de atención esta semana
-        </h4>
-
-        {analisisConRiesgo.length === 0 ? (
-          <p style={{ color: "#64748b", margin: 0 }}>Sin empleados en foco rojo esta semana.</p>
-        ) : analisisConRiesgo
-          .slice()
-          .sort((a, b) => {
-            const orden = { "Crítica": 0, "Alta": 1, "Media": 2, "Baja": 3 };
-            return orden[a.prioridad] - orden[b.prioridad];
-          })
-          .slice(0, 3)
-          .map((a, idx, arr) => (
-            <div
-              key={a.empleado.id}
-              style={{
-                padding: "10px 0",
-                borderBottom: idx < arr.length - 1 ? "1px solid #bae6fd" : "none"
-              }}
-            >
-              <div style={{ fontWeight: 900, color: "#0f172a" }}>
-                {idx + 1}. {a.empleado.name} — Prioridad {a.prioridad}
+    <div className="ai-chat">
+      <div className="ai-chat-history">
+        {chatHistory.length === 0 && !chatLoading && (
+          <div className="ai-chat-empty">
+            <Icon name="ai" size={22} />
+            <span>Empieza la conversación o usa una pregunta sugerida.</span>
+          </div>
+        )}
+        {chatHistory.map((m, i) => (
+          <div key={i} className={`ai-chat-msg ai-chat-msg--${m.role}`}>
+            {m.role === "ai" ? (
+              <div className="ai-output ai-output--chat">
+                <MarkdownLite text={m.text} />
               </div>
-              <div style={{ color: "#475569", fontSize: 13 }}>
-                {normalizeSucursal(a.empleado.sucursal)} · {a.empleado.puesto} · Pulse Score {a.pulse}
-              </div>
-              <div style={{ color: "#004D40", fontWeight: 800, marginTop: 4 }}>
-                {a.recomendacion}
-              </div>
-            </div>
-          ))}
+            ) : (
+              <span>{m.text}</span>
+            )}
+          </div>
+        ))}
+        {chatLoading && (
+          <div className="ai-chat-msg ai-chat-msg--ai">
+            <span className="ai-spinner" /> Pensando…
+          </div>
+        )}
       </div>
 
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-        gap: 14
-      }}>
-        <div style={{
-          padding: 16,
-          borderRadius: 14,
-          background: "#f8fafc",
-          border: "1px solid #e5e7eb"
-        }}>
-          <h4 style={{ margin: "0 0 10px", color: "#004D40", display: "flex", alignItems: "center", gap: 8 }}>
-            <Icon name="message" size={16} /> Preguntas sugeridas para seguimiento
-          </h4>
-
-          <ul style={{ color: "#334155", lineHeight: 1.8, margin: 0, paddingLeft: 20 }}>
-            <li>¿Cómo te has sentido emocionalmente durante las últimas semanas?</li>
-            <li>¿Hay alguna situación laboral o personal que esté afectando tu desempeño?</li>
-            <li>¿Sientes apoyo suficiente de tu equipo y supervisor?</li>
-            <li>¿Qué cambio ayudaría a mejorar tu bienestar en la sucursal?</li>
-            <li>¿Hay algo que prefieras comunicar de forma confidencial?</li>
-          </ul>
-        </div>
-
-        <div style={{
-          padding: 16,
-          borderRadius: 14,
-          background: "#f8fafc",
-          border: "1px solid #e5e7eb"
-        }}>
-          <h4 style={{ margin: "0 0 10px", color: "#004D40", display: "flex", alignItems: "center", gap: 8 }}>
-            <Icon name="wrench" size={16} /> Acciones recomendadas
-          </h4>
-
-          <ul style={{ color: "#334155", lineHeight: 1.8, margin: 0, paddingLeft: 20 }}>
-            <li>Revisar primero los casos críticos y altos.</li>
-            <li>Consultar expediente integral antes de hablar con el colaborador.</li>
-            <li>Registrar nota privada después de cada seguimiento.</li>
-            <li>Dar reconocimiento positivo a empleados con mejora o estabilidad.</li>
-            <li>Escalar a dirección solo los casos con riesgo alto sostenido.</li>
-          </ul>
-        </div>
+      <div className="ai-chat-suggestions">
+        {[
+          "¿Quiénes necesitan atención prioritaria esta semana?",
+          "¿Qué sucursal tiene mayor riesgo y por qué?",
+          "Dame 3 acciones concretas para esta semana",
+        ].map(q => (
+          <button key={q} type="button" className="ai-chip" onClick={() => setChatInput(q)}>
+            {q}
+          </button>
+        ))}
       </div>
 
-      <div style={{
-        padding: 16,
-        borderRadius: 14,
-        background: "#fff7ed",
-        border: "1px solid #fed7aa"
-      }}>
-        <h4 style={{ margin: "0 0 10px", color: "#9a3412", display: "flex", alignItems: "center", gap: 8 }}>
-          <Icon name="alert" size={16} /> Nota del Copiloto
-        </h4>
-        <p style={{ color: "#7c2d12", lineHeight: 1.7, margin: 0 }}>
-          Este análisis no sustituye el criterio humano ni profesional. Su función es priorizar señales,
-          organizar información y sugerir acciones preventivas para que la psicóloga, RH o dirección
-          tomen mejores decisiones.
-        </p>
+      <div className="ai-chat-composer">
+        <input
+          className="ai-chat-input"
+          value={chatInput}
+          onChange={e => setChatInput(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") sendChat(); }}
+          placeholder="Escribe tu pregunta al copiloto…"
+        />
+        <button
+          type="button"
+          className="ai-gen-btn"
+          onClick={sendChat}
+          disabled={chatLoading || !chatInput.trim()}
+        >
+          <Icon name="message" size={15} /> Enviar
+        </button>
       </div>
     </div>
+
+    <p className="ai-copiloto-nota">
+      <Icon name="alert" size={13} /> No sustituye el criterio profesional; prioriza señales y sugiere acciones.
+    </p>
   </Card>
 )}
 
@@ -792,6 +885,8 @@ const RESUMEN_LIMITE = 8;
         .map(a => (
           <div
             key={a.empleado.id}
+            id={`ai-exp-${a.empleado.id}`}
+            className={selectedEmp?.id === a.empleado.id ? "ai-exp-card ai-exp-card--selected" : "ai-exp-card"}
             style={{
               padding: 16,
               borderRadius: 14,
@@ -955,6 +1050,26 @@ const RESUMEN_LIMITE = 8;
             }}>
               Recomendación IA: {a.recomendacion}
             </div>
+
+            <div className="ai-exp-actions">
+              <button
+                type="button"
+                className="ai-gen-btn ai-gen-btn--sm"
+                onClick={() => analizarEmpleado(a.empleado)}
+                disabled={loading && selectedEmp?.id === a.empleado.id}
+              >
+                <Icon name="sparkles" size={14} />
+                {loading && selectedEmp?.id === a.empleado.id ? " Generando…" : " Analizar con IA"}
+              </button>
+            </div>
+
+            {selectedEmp?.id === a.empleado.id && (output || loading) && (
+              <AIOutput
+                text={output}
+                loading={loading}
+                placeholder="Pulsa “Analizar con IA” para el diagnóstico de Gemini."
+              />
+            )}
           </div>
         ))}
     </div>

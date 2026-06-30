@@ -7,8 +7,8 @@ import SectionTitle from "../common/SectionTitle";
 import Badge from "../common/Badge";
 import Icon from "../ui/Icon";
 import GroupedBarChart from "../common/GroupedBarChart";
-import { semanaDisplay, normalizeSucursal, isSemanaActual, formatSemanaDisplay } from "../../utils/constants";
-import { calcPulseScore, getPulseStatus } from "../../utils/pulseScore";
+import { semanaActual, normalizeSucursal, formatSemanaDisplay } from "../../utils/constants";
+import { getPulseStatus } from "../../utils/pulseScore";
 
 const SEMAFORO_META = {
   verde: { label: "Estable", color: "#22c55e" },
@@ -22,24 +22,58 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
   const { user } = useAuth();
   const empleados = USERS.filter(u => u.role === "empleado");
 
-  // Estado por empleado: una sola fuente de verdad (Pulse Score → semáforo).
+  // Semanas como "buckets" por etiqueta de display: las pre-lanzamiento
+  // (2025-W15, 2026-W01 viejo) se juntan en "2026-W00"; lanzamiento+ = "2026-W01"…
+  const semanasRaw = [...new Set(
+    encuestas.filter(e => Number.isFinite(Number(e.score))).map(e => String(e.semana))
+  )];
+  const bucketWeeks = {}; // etiqueta -> [semanas ISO crudas]
+  semanasRaw.forEach(w => {
+    const b = formatSemanaDisplay(w);
+    (bucketWeeks[b] ||= []).push(w);
+  });
+  const labelActual = formatSemanaDisplay(semanaActual);
+  const opcionesSemana = [...new Set([labelActual, ...Object.keys(bucketWeeks)])].sort((a, b) => b.localeCompare(a));
+  const defaultWeek = bucketWeeks[labelActual] ? labelActual : (opcionesSemana.find(o => bucketWeeks[o]) || labelActual);
+  const [weekSel, setWeekSel] = useState(defaultWeek);
+
+  const selRawWeeks = bucketWeeks[weekSel] || (weekSel === labelActual ? [semanaActual] : []);
+
+  // Encuesta más reciente del empleado dentro del bucket seleccionado.
+  const encDelBucket = (empId) =>
+    encuestas
+      .filter(e => e.empleadoId === empId && Number.isFinite(Number(e.score)) && selRawWeeks.includes(String(e.semana)))
+      .sort((a, b) => String(b.semana).localeCompare(String(a.semana)))[0];
+  // Score de la encuesta anterior al bucket (para la tendencia ↑↓).
+  const scorePrevio = (empId) => {
+    const minSel = [...selRawWeeks].sort()[0] || "";
+    const prev = encuestas
+      .filter(e => e.empleadoId === empId && Number.isFinite(Number(e.score)) && String(e.semana) < minSel)
+      .sort((a, b) => String(b.semana).localeCompare(String(a.semana)))[0];
+    return prev ? Math.round(Number(prev.score)) : null;
+  };
+
+  // Estado por empleado en el bucket seleccionado (snapshot).
   const estados = empleados.map(emp => {
-    const ps = calcPulseScore(emp.id, encuestas);
-    const nivel = ps.sinDatos ? "sin-datos" : getPulseStatus(ps.score).nivel;
-    return { emp, ps, nivel };
+    const enc = encDelBucket(emp.id);
+    const score = enc ? Math.round(Number(enc.score)) : null;
+    const nivel = score == null ? "sin-datos" : getPulseStatus(score).nivel;
+    const prev = score == null ? null : scorePrevio(emp.id);
+    const delta = score != null && prev != null ? score - prev : null;
+    const tendencia = delta == null ? "→" : delta > 0 ? "↑" : delta < 0 ? "↓" : "→";
+    return { emp, score, nivel, delta, tendencia };
   });
 
-  const semanaEnc = encuestas.filter(e => isSemanaActual(e.semana));
-  const contestaron = new Set(semanaEnc.map(e => e.empleadoId)).size;
+  const contestaron = estados.filter(e => e.score != null).length;
   const pendientes = empleados.length - contestaron;
   const participacion = empleados.length ? Math.round((contestaron / empleados.length) * 100) : 0;
 
-  // Distribución de semáforo (cuenta empleados, no filas de encuesta).
   const dist = { verde: 0, amarillo: 0, rojo: 0, "sin-datos": 0 };
   estados.forEach(e => { dist[e.nivel] += 1; });
   const focoRojo = dist.rojo;
   const conDatos = empleados.length - dist["sin-datos"];
 
+  const semanaSelLabel = weekSel;
   const reportesNuevos = reportesConfidenciales.filter(r => r.estado === "nuevo").length;
   const mensajesNoLeidos = mensajes.filter(m => m.para === user?.id && !m.leido).length;
 
@@ -49,26 +83,27 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
   USERS.forEach(u => { empSucursal[u.id] = normalizeSucursal(u.sucursal) || "Sin sucursal"; });
 
   const officeWeek = {};
-  const semanasSet = new Set();
+  const bucketSet = new Set();
   encuestas.forEach(e => {
     const s = Number(e.score);
     if (!Number.isFinite(s)) return;
     const suc = empSucursal[e.empleadoId];
     if (!suc) return; // encuesta huérfana: empleadoId ya no existe en usuarios
-    semanasSet.add(e.semana);
+    const b = formatSemanaDisplay(String(e.semana)); // junta pre-lanzamiento en "2026-W00"
+    bucketSet.add(b);
     (officeWeek[suc] ||= {});
-    (officeWeek[suc][e.semana] ||= []).push(s);
+    (officeWeek[suc][b] ||= []).push(s);
   });
-  const semanas = [...semanasSet].sort((a, b) => String(a).localeCompare(String(b))).slice(-6);
-  const trendLabels = semanas.map(w => formatSemanaDisplay(w));
+  const semanas = [...bucketSet].sort((a, b) => a.localeCompare(b)).slice(-6);
+  const trendLabels = semanas;
   const trendSeries = Object.keys(officeWeek)
-    .filter(suc => semanas.some(w => officeWeek[suc][w]))
+    .filter(suc => semanas.some(b => officeWeek[suc][b]))
     .map((suc, i) => ({
       label: suc,
       color: TREND_COLORS[i % TREND_COLORS.length],
-      values: semanas.map(w => {
-        const arr = officeWeek[suc][w];
-        return arr ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null;
+      values: semanas.map(b => {
+        const arr = officeWeek[suc][b];
+        return arr ? Math.round(arr.reduce((a, c) => a + c, 0) / arr.length) : null;
       }),
     }))
     .slice(0, 8);
@@ -116,10 +151,17 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
           </p>
         </div>
         <div className="dashboard-executive-meta">
-          <span className="dashboard-week-badge">
+          <label className="psico-week-select">
             <Icon name="calendar" size={14} />
-            Semana {semanaDisplay}
-          </span>
+            <span className="psico-week-select-label">Semana</span>
+            <select value={weekSel} onChange={e => setWeekSel(e.target.value)}>
+              {opcionesSemana.map(w => (
+                <option key={w} value={w}>
+                  {w}{w === labelActual ? " · actual" : ""}{w === `${w.slice(0, 4)}-W00` ? " · anterior" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
           {reportesNuevos > 0 && (
             <span className="dashboard-participation-badge psico-meta-badge--conf">
               <Icon name="lock" size={14} />
@@ -176,7 +218,7 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
 
         {/* Participación semanal */}
         <Card>
-          <SectionTitle icon="clipboardCheck">Participación · Semana {semanaDisplay}</SectionTitle>
+          <SectionTitle icon="clipboardCheck">Participación · Semana {semanaSelLabel}</SectionTitle>
           <div className="psico-part">
             <div className="psico-part-ring" style={{ "--pct": participacion }}>
               <span className="psico-part-pct">{participacion}%</span>
@@ -256,7 +298,7 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
           <p className="admin-empty">No hay casos en amarillo o rojo.</p>
         ) : (
           <div className="psico-priority-grid">
-            {casosPrioritarios.map(({ emp, ps, nivel }) => (
+            {casosPrioritarios.map(({ emp, score, tendencia, nivel }) => (
               <div key={emp.id} className={`psico-priority-card psico-priority-card--${nivel}`}>
                 <div className="psico-priority-top">
                   <div>
@@ -268,11 +310,11 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
                 <div className="psico-priority-foot">
                   <span className="psico-priority-stat">
                     <Icon name="activity" size={14} />
-                    Score {Number.isFinite(Number(ps.score)) ? ps.score : "—"}
+                    Score {Number.isFinite(Number(score)) ? score : "—"}
                   </span>
                   <span className="psico-priority-stat">
                     <Icon name="trending" size={14} />
-                    Tendencia {ps.tendencia}
+                    Tendencia {tendencia}
                   </span>
                 </div>
               </div>
@@ -299,14 +341,14 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
             </div>
 
             <div className="psico-suc-modal-list">
-              {sucursalDetalle.emps.map(({ emp, ps, nivel }) => (
+              {sucursalDetalle.emps.map(({ emp, score, tendencia, nivel }) => (
                 <div key={emp.id} className={`psico-suc-emp psico-suc-emp--${nivel}`}>
                   <div className="psico-suc-emp-info">
                     <div className="psico-suc-emp-name">{emp.name}</div>
                     <div className="psico-suc-emp-meta">{emp.puesto}</div>
                   </div>
                   <div className="psico-suc-emp-right">
-                    <span className="psico-suc-emp-score">Score {Number.isFinite(Number(ps.score)) ? ps.score : "—"} {ps.tendencia}</span>
+                    <span className="psico-suc-emp-score">Score {Number.isFinite(Number(score)) ? score : "—"} {tendencia}</span>
                     <Badge tipo={nivel} />
                   </div>
                 </div>
