@@ -14,6 +14,7 @@ import { semanaActual, normalizeSucursal, formatSemanaDisplay } from "../../util
 import { calcularAntiguedad, resolveFechaIngreso } from "../../utils/helpers";
 import { calcPulseScore, getPulseStatus, calcRiesgos } from "../../utils/pulseScore";
 import { callAI } from "../../utils/analysisEngine";
+import WeekSelect from "../common/WeekSelect";
 import { db } from "../../config/firebase";
 import { collection, addDoc, getDocs, updateDoc, doc, serverTimestamp } from "firebase/firestore";
 
@@ -385,17 +386,15 @@ const RESUMEN_LIMITE = 8;
           <h1 className="admin-page-title">McDental Pulse AI Engine</h1>
           <p className="admin-page-subtitle">Motor de inteligencia artificial · análisis en tiempo real</p>
         </div>
-        <label className="psico-week-select ai-engine-week-select">
-          <Icon name="calendar" size={14} />
-          <span className="psico-week-select-label">Semana</span>
-          <select value={weekSel} onChange={e => setWeekSel(e.target.value)}>
-            {opcionesSemana.map(w => (
-              <option key={w} value={w}>
-                {w}{w === labelActual ? " · actual" : ""}{w === `${w.slice(0, 4)}-W00` ? " · anterior" : ""}
-              </option>
-            ))}
-          </select>
-        </label>
+        <WeekSelect
+          className="ai-engine-week-select"
+          value={weekSel}
+          onChange={setWeekSel}
+          options={opcionesSemana.map(w => ({
+            value: w,
+            label: `${w}${w === labelActual ? " · actual" : ""}${w === `${w.slice(0, 4)}-W00` ? " · anterior" : ""}`,
+          }))}
+        />
         <div className="ai-engine-status-badge">
           <Icon name="sparkles" size={14} /> Activo
         </div>

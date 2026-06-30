@@ -7,8 +7,9 @@ import LineChart from "../common/LineChart";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
 import SectionTitle from "../common/SectionTitle";
-import { SUCURSALES, semanaDisplay, normalizeSucursal, sucursalMatches, isSemanaActual } from "../../utils/constants";
-import { calcPulseScore, getPulseStatus } from "../../utils/pulseScore";
+import WeekSelect from "../common/WeekSelect";
+import { SUCURSALES, semanaActual, normalizeSucursal, sucursalMatches, formatSemanaDisplay } from "../../utils/constants";
+import { getPulseStatus } from "../../utils/pulseScore";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 
 const semaforoToBadge = (semaforo) => {
@@ -25,25 +26,27 @@ const sucursalScoreColor = (val) => {
   return "#A84444";
 };
 
-const buildSucursalDetalle = (nombreSucursal, empleados, encuestas, semanaEnc) => {
+const buildSucursalDetalle = (nombreSucursal, empleados, encBucket) => {
   const empsSucursal = empleados.filter((e) => sucursalMatches(e.sucursal, nombreSucursal));
 
   const filas = empsSucursal
     .map((emp) => {
-      const pulse = calcPulseScore(emp.id, encuestas);
-      const sinDatos = pulse.sinDatos || !Number.isFinite(Number(pulse.score));
-      const contestoSemana = semanaEnc.some((e) => e.empleadoId === emp.id);
+      const enc = encBucket(emp.id);
+      const score = enc ? Math.round(Number(enc.score)) : null;
+      const sinDatos = score == null;
+      const contestoSemana = !!enc;
       const status = sinDatos
         ? { label: "Sin evaluación", semaforo: "Sin evaluación", color: "#94a3b8" }
-        : getPulseStatus(pulse.score);
+        : getPulseStatus(score);
 
       return {
         empleado: emp,
-        pulse,
+        score,
+        color: sinDatos ? "#94a3b8" : status.color,
         sinDatos,
         status,
         contestoSemana,
-        sortScore: sinDatos ? 9999 : Number(pulse.score),
+        sortScore: sinDatos ? 9999 : score,
       };
     })
     .sort((a, b) => {
@@ -54,7 +57,7 @@ const buildSucursalDetalle = (nombreSucursal, empleados, encuestas, semanaEnc) =
 
   const conScore = filas.filter((f) => !f.sinDatos);
   const promedio = conScore.length
-    ? Math.round(conScore.reduce((s, f) => s + Number(f.pulse.score), 0) / conScore.length)
+    ? Math.round(conScore.reduce((s, f) => s + Number(f.score), 0) / conScore.length)
     : null;
   const promedioStatus =
     promedio == null
@@ -74,69 +77,113 @@ const buildSucursalDetalle = (nombreSucursal, empleados, encuestas, semanaEnc) =
 const AdminDashboard = ({ encuestas, mensajes }) => {
   const { usuarios: USERS } = useGlobal();
   const [sucursalModal, setSucursalModal] = useState(null);
+  const [sucRiesgoModal, setSucRiesgoModal] = useState(null);
 
   const empleados = USERS.filter((u) => u.role === "empleado");
-  const semanaEnc = encuestas.filter((e) => isSemanaActual(e.semana));
-  const contestaron = new Set(semanaEnc.map((e) => e.empleadoId)).size;
+
+  // Semanas como "buckets" (pre-lanzamiento juntas en "2026-W00"; lanzamiento+ "2026-W01"…).
+  const semanasRaw = [...new Set(
+    encuestas.filter((e) => Number.isFinite(Number(e.score))).map((e) => String(e.semana))
+  )];
+  const bucketWeeks = {};
+  semanasRaw.forEach((w) => { (bucketWeeks[formatSemanaDisplay(w)] ||= []).push(w); });
+  const labelActual = formatSemanaDisplay(semanaActual);
+  const opcionesSemana = [...new Set([labelActual, ...Object.keys(bucketWeeks)])].sort((a, b) => b.localeCompare(a));
+  const defaultWeek = bucketWeeks[labelActual] ? labelActual : (opcionesSemana.find((o) => bucketWeeks[o]) || labelActual);
+  const [weekSel, setWeekSel] = useState(defaultWeek);
+  const selRawWeeks = bucketWeeks[weekSel] || (weekSel === labelActual ? [semanaActual] : []);
+
+  // Encuesta más reciente del empleado dentro del bucket; y score previo (tendencia).
+  const encDelBucket = (empId) =>
+    encuestas
+      .filter((e) => e.empleadoId === empId && Number.isFinite(Number(e.score)) && selRawWeeks.includes(String(e.semana)))
+      .sort((a, b) => String(b.semana).localeCompare(String(a.semana)))[0];
+  const scorePrevio = (empId) => {
+    const minSel = [...selRawWeeks].sort()[0] || "";
+    const prev = encuestas
+      .filter((e) => e.empleadoId === empId && Number.isFinite(Number(e.score)) && String(e.semana) < minSel)
+      .sort((a, b) => String(b.semana).localeCompare(String(a.semana)))[0];
+    return prev ? Math.round(Number(prev.score)) : null;
+  };
 
   const pulsePorEmpleado = empleados.map((emp) => {
-    const pulse = calcPulseScore(emp.id, encuestas);
+    const enc = encDelBucket(emp.id);
+    const score = enc ? Math.round(Number(enc.score)) : null;
+    const sinDatos = score == null;
+    const status = sinDatos
+      ? { label: "Sin datos", semaforo: "Sin datos", color: "#94a3b8", bg: "#f1f5f9" }
+      : getPulseStatus(score);
+    const prev = sinDatos ? null : scorePrevio(emp.id);
+    const tendencia = prev == null ? "→" : score > prev ? "↑" : score < prev ? "↓" : "→";
     return {
       empleado: emp,
-      score: pulse.score,
-      sinDatos: pulse.sinDatos,
-      pulse,
-      status: pulse.sinDatos
-        ? { label: "Sin datos", semaforo: "Sin datos", color: "#94a3b8", bg: "#f1f5f9" }
-        : getPulseStatus(pulse.score),
+      score,
+      sinDatos,
+      status,
+      pulse: { score, color: status.color, nivel: status.label, tendencia },
     };
   });
 
-  const empleadosConDatos = pulsePorEmpleado.filter(
-    (e) => !e.sinDatos && Number.isFinite(Number(e.score))
-  );
+  const empleadosConDatos = pulsePorEmpleado.filter((e) => !e.sinDatos);
+  const contestaron = empleadosConDatos.length;
 
   const verdes = empleadosConDatos.filter((e) => e.status.semaforo === "Verde").length;
   const amarillos = empleadosConDatos.filter((e) => e.status.semaforo === "Amarillo").length;
   const rojos = empleadosConDatos.filter((e) => e.status.semaforo === "Rojo").length;
 
-  const tendencia = ["W10", "W11", "W12", "W13", "W14"].map((w) => {
-    const encValidas = encuestas.filter(
-      (e) => e.semana === `2025-${w}` && Number.isFinite(Number(e.score))
-    );
-    const hasData = encValidas.length > 0;
-    return {
-      label: w,
-      hasData,
-      v: hasData
-        ? Math.round(encValidas.reduce((s, e) => s + Number(e.score), 0) / encValidas.length)
-        : null,
-    };
+  // Tendencia real: Pulse Score promedio organizacional por bucket de semana.
+  const porBucket = {};
+  encuestas.forEach((e) => {
+    const s = Number(e.score);
+    if (!Number.isFinite(s)) return;
+    (porBucket[formatSemanaDisplay(String(e.semana))] ||= []).push(s);
   });
-
-  const semanasConScore = tendencia.filter((t) => t.hasData && Number.isFinite(t.v));
-  const tieneHistorialSuficiente = semanasConScore.length >= 2;
-  const datosTendencia = semanasConScore.map(({ label, v }) => ({ label, v }));
+  const datosTendencia = Object.keys(porBucket)
+    .sort((a, b) => a.localeCompare(b))
+    .slice(-6)
+    .map((b) => ({
+      label: b.replace("2026-", ""),
+      v: Math.round(porBucket[b].reduce((s, c) => s + c, 0) / porBucket[b].length),
+    }));
+  const tieneHistorialSuficiente = datosTendencia.length >= 2;
 
   const porSucursal = SUCURSALES.map((s) => {
-    const emps = empleados.filter((e) => sucursalMatches(e.sucursal, s)).map((e) => e.id);
-    const encValidas = semanaEnc.filter(
-      (e) => emps.includes(e.empleadoId) && Number.isFinite(Number(e.score))
-    );
-    const hasData = encValidas.length > 0;
+    const empsIds = empleados.filter((e) => sucursalMatches(e.sucursal, s)).map((e) => e.id);
+    const scores = empsIds.map((id) => { const enc = encDelBucket(id); return enc ? Number(enc.score) : null; })
+      .filter((v) => Number.isFinite(v));
+    const hasData = scores.length > 0;
     return {
       label: s,
       hasData,
-      v: hasData
-        ? Math.round(encValidas.reduce((sum, e) => sum + Number(e.score), 0) / encValidas.length)
-        : null,
+      v: hasData ? Math.round(scores.reduce((sum, v) => sum + v, 0) / scores.length) : null,
     };
   });
 
   const detalleSucursal = useMemo(() => {
     if (!sucursalModal) return null;
-    return buildSucursalDetalle(sucursalModal, empleados, encuestas, semanaEnc);
-  }, [sucursalModal, empleados, encuestas, semanaEnc]);
+    return buildSucursalDetalle(sucursalModal, empleados, encDelBucket);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sucursalModal, weekSel, empleados, encuestas]);
+
+  // Sucursales con más casos en riesgo (amarillo/rojo) en la semana seleccionada.
+  const sucRiesgoMap = {};
+  pulsePorEmpleado.forEach(({ empleado, status, sinDatos, score, pulse }) => {
+    const suc = normalizeSucursal(empleado.sucursal) || "Sin sucursal";
+    (sucRiesgoMap[suc] ||= { suc, total: 0, riesgo: 0, emps: [] });
+    sucRiesgoMap[suc].total += 1;
+    const nivel = sinDatos ? "sin-datos"
+      : status.semaforo === "Rojo" ? "rojo"
+      : status.semaforo === "Amarillo" ? "amarillo" : "verde";
+    if (nivel === "rojo" || nivel === "amarillo") {
+      sucRiesgoMap[suc].riesgo += 1;
+      sucRiesgoMap[suc].emps.push({ emp: empleado, score, nivel, tendencia: pulse.tendencia });
+    }
+  });
+  const sucursalesRiesgo = Object.values(sucRiesgoMap)
+    .filter((x) => x.riesgo > 0)
+    .sort((a, b) => b.riesgo - a.riesgo)
+    .slice(0, 5);
+  sucursalesRiesgo.forEach((s) => s.emps.sort((a, b) => (a.nivel === "rojo" ? 0 : 1) - (b.nivel === "rojo" ? 0 : 1)));
 
   const avgPulse = empleadosConDatos.length
     ? Math.round(
@@ -163,10 +210,14 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
           </p>
         </div>
         <div className="dashboard-executive-meta">
-          <span className="dashboard-week-badge">
-            <Icon name="calendar" size={14} />
-            Semana {semanaDisplay}
-          </span>
+          <WeekSelect
+            value={weekSel}
+            onChange={setWeekSel}
+            options={opcionesSemana.map((w) => ({
+              value: w,
+              label: `${w}${w === labelActual ? " · actual" : ""}${w === `${w.slice(0, 4)}-W00` ? " · anterior" : ""}`,
+            }))}
+          />
           <span className="dashboard-participation-badge">
             <Icon name="clipboardCheck" size={14} />
             {participacion}% participación
@@ -202,25 +253,53 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
         </Card>
       </div>
 
-      <div className="dashboard-grid-2">
-        <Card className="dashboard-chart-card">
-          <SectionTitle icon="trending">Tendencia Semanal</SectionTitle>
-          {tieneHistorialSuficiente ? (
-            <LineChart data={datosTendencia} color="#2D6A5F" height={128} />
-          ) : (
-            <div className="dashboard-trend-empty">
-              <div className="dashboard-trend-empty-icon">
-                <Icon name="trending" size={22} />
-              </div>
-              <p className="dashboard-trend-empty-text">
-                Aún no hay historial suficiente para calcular la evolución semanal.
-              </p>
-              <p className="dashboard-trend-empty-sub">
-                La tendencia se activará conforme se registren nuevas encuestas.
-              </p>
+      <Card className="dashboard-chart-card">
+        <SectionTitle icon="trending">Tendencia Semanal</SectionTitle>
+        {tieneHistorialSuficiente ? (
+          <LineChart data={datosTendencia} color="#2D6A5F" height={150} />
+        ) : (
+          <div className="dashboard-trend-empty">
+            <div className="dashboard-trend-empty-icon">
+              <Icon name="trending" size={22} />
             </div>
-          )}
-        </Card>
+            <p className="dashboard-trend-empty-text">
+              Aún no hay historial suficiente para calcular la evolución semanal.
+            </p>
+            <p className="dashboard-trend-empty-sub">
+              La tendencia se activará conforme se registren nuevas encuestas.
+            </p>
+          </div>
+        )}
+      </Card>
+
+      <Card>
+        <SectionTitle icon="alert">Sucursales en riesgo</SectionTitle>
+        {sucursalesRiesgo.length === 0 ? (
+          <p className="admin-empty">Ninguna sucursal con casos en amarillo o rojo esta semana.</p>
+        ) : (
+          <div className="psico-suc-list">
+            {sucursalesRiesgo.map((s) => (
+              <button
+                key={s.suc}
+                type="button"
+                className="psico-suc-row psico-suc-row--clickable"
+                title={`${s.riesgo} en riesgo: ${s.emps.map((e) => e.emp.name.split(" ")[0]).join(", ")}`}
+                onClick={() => setSucRiesgoModal(s)}
+              >
+                <div className="psico-suc-head">
+                  <span className="psico-suc-name">{s.suc}</span>
+                  <span className="psico-suc-count">{s.riesgo}/{s.total} <Icon name="eye" size={13} /></span>
+                </div>
+                <div className="psico-suc-track">
+                  <div className="psico-suc-fill" style={{ width: `${Math.round((s.riesgo / s.total) * 100)}%` }} />
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <div className="dashboard-grid-2 dashboard-grid-2--single">
         <Card className="dashboard-chart-card dashboard-chart-card--sucursal">
           <div className="dashboard-sucursal-card-head">
             <SectionTitle icon="building">Score por Sucursal</SectionTitle>
@@ -355,10 +434,10 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
                 <p className="dashboard-sucursal-empty">No hay colaboradores registrados en esta sucursal.</p>
               ) : (
                 <div className="dashboard-sucursal-list">
-                  {detalleSucursal.filas.map(({ empleado, pulse, sinDatos, status, contestoSemana }) => (
+                  {detalleSucursal.filas.map(({ empleado, score, color, sinDatos, status, contestoSemana }) => (
                     <div key={empleado.id} className="dashboard-sucursal-emp-row">
                       <div className="dashboard-sucursal-emp-info">
-                        <Avatar name={empleado.name} size={40} color={sinDatos ? "#94a3b8" : pulse.color} />
+                        <Avatar name={empleado.name} size={40} color={color} />
                         <div className="dashboard-sucursal-emp-text">
                           <div className="dashboard-sucursal-emp-name">{empleado.name}</div>
                           <div className="dashboard-sucursal-emp-puesto">{empleado.puesto || "Sin puesto"}</div>
@@ -366,7 +445,7 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
                       </div>
                       <div className="dashboard-sucursal-emp-badges">
                         <span className="dashboard-sucursal-tag dashboard-sucursal-tag--muted">
-                          Pulse: {sinDatos ? "Sin datos" : pulse.score}
+                          Pulse: {sinDatos ? "Sin datos" : score}
                         </span>
                         <span className="dashboard-sucursal-tag dashboard-sucursal-tag--muted">
                           Semáforo:{" "}
@@ -392,6 +471,40 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
               <button type="button" className="mc-btn-secondary" onClick={() => setSucursalModal(null)}>
                 Cerrar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {sucRiesgoModal && (
+        <div className="mc-modal-overlay" onClick={() => setSucRiesgoModal(null)}>
+          <div className="mc-modal psico-suc-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="psico-suc-modal-head">
+              <div>
+                <h2 className="mc-modal-title">
+                  <Icon name="building" size={18} /> {sucRiesgoModal.suc}
+                </h2>
+                <p className="admin-page-subtitle psico-suc-modal-sub">
+                  {sucRiesgoModal.riesgo} de {sucRiesgoModal.total} colaboradores en riesgo
+                </p>
+              </div>
+              <button type="button" className="dashboard-sucursal-modal-close" onClick={() => setSucRiesgoModal(null)} aria-label="Cerrar">
+                <Icon name="xCircle" size={20} />
+              </button>
+            </div>
+            <div className="psico-suc-modal-list">
+              {sucRiesgoModal.emps.map(({ emp, score, nivel, tendencia }) => (
+                <div key={emp.id} className={`psico-suc-emp psico-suc-emp--${nivel}`}>
+                  <div className="psico-suc-emp-info">
+                    <div className="psico-suc-emp-name">{emp.name}</div>
+                    <div className="psico-suc-emp-meta">{emp.puesto}</div>
+                  </div>
+                  <div className="psico-suc-emp-right">
+                    <span className="psico-suc-emp-score">Score {Number.isFinite(Number(score)) ? score : "—"} {tendencia}</span>
+                    <Badge tipo={nivel} />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

@@ -7,6 +7,7 @@ import SectionTitle from "../common/SectionTitle";
 import Badge from "../common/Badge";
 import Icon from "../ui/Icon";
 import GroupedBarChart from "../common/GroupedBarChart";
+import WeekSelect from "../common/WeekSelect";
 import { semanaActual, normalizeSucursal, formatSemanaDisplay } from "../../utils/constants";
 import { getPulseStatus } from "../../utils/pulseScore";
 
@@ -151,17 +152,14 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
           </p>
         </div>
         <div className="dashboard-executive-meta">
-          <label className="psico-week-select">
-            <Icon name="calendar" size={14} />
-            <span className="psico-week-select-label">Semana</span>
-            <select value={weekSel} onChange={e => setWeekSel(e.target.value)}>
-              {opcionesSemana.map(w => (
-                <option key={w} value={w}>
-                  {w}{w === labelActual ? " · actual" : ""}{w === `${w.slice(0, 4)}-W00` ? " · anterior" : ""}
-                </option>
-              ))}
-            </select>
-          </label>
+          <WeekSelect
+            value={weekSel}
+            onChange={setWeekSel}
+            options={opcionesSemana.map(w => ({
+              value: w,
+              label: `${w}${w === labelActual ? " · actual" : ""}${w === `${w.slice(0, 4)}-W00` ? " · anterior" : ""}`,
+            }))}
+          />
           {reportesNuevos > 0 && (
             <span className="dashboard-participation-badge psico-meta-badge--conf">
               <Icon name="lock" size={14} />

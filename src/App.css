@@ -7469,11 +7469,14 @@
   .ai-chat-msg { max-width: 92%; }
 }
 
-/* Selector de semana (dashboard psicóloga) */
-.psico-week-select {
+/* Selector de semana propio (no nativo) */
+.week-select { position: relative; max-width: 100%; min-width: 0; }
+.week-select-trigger {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  max-width: 100%;
+  min-width: 0;
   padding: 7px 12px;
   border-radius: 999px;
   background: var(--mc-verde-claro);
@@ -7481,18 +7484,63 @@
   color: var(--mc-verde-oscuro);
   font-size: 13px;
   font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
 }
-.psico-week-select svg { color: var(--mc-verde-medio); }
-.psico-week-select-label { color: var(--mc-gris-texto); font-weight: 600; }
-.psico-week-select select {
+.week-select-trigger svg { color: var(--mc-verde-medio); flex-shrink: 0; }
+.week-select-value { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.week-select-caret {
+  width: 0; height: 0; flex-shrink: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--mc-verde-medio);
+  transition: transform 0.18s;
+}
+.week-select-caret--open { transform: rotate(180deg); }
+
+.week-select-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 120;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  min-width: 180px;
+  max-width: min(260px, calc(100vw - 32px));
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--mc-blanco);
+  border: 1px solid var(--mc-gris-suave);
+  border-radius: 14px;
+  box-shadow: var(--mc-sombra);
+  animation: weekSelectIn 0.16s ease;
+}
+@keyframes weekSelectIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+.week-select-option {
+  width: 100%;
+  display: block;
+  text-align: left;
+  padding: 10px 12px;
   border: none;
+  border-radius: 10px;
   background: transparent;
   font-family: inherit;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--mc-verde-oscuro);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--mc-texto);
   cursor: pointer;
-  outline: none;
+  white-space: nowrap;
+}
+.week-select-option:hover { background: var(--mc-gris-perla); }
+.week-select-option--active { background: var(--mc-verde-claro); color: var(--mc-verde-oscuro); font-weight: 800; }
+
+@media (max-width: 768px) {
+  .week-select { width: 100%; }
+  .week-select-trigger { width: 100%; justify-content: flex-start; padding: 7px 12px; font-size: 12px; }
+  .week-select-caret { margin-left: auto; }
+  .dashboard-executive-meta > .week-select { grid-column: 1 / -1; }
+  .week-select-menu { left: 0; right: 0; min-width: 0; max-width: 100%; }
 }
 
 /* Expediente IA seleccionado (scroll + resaltado) */
@@ -7626,3 +7674,6 @@
   flex-shrink: 0;
 }
 .mensajes-conv-time { font-size: 10px; color: var(--mc-gris-texto); white-space: nowrap; }
+
+/* Admin: una sola tarjeta a ancho completo en el grid de dashboard */
+.dashboard-grid-2--single { grid-template-columns: 1fr; }
