@@ -55,6 +55,49 @@ src/
 
 ## Changelog
 
+### 2026-07-02
+
+Auditoría de 4 ejes (código · arquitectura · seguridad · UI/accesibilidad) y corrección
+de los hallazgos, excepto la contraseña temporal (se conserva por decisión de negocio).
+
+#### 🔒 Seguridad
+- **Escalación de privilegios `rh → admin` cerrada** (migración `023`): un trigger
+  `BEFORE UPDATE` sobre `usuarios` impide que cualquier caller que no sea admin cambie
+  `role` o `auth_user_id`, incluso llamando a Postgres directo (la policy sola no bastaba).
+- **`api/gemini.js` ahora exige JWT de Supabase**: antes el endpoint estaba abierto
+  (cualquiera podía quemar la cuota de Gemini y sobreescribir el system prompt). Además
+  ignora el `system` enviado por el cliente y lo fija en el servidor.
+- **`GestionUsuarios`** ya no llama a `supabase` directo: la creación de usuarios pasa por
+  `usuariosService.crearUsuario()` (capa de servicios).
+
+#### 🐛 Corregido
+- **Selects de empleado rotos** (`ReconocimientosGestion`, `ExpedienteIntegral`): el `value`
+  del `<select>` es string y el `id` number; con `===` estricto dejaban de funcionar tras el
+  primer cambio. Ahora comparan con `String()`.
+- **AI Engine**: las 5 llamadas a la IA no tenían `try/catch` → el spinner quedaba colgado
+  para siempre si fallaba el fetch. Ahora hay `try/catch/finally` + toast de error.
+- **Falso éxito** en encuesta y mensaje: se confirmaba "enviado" sin esperar el guardado.
+  Ahora las acciones devuelven booleano y solo se confirma en éxito.
+- **`GlobalContext`**: un error de red se veía idéntico a "sin datos". Ahora distingue el
+  fallo (conserva estado previo + toast) de un resultado vacío real.
+- **Login**: distingue error de conexión de credenciales inválidas.
+
+#### ♿ Accesibilidad
+- **42 labels** de formulario con `htmlFor` asociado a su control (antes sin asociación).
+- **4 modales** con `role="dialog"`, `aria-modal` y `aria-labelledby`; `aria-label` en el
+  botón de cerrar.
+- `SectionTitle` pasa de `<h3>` a `<h2>` (no se salta el nivel de encabezado).
+
+#### 🎨 Dark mode
+- Colores de estado (`.mc-kpi-value`, RiskBar, semáforos de riesgo) migrados a tokens
+  `--mc-stat-*` con rama clara/oscura vía `color-mix`, para que reaccionen al tema
+  (antes eran hex inline, imposibles de sobreescribir por `[data-theme="dark"]`).
+
+#### ⚡ Rendimiento / orden
+- `useMemo` en el análisis de `AIEngine` (antes se recalculaba en cada tecla del chat).
+- `AIEngine.jsx` de 923 → 743 líneas: motor de riesgo extraído a `utils/aiRiskEngine.js`
+  y el render markdown a `components/common/MarkdownLite.jsx`.
+
 ### 2026-06-30
 
 #### ✨ Añadido
