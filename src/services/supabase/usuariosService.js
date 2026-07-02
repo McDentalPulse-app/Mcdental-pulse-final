@@ -30,7 +30,9 @@ export const getUsuarios = async () => {
 export const updateUsuario = async (id, updates) => {
   const payload = {};
   if (updates.name !== undefined) payload.name = updates.name;
-  if (updates.user !== undefined) payload.username = updates.user;
+  // El username NO se actualiza acá a propósito: el login autentica contra el
+  // email sintético de auth.users, así que cambiarlo solo en public.usuarios
+  // deja al empleado sin poder entrar. Usar cambiarUsername() (edge function).
   if (updates.role !== undefined) payload.role = updates.role;
   if (updates.sucursal !== undefined) payload.sucursal = updates.sucursal;
   if (updates.puesto !== undefined) payload.puesto = updates.puesto;
@@ -52,6 +54,26 @@ export const updateUsuario = async (id, updates) => {
     throw new Error("No se pudo actualizar el usuario.");
   }
   return mapUsuario(data);
+};
+
+// Cambio de nombre de usuario: pasa por la Edge Function admin-update-username,
+// que actualiza en un solo paso auth.users.email (la credencial real de login),
+// usuarios.username y usuarios.synthetic_email.
+export const cambiarUsername = async (usuarioId, nuevoUsername) => {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData?.session?.access_token;
+  if (!token) throw new Error("Sesión no válida. Vuelve a iniciar sesión.");
+
+  const { data, error } = await supabase.functions.invoke("admin-update-username", {
+    body: { usuarioId, nuevoUsername },
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (error) {
+    // supabase-js envuelve los 4xx: el detalle real viene en el body.
+    const detalle = await error?.context?.json?.().catch(() => null);
+    throw new Error(detalle?.error || error.message || "No se pudo cambiar el nombre de usuario.");
+  }
+  return mapUsuario(data.usuario);
 };
 
 // Alta de usuario: la creación pasa por la Edge Function admin-create-usuario

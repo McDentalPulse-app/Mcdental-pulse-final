@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNotification } from "../../contexts/NotificationContext";
-import { updateUsuario, crearUsuario } from "../../services/supabase/usuariosService";
+import { updateUsuario, crearUsuario, cambiarUsername } from "../../services/supabase/usuariosService";
 import Card from "../common/Card";
 import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
@@ -84,9 +84,19 @@ const GestionUsuarios = () => {
       };
 
       if (usuarioEditando) {
+        // El username es la credencial de login (email sintético en Auth):
+        // si cambió, va primero por la edge function que sincroniza Auth + BD.
+        const usernameNuevo = (payload.user || "").trim().toLowerCase();
+        const usernameCambio = usernameNuevo && usernameNuevo !== (usuarioEditando.user || "").trim().toLowerCase();
+        if (usernameCambio) {
+          await cambiarUsername(usuarioEditando.id, usernameNuevo);
+        }
         const actualizado = await updateUsuario(usuarioEditando.id, payload);
-        setUsuarios(prev => prev.map(u => u.id === usuarioEditando.id ? actualizado : u));
-        toast.success("Usuario actualizado con éxito.");
+        const conUsername = usernameCambio ? { ...actualizado, user: usernameNuevo } : actualizado;
+        setUsuarios(prev => prev.map(u => u.id === usuarioEditando.id ? conUsername : u));
+        toast.success(usernameCambio
+          ? `Usuario actualizado. Nuevo nombre de acceso: ${usernameNuevo}`
+          : "Usuario actualizado con éxito.");
       } else {
         const nuevoUsuario = await crearUsuario(payload);
         setUsuarios(prev => [...prev, nuevoUsuario]);

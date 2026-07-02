@@ -71,3 +71,35 @@ Este archivo conserva el estado actual de la interacción y del proyecto para re
     *   `mario` ya no está en `emp123`: el usuario completó el flujo de cambio forzado y tiene contraseña propia. `maricruz izaguirre` sigue en `emp123`+flag (usada para sesiones admin/rh de prueba).
 3.  **Fondo animado dark/neón**: `src/styles/dark/background.css` (aditivo) — base abisal `#071613`, orbes aurora aqua/cian con drift, grid neón, cinta cónica en desktop; solo transform/opacity + `prefers-reduced-motion`. Tema **default ahora es dark** (ThemeContext ya no sigue al sistema; el toggle y la preferencia guardada se respetan). Nota: `.app-main` no tenía override oscuro — antes en dark el gradiente arrancaba en `#F7FBFA`.
 4.  **PWA/móvil**: `src/styles/mobile-polish.css` (touch targets ≥44px, inputs 16px anti-zoom iOS, feedback :active, overscroll contain, títulos compactos) + dark overrides del bottom-sheet en `screens.css` (era blanco fijo) + toggle de tema del sheet con clase propia (ya no hereda el rojo de logout). `theme-color`/manifest → `#071613`, viewport con `viewport-fit=cover`.
+5.  **Fix badge "Semana" del Inicio del empleado**: era invisible en modo claro — `.dashboard-week-badge` está diseñado para el header premium oscuro (texto `#EAFFFB` + glass blanco 8%) pero en `InicioEmpleado` vive sobre el fondo claro de la página. Fix con alcance `.empleado-welcome-header .dashboard-week-badge`: pill de marca en claro (App.css) + restauración glass en oscuro (`styles/dark/screens.css`). El badge de RH (dentro de `PageHeader`) no se tocó. Verificado en ambos temas con screenshot.
+6.  **Semántica de semanas (confirmada con el usuario)**: se guarda la semana ISO real (`2026-W27`); la UI renumera desde `LAUNCH_WEEK='2026-W27'` → "2026-W01". El lunes 2026-07-06 00:00 local arranca `2026-W28` → "2026-W02" y la encuesta se reinicia (timer de 60s en App.jsx, sin recargar). Una encuesta por empleado/semana: UI + índice único de la migración 24.
+
+---
+
+## 🚀 Deploy a producción (2026-07-02)
+
+*   **GitHub** — dos remotos:
+    *   `prod` → `https://github.com/McDentalPulse-app/Mcdental-pulse-final.git` (**producción**, conectado a Vercel: cada push a `main` despliega solo).
+    *   `origin` → `https://github.com/MCDentalSist/MCDentalPulseBackUp.git` (backup).
+    *   Ambos en `main` = `beabf1b` ("feat: sync de encuestas en tiempo real, fondo dark/neón, PWA móvil y credenciales emp123"). README actualizado con changelog "2026-07-02 · sesión 2".
+    *   `gh` quedó autenticado en esta máquina como **MCDentalSist** (credenciales en texto plano según aviso de gh; `gh auth setup-git` configurado como credential helper).
+*   **Vercel** — proyecto `mcdental-pulse-final` (team `mcdentalpulse-apps-projects`), CLI instalado global y logueado como **mcdentalpulse-app**. Repo linkeado (`.vercel/` local, `.env.local` intacto — Vercel solo añadió `VERCEL_OIDC_TOKEN`).
+    *   **Env vars Production**: `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` (agregadas esta sesión) + `GEMINI_API_KEY` (ya existía). ⚠️ Nunca subir `SUPABASE_SERVICE_ROLE_KEY` a Vercel. Quedan `VITE_FIREBASE_*` viejas (residuo inofensivo, el código no las lee — borrables).
+    *   **Redeploy verificado**: bundle de producción contiene la URL de Supabase horneada; `/api/gemini` sin token responde 401 (function viva exigiendo JWT). URL: https://mcdental-pulse-final.vercel.app
+*   **⚠️ Pendiente de seguridad**: rotar el Personal Access Token de Supabase usado esta sesión (quedó en el historial del chat) — supabase.com/dashboard/account/tokens. Valorar `gh auth logout` si la máquina es compartida.
+
+## 🐛 Fix: cambio de nombre de usuario (2026-07-02, noche)
+
+*   **Bug**: editar el username en Gestión de Personal solo actualizaba `public.usuarios`; el login autentica contra `auth.users.email` (email sintético) → el empleado renombrado no podía entrar ni con el username nuevo ni con `emp123`. Además `usuarios.synthetic_email` quedaba desincronizado.
+*   **Fix**: edge function nueva **`admin-update-username`** (caller admin/rh; actualiza atómicamente auth email + username + synthetic_email, con precheck de disponibilidad y rollback del email si falla la BD; idempotente — llamarla con el username actual re-sincroniza). `usuariosService.updateUsuario` ya NO escribe username directo (comentado a propósito); nuevo `cambiarUsername()`; `GestionUsuarios.guardarUsuario` la invoca solo si el username cambió.
+*   **Reparados** los 2 usuarios atrapados por el bug en pruebas del usuario: `georgina silva` (ex `minerva sanchez`) y `samantha perez` (ex `samanta perez`) — resincronizados + normalizados a `emp123`+flag.
+*   **Verificado E2E en UI** (Playwright): renombrar sandra galvan → "sandra prueba" desde Gestión de Personal como rh; tabla y pantalla Empleados muestran el cambio al instante (propagación vía `setUsuarios` del GlobalContext — todos los consumidores leen del contexto); login con username nuevo + `emp123` → panel de cambio forzado; username viejo rechazado. Estado restaurado después (sandra y maricruz de vuelta a su estado estándar).
+*   **Propagación en la app**: dentro de la sesión, todo consume `usuarios` del GlobalContext por id → un edit se refleja en todas las pantallas. Nota: registros históricos con nombre denormalizado (p. ej. `otorgadoPor` en reconocimientos viejos) conservan el nombre de aquel momento — esperado. Otras sesiones abiertas ven el cambio al recargar (usuarios no está en realtime).
+
+## 🔑 Estado de cuentas al cierre (2026-07-02 tarde)
+
+*   Temporal estándar: `emp123` + `debe_cambiar_password=true`. Entrar con `emp123` SIEMPRE fuerza cambio (blindaje AuthContext), aunque el flag esté apagado.
+*   `mario` (admin) y `valeria alcaraz` (empleado): completaron el cambio forzado durante las pruebas del usuario — tienen contraseña personal, flag=false.
+*   `maricruz izaguirre` (rh): `emp123` + flag=true (útil para sesiones admin/rh de prueba vía API).
+*   `ana salas` (psicologa) y resto de empleados: `emp123` + flag=true.
+*   `luz gomez`: contraseña propia previa a esta sesión, flag=false (legítimo).

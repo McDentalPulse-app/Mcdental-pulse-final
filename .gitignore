@@ -38,3 +38,5 @@ scripts/migration-report.json
 
 # Supabase CLI: cache local del link al proyecto (puede incluir connection strings)
 supabase/.temp/
+.vercel
+.env*
