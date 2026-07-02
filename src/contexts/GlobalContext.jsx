@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
+import React, { createContext, useState, useContext, useEffect, useCallback } from "react";
 import {
   MENSAJES_INIT,
   NOTAS_INIT,
@@ -10,7 +10,7 @@ import {
 import { useAuth } from "./AuthContext";
 import { notify } from "../utils/notify";
 
-import { getEncuestas } from "../services/supabase/encuestasService";
+import { getEncuestas, subscribeEncuestas } from "../services/supabase/encuestasService";
 import { getMensajes } from "../services/supabase/mensajesService";
 import { getReportesConfidenciales } from "../services/supabase/reportesService";
 import { getReconocimientos } from "../services/supabase/reconocimientosService";
@@ -149,6 +149,46 @@ export const GlobalProvider = ({ children }) => {
 
     fetchAllData();
   }, [user]);
+
+  // Refetch puntual de encuestas (para sincronización en vivo). Si la red
+  // falla se conserva el estado previo, igual que en la carga inicial.
+  const refreshEncuestas = useCallback(async () => {
+    try {
+      const rows = await getEncuestas();
+      setEncuestas(rows);
+    } catch (error) {
+      console.error("Error refrescando encuestas:", error);
+    }
+  }, []);
+
+  // Sincronización en vivo de encuestas para los roles que las consumen:
+  // 1) Realtime INSERT (instantáneo cuando la publicación esté habilitada),
+  // 2) refetch al volver a la pestaña (visibilitychange),
+  // 3) polling suave cada 60s como fallback, solo con la pestaña visible.
+  useEffect(() => {
+    if (!user) return;
+    const { role } = user;
+    if (role !== "admin" && role !== "psicologa" && role !== "empleado") return;
+
+    const unsubscribe = subscribeEncuestas((nueva) => {
+      setEncuestas((prev) => (prev.some((e) => e.id === nueva.id) ? prev : [...prev, nueva]));
+    });
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refreshEncuestas();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === "visible") refreshEncuestas();
+    }, 60000);
+
+    return () => {
+      unsubscribe();
+      document.removeEventListener("visibilitychange", onVisible);
+      clearInterval(intervalId);
+    };
+  }, [user, refreshEncuestas]);
 
   return (
     <GlobalContext.Provider

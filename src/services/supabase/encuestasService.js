@@ -19,6 +19,21 @@ export const getEncuestas = async () => {
   return data.map(mapEncuesta);
 };
 
+// Suscripción realtime a nuevas encuestas. Requiere que la tabla esté en la
+// publicación supabase_realtime (migración 24); si no lo está, el canal queda
+// suscrito pero mudo y el polling del GlobalContext cubre la sincronización.
+export const subscribeEncuestas = (onInsert) => {
+  const channel = supabase
+    .channel("encuestas-inserts")
+    .on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "encuestas" },
+      (payload) => onInsert(mapEncuesta(payload.new))
+    )
+    .subscribe();
+  return () => supabase.removeChannel(channel);
+};
+
 export const addEncuesta = async ({ empleadoId, semana, respuestas, score, semaforo, fecha }) => {
   const { data, error } = await supabase
     .from("encuestas")

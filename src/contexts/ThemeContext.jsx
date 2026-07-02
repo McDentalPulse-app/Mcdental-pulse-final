@@ -5,9 +5,10 @@ const ThemeContext = createContext();
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
     const savedTheme = localStorage.getItem('mc-theme');
-    // Default to dark theme for a premium vibe, or match system preference
+    // Default oscuro siempre (estética neón de la app); el toggle sigue
+    // permitiendo claro y se respeta la elección guardada del usuario.
     if (savedTheme) return savedTheme;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return 'dark';
   });
 
   useEffect(() => {

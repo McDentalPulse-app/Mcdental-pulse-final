@@ -256,7 +256,7 @@ const Sidebar = () => {
                 );
               })}
             </div>
-            <button type="button" className="mobile-sheet-logout" onClick={toggleTheme} style={{ marginBottom: 8 }}>
+            <button type="button" className="mobile-sheet-logout mobile-sheet-theme" onClick={toggleTheme} style={{ marginBottom: 8 }}>
               <Icon name={theme === "dark" ? "sun" : "moon"} size={16} /> {theme === "dark" ? "Modo claro" : "Modo oscuro"}
             </button>
             <button type="button" className="mobile-sheet-logout" onClick={handleLogout}>

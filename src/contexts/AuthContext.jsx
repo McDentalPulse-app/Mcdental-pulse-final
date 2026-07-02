@@ -1,8 +1,13 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
+import React, { createContext, useState, useContext, useEffect, useRef } from "react";
 import { supabase, usernameToSyntheticEmail } from "../config/supabase";
 import { notify } from "../utils/notify";
 
 const VALID_ROLES = new Set(["admin", "rh", "psicologa", "empleado"]);
+
+// Contraseña temporal por defecto (debe coincidir con TEMP_PASSWORD de
+// supabase/functions/_shared/username.ts). Entrar con ella siempre fuerza el
+// cambio de contraseña, aunque debe_cambiar_password esté apagado en la BD.
+const TEMP_PASSWORD = "emp123";
 
 const AuthContext = createContext();
 
@@ -33,6 +38,10 @@ export const AuthProvider = ({ children }) => {
   // mientras se restaura la sesión, sin interrumpir la landing durante un login activo.
   const [checkingSession, setCheckingSession] = useState(true);
   const [requiereCambioPassword, setRequiereCambioPassword] = useState(false);
+  // true cuando el login activo se hizo con la contraseña temporal; ref (no
+  // state) porque cargarPerfil también corre desde onAuthStateChange y debe
+  // leer el valor vigente sin esperar un re-render.
+  const loginConTemporalRef = useRef(false);
 
   const cargarPerfil = async (authUserId) => {
     const { data, error } = await supabase
@@ -48,7 +57,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     setUser(mapUsuarioRow(data));
-    setRequiereCambioPassword(!!data.debe_cambiar_password);
+    setRequiereCambioPassword(!!data.debe_cambiar_password || loginConTemporalRef.current);
   };
 
   useEffect(() => {
@@ -80,6 +89,9 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     setLoadingAuth(true);
+    // Se marca antes del signIn: onAuthStateChange dispara cargarPerfil en
+    // cuanto la sesión existe y ya debe ver este valor.
+    loginConTemporalRef.current = password === TEMP_PASSWORD;
     try {
       const email = usernameToSyntheticEmail(username);
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -103,6 +115,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     await supabase.auth.signOut();
+    loginConTemporalRef.current = false;
     setUser(null);
     setRequiereCambioPassword(false);
   };
@@ -117,6 +130,7 @@ export const AuthProvider = ({ children }) => {
       const { error: dbError } = await supabase.rpc("mark_password_changed");
       if (dbError) throw dbError;
 
+      loginConTemporalRef.current = false;
       setUser((prev) => ({ ...prev, debeCambiarPassword: false }));
       setRequiereCambioPassword(false);
       notify.toast.success("Contraseña actualizada correctamente.");

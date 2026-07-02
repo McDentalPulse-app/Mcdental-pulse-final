@@ -55,6 +55,46 @@ src/
 
 ## Changelog
 
+### 2026-07-02 · sesión 2 (credenciales, sync en vivo, fondo neón, PWA)
+
+#### 🔒 Credenciales
+- **Contraseña temporal unificada a `emp123`** (revierte la decisión previa de conservar
+  `CambiaEsteTemporal2026!`): reseteados vía service role los 98 usuarios pendientes de
+  primer login; el código ya la usaba en edge functions y UI.
+- **Blindaje de primer ingreso** (`AuthContext`): entrar con `emp123` siempre fuerza el
+  panel "Cambia tu contraseña", aunque `debe_cambiar_password` esté apagado en BD.
+- **Edge functions redesplegadas** (`admin-reset-password`, `admin-create-usuario`): las
+  versiones desplegadas eran viejas y al restablecer ponían `CambiaEsteTemporal2026!` en
+  vez de `emp123`. Verificado E2E contra Supabase.
+
+#### ✨ Encuestas en tiempo real
+- Los dashboards (admin/psicóloga) ahora reflejan encuestas nuevas **sin recargar**, en
+  tres capas: suscripción Realtime (INSERT instantáneo), refetch al volver a la pestaña
+  y polling suave de 60s como fallback (`subscribeEncuestas` + `GlobalContext`).
+- **Migración `024`**: publica `encuestas` en `supabase_realtime` + índice único
+  `(empleado_id, semana)` — el doble envío de la misma semana ya es imposible a nivel BD
+  (la UI ya lo bloqueaba, pero una condición de carrera podía duplicar).
+
+#### 🎨 Fondo animado dark/neón
+- Nuevo `styles/dark/background.css`: base abisal `#071613`, orbes aurora aqua/cian con
+  deriva lenta, grid blueprint tintado neón y barrido cónico en desktop. Solo
+  `transform`/`opacity` (GPU-friendly) y respeta `prefers-reduced-motion`.
+- **El tema oscuro es ahora el default** (antes seguía al sistema); el toggle y la
+  preferencia guardada se respetan. De paso: `.app-main` no tenía override oscuro y en
+  dark el fondo arrancaba en `#F7FBFA` — corregido.
+
+#### 📱 PWA / móvil
+- `styles/mobile-polish.css`: touch targets ≥44px, inputs a 16px (evita el auto-zoom de
+  iOS), feedback `:active`, `overscroll-behavior: contain`, tipografía compacta.
+- Bottom-sheet "Más" con overrides de modo oscuro (era blanco fijo) y el toggle de tema
+  con estilo propio (ya no hereda el rojo de "Cerrar sesión").
+- `theme-color` y manifest → `#071613` (estética oscura), `viewport-fit=cover` (notch).
+
+#### 🐛 Corregido
+- Badge "Semana" del Inicio del empleado invisible en modo claro (usaba el estilo glass
+  del header premium oscuro sobre fondo claro de página); ahora pill de marca en claro y
+  glass en oscuro.
+
 ### 2026-07-02
 
 Auditoría de 4 ejes (código · arquitectura · seguridad · UI/accesibilidad) y corrección

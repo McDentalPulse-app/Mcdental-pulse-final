@@ -235,3 +235,39 @@
 [data-theme="dark"] .psico-priority-name {
   color: var(--mc-texto-titulo);
 }
+
+/* ── Navegación móvil (tabbar ya usa --grad-brand, oscuro en ambos modos;
+   la hoja "Más" fija --mc-blanco y colores de texto claros, se pisan acá). ── */
+[data-theme="dark"] .mobile-sheet {
+  background: var(--mc-superficie-card);
+}
+[data-theme="dark"] .mobile-sheet-item {
+  color: var(--mc-texto-titulo);
+}
+[data-theme="dark"] .mobile-sheet-item--active {
+  background: rgba(20, 200, 182, 0.16);
+  color: var(--brand-200);
+}
+[data-theme="dark"] .mobile-sheet-icon {
+  background: var(--mc-superficie-input);
+  color: var(--brand-300);
+}
+[data-theme="dark"] .mobile-sheet-user .sidebar-user-name {
+  color: var(--mc-texto-titulo);
+}
+[data-theme="dark"] .mobile-sheet-user .sidebar-user-role {
+  color: var(--mc-texto-secundario);
+}
+[data-theme="dark"] .mobile-sheet-logout {
+  background: var(--mc-superficie-input);
+  color: #FCA5A5;
+  border-color: rgba(252, 165, 165, 0.25);
+}
+
+/* Badge "Semana" del Inicio del empleado: en claro usa pill de marca (ver
+   App.css); en oscuro la página ya es oscura y el glass original funciona. */
+[data-theme="dark"] .empleado-welcome-header .dashboard-week-badge {
+  background: rgba(255, 255, 255, 0.08);
+  color: #EAFFFB;
+  border-color: rgba(20, 200, 182, 0.4);
+}

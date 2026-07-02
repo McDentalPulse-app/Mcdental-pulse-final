@@ -1,0 +1,104 @@
+/* ============================================================
+   Pulido móvil PWA — sensación de app nativa premium
+   Aditivo: no toca App.css; solo refina touch targets, tipografía
+   y comportamiento táctil en pantallas chicas. Importado después
+   de App.css en main.jsx para ganar en cascada a igual
+   especificidad.
+   ============================================================ */
+
+/* Táctil: sin flash gris de WebKit al tocar, y sin la espera de
+   double-tap-zoom en controles (mantiene el pinch-zoom del documento). */
+button,
+a,
+.sidebar-nav-btn,
+.mobile-tab,
+.mobile-sheet-item,
+.empleado-scale-btn,
+.empleado-option-btn {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+@media (max-width: 768px) {
+  html {
+    /* iOS Safari: no inflar tipografías al rotar */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    /* Sin rebote de scroll encadenado al body (sensación de web, no de app) */
+    overscroll-behavior-y: contain;
+  }
+
+  .app-main {
+    overscroll-behavior: contain;
+  }
+
+  /* iOS hace zoom automático al enfocar inputs con font-size < 16px;
+     16px lo evita y de paso mejora la legibilidad táctil. */
+  .mc-form-input,
+  .mc-form-select,
+  .mc-form-textarea {
+    font-size: 16px;
+    min-height: 44px;
+  }
+
+  /* Touch targets ≥ 44px (guía iOS HIG / Android 48dp) */
+  .mc-btn-primary,
+  .mc-btn-secondary,
+  .empleado-option-btn {
+    min-height: 44px;
+  }
+
+  .mobile-sheet-item,
+  .mobile-sheet-logout {
+    min-height: 48px;
+  }
+
+  .empleado-submit-btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 50px;
+    font-size: 15px;
+  }
+
+  /* Feedback táctil inmediato (reemplaza el hover que no existe en touch) */
+  .mc-btn-primary:active,
+  .mc-btn-secondary:active,
+  .empleado-option-btn:active,
+  .empleado-scale-btn:active {
+    transform: scale(0.97);
+  }
+  .mobile-tab:active svg {
+    transform: scale(0.9);
+  }
+
+  /* Jerarquía tipográfica más compacta en móvil */
+  .admin-page-title {
+    font-size: 22px;
+    letter-spacing: -0.4px;
+  }
+  .admin-page-subtitle {
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Escala 1-10 de la encuesta: dedo cómodo sin desbordar (flex-wrap) */
+  .empleado-scale-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 15px;
+  }
+}
+
+/* El toggle de tema del bottom-sheet reutiliza .mobile-sheet-logout (rojo);
+   con clase propia recupera un color neutro de acción en ambos temas. */
+.mobile-sheet-theme {
+  color: var(--mc-verde-medio) !important;
+}
+[data-theme="dark"] .mobile-sheet-theme {
+  color: var(--brand-300) !important;
+  border-color: rgba(70, 214, 197, 0.25) !important;
+}

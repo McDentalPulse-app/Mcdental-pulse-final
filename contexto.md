@@ -51,7 +51,7 @@ Este archivo conserva el estado actual de la interacción y del proyecto para re
 ## 🔑 Patrones operativos para la próxima sesión
 
 *   **Token de Supabase CLI**: no se persiste en disco por seguridad. Para correr `supabase db push` (migraciones) hay que pedírselo de nuevo al usuario (Personal Access Token desde `supabase.com/dashboard/account/tokens`) y usarlo solo como variable de entorno en el comando, nunca imprimirlo.
-*   **Cuentas de prueba** (reset vía `SUPABASE_SERVICE_ROLE_KEY`, patrón usado dutante toda la sesión): `mario` (admin), `maricruz izaguirre` (rh), `ana salas` (psicologa), `valeria alcaraz` (empleado). Contraseña temporal estándar: `CambiaEsteTemporal2026!` + `debe_cambiar_password=true`. **Siempre restaurar este estado al terminar de probar** — es el estado en el que deben quedar entre sesiones.
+*   **Cuentas de prueba** (reset vía `SUPABASE_SERVICE_ROLE_KEY`, patrón usado dutante toda la sesión): `mario` (admin), `maricruz izaguirre` (rh), `ana salas` (psicologa), `valeria alcaraz` (empleado). Contraseña temporal estándar: `emp123` + `debe_cambiar_password=true` (actualizada 2026-07-02: se reseteó vía service role a los 98 usuarios pendientes; antes era `CambiaEsteTemporal2026!`). **Siempre restaurar este estado al terminar de probar** — es el estado en el que deben quedar entre sesiones.
 *   **Testing UI**: Playwright instalado con `npm install --no-save playwright` para cada ronda de pruebas, y desinstalado (`npm uninstall playwright`) + scripts `.mjs` temporales borrados al terminar — nunca se commitea.
 *   **`.env`**: contiene credenciales viejas de Firebase, el usuario pidió explícitamente conservarlo como backup — no borrar ni tocar.
 
@@ -60,3 +60,14 @@ Este archivo conserva el estado actual de la interacción y del proyecto para re
 ## 📌 Próximos pasos posibles (no confirmados, ideas abiertas de la sesión)
 *   No hay tareas pendientes abiertas al cierre de esta sesión — el barrido de modo oscuro y la feature de avatares quedaron completos y verificados end-to-end.
 *   Si se retoma trabajo de UI, revisar primero si hay overrides de dark mode ya cubiertos en `src/styles/dark/` antes de escribir CSS nuevo.
+
+---
+
+## 🛠️ Sesión 2026-07-02 (tarde)
+
+1.  **Credenciales**: contraseña temporal unificada a `emp123` — reseteados vía service role los 98 usuarios con `debe_cambiar_password=true` + `mario`/`maricruz izaguirre`. A ambos se les restauró después `debe_cambiar_password=true` (todo usuario con `emp123` debe cambiarla al entrar; única excepción legítima con flag=false: `luz gomez`, que ya tenía contraseña propia). **Blindaje en `AuthContext.jsx`**: entrar con `emp123` (const `TEMP_PASSWORD`, espejo de la edge function) fuerza el panel "Cambia tu contraseña" aunque el flag esté apagado en BD (`loginConTemporalRef`) — verificado E2E con Playwright.
+2.  **Sync de encuestas en vivo**: `subscribeEncuestas()` (realtime INSERT) en `encuestasService.js` + en `GlobalContext` refetch al volver a la pestaña (visibilitychange) y polling de 60s con pestaña visible. Migración **00000000000024_encuestas_realtime.sql** aplicada vía `db push` (⚠️ se renumeró de 23→24: ya existía `00000000000023_usuarios_prevent_privilege_escalation.sql` aplicada en remoto). Realtime verificado en vivo (INSERT → evento) + unique index (empleado_id, semana) rechaza duplicados (23505).
+    *   **Edge functions redesplegadas** (2026-07-02, `supabase functions deploy --use-api`): `admin-reset-password` y `admin-create-usuario` — las versiones desplegadas eran viejas y seguían poniendo `CambiaEsteTemporal2026!` al restablecer. Verificado E2E: reset → vieja rechazada, `emp123` acepta.
+    *   `mario` ya no está en `emp123`: el usuario completó el flujo de cambio forzado y tiene contraseña propia. `maricruz izaguirre` sigue en `emp123`+flag (usada para sesiones admin/rh de prueba).
+3.  **Fondo animado dark/neón**: `src/styles/dark/background.css` (aditivo) — base abisal `#071613`, orbes aurora aqua/cian con drift, grid neón, cinta cónica en desktop; solo transform/opacity + `prefers-reduced-motion`. Tema **default ahora es dark** (ThemeContext ya no sigue al sistema; el toggle y la preferencia guardada se respetan). Nota: `.app-main` no tenía override oscuro — antes en dark el gradiente arrancaba en `#F7FBFA`.
+4.  **PWA/móvil**: `src/styles/mobile-polish.css` (touch targets ≥44px, inputs 16px anti-zoom iOS, feedback :active, overscroll contain, títulos compactos) + dark overrides del bottom-sheet en `screens.css` (era blanco fijo) + toggle de tema del sheet con clase propia (ya no hereda el rojo de logout). `theme-color`/manifest → `#071613`, viewport con `viewport-fit=cover`.

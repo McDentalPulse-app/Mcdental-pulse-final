@@ -1,0 +1,84 @@
+/* ============================================================
+   Modo oscuro — Fondo animado "aurora neón"
+   Aditivo: pisa el fondo claro de .app-shell/.app-main (App.css
+   los hardcodea con #F7FBFA) vía [data-theme="dark"], igual que
+   el resto de src/styles/dark/. Sin JS: solo CSS, y las
+   animaciones usan únicamente transform/opacity (GPU-friendly,
+   sin repaints) para no castigar móviles.
+   ============================================================ */
+
+[data-theme="dark"] .app-shell {
+  /* Base abisal: más profunda que --mc-gris-perla para que el neón resalte. */
+  background: #071613;
+}
+
+[data-theme="dark"] .app-main {
+  background:
+    /* Bruma superior de marca, muy tenue */
+    radial-gradient(ellipse 90% 50% at 50% -10%, rgba(14, 140, 122, 0.20) 0%, transparent 60%),
+    /* Degradado base: negro verdoso profundo */
+    linear-gradient(180deg, #081815 0%, #060F0D 55%, #081A16 100%);
+}
+
+/* Grid blueprint: mismo patrón que en claro, tintado neón y con máscara más
+   amplia. Hereda posición/máscara del ::before base de App.css. */
+[data-theme="dark"] .app-main::before {
+  background-image:
+    linear-gradient(rgba(70, 214, 197, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(70, 214, 197, 0.055) 1px, transparent 1px);
+}
+
+/* Orbes aurora: dos halos de neón (aqua + cian) que derivan lentamente.
+   Sin filter: blur() — el falloff del propio radial-gradient ya es suave y
+   evita el costo de blur sobre un layer a pantalla completa. */
+[data-theme="dark"] .app-main::after {
+  background:
+    radial-gradient(circle 420px at 88% -4%, rgba(20, 200, 182, 0.20), transparent 68%),
+    radial-gradient(circle 460px at -6% 100%, rgba(34, 211, 238, 0.12), transparent 70%),
+    radial-gradient(circle 300px at 55% 118%, rgba(138, 233, 221, 0.08), transparent 75%);
+  filter: none;
+  animation: mcAuroraDrift 32s ease-in-out infinite;
+}
+
+@keyframes mcAuroraDrift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33%      { transform: translate3d(-26px, 18px, 0) scale(1.07); }
+  66%      { transform: translate3d(18px, -14px, 0) scale(1.03); }
+}
+
+/* Cinta de aurora: un brillo cónico muy sutil que barre en diagonal detrás
+   de las tarjetas. Vive en el propio .app-main como capa extra animada. */
+@media (min-width: 769px) {
+  [data-theme="dark"] .app-main-inner::before {
+    content: "";
+    position: fixed;
+    top: -30vh;
+    right: -20vw;
+    width: 80vw;
+    height: 80vh;
+    z-index: -1;
+    pointer-events: none;
+    background: conic-gradient(
+      from 210deg at 50% 50%,
+      transparent 0deg,
+      rgba(20, 200, 182, 0.07) 40deg,
+      rgba(34, 211, 238, 0.05) 80deg,
+      transparent 130deg
+    );
+    animation: mcAuroraSweep 46s linear infinite;
+  }
+}
+
+@keyframes mcAuroraSweep {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Accesibilidad: sin movimiento para quien lo pide. El fondo queda como
+   composición estática (los gradientes se conservan). */
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="dark"] .app-main::after,
+  [data-theme="dark"] .app-main-inner::before {
+    animation: none;
+  }
+}
