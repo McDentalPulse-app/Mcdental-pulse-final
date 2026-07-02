@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { useGlobal } from "../../contexts/GlobalContext";
+import { useNotification } from "../../contexts/NotificationContext";
 import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
@@ -15,193 +16,12 @@ import { semanaActual, normalizeSucursal, formatSemanaDisplay } from "../../util
 import { calcularAntiguedad, resolveFechaIngreso } from "../../utils/helpers";
 import { calcPulseScore, getPulseStatus, calcRiesgos } from "../../utils/pulseScore";
 import { callAI } from "../../utils/analysisEngine";
+import { analyzeEmployeeAI } from "../../utils/aiRiskEngine";
+import MarkdownLite from "../common/MarkdownLite";
 import WeekSelect from "../common/WeekSelect";
-import { db } from "../../config/firebase";
-import { collection, addDoc, getDocs, updateDoc, doc, serverTimestamp } from "firebase/firestore";
+import PageHeader from "../common/PageHeader";
 import "./AIEngine.css";
 
-const STATUS_SIN_DATOS = {
-  label: "Sin datos",
-  semaforo: "Sin evaluación",
-  color: "#94a3b8",
-  bg: "#f1f5f9"
-};
-
-const analyzeEmployeeAI = (empleado, encuestas, permisos = [], descuentos = [], reconocimientos = [], reportesConfidenciales = [], USERS = []) => {
-  const encuestasEmpleado = encuestas.filter(e => e.empleadoId === empleado.id);
-  const encuestasConScore = encuestasEmpleado.filter(e => Number.isFinite(Number(e.score)));
-  const permisosEmpleado = permisos.filter(p => p.empleadoId === empleado.id);
-  const descuentosEmpleado = descuentos.filter(d => d.empleadoId === empleado.id);
-  const reconocimientosEmpleado = reconocimientos.filter(r => r.empleadoId === empleado.id);
-  const reportesEmpleado = reportesConfidenciales.filter(r => r.empleadoId === empleado.id);
-
-  const pulseResult = calcPulseScore(empleado.id, encuestas);
-  const tieneDatosReales = !pulseResult.sinDatos && Number.isFinite(Number(pulseResult.score));
-  const pulse = tieneDatosReales ? pulseResult.score : null;
-  const status = tieneDatosReales ? getPulseStatus(pulse) : STATUS_SIN_DATOS;
-
-  const ultimas = encuestasConScore.slice(-3);
-  const primera = ultimas[0]?.score ?? null;
-  const ultima = ultimas[ultimas.length - 1]?.score ?? null;
-  const cambio = tieneDatosReales && primera !== null && ultima !== null ? ultima - primera : 0;
-
-  const riesgos = [];
-
-  if (reportesEmpleado.some(r => r.urgencia === "Alta" || r.urgencia === "Crítica")) {
-    riesgos.push({
-      tipo: "Reporte confidencial prioritario",
-      nivel: "Alta",
-      detalle: "Existe un reporte confidencial de urgencia alta o crítica."
-    });
-  }
-
-  if (!tieneDatosReales) {
-    return {
-      empleado,
-      pulse,
-      sinDatos: true,
-      status,
-      cambio: 0,
-      prioridad: "Sin datos",
-      riesgos,
-      recomendacion: encuestasEmpleado.length
-        ? "Encuesta registrada sin score válido. Pendiente de evaluación."
-        : "Sin encuestas registradas. Pendiente de evaluación semanal."
-    };
-  }
-
-  if (pulse < 50) {
-    riesgos.push({
-      tipo: "Intervención inmediata",
-      nivel: "Crítica",
-      detalle: "Pulse Score menor a 50. Requiere intervención prioritaria."
-    });
-  } else if (pulse < 60) {
-    riesgos.push({
-      tipo: "Riesgo emocional",
-      nivel: "Alta",
-      detalle: "Pulse Score en zona de riesgo."
-    });
-  } else if (pulse < 70) {
-    riesgos.push({
-      tipo: "Atención preventiva",
-      nivel: "Media",
-      detalle: "Pulse Score en zona de atención."
-    });
-  }
-
-  if (ultimas.length >= 2 && cambio <= -10) {
-    riesgos.push({
-      tipo: "Cambio de comportamiento",
-      nivel: "Alta",
-      detalle: `Disminución de ${Math.abs(cambio)} puntos en sus últimas mediciones.`
-    });
-  } else if (ultimas.length >= 2 && cambio <= -5) {
-    riesgos.push({
-      tipo: "Tendencia negativa",
-      nivel: "Media",
-      detalle: `Baja moderada de ${Math.abs(cambio)} puntos.`
-    });
-  }
-
-  if (permisosEmpleado.length >= 2) {
-    riesgos.push({
-      tipo: "Riesgo de ausentismo",
-      nivel: "Media",
-      detalle: "Presenta varios permisos registrados."
-    });
-  }
-
-  if (descuentosEmpleado.some(d => d.estado === "activo" || d.estado === "pendiente")) {
-    riesgos.push({
-      tipo: "Posible presión financiera/administrativa",
-      nivel: "Baja",
-      detalle: "Tiene descuentos administrativos activos o pendientes."
-    });
-  }
-
-  if (reconocimientosEmpleado.length === 0 && pulse < 70) {
-    riesgos.push({
-      tipo: "Desconexión organizacional",
-      nivel: "Media",
-      detalle: "No tiene reconocimientos registrados y su score requiere atención."
-    });
-  }
-
-  const prioridad =
-    riesgos.some(r => r.nivel === "Crítica") ? "Crítica" :
-    riesgos.some(r => r.nivel === "Alta") ? "Alta" :
-    riesgos.some(r => r.nivel === "Media") ? "Media" :
-    "Baja";
-
-  const recomendacion =
-    prioridad === "Crítica" ? "Agendar intervención inmediata con psicóloga y seguimiento directivo." :
-    prioridad === "Alta" ? "Programar conversación individual y revisar expediente integral." :
-    prioridad === "Media" ? "Monitorear semanalmente y aplicar intervención preventiva." :
-    "Mantener seguimiento regular y reforzar reconocimiento positivo.";
-
-  return {
-    empleado,
-    pulse,
-    sinDatos: false,
-    status,
-    cambio,
-    prioridad,
-    riesgos,
-    recomendacion
-  };
-};
-
-
-// Inline markdown: **negrita**, *cursiva*, `código`.
-const parseInlineMD = (text) => {
-  const nodes = [];
-  const re = /(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g;
-  let last = 0, m, key = 0;
-  while ((m = re.exec(text)) !== null) {
-    if (m.index > last) nodes.push(text.slice(last, m.index));
-    const t = m[0];
-    if (t.startsWith("**")) nodes.push(<strong key={key++}>{t.slice(2, -2)}</strong>);
-    else if (t.startsWith("`")) nodes.push(<code key={key++} className="ai-md-code">{t.slice(1, -1)}</code>);
-    else nodes.push(<em key={key++}>{t.slice(1, -1)}</em>);
-    last = m.index + t.length;
-  }
-  if (last < text.length) nodes.push(text.slice(last));
-  return nodes;
-};
-
-// Render markdown-lite por bloques: encabezados, listas (•/numéricas), párrafos, separadores.
-const MarkdownLite = ({ text }) => {
-  const blocks = [];
-  let list = null;
-  const flush = () => { if (list) { blocks.push(list); list = null; } };
-
-  String(text || "").split("\n").forEach(raw => {
-    const line = raw.trim();
-    if (!line) { flush(); return; }
-    const h = /^(#{1,4})\s+(.*)$/.exec(line);
-    const ul = /^[-*]\s+(.*)$/.exec(line);
-    const ol = /^\d+[.)]\s+(.*)$/.exec(line);
-    if (/^[-*_]{3,}$/.test(line)) { flush(); blocks.push({ type: "hr" }); }
-    else if (h) { flush(); blocks.push({ type: "h", level: h[1].length, text: h[2] }); }
-    else if (ul) { if (!list || list.type !== "ul") { flush(); list = { type: "ul", items: [] }; } list.items.push(ul[1]); }
-    else if (ol) { if (!list || list.type !== "ol") { flush(); list = { type: "ol", items: [] }; } list.items.push(ol[1]); }
-    else { flush(); blocks.push({ type: "p", text: line }); }
-  });
-  flush();
-
-  return (
-    <div className="ai-md">
-      {blocks.map((b, i) => {
-        if (b.type === "hr") return <hr key={i} className="ai-md-hr" />;
-        if (b.type === "h") return <p key={i} className={`ai-md-h ai-md-h${b.level}`}>{parseInlineMD(b.text)}</p>;
-        if (b.type === "ul") return <ul key={i} className="ai-md-ul">{b.items.map((it, j) => <li key={j}>{parseInlineMD(it)}</li>)}</ul>;
-        if (b.type === "ol") return <ol key={i} className="ai-md-ol">{b.items.map((it, j) => <li key={j}>{parseInlineMD(it)}</li>)}</ol>;
-        return <p key={i} className="ai-md-p">{parseInlineMD(b.text)}</p>;
-      })}
-    </div>
-  );
-};
 
 const AIOutput = ({ text, loading, placeholder }) => {
   if (loading) {
@@ -248,6 +68,7 @@ const AICard = ({ icon = "ai", title, desc, onGenerate, output, loading }) => (
 
 const AIEngine = ({ encuestas, mensajes, notas, userRole, permisos = [], descuentos = [], reconocimientos = [], reportesConfidenciales = [] }) => {
   const { usuarios: USERS } = useGlobal();
+  const { toast } = useNotification();
   const reduce = useReducedMotion();
   const pillTransition = reduce ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 32 };
   const [tab, setTab] = useState("resumen");
@@ -258,7 +79,7 @@ const AIEngine = ({ encuestas, mensajes, notas, userRole, permisos = [], descuen
   const [chatHistory, setChatHistory] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
 
-  const empleados = USERS.filter(u => u.role === "empleado");
+  const empleados = useMemo(() => USERS.filter(u => u.role === "empleado"), [USERS]);
 
   // Filtro por semana (buckets): pre-lanzamiento juntas en "2026-W00", lanzamiento+ "2026-W01"…
   const semanasRaw = [...new Set(
@@ -271,7 +92,11 @@ const AIEngine = ({ encuestas, mensajes, notas, userRole, permisos = [], descuen
   const defaultWeek = bucketWeeks[labelActual] ? labelActual : (opcionesSemana.find(o => bucketWeeks[o]) || labelActual);
   const [weekSel, setWeekSel] = useState(defaultWeek);
   const selRawWeeks = bucketWeeks[weekSel] || (weekSel === labelActual ? [semanaActual] : []);
-  const encuestasSemana = encuestas.filter(e => selRawWeeks.includes(String(e.semana)));
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- selRawWeeks deriva de encuestas+weekSel
+  const encuestasSemana = useMemo(
+    () => encuestas.filter(e => selRawWeeks.includes(String(e.semana))),
+    [encuestas, weekSel]
+  );
 
   // Al seleccionar un empleado (chip o botón), baja a su tarjeta de expediente.
   useEffect(() => {
@@ -281,16 +106,19 @@ const AIEngine = ({ encuestas, mensajes, notas, userRole, permisos = [], descuen
     }
   }, [tab, selectedEmp]);
 
-const analisisIA = empleados.map(emp =>
-  analyzeEmployeeAI(
-    emp,
-    encuestasSemana,
-    permisos,
-    descuentos,
-    reconocimientos,
-    reportesConfidenciales,
-    USERS
-  )
+const analisisIA = useMemo(
+  () => empleados.map(emp =>
+    analyzeEmployeeAI(
+      emp,
+      encuestasSemana,
+      permisos,
+      descuentos,
+      reconocimientos,
+      reportesConfidenciales,
+      USERS
+    )
+  ),
+  [empleados, encuestasSemana, permisos, descuentos, reconocimientos, reportesConfidenciales, USERS]
 );
 
 const analisisConDatos = analisisIA.filter(a => !a.sinDatos);
@@ -338,32 +166,60 @@ const RESUMEN_LIMITE = 8;
     setLoading(true); setOutput("");
     const ctx = buildContexto();
     const prompt = `${ctx}\n\nGenera un RESUMEN EJECUTIVO SEMANAL completo para la psicóloga y el admin. Incluye:\n1. Estado general de McDental (1-2 oraciones)\n2. Principales alertas y empleados prioritarios (usa nombres reales)\n3. Riesgos detectados por sucursal\n4. Recomendaciones de intervención concretas\n5. Tendencia organizacional\n\nFormato: usa emojis, sé directo y accionable. Máximo 350 palabras.`;
-    const result = await callAI(prompt);
-    setOutput(result); setLoading(false);
+    try {
+      const result = await callAI(prompt);
+      setOutput(result);
+    } catch (error) {
+      console.error("Error generando resumen IA:", error);
+      toast.error("No se pudo generar el resumen. Revisa la conexión e inténtalo de nuevo.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const analizarEmpleado = async (emp) => {
     setSelectedEmp(emp); setLoading(true); setOutput("");
     const ctx = buildEmpContexto(emp);
     const prompt = `${ctx}\n\nComo copiloto de la psicóloga, analiza este expediente y proporciona:\n1. Diagnóstico de bienestar actual (2-3 oraciones)\n2. Cambios de comportamiento detectados\n3. Factores de riesgo específicos\n4. 3 preguntas de seguimiento sugeridas para la próxima sesión\n5. Intervención recomendada (nivel y tipo)\n\nSé empático, preciso y profesional.`;
-    const result = await callAI(prompt);
-    setOutput(result); setLoading(false);
+    try {
+      const result = await callAI(prompt);
+      setOutput(result);
+    } catch (error) {
+      console.error("Error analizando empleado con IA:", error);
+      toast.error("No se pudo analizar el expediente. Revisa la conexión e inténtalo de nuevo.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const generarAlertas = async () => {
     setLoading(true); setOutput("");
     const ctx = buildContexto();
     const prompt = `${ctx}\n\nGenera una lista de ALERTAS AUTOMÁTICAS priorizada. Para cada alerta especifica:\n- Nivel: 🟢 Informativo / 🟡 Atención / 🟠 Riesgo / 🔴 Prioridad Alta\n- Empleado o sucursal afectada\n- Descripción del riesgo detectado\n- Acción recomendada inmediata\n\nGenera entre 5 y 8 alertas ordenadas por prioridad. Usa nombres reales del sistema.`;
-    const result = await callAI(prompt);
-    setOutput(result); setLoading(false);
+    try {
+      const result = await callAI(prompt);
+      setOutput(result);
+    } catch (error) {
+      console.error("Error generando alertas IA:", error);
+      toast.error("No se pudieron generar las alertas. Revisa la conexión e inténtalo de nuevo.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const generarPrediccion = async () => {
     setLoading(true); setOutput("");
     const ctx = buildContexto();
     const prompt = `${ctx}\n\nGenera PREDICCIONES ORGANIZACIONALES para McDental:\n1. Riesgo de renuncia a 30, 60 y 90 días (nombres específicos con % confianza)\n2. Riesgo de burnout colectivo por sucursal\n3. Empleados con mayor probabilidad de ausentismo próximas semanas\n4. Tendencia del clima laboral general\n5. Sucursal con mayor riesgo organizacional\n\nPara cada predicción explica brevemente las variables que usaste. Sé específico con nombres.`;
-    const result = await callAI(prompt);
-    setOutput(result); setLoading(false);
+    try {
+      const result = await callAI(prompt);
+      setOutput(result);
+    } catch (error) {
+      console.error("Error generando predicción IA:", error);
+      toast.error("No se pudo generar la predicción. Revisa la conexión e inténtalo de nuevo.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const sendChat = async () => {
@@ -375,9 +231,15 @@ const RESUMEN_LIMITE = 8;
     const ctx = buildContexto();
     const historial = chatHistory.slice(-6).map(m => `${m.role === "user" ? "Usuario" : "IA"}: ${m.text}`).join("\n");
     const prompt = `CONTEXTO DEL SISTEMA:\n${ctx}\n\nHISTORIAL:\n${historial}\n\nPREGUNTA ACTUAL: ${userMsg}\n\nResponde como copiloto de la psicóloga/admin de McDental Pulse. Sé conciso y accionable.`;
-    const result = await callAI(prompt);
-    setChatHistory(h => [...h, { role: "ai", text: result }]);
-    setChatLoading(false);
+    try {
+      const result = await callAI(prompt);
+      setChatHistory(h => [...h, { role: "ai", text: result }]);
+    } catch (error) {
+      console.error("Error en chat IA:", error);
+      setChatHistory(h => [...h, { role: "ai", text: "⚠️ No pude responder ahora. Revisa la conexión e inténtalo de nuevo." }]);
+    } finally {
+      setChatLoading(false);
+    }
   };
 
   const tabs = [
@@ -390,15 +252,11 @@ const RESUMEN_LIMITE = 8;
 
   return (
     <div className="admin-page ai-engine-page">
-      <div className="ai-engine-header">
-        <div className="ai-hero-bg" aria-hidden="true" />
-        <div className="admin-stat-icon-wrap ai-engine-header-icon">
-          <Icon name="ai" size={22} />
-        </div>
-        <div className="ai-engine-header-main">
-          <h1 className="admin-page-title">McDental Pulse AI Engine</h1>
-          <p className="admin-page-subtitle">Motor de inteligencia artificial · análisis en tiempo real</p>
-        </div>
+      <PageHeader
+        icon="ai"
+        title="McDental Pulse AI Engine"
+        subtitle="Motor de inteligencia artificial · análisis en tiempo real"
+      >
         <WeekSelect
           className="ai-engine-week-select"
           value={weekSel}
@@ -411,7 +269,7 @@ const RESUMEN_LIMITE = 8;
         <div className="ai-engine-status-badge">
           <span className="ai-status-dot" aria-hidden="true" /> Activo
         </div>
-      </div>
+      </PageHeader>
       <div className="admin-stat-grid">
         <StatCard iconName="shieldAlert" value={prioridadCritica} label="Prioridad crítica" valueClass="admin-stat-value--red" />
         <StatCard iconName="critical" value={prioridadAlta} label="Prioridad alta" valueClass="admin-stat-value--red" />
@@ -431,7 +289,7 @@ const RESUMEN_LIMITE = 8;
               style={{ borderColor: `${ps.color}40` }}
               onClick={() => { setTab("expedientes"); analizarEmpleado(emp); }}
             >
-              <Avatar name={emp.name} size={32} color={ps.color} />
+              <Avatar name={emp.name} size={32} color={ps.color} photoUrl={emp.avatarUrl} />
               <div className="ai-engine-pulse-chip-text">
                 <div className="ai-engine-pulse-chip-name">{emp.name.split(" ")[0]}</div>
                 <PulseScoreBadge score={ps.score} nivel={ps.nivel} color={ps.color} tendencia={ps.tendencia} size="sm" />

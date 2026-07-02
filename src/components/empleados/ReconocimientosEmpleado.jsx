@@ -2,6 +2,7 @@ import React from "react";
 import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
+import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 
 const ReconocimientosEmpleado = ({ user, reconocimientos }) => {
@@ -9,12 +10,11 @@ const ReconocimientosEmpleado = ({ user, reconocimientos }) => {
 
   return (
     <div className="admin-page empleado-page">
-      <div className="admin-page-header">
-        <h1 className="admin-page-title">Mis reconocimientos</h1>
-        <p className="admin-page-subtitle">
-          Historial de reconocimientos recibidos dentro de McDental.
-        </p>
-      </div>
+      <PageHeader
+        icon="award"
+        title="Mis reconocimientos"
+        subtitle="Historial de reconocimientos recibidos dentro de McDental."
+      />
 
       <div className="admin-stat-grid">
         <StatCard iconName="award" value={misReconocimientos.length} label="Reconocimientos recibidos" valueClass="admin-stat-value--green" />

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
+import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { useNotification } from "../../contexts/NotificationContext";
 
@@ -38,7 +39,7 @@ export default function PermisosEmpleado({
         ...v,
         tipo: "Vacaciones"
       }))
-  ].sort((a, b) => Number(b.id) - Number(a.id));
+  ].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
 
   const estadoClass = (estado) => {
     const e = String(estado || "").toLowerCase();
@@ -130,12 +131,11 @@ export default function PermisosEmpleado({
 
   return (
     <div className="admin-page empleado-page empleado-form-narrow">
-      <div className="admin-page-header">
-        <h1 className="admin-page-title">Vacaciones</h1>
-        <p className="admin-page-subtitle">
-          Solicita días de descanso. RH revisará tu petición y te notificará el estatus.
-        </p>
-      </div>
+      <PageHeader
+        icon="vacation"
+        title="Vacaciones"
+        subtitle="Solicita días de descanso. RH revisará tu petición y te notificará el estatus."
+      />
 
       <Card className="empleado-form-card">
         <SectionTitle icon="vacation">Nueva solicitud</SectionTitle>
@@ -148,8 +148,9 @@ export default function PermisosEmpleado({
 
           <div className="mc-form-row-2">
             <div className="mc-form-group">
-              <label className="mc-form-label">Fecha de inicio</label>
+              <label className="mc-form-label" htmlFor="pe-fecha-inicio">Fecha de inicio</label>
               <input
+                id="pe-fecha-inicio"
                 className="mc-form-input"
                 name="fechaInicio"
                 type="date"
@@ -164,8 +165,9 @@ export default function PermisosEmpleado({
 
             {tipoSeleccionado === "Vacaciones" && (
               <div className="mc-form-group">
-                <label className="mc-form-label">Fecha de fin</label>
+                <label className="mc-form-label" htmlFor="pe-fecha-fin">Fecha de fin</label>
                 <input
+                  id="pe-fecha-fin"
                   className="mc-form-input"
                   name="fechaFin"
                   type="date"
@@ -180,13 +182,13 @@ export default function PermisosEmpleado({
           </div>
 
           <div className="mc-form-group">
-            <label className="mc-form-label">Motivo</label>
-            <input className="mc-form-input" name="motivo" placeholder="Motivo de la solicitud" required />
+            <label className="mc-form-label" htmlFor="pe-motivo">Motivo</label>
+            <input id="pe-motivo" className="mc-form-input" name="motivo" placeholder="Motivo de la solicitud" required />
           </div>
 
           <div className="mc-form-group">
-            <label className="mc-form-label">Comentario opcional</label>
-            <input className="mc-form-input" name="comentario" placeholder="Información adicional para RH" />
+            <label className="mc-form-label" htmlFor="pe-comentario">Comentario opcional</label>
+            <input id="pe-comentario" className="mc-form-input" name="comentario" placeholder="Información adicional para RH" />
           </div>
 
           {tipoSeleccionado === "Vacaciones" && diasPreview > 0 && (

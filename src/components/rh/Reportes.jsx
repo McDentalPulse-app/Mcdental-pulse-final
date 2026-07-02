@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
+import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { semanaActual, normalizeSucursal, sucursalMatches, isSemanaActual, formatSemanaDisplay } from "../../utils/constants";
 
@@ -220,12 +221,11 @@ const Reportes = ({ users = [], encuestas = [] }) => {
 
   return (
     <div className="admin-page">
-      <div className="admin-page-header">
-        <h1 className="admin-page-title">Reportes</h1>
-        <p className="admin-page-subtitle">
-          Centro de exportación ejecutiva · bienestar, participación y desempeño por periodo.
-        </p>
-      </div>
+      <PageHeader
+        icon="report"
+        title="Reportes"
+        subtitle="Centro de exportación ejecutiva · bienestar, participación y desempeño por periodo."
+      />
 
       <Card className="reportes-hero">
         <div className="reportes-hero-top">
@@ -245,8 +245,8 @@ const Reportes = ({ users = [], encuestas = [] }) => {
         {mostrarSelectorSucursal && (
           <div className="reportes-sucursal-panel">
             <div className="mc-form-group">
-              <label className="mc-form-label">Selecciona la sucursal</label>
-              <select className="mc-form-select" value={sucursalReporte} onChange={(e) => setSucursalReporte(e.target.value)}>
+              <label className="mc-form-label" htmlFor="rep-sucursal">Selecciona la sucursal</label>
+              <select id="rep-sucursal" className="mc-form-select" value={sucursalReporte} onChange={(e) => setSucursalReporte(e.target.value)}>
                 {sucursalesReporte.map((sucursal) => (
                   <option key={sucursal} value={sucursal}>{sucursal}</option>
                 ))}

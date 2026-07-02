@@ -3,6 +3,7 @@ import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
+import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
@@ -45,12 +46,11 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
 
   return (
     <div className="admin-page psico-seguimiento-page">
-      <div className="admin-page-header">
-        <h1 className="admin-page-title">Seguimiento psicológico</h1>
-        <p className="admin-page-subtitle">
-          Panel confidencial de bienestar, semáforo y notas clínicas por colaborador.
-        </p>
-      </div>
+      <PageHeader
+        icon="heart"
+        title="Seguimiento psicológico"
+        subtitle="Panel confidencial de bienestar, semáforo y notas clínicas por colaborador."
+      />
 
       <div className="admin-stat-grid">
         <StatCard iconName="users" value={empleados.length} label="Total colaboradores" valueClass="admin-stat-value--green" />
@@ -110,7 +110,7 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
                 onClick={() => setEmpleadoDetalle(emp)}
               >
                 <div className="psico-emp-top">
-                  <Avatar name={emp.name} size={36} color={semaforoColor[sem] || semaforoColor.verde} />
+                  <Avatar name={emp.name} size={36} color={semaforoColor[sem] || semaforoColor.verde} photoUrl={emp.avatarUrl} />
                   <div className="psico-emp-info">
                     <div className="psico-emp-name">{emp.name}</div>
                     <div className="psico-emp-meta">{normalizeSucursal(emp.sucursal)}</div>
@@ -187,15 +187,15 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
 
         return (
           <div className="mc-modal-overlay psico-detail-overlay" onClick={() => setEmpleadoDetalle(null)}>
-            <div className="mc-modal psico-detail-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="mc-modal psico-detail-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="psico-detail-modal-title">
               <div className="psico-detail-header">
                 <div>
-                  <h2 className="mc-modal-title">{empleadoDetalle.name || empleadoDetalle.nombre}</h2>
+                  <h2 id="psico-detail-modal-title" className="mc-modal-title">{empleadoDetalle.name || empleadoDetalle.nombre}</h2>
                   <p className="admin-page-subtitle psico-detail-sub">
                     {normalizeSucursal(empleadoDetalle.sucursal)} · {empleadoDetalle.puesto}
                   </p>
                 </div>
-                <button type="button" className="psico-detail-close" onClick={() => setEmpleadoDetalle(null)}>
+                <button type="button" className="psico-detail-close" aria-label="Cerrar" onClick={() => setEmpleadoDetalle(null)}>
                   <Icon name="xCircle" size={20} />
                 </button>
               </div>

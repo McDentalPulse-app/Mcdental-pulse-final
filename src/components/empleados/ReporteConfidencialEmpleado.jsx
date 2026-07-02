@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
+import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { useNotification } from "../../contexts/NotificationContext";
 
@@ -59,12 +60,11 @@ const ReporteConfidencialEmpleado = ({ user, onSubmit }) => {
 
   return (
     <div className="admin-page empleado-page empleado-form-narrow">
-      <div className="admin-page-header">
-        <h1 className="admin-page-title">Reporte confidencial</h1>
-        <p className="admin-page-subtitle">
-          Este espacio permite reportar situaciones sensibles. La información será visible únicamente para Psicóloga y Admin Principal.
-        </p>
-      </div>
+      <PageHeader
+        icon="lock"
+        title="Reporte confidencial"
+        subtitle="Este espacio permite reportar situaciones sensibles. La información será visible únicamente para Psicóloga y Admin Principal."
+      />
 
       <div className="admin-info-box psico-confidential-info empleado-confidential-info">
         <Icon name="shield" size={16} />
@@ -87,15 +87,15 @@ const ReporteConfidencialEmpleado = ({ user, onSubmit }) => {
 
           <div className="mc-form-grid">
             <div className="mc-form-group">
-              <label className="mc-form-label">Tipo de reporte</label>
-              <select className="mc-form-select" value={tipo} onChange={(e) => setTipo(e.target.value)}>
+              <label className="mc-form-label" htmlFor="rc-tipo">Tipo de reporte</label>
+              <select id="rc-tipo" className="mc-form-select" value={tipo} onChange={(e) => setTipo(e.target.value)}>
                 {tipos.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
 
             <div className="mc-form-group">
-              <label className="mc-form-label">Nivel de urgencia</label>
-              <select className="mc-form-select" value={urgencia} onChange={(e) => setUrgencia(e.target.value)}>
+              <label className="mc-form-label" htmlFor="rc-urgencia">Nivel de urgencia</label>
+              <select id="rc-urgencia" className="mc-form-select" value={urgencia} onChange={(e) => setUrgencia(e.target.value)}>
                 <option>Baja</option>
                 <option>Media</option>
                 <option>Alta</option>
@@ -104,8 +104,9 @@ const ReporteConfidencialEmpleado = ({ user, onSubmit }) => {
             </div>
 
             <div className="mc-form-group">
-              <label className="mc-form-label">Descripción</label>
+              <label className="mc-form-label" htmlFor="rc-descripcion">Descripción</label>
               <textarea
+                id="rc-descripcion"
                 className="mc-form-textarea"
                 value={descripcion}
                 onChange={(e) => setDescripcion(e.target.value)}
@@ -115,8 +116,9 @@ const ReporteConfidencialEmpleado = ({ user, onSubmit }) => {
             </div>
 
             <div className="mc-form-group">
-              <label className="mc-form-label">Evidencias o notas adicionales</label>
+              <label className="mc-form-label" htmlFor="rc-evidencias">Evidencias o notas adicionales</label>
               <textarea
+                id="rc-evidencias"
                 className="mc-form-textarea"
                 value={evidencias}
                 onChange={(e) => setEvidencias(e.target.value)}

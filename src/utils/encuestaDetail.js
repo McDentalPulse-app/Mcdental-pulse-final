@@ -74,7 +74,7 @@ const readRespuesta = (respuestas, key) => {
 
 export const getEncuestasEmpleado = (encuestas, empleadoId) =>
   (encuestas || [])
-    .filter((e) => Number(e.empleadoId) === Number(empleadoId))
+    .filter((e) => e.empleadoId === empleadoId)
     .slice()
     .sort((a, b) => {
       const bySemana = normalizeWeek(b.semana).localeCompare(normalizeWeek(a.semana));

@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
+import PageHeader from "../common/PageHeader";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
 import { getPsicologaPrincipal, formatUsuarioMensajesMeta } from "../../utils/psicologa";
 
-// Orden cronológico estable: usa id (Date.now al crear); cae a fecha como respaldo.
-const porTiempo = (a, b) =>
-  (Number(a.id) || 0) - (Number(b.id) || 0) ||
-  String(a.fecha || "").localeCompare(String(b.fecha || ""));
+// Orden cronológico: los ids son uuid (no ordenables), se ordena por fecha (ISO, sortable como string).
+const porTiempo = (a, b) => String(a.fecha || "").localeCompare(String(b.fecha || ""));
 
 // "2026-06-30 14:05" -> "14:05" (si trae hora); si solo fecha, la muestra.
 const formatHora = (fecha) => {
@@ -55,7 +54,7 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
   const conversacionesActivas = user.role === "psicologa"
     ? conversaciones
         .filter(c => c.mensajes.length > 0)
-        .sort((a, b) => (Number(b.ultimo?.id) || 0) - (Number(a.ultimo?.id) || 0))
+        .sort((a, b) => String(b.ultimo?.fecha || "").localeCompare(String(a.ultimo?.fecha || "")))
     : conversaciones;
 
   const selected =
@@ -73,28 +72,28 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
     if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
   }, [selected?.usuario.id, selected?.mensajes.length]);
 
-  const enviar = () => {
+  const enviar = async () => {
     if (!selected || !texto.trim()) return;
-    onSend({
+    const ok = await onSend({
       de: user.id,
       para: selected.usuario.id,
       texto: texto.trim(),
       fecha: new Date().toISOString().slice(0, 16).replace("T", " "),
       leido: false,
     });
-    setTexto("");
+    if (ok) setTexto("");
   };
 
   const sinConversacionesActivas = conversacionesActivas.length === 0;
 
   return (
     <div className="admin-page mensajes-page">
-      <div className="admin-page-header mensajes-page-header">
-        <h1 className="admin-page-title">Mensajes</h1>
-        <p className="admin-page-subtitle">
-          Canal privado de comunicación entre empleado y psicóloga.
-        </p>
-      </div>
+      <PageHeader
+        className="mensajes-page-header"
+        icon="message"
+        title="Mensajes"
+        subtitle="Canal privado de comunicación entre empleado y psicóloga."
+      />
 
       {sinConversacionesActivas ? (
         <Card className="mensajes-inbox-empty-card">
@@ -138,6 +137,7 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
                       name={c.usuario.name}
                       size={36}
                       color={activo ? "#00897B" : "#64748b"}
+                      photoUrl={c.usuario.avatarUrl}
                     />
 
                     <div className="mensajes-conv-main">
@@ -170,7 +170,7 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
             ) : (
               <>
                 <div className="mensajes-chat-head">
-                  <Avatar name={selected.usuario.name} size={40} color="#00897B" />
+                  <Avatar name={selected.usuario.name} size={40} color="#00897B" photoUrl={selected.usuario.avatarUrl} />
                   <div>
                     <div className="mensajes-chat-name">{selected.usuario.name}</div>
                     <div className="mensajes-chat-meta">{formatUsuarioMensajesMeta(selected.usuario)}</div>

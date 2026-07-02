@@ -1,0 +1,69 @@
+/* ============================================================
+   Modo oscuro — Badges, pills de estado, tags
+   Mismo hue por familia semántica, invertido: en claro son pastel claro +
+   texto saturado; en oscuro pasan a fondo saturado oscuro + texto claro
+   (tokens --mc-badge-* definidos en index.css). Agrupados por color, no por
+   cada nombre de variante — varias variantes comparten el mismo hue.
+   ============================================================ */
+
+/* ── Verde: ok / aprobado / pagado / completado ── */
+[data-theme="dark"] .mc-tag,
+[data-theme="dark"] .mc-badge--verde,
+[data-theme="dark"] .mc-status-pill--activo,
+[data-theme="dark"] .mc-status-pill--later,
+[data-theme="dark"] .mc-status-pill--baja,
+[data-theme="dark"] .mc-status-pill--cerrado,
+[data-theme="dark"] .mc-status-pill--aprobada,
+[data-theme="dark"] .mc-status-pill--aprobado,
+[data-theme="dark"] .mc-status-pill--pagado,
+[data-theme="dark"] .mc-status-pill--festivo {
+  background: var(--mc-badge-verde-bg);
+  color: var(--mc-badge-verde-texto);
+}
+[data-theme="dark"] .mc-badge--verde .mc-badge-dot { background: var(--mc-badge-verde-texto); }
+
+/* ── Rojo: crítico / inactivo / rechazado / cancelado ── */
+[data-theme="dark"] .mc-badge--rojo,
+[data-theme="dark"] .mc-status-pill--inactivo,
+[data-theme="dark"] .mc-status-pill--today,
+[data-theme="dark"] .mc-status-pill--critica,
+[data-theme="dark"] .mc-status-pill--rechazada,
+[data-theme="dark"] .mc-status-pill--rechazado,
+[data-theme="dark"] .mc-status-pill--cancelado {
+  background: var(--mc-badge-rojo-bg);
+  color: var(--mc-badge-rojo-texto);
+}
+[data-theme="dark"] .mc-badge--rojo .mc-badge-dot { background: var(--mc-badge-rojo-texto); }
+
+/* ── Amarillo/naranja: atención / pendiente / en seguimiento ── */
+[data-theme="dark"] .mc-badge--amarillo,
+[data-theme="dark"] .mc-status-pill--soon3,
+[data-theme="dark"] .mc-status-pill--soon7,
+[data-theme="dark"] .mc-status-pill--alta,
+[data-theme="dark"] .mc-status-pill--media,
+[data-theme="dark"] .mc-status-pill--seguimiento,
+[data-theme="dark"] .mc-status-pill--pendiente,
+[data-theme="dark"] .mc-status-pill--permiso {
+  background: var(--mc-badge-amarillo-bg);
+  color: var(--mc-badge-amarillo-texto);
+}
+[data-theme="dark"] .mc-badge--amarillo .mc-badge-dot { background: var(--mc-badge-amarillo-texto); }
+
+/* ── Azul: informativo / nuevo / vacaciones ── */
+[data-theme="dark"] .mc-status-pill--nuevo,
+[data-theme="dark"] .mc-status-pill--vacaciones {
+  background: var(--mc-badge-azul-bg);
+  color: var(--mc-badge-azul-texto);
+}
+/* .mc-status-pill--activo también existe en un segundo contexto (RH:
+   solicitudes) con azul en vez de verde — ambos comparten nombre de clase,
+   así que el override verde de arriba gana; se deja documentado por si en
+   una pasada futura se dan clases distintas para desambiguar. */
+
+/* ── Gris/índigo: privilegiado / default ── */
+[data-theme="dark"] .mc-tag--role-privileged,
+[data-theme="dark"] .mc-badge--default {
+  background: var(--mc-badge-gris-bg);
+  color: var(--mc-badge-gris-texto);
+}
+[data-theme="dark"] .mc-badge--default .mc-badge-dot { background: var(--mc-badge-gris-texto); }

@@ -2,6 +2,7 @@ import React from "react";
 import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
+import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { normalizeSucursal } from "../../utils/constants";
 
@@ -54,12 +55,11 @@ const CalendarioRH = ({ vacaciones, permisos, eventosExtra }) => {
 
   return (
     <div className="admin-page">
-      <div className="admin-page-header">
-        <h1 className="admin-page-title">Calendario General</h1>
-        <p className="admin-page-subtitle">
-          Vista general de vacaciones, permisos, festivos y asuetos.
-        </p>
-      </div>
+      <PageHeader
+        icon="calendarDays"
+        title="Calendario General"
+        subtitle="Vista general de vacaciones, permisos, festivos y asuetos."
+      />
 
       <div className="admin-stat-grid">
         <StatCard iconName="vacation" value={resumen.vacaciones} label="Vacaciones" valueClass="admin-stat-value--blue" />

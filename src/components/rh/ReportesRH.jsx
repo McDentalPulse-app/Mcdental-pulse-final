@@ -2,6 +2,7 @@ import React from "react";
 import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
+import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { SUCURSALES, normalizeSucursal, sucursalMatches } from "../../utils/constants";
 
@@ -42,12 +43,11 @@ const ReportesRH = ({ vacaciones, permisos, descuentos }) => {
 
   return (
     <div className="admin-page">
-      <div className="admin-page-header">
-        <h1 className="admin-page-title">Reportes RH</h1>
-        <p className="admin-page-subtitle">
-          Resumen administrativo de vacaciones, permisos y descuentos por sucursal y colaborador.
-        </p>
-      </div>
+      <PageHeader
+        icon="report"
+        title="Reportes RH"
+        subtitle="Resumen administrativo de vacaciones, permisos y descuentos por sucursal y colaborador."
+      />
 
       <div className="admin-stat-grid">
         <StatCard iconName="vacation" value={vacaciones.length} label="Vacaciones" valueClass="admin-stat-value--blue" />

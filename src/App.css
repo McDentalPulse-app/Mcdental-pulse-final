@@ -10,6 +10,7 @@
 }
 
 .app-main {
+  position: relative;
   flex: 1;
   padding: 28px 32px;
   overflow-y: auto;
@@ -18,12 +19,51 @@
   height: 100vh;
   -webkit-overflow-scrolling: touch;
   background:
-    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(20, 200, 182, 0.10) 0%, transparent 55%),
-    radial-gradient(ellipse 50% 40% at 0% 100%, rgba(16, 116, 99, 0.08) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(20, 200, 182, 0.16) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 0% 100%, rgba(16, 116, 99, 0.13) 0%, transparent 55%),
     linear-gradient(180deg, #F7FBFA 0%, var(--mc-gris-fondo) 100%);
 }
 
+/* Mismas "vibes" que el fondo de la landing (grid blueprint + orbes flotantes),
+   pero adaptadas a la paleta clara del resto de la app: opacidades muy bajas
+   para que quede como textura ambiental detrás de las tarjetas, no como
+   manchas de color. Pseudo-elementos del propio .app-main (no hijos del
+   contenido scrolleable) para que se vean fijos al hacer scroll, igual que
+   el gradiente de fondo que ya tenía. */
+.app-main::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(10, 51, 46, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10, 51, 46, 0.09) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 95% 90% at 50% 30%, #000 40%, transparent 92%);
+  -webkit-mask-image: radial-gradient(ellipse 95% 90% at 50% 30%, #000 40%, transparent 92%);
+  pointer-events: none;
+}
+.app-main::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(circle 340px at 96% 0%, rgba(20, 200, 182, 0.22), transparent 72%),
+    radial-gradient(circle 380px at 2% 96%, rgba(16, 116, 99, 0.20), transparent 72%);
+  filter: blur(16px);
+  animation: appMainOrbFloat 18s ease-in-out infinite;
+}
+@keyframes appMainOrbFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-18px, 14px) scale(1.06); }
+}
+
 .app-main-inner {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
@@ -133,22 +173,6 @@
   display: block;
 }
 
-.sidebar-ai-badge {
-  margin-top: 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 9px;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
 .sidebar-nav {
   padding: 10px 10px;
   flex: 1;
@@ -256,7 +280,8 @@
   margin-top: 1px;
 }
 
-.sidebar-logout {
+.sidebar-logout,
+.sidebar-theme-toggle {
   width: 100%;
   padding: 10px;
   background: rgba(255, 255, 255, 0.08);
@@ -274,7 +299,12 @@
   gap: 8px;
 }
 
-.sidebar-logout:hover {
+.sidebar-theme-toggle {
+  margin-bottom: 8px;
+}
+
+.sidebar-logout:hover,
+.sidebar-theme-toggle:hover {
   background: rgba(255, 255, 255, 0.16);
 }
 
@@ -303,10 +333,6 @@
   }
 
   .sidebar-brand-sub {
-    display: none;
-  }
-
-  .sidebar-ai-badge {
     display: none;
   }
 
@@ -459,16 +485,14 @@
   gap: 8px;
   padding: 7px 14px;
   border-radius: 999px;
-  background: var(--mc-blanco);
-  color: var(--mc-verde-medio);
+  /* Vive dentro del header premium (fondo oscuro con gradiente): mismo
+     patrón "glass" que el badge de estado de AI Engine, no blanco sólido. */
+  background: rgba(255, 255, 255, 0.08);
+  color: #EAFFFB;
   font-size: 12px;
   font-weight: 600;
-  border: 1px solid var(--mc-gris-suave);
+  border: 1px solid rgba(20, 200, 182, 0.4);
   white-space: nowrap;
-}
-
-.dashboard-participation-badge {
-  color: var(--mc-texto);
 }
 
 .dashboard-metrics {
@@ -1259,17 +1283,37 @@
 .mc-card {
   position: relative;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(246, 251, 250, 0.82) 100%);
-  -webkit-backdrop-filter: blur(10px) saturate(120%);
-  backdrop-filter: blur(10px) saturate(120%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78) 0%, rgba(246, 251, 250, 0.66) 100%);
+  -webkit-backdrop-filter: blur(6px) saturate(120%);
+  backdrop-filter: blur(6px) saturate(120%);
   border-radius: var(--mc-radio);
   padding: 22px 24px;
   border: 1px solid rgba(255, 255, 255, 0.7);
   box-shadow: var(--mc-sombra-card);
-  transition: box-shadow 0.22s ease, border-color 0.22s ease, transform 0.22s ease;
+  transition: box-shadow 0.22s ease, border-color 0.22s ease,
+              transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   margin-bottom: 16px;
   max-width: 100%;
   min-width: 0;
+  overflow: hidden;
+}
+
+/* Hilo de acento superior + "lift" al hover — mismo patrón que las tarjetas
+   KPI del Dashboard (Empleados/Contestaron/Verde), ahora en TODA tarjeta del
+   sistema para que el comportamiento sea homogéneo. En reposo el acento está
+   oculto (scaleX(0)); al pasar el mouse se desliza de izquierda a derecha
+   mientras la tarjeta se eleva. */
+.mc-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--grad-accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .mc-card:last-child {
@@ -1278,7 +1322,29 @@
 
 .mc-card:hover {
   border-color: rgba(20, 200, 182, 0.35);
-  box-shadow: 0 14px 36px -16px rgba(14, 90, 79, 0.32);
+  box-shadow: 0 18px 38px -20px rgba(4, 35, 31, 0.45);
+  transform: translateY(-4px);
+}
+.mc-card:hover::after {
+  transform: scaleX(1);
+}
+
+/* Fila/tarjeta de lista clicable — mismo patrón que "Score por Sucursal" del
+   Dashboard (antes scoped solo ahí), ahora genérico para cualquier lista de
+   la app: desplazamiento lateral + tinte de fondo al pasar el mouse. */
+.mc-row-hover {
+  transition: background 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.mc-row-hover:hover {
+  transform: translateX(4px);
+  background: rgba(20, 200, 182, 0.07);
+}
+.mc-row-hover:active {
+  transform: translateX(2px) scale(0.995);
+}
+@media (prefers-reduced-motion: reduce) {
+  .mc-row-hover { transition: background 0.2s ease; }
+  .mc-row-hover:hover, .mc-row-hover:active { transform: none; }
 }
 
 .mc-kpi {
@@ -1329,7 +1395,7 @@
 
 .mc-kpi-sub {
   font-size: 11px;
-  color: var(--mc-gris-texto);
+  color: var(--mc-texto-secundario);
   margin-top: 4px;
   position: relative;
   z-index: 1;
@@ -1558,6 +1624,10 @@
   grid-template-columns: 1.8fr 0.8fr 0.8fr;
   gap: 12px;
   align-items: center;
+}
+
+.list-filters-grid--2col {
+  grid-template-columns: 1.8fr 0.8fr;
 }
 
 .list-filter-input,
@@ -1999,7 +2069,7 @@
 .detail-stat-value {
   font-size: 22px;
   font-weight: 900;
-  color: var(--mc-verde-oscuro);
+  color: var(--mc-texto-titulo);
 }
 
 .detail-grid-2 {
@@ -2019,7 +2089,7 @@
 .detail-section-title {
   font-weight: 800;
   font-size: 14px;
-  color: var(--mc-verde-oscuro);
+  color: var(--mc-texto-titulo);
   margin-bottom: 12px;
   flex-shrink: 0;
 }
@@ -2197,24 +2267,115 @@
   margin: 0;
   font-size: 28px;
   font-weight: 800;
-  color: var(--mc-verde-oscuro);
+  color: var(--mc-texto-titulo);
   letter-spacing: -0.6px;
   line-height: 1.2;
 }
 
 .admin-page-subtitle {
   margin: 8px 0 0;
-  color: var(--mc-gris-texto);
+  color: var(--mc-texto-secundario);
   font-size: 15px;
   line-height: 1.55;
   max-width: 640px;
+}
+
+/* ============================================================
+   Header premium compartido (patrón AI Engine, generalizado):
+   banner con gradiente de marca + aura animada + icono con glow.
+   Usado por <PageHeader> en todas las pantallas.
+   ============================================================ */
+.premium-page-header {
+  position: relative;
+  z-index: 5;               /* si trae un <select> desplegable, debe quedar arriba */
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  overflow: visible;
+  background: var(--grad-brand);
+  border: 1px solid rgba(20, 200, 182, 0.28);
+  border-radius: var(--mc-radio-xl, 22px);
+  box-shadow: 0 26px 64px -30px rgba(4, 35, 31, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: #fff;
+  padding: 22px 24px;
+  margin-bottom: 4px;
+}
+.premium-header-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+  animation: premiumHeaderBreathe 9s ease-in-out infinite;
+}
+.premium-header-bg::before,
+.premium-header-bg::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+}
+.premium-header-bg::before {
+  width: 300px; height: 300px;
+  top: -130px; right: -60px;
+  background: radial-gradient(circle, rgba(20, 200, 182, 0.5), transparent 70%);
+}
+.premium-header-bg::after {
+  width: 220px; height: 220px;
+  bottom: -120px; left: 18%;
+  background: radial-gradient(circle, rgba(16, 116, 99, 0.55), transparent 70%);
+}
+@keyframes premiumHeaderBreathe {
+  0%, 100% { opacity: 0.78; }
+  50% { opacity: 1; }
+}
+.premium-page-header > *:not(.premium-header-bg) { position: relative; z-index: 1; }
+
+.premium-header-icon {
+  background: rgba(20, 200, 182, 0.2);
+  color: #EAFFFB;
+  border: 1px solid rgba(20, 200, 182, 0.35);
+  box-shadow: 0 0 32px -6px rgba(20, 200, 182, 0.6);
+  flex-shrink: 0;
+}
+
+.premium-header-main { flex: 1; min-width: 200px; }
+.premium-page-header .admin-page-title { color: #fff; }
+.premium-page-header .admin-page-subtitle { color: rgba(255, 255, 255, 0.7); max-width: none; }
+
+.premium-header-eyebrow {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--mc-aqua);
+  margin-bottom: 6px;
+}
+
+.premium-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .premium-header-bg { animation: none; }
+  .app-main::after { animation: none; }
+  /* Lift + acento animado de .mc-card:hover: mantener el cambio de color/sombra
+     (sigue siendo feedback útil) pero sin el movimiento de transform. */
+  .mc-card { transition: box-shadow 0.22s ease, border-color 0.22s ease; }
+  .mc-card:hover { transform: none; }
+  .mc-card::after { transition: none; }
 }
 
 .admin-section-title {
   margin: 0 0 16px;
   font-size: 15px;
   font-weight: 600;
-  color: var(--mc-verde-oscuro);
+  color: var(--mc-texto-titulo);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -2262,19 +2423,6 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  overflow: hidden;
-}
-
-/* hilo de acento superior en las stat cards */
-.admin-stat-card.mc-card::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--grad-accent);
-  opacity: 0.85;
 }
 
 .admin-stat-icon-wrap {
@@ -2330,7 +2478,7 @@
 .admin-stat-label {
   font-size: 13px;
   font-weight: 700;
-  color: var(--mc-gris-texto);
+  color: var(--mc-texto-secundario);
 }
 
 .admin-stat-value--green { color: var(--mc-verde-medio); }
@@ -2583,7 +2731,7 @@
   margin: 0 0 20px;
   font-size: 22px;
   font-weight: 800;
-  color: var(--mc-verde-oscuro);
+  color: var(--mc-texto-titulo);
 }
 
 /* Notifications & confirm/prompt modals */
@@ -3477,6 +3625,57 @@
   background: var(--mc-verde-claro);
 }
 
+/* Tarjeta de foto de perfil (Expediente Integral) */
+.expediente-foto-card {
+  align-items: center;
+  text-align: center;
+}
+
+.expediente-foto-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.expediente-foto-upload,
+.expediente-foto-quitar {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(14, 140, 122, 0.3);
+  background: var(--mc-verde-claro);
+  color: var(--mc-verde-medio);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s;
+}
+
+.expediente-foto-upload:hover,
+.expediente-foto-quitar:hover:not(:disabled) {
+  background: #d4efe9;
+  border-color: var(--mc-aqua);
+}
+
+.expediente-foto-upload[aria-disabled="true"],
+.expediente-foto-quitar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.expediente-foto-quitar {
+  background: #fef2f2;
+  color: #991b1b;
+  border-color: rgba(168, 68, 68, 0.35);
+}
+
+.expediente-foto-quitar:hover:not(:disabled) {
+  background: #fee2e2;
+  border-color: #a84444;
+}
+
 .mc-file-input-icon {
   color: var(--mc-verde-medio);
   flex-shrink: 0;
@@ -4088,10 +4287,12 @@
 }
 
 /* ── Psicóloga premium ── */
+/* Vive dentro del header premium (fondo oscuro con gradiente): mismo patrón
+   "glass" que el resto de los badges de header, no un verde claro sólido. */
 .psico-meta-badge--conf {
-  color: var(--mc-verde-medio);
-  border-color: rgba(14, 140, 122, 0.18);
-  background: var(--mc-verde-claro);
+  color: #EAFFFB;
+  border-color: rgba(20, 200, 182, 0.4);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .psico-priority-grid {
@@ -7084,9 +7285,12 @@
   }
 }
 
-/* ── Dashboard Psicóloga: widgets ── */
+/* ── Dashboard Psicóloga: widgets ──
+   height:100% explícito porque el stretch de grid por sí solo no alcanza a
+   igualar la altura cuando el hijo es a la vez flex-column con contenido de
+   alto intrínseco distinto (ver Distribución del equipo vs Participación). */
 .psico-dash-grid { align-items: stretch; }
-.psico-dash-grid > .mc-card { display: flex; flex-direction: column; }
+.psico-dash-grid > .mc-card { display: flex; flex-direction: column; height: 100%; }
 
 /* Distribución de semáforo */
 .psico-dist-bar {

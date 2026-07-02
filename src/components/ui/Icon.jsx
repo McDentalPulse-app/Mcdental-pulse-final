@@ -55,6 +55,8 @@ import {
   Wrench,
   TrendingDown,
   Eye,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 const ICON_MAP = {
@@ -117,6 +119,8 @@ const ICON_MAP = {
   wrench: Wrench,
   trendingDown: TrendingDown,
   eye: Eye,
+  sun: Sun,
+  moon: Moon,
 };
 
 const Icon = ({ name, size = 18, className = "", strokeWidth = 1.75, color }) => {

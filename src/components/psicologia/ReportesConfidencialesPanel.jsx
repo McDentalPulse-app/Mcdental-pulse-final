@@ -2,6 +2,7 @@ import React from "react";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
 import StatCard from "../common/StatCard";
+import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { normalizeSucursal } from "../../utils/constants";
 
@@ -25,12 +26,11 @@ const ReportesConfidencialesPanel = ({ reportes }) => {
 
   return (
     <div className="admin-page psico-confidenciales-page">
-      <div className="admin-page-header">
-        <h1 className="admin-page-title">Reportes Confidenciales</h1>
-        <p className="admin-page-subtitle">
-          Bandeja confidencial visible únicamente para Psicóloga y Admin Principal.
-        </p>
-      </div>
+      <PageHeader
+        icon="lock"
+        title="Reportes Confidenciales"
+        subtitle="Bandeja confidencial visible únicamente para Psicóloga y Admin Principal."
+      />
 
       <div className="admin-info-box psico-confidential-info">
         <Icon name="shield" size={16} />

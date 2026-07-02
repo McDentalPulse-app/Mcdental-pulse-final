@@ -59,6 +59,78 @@
   --mc-semaforo-verde: #059669;
   --mc-semaforo-amarillo: #D97706;
   --mc-semaforo-rojo: #DC2626;
+
+  /* ── Stat/KPI semánticos (fase 2 dark: rama clara abajo para legibilidad
+     sobre tarjeta oscura; los valores de KPI/semáforo se pasan como estos
+     tokens en vez de hex fijos para que reaccionen al tema). ── */
+  --mc-stat-teal: #2D6A5F;
+  --mc-stat-teal-2: #3D8B7E;
+  --mc-stat-green: #2F7D5A;
+  --mc-stat-amber: #9A6B1F;
+  --mc-stat-red: #A84444;
+  --mc-riskbar-track: #f3f4f6;
+
+  /* ── Texto de título (fase 2 dark mode) ──
+     En claro apunta a --mc-verde-oscuro (comportamiento actual, sin cambios).
+     En oscuro (abajo) pasa a un teal claro — evita que .admin-page-title/
+     .mc-modal-title, que hoy fijan --mc-verde-oscuro directo, desaparezcan
+     sobre tarjeta oscura. */
+  --mc-texto-titulo: var(--mc-verde-oscuro);
+
+  /* Texto secundario (labels, subtítulos) que vive sobre superficies que
+     pasan a oscuras en fase 2 — mismo patrón: en claro no cambia nada. */
+  --mc-texto-secundario: var(--mc-gris-texto);
+}
+
+/* ── Modo oscuro (fase 2: superficies reales, no solo el fondo) ──
+   --mc-texto y --mc-gris-texto siguen SIN cambiar: mucho contenido (labels,
+   texto suelto) hereda estas variables y no todas las superficies pasan por
+   los tokens nuevos de abajo todavía. Las superficies que SÍ se oscurecen de
+   verdad (tarjetas, tablas, inputs, badges) usan los tokens nuevos
+   --mc-superficie-* y --mc-badge-*, consumidos desde los archivos en
+   src/styles/dark/ (overrides aditivos, no tocan App.css). */
+[data-theme="dark"] {
+  --mc-gris-fondo: #0A2420;
+  --mc-gris-perla: #0D2B26;
+  --mc-gris-suave: rgba(255, 255, 255, 0.12);
+
+  --mc-sombra: 0 18px 48px -16px rgba(0, 0, 0, 0.55), 0 4px 12px -6px rgba(0, 0, 0, 0.35);
+  --mc-sombra-suave: 0 8px 24px -12px rgba(0, 0, 0, 0.4);
+  --mc-sombra-card: 0 1px 3px rgba(0, 0, 0, 0.25), 0 6px 20px -14px rgba(0, 0, 0, 0.45);
+
+  --mc-texto-titulo: var(--brand-200);
+  --mc-texto-secundario: #9DBDB6;
+
+  /* Stat/KPI: versiones claras/brillantes (mismos hues que los badges dark,
+     ya validados como legibles sobre #0F332C). */
+  --mc-stat-teal: #8AE9DD;
+  --mc-stat-teal-2: #8AE9DD;
+  --mc-stat-green: #86EFAC;
+  --mc-stat-amber: #FCD34D;
+  --mc-stat-red: #FCA5A5;
+  --mc-riskbar-track: rgba(255, 255, 255, 0.10);
+
+  /* Superficies: tarjetas/modales/inputs/tabla, todas un poco más claras que
+     el fondo de página para que se distingan como "elevadas". */
+  --mc-superficie-card: #0F332C;
+  --mc-superficie-card-border: rgba(255, 255, 255, 0.10);
+  --mc-superficie-input: #0A2420;
+  --mc-superficie-input-focus: #123A33;
+  --mc-superficie-th: rgba(255, 255, 255, 0.04);
+
+  /* Badges/pills invertidos: fondo saturado oscuro + texto claro (no solo
+     atenuar el pastel claro que usan en modo claro). Mismos hues, escala
+     900/300 en vez de 100/800. */
+  --mc-badge-verde-bg: #14532D;
+  --mc-badge-verde-texto: #86EFAC;
+  --mc-badge-rojo-bg: #7F1D1D;
+  --mc-badge-rojo-texto: #FCA5A5;
+  --mc-badge-amarillo-bg: #78350F;
+  --mc-badge-amarillo-texto: #FCD34D;
+  --mc-badge-azul-bg: #1E3A8A;
+  --mc-badge-azul-texto: #93C5FD;
+  --mc-badge-gris-bg: #312E81;
+  --mc-badge-gris-texto: #A5B4FC;
 }
 
 *, *::before, *::after {
@@ -94,7 +166,7 @@ img {
   height: auto;
 }
 
-/* ── Auth (Login / CambiarPassword) ── */
+/* ── Auth (Login, y campos compartidos con el panel de cambio de contraseña de la landing) ── */
 .auth-page {
   position: relative;
   min-height: 100vh;

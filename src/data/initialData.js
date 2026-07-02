@@ -1,5 +1,4 @@
-// Usuarios del sistema
-// Migrar a Firebase Auth y eliminar contraseñas
+// Usuarios del sistema (dataset legacy, usado como fuente de la migración a Supabase)
 import { applyCanonicalAdminDates } from "../utils/adminEmployeeDates";
 
 const USERS_RAW = [

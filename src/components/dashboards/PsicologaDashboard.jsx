@@ -8,6 +8,7 @@ import Badge from "../common/Badge";
 import Icon from "../ui/Icon";
 import GroupedBarChart from "../common/GroupedBarChart";
 import WeekSelect from "../common/WeekSelect";
+import PageHeader from "../common/PageHeader";
 import { semanaActual, normalizeSucursal, formatSemanaDisplay } from "../../utils/constants";
 import { getPulseStatus } from "../../utils/pulseScore";
 
@@ -143,37 +144,33 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
 
   return (
     <div className="admin-page dashboard-page psico-dashboard">
-      <header className="dashboard-executive-header">
-        <div className="dashboard-executive-main">
-          <span className="dashboard-eyebrow">McDental Pulse · Psicología Organizacional</span>
-          <h1 className="dashboard-title">Dashboard Psicóloga</h1>
-          <p className="dashboard-subtitle">
-            Seguimiento clínico, bienestar emocional y casos prioritarios del equipo.
-          </p>
-        </div>
-        <div className="dashboard-executive-meta">
-          <WeekSelect
-            value={weekSel}
-            onChange={setWeekSel}
-            options={opcionesSemana.map(w => ({
-              value: w,
-              label: `${w}${w === labelActual ? " · actual" : ""}${w === `${w.slice(0, 4)}-W00` ? " · anterior" : ""}`,
-            }))}
-          />
-          {reportesNuevos > 0 && (
-            <span className="dashboard-participation-badge psico-meta-badge--conf">
-              <Icon name="lock" size={14} />
-              {reportesNuevos} reportes nuevos
-            </span>
-          )}
-          {mensajesNoLeidos > 0 && (
-            <span className="dashboard-participation-badge">
-              <Icon name="message" size={14} />
-              {mensajesNoLeidos} mensajes
-            </span>
-          )}
-        </div>
-      </header>
+      <PageHeader
+        icon="heart"
+        eyebrow="McDental Pulse · Psicología Organizacional"
+        title="Dashboard Psicóloga"
+        subtitle="Seguimiento clínico, bienestar emocional y casos prioritarios del equipo."
+      >
+        <WeekSelect
+          value={weekSel}
+          onChange={setWeekSel}
+          options={opcionesSemana.map(w => ({
+            value: w,
+            label: `${w}${w === labelActual ? " · actual" : ""}${w === `${w.slice(0, 4)}-W00` ? " · anterior" : ""}`,
+          }))}
+        />
+        {reportesNuevos > 0 && (
+          <span className="dashboard-participation-badge psico-meta-badge--conf">
+            <Icon name="lock" size={14} />
+            {reportesNuevos} reportes nuevos
+          </span>
+        )}
+        {mensajesNoLeidos > 0 && (
+          <span className="dashboard-participation-badge">
+            <Icon name="message" size={14} />
+            {mensajesNoLeidos} mensajes
+          </span>
+        )}
+      </PageHeader>
 
       <div className="admin-stat-grid">
         {stats.map((s, i) => (
@@ -323,10 +320,10 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
 
       {sucursalDetalle && (
         <div className="mc-modal-overlay" onClick={() => setSucursalDetalle(null)}>
-          <div className="mc-modal psico-suc-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="mc-modal psico-suc-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="psico-suc-modal-title">
             <div className="psico-suc-modal-head">
               <div>
-                <h2 className="mc-modal-title">
+                <h2 id="psico-suc-modal-title" className="mc-modal-title">
                   <Icon name="building" size={18} /> {sucursalDetalle.suc}
                 </h2>
                 <p className="admin-page-subtitle psico-suc-modal-sub">

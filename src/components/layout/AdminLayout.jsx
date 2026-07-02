@@ -20,7 +20,7 @@ export default function AdminLayout({ user, globals, actions }) {
   const { usuarios: USERS } = useGlobal();
 
   const { encuestas, mensajes, notas, permisos, descuentos, reconocimientos, reportesConfidenciales, vacaciones, archivosExpediente } = globals;
-  const { restablecerPasswordUsuario, subirArchivoExpediente, addReconocimiento, inicializarUsuariosPassword } = actions;
+  const { restablecerPasswordUsuario, subirArchivoExpediente, addReconocimiento } = actions;
 
   return (
     <div className="app-shell">
@@ -37,7 +37,7 @@ export default function AdminLayout({ user, globals, actions }) {
             <Route path="eventospersonal" element={<EventosPersonal users={USERS} />} />
             <Route path="reportes" element={<Reportes users={USERS} encuestas={encuestas} />} />
             <Route path="confidenciales" element={<ReportesConfidencialesPanel reportes={reportesConfidenciales} />} />
-            <Route path="config" element={<Config inicializarUsuariosPassword={inicializarUsuariosPassword} />} />
+            <Route path="config" element={<Config />} />
             <Route path="encuestas" element={<GestionEncuestas encuestas={encuestas} />} />
             <Route path="mensajes" element={
               <Card className="admin-restricted">

@@ -1,20 +1,25 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
-import { 
-  MENSAJES_INIT, 
-  NOTAS_INIT, 
+import {
+  MENSAJES_INIT,
+  NOTAS_INIT,
   REPORTES_CONFIDENCIALES_INIT,
   CALENDARIO_EXTRA_INIT,
   ENCUESTA_PREGUNTAS,
 } from "../data/initialData";
 
 import { useAuth } from "./AuthContext";
+import { notify } from "../utils/notify";
 
-import { getEncuestas } from "../services/firestore/encuestasService";
-import { getMensajes } from "../services/firestore/mensajesService";
-import { getReportesConfidenciales } from "../services/firestore/reportesService";
-import { getReconocimientos } from "../services/firestore/reconocimientosService";
-import { getArchivosExpediente, getVacaciones, getPermisos, getDescuentos } from "../services/firestore/expedientesService";
-import { getUsuarios, getEncuestaPreguntas } from "../services/firestore/usuariosService";
+import { getEncuestas } from "../services/supabase/encuestasService";
+import { getMensajes } from "../services/supabase/mensajesService";
+import { getReportesConfidenciales } from "../services/supabase/reportesService";
+import { getReconocimientos } from "../services/supabase/reconocimientosService";
+import { getVacaciones } from "../services/supabase/vacacionesService";
+import { getPermisos } from "../services/supabase/permisosService";
+import { getDescuentos } from "../services/supabase/descuentosService";
+import { getArchivosExpediente } from "../services/supabase/archivosExpedienteService";
+import { getNotasPsicologicas } from "../services/supabase/notasService";
+import { getUsuarios, getEncuestaPreguntas } from "../services/supabase/usuariosService";
 import { normalizePreguntasList } from "../utils/encuestaPreguntas";
 
 const GlobalContext = createContext();
@@ -30,13 +35,13 @@ export const GlobalProvider = ({ children }) => {
   const [mensajes, setMensajes] = useState(MENSAJES_INIT);
   const [reportesConfidenciales, setReportesConfidenciales] = useState(REPORTES_CONFIDENCIALES_INIT);
   const [reconocimientos, setReconocimientos] = useState([]);
-  
+
   // Expedientes
   const [archivosExpediente, setArchivosExpediente] = useState([]);
   const [vacaciones, setVacaciones] = useState([]);
   const [permisos, setPermisos] = useState([]);
   const [descuentos, setDescuentos] = useState([]);
-  
+
   // Notas AI / Calendario
   const [notas, setNotas] = useState(NOTAS_INIT);
   const [calendario, setCalendario] = useState([]);
@@ -44,82 +49,99 @@ export const GlobalProvider = ({ children }) => {
 
   const [loadingData, setLoadingData] = useState(true);
 
-  // Cargar datos de Firebase según el rol del usuario
+  // Cargar datos de Supabase según el rol del usuario
   useEffect(() => {
     const fetchAllData = async () => {
       if (!user) {
         setLoadingData(false);
         return;
       }
-      
+
       setLoadingData(true);
       try {
         const promises = [];
         const { role } = user;
+        // Sentinela: null = no se cargó (no pedido, o falló). Un array (incluso
+        // vacío) = fetch OK. Así "error de red" no se confunde con "0 datos".
+        let huboError = false;
 
-        let fbUsuarios = [];
-        let fbPreguntas = [];
-        let fbEncuestas = [];
-        let fbMensajes = [];
-        let fbReportes = [];
-        let fbReconocimientos = [];
-        let fbArchivos = [];
-        let fbVacaciones = [];
-        let fbPermisos = [];
-        let fbDescuentos = [];
+        let dbUsuarios = null;
+        let dbPreguntas = null;
+        let dbEncuestas = null;
+        let dbMensajes = null;
+        let dbReportes = null;
+        let dbReconocimientos = null;
+        let dbArchivos = null;
+        let dbVacaciones = null;
+        let dbPermisos = null;
+        let dbDescuentos = null;
+        let dbNotas = null;
 
         // Base data for everyone
-        promises.push(getUsuarios().then(res => fbUsuarios = res).catch(() => []));
-        promises.push(getEncuestaPreguntas().then(res => fbPreguntas = res).catch(() => []));
+        promises.push(getUsuarios().then(res => dbUsuarios = res).catch(() => { huboError = true; }));
+        promises.push(getEncuestaPreguntas().then(res => dbPreguntas = res).catch(() => { huboError = true; }));
 
         // Encuestas y mensajes y reconocimientos: admin, psicologa, empleado
         if (role === "admin" || role === "psicologa" || role === "empleado") {
-          promises.push(getEncuestas().then(res => fbEncuestas = res).catch(() => []));
-          promises.push(getMensajes().then(res => fbMensajes = res).catch(() => []));
-          promises.push(getReconocimientos().then(res => fbReconocimientos = res).catch(() => []));
+          promises.push(getEncuestas().then(res => dbEncuestas = res).catch(() => { huboError = true; }));
+          promises.push(getMensajes().then(res => dbMensajes = res).catch(() => { huboError = true; }));
+          promises.push(getReconocimientos().then(res => dbReconocimientos = res).catch(() => { huboError = true; }));
         }
 
         // Reportes confidenciales: admin, psicologa
         if (role === "admin" || role === "psicologa") {
-          promises.push(getReportesConfidenciales().then(res => fbReportes = res).catch(() => []));
+          promises.push(getReportesConfidenciales().then(res => dbReportes = res).catch(() => { huboError = true; }));
         }
 
         // Vacaciones y permisos: admin, rh, psicologa, empleado
         if (role === "admin" || role === "rh" || role === "psicologa" || role === "empleado") {
-          promises.push(getVacaciones().then(res => fbVacaciones = res).catch(() => []));
-          promises.push(getPermisos().then(res => fbPermisos = res).catch(() => []));
+          promises.push(getVacaciones().then(res => dbVacaciones = res).catch(() => { huboError = true; }));
+          promises.push(getPermisos().then(res => dbPermisos = res).catch(() => { huboError = true; }));
         }
 
         // Descuentos: admin, rh, psicologa
         if (role === "admin" || role === "rh" || role === "psicologa") {
-          promises.push(getDescuentos().then(res => fbDescuentos = res).catch(() => []));
+          promises.push(getDescuentos().then(res => dbDescuentos = res).catch(() => { huboError = true; }));
         }
 
         // Archivos Expediente: admin, psicologa, rh
         if (role === "admin" || role === "psicologa" || role === "rh") {
-          promises.push(getArchivosExpediente().then(res => fbArchivos = res).catch(() => []));
+          promises.push(getArchivosExpediente().then(res => dbArchivos = res).catch(() => { huboError = true; }));
+        }
+
+        // Notas psicológicas: psicologa, admin (gateado también por RLS)
+        if (role === "admin" || role === "psicologa") {
+          promises.push(getNotasPsicologicas().then(res => dbNotas = res).catch(() => { huboError = true; }));
         }
 
         await Promise.all(promises);
 
-        if (fbUsuarios.length > 0) setUsuarios(fbUsuarios);
-        if (fbPreguntas.length > 0) {
-          setEncuestaPreguntas(normalizePreguntasList(fbPreguntas));
-        } else {
+        // Solo se actualiza el estado cuando el fetch respondió (array, aunque
+        // sea vacío). Si falló (null), se conserva el estado previo en vez de
+        // pisarlo con datos vacíos que parecerían "sin registros".
+        if (dbUsuarios) setUsuarios(dbUsuarios);
+        if (dbPreguntas && dbPreguntas.length > 0) {
+          setEncuestaPreguntas(normalizePreguntasList(dbPreguntas));
+        } else if (dbPreguntas) {
           setEncuestaPreguntas(normalizePreguntasList(ENCUESTA_PREGUNTAS));
         }
-        if (fbEncuestas.length > 0) setEncuestas(fbEncuestas);
-        if (fbMensajes.length > 0) setMensajes(fbMensajes);
-        if (fbReportes.length > 0) setReportesConfidenciales(fbReportes);
-        if (fbReconocimientos.length > 0) setReconocimientos(fbReconocimientos);
-        
-        if (fbArchivos.length > 0) setArchivosExpediente(fbArchivos);
-        if (fbVacaciones.length > 0) setVacaciones(fbVacaciones);
-        if (fbPermisos.length > 0) setPermisos(fbPermisos);
-        if (fbDescuentos.length > 0) setDescuentos(fbDescuentos);
+        if (dbEncuestas) setEncuestas(dbEncuestas);
+        if (dbMensajes) setMensajes(dbMensajes);
+        if (dbReportes) setReportesConfidenciales(dbReportes);
+        if (dbReconocimientos) setReconocimientos(dbReconocimientos);
+
+        if (dbArchivos) setArchivosExpediente(dbArchivos);
+        if (dbVacaciones) setVacaciones(dbVacaciones);
+        if (dbPermisos) setPermisos(dbPermisos);
+        if (dbDescuentos) setDescuentos(dbDescuentos);
+        if (dbNotas) setNotas(dbNotas);
+
+        if (huboError) {
+          notify.toast.error("No se pudieron cargar algunos datos. Revisa tu conexión.");
+        }
 
       } catch (error) {
-        console.error("Error global al cargar datos de Firebase:", error);
+        console.error("Error global al cargar datos de Supabase:", error);
       } finally {
         setLoadingData(false);
       }
@@ -129,8 +151,8 @@ export const GlobalProvider = ({ children }) => {
   }, [user]);
 
   return (
-    <GlobalContext.Provider 
-      value={{ 
+    <GlobalContext.Provider
+      value={{
         usuarios, setUsuarios,
         encuestaPreguntas, setEncuestaPreguntas,
         encuestas, setEncuestas,
@@ -144,7 +166,7 @@ export const GlobalProvider = ({ children }) => {
         notas, setNotas,
         calendario, setCalendario,
         calendarioExtra,
-        loadingData 
+        loadingData
       }}
     >
       {children}

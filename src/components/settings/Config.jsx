@@ -3,17 +3,18 @@ import { useNotification } from '../../contexts/NotificationContext';
 import Card from '../common/Card';
 import SectionTitle from '../common/SectionTitle';
 import StatCard from '../common/StatCard';
+import PageHeader from '../common/PageHeader';
 import Icon from '../ui/Icon';
 import { SUCURSALES } from '../../utils/constants';
 
-const Config = ({ inicializarUsuariosPassword }) => {
+const Config = () => {
   const { toast } = useNotification();
   const [verde, setVerde] = useState(70);
   const [amarillo, setAmarillo] = useState(45);
   const [rojo, setRojo] = useState(45);
 
   const guardarConfig = () => {
-    toast.success("Configuración guardada correctamente en modo demo. Cuando conectemos Firebase, estos valores se guardarán por organización.");
+    toast.success("Configuración guardada correctamente en modo demo. Estos valores todavía no se persisten por organización.");
   };
 
   const roles = [
@@ -28,17 +29,16 @@ const Config = ({ inicializarUsuariosPassword }) => {
     "RH no puede ver reportes confidenciales ni conversaciones privadas.",
     "Admin puede ver indicadores generales, pero no debe acceder al contenido de mensajes privados.",
     "Los reportes confidenciales son visibles únicamente para psicóloga y admin principal.",
-    "Los datos sensibles deberán protegerse con reglas de seguridad en Firebase."
+    "Los datos sensibles se protegen con Row Level Security a nivel de base de datos."
   ];
 
   return (
     <div className="admin-page">
-      <div className="admin-page-header">
-        <h1 className="admin-page-title">Configuración</h1>
-        <p className="admin-page-subtitle">
-          Parámetros generales de McDental Pulse, roles, privacidad y umbrales de bienestar.
-        </p>
-      </div>
+      <PageHeader
+        icon="settings"
+        title="Configuración"
+        subtitle="Parámetros generales de McDental Pulse, roles, privacidad y umbrales de bienestar."
+      />
 
       <div className="admin-grid-auto">
         <Card className="admin-stat-card">
@@ -84,22 +84,22 @@ const Config = ({ inicializarUsuariosPassword }) => {
 
         <div className="config-threshold-grid">
           <div className="config-threshold-card config-threshold--verde">
-            <label className="mc-form-label config-threshold-label--verde">
+            <label className="mc-form-label config-threshold-label--verde" htmlFor="cfg-verde">
               <Icon name="check" size={14} /> Verde mayor o igual a
             </label>
-            <input className="mc-form-input config-threshold-input" value={verde} onChange={(e) => setVerde(e.target.value)} />
+            <input id="cfg-verde" className="mc-form-input config-threshold-input" value={verde} onChange={(e) => setVerde(e.target.value)} />
           </div>
           <div className="config-threshold-card config-threshold--amarillo">
-            <label className="mc-form-label config-threshold-label--amarillo">
+            <label className="mc-form-label config-threshold-label--amarillo" htmlFor="cfg-amarillo">
               <Icon name="warning" size={14} /> Amarillo mayor o igual a
             </label>
-            <input className="mc-form-input config-threshold-input" value={amarillo} onChange={(e) => setAmarillo(e.target.value)} />
+            <input id="cfg-amarillo" className="mc-form-input config-threshold-input" value={amarillo} onChange={(e) => setAmarillo(e.target.value)} />
           </div>
           <div className="config-threshold-card config-threshold--rojo">
-            <label className="mc-form-label config-threshold-label--rojo">
+            <label className="mc-form-label config-threshold-label--rojo" htmlFor="cfg-rojo">
               <Icon name="critical" size={14} /> Rojo menor a
             </label>
-            <input className="mc-form-input config-threshold-input" value={rojo} onChange={(e) => setRojo(e.target.value)} />
+            <input id="cfg-rojo" className="mc-form-input config-threshold-input" value={rojo} onChange={(e) => setRojo(e.target.value)} />
           </div>
         </div>
 

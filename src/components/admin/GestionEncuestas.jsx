@@ -3,6 +3,7 @@ import { useGlobal } from "../../contexts/GlobalContext";
 import { useNotification } from "../../contexts/NotificationContext";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
+import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { semanaDisplay, isSemanaActual } from "../../utils/constants";
 import {
@@ -10,7 +11,7 @@ import {
   normalizePregunta,
   DEFAULT_OPCIONES_RIESGO,
 } from "../../utils/encuestaPreguntas";
-import { saveEncuestaPreguntas } from "../../services/firestore/encuestaPreguntasService";
+import { saveEncuestaPreguntas } from "../../services/supabase/encuestaPreguntasService";
 
 const TIPOS = [
   { value: "escala", label: "Escala (1–10)" },
@@ -145,7 +146,7 @@ const GestionEncuestas = ({ encuestas = [] }) => {
       toast.success("Preguntas de encuesta guardadas correctamente.");
       cerrarEditor();
     } catch (error) {
-      toast.error(error.message || "No se pudieron guardar los cambios en Firebase.");
+      toast.error(error.message || "No se pudieron guardar los cambios.");
     } finally {
       setGuardando(false);
     }
@@ -172,10 +173,11 @@ const GestionEncuestas = ({ encuestas = [] }) => {
 
   return (
     <div className="admin-page">
-      <div className="admin-page-header">
-        <h1 className="admin-page-title">Gestión de Encuestas</h1>
-        <p className="admin-page-subtitle">Encuesta activa y preguntas del periodo actual.</p>
-      </div>
+      <PageHeader
+        icon="clipboard"
+        title="Gestión de Encuestas"
+        subtitle="Encuesta activa y preguntas del periodo actual."
+      />
 
       <Card className="encuesta-page-card">
         <SectionTitle icon="clipboard">Encuesta semanal activa</SectionTitle>
@@ -274,8 +276,9 @@ const GestionEncuestas = ({ encuestas = [] }) => {
                 <h3 className="encuesta-edit-form-title">Editar pregunta #{form?.id}</h3>
 
                 <div className="mc-form-group">
-                  <label className="mc-form-label">Texto de la pregunta</label>
+                  <label className="mc-form-label" htmlFor="ge-texto">Texto de la pregunta</label>
                   <textarea
+                    id="ge-texto"
                     className="mc-form-textarea"
                     rows={3}
                     value={form?.texto || ""}
@@ -285,8 +288,9 @@ const GestionEncuestas = ({ encuestas = [] }) => {
 
                 <div className="mc-form-row-2">
                   <div className="mc-form-group">
-                    <label className="mc-form-label">Tipo</label>
+                    <label className="mc-form-label" htmlFor="ge-tipo">Tipo</label>
                     <select
+                      id="ge-tipo"
                       className="mc-form-select"
                       value={form?.tipo || "escala"}
                       onChange={(e) => handleTipoChange(e.target.value)}
@@ -298,8 +302,9 @@ const GestionEncuestas = ({ encuestas = [] }) => {
                   </div>
 
                   <div className="mc-form-group">
-                    <label className="mc-form-label">Orden</label>
+                    <label className="mc-form-label" htmlFor="ge-orden">Orden</label>
                     <input
+                      id="ge-orden"
                       type="number"
                       min={1}
                       className="mc-form-input"
@@ -312,8 +317,9 @@ const GestionEncuestas = ({ encuestas = [] }) => {
                 </div>
 
                 <div className="mc-form-group">
-                  <label className="mc-form-label">Área</label>
+                  <label className="mc-form-label" htmlFor="ge-area">Área</label>
                   <input
+                    id="ge-area"
                     className="mc-form-input"
                     value={form?.area || ""}
                     onChange={(e) => setForm((prev) => ({ ...prev, area: e.target.value }))}
@@ -321,8 +327,9 @@ const GestionEncuestas = ({ encuestas = [] }) => {
                 </div>
 
                 <div className="mc-form-group">
-                  <label className="mc-form-label">Estado</label>
+                  <label className="mc-form-label" htmlFor="ge-estado">Estado</label>
                   <select
+                    id="ge-estado"
                     className="mc-form-select"
                     value={form?.activa === false ? "inactiva" : "activa"}
                     onChange={(e) =>
@@ -339,8 +346,9 @@ const GestionEncuestas = ({ encuestas = [] }) => {
 
                 {form?.tipo === "opcion" && (
                   <div className="mc-form-group">
-                    <label className="mc-form-label">Opciones (una por línea)</label>
+                    <label className="mc-form-label" htmlFor="ge-opciones">Opciones (una por línea)</label>
                     <textarea
+                      id="ge-opciones"
                       className="mc-form-textarea"
                       rows={4}
                       value={form.opcionesTexto || ""}

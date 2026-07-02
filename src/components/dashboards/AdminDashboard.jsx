@@ -9,6 +9,7 @@ import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
 import SectionTitle from "../common/SectionTitle";
 import WeekSelect from "../common/WeekSelect";
+import PageHeader from "../common/PageHeader";
 import { SUCURSALES, semanaActual, normalizeSucursal, sucursalMatches, formatSemanaDisplay } from "../../utils/constants";
 import { getPulseStatus } from "../../utils/pulseScore";
 import PulseScoreBadge from "../common/PulseScoreBadge";
@@ -46,9 +47,9 @@ const semaforoToBadge = (semaforo) => {
 
 const sucursalScoreColor = (val) => {
   if (val == null || !Number.isFinite(Number(val))) return "#e2e8f0";
-  if (val >= 70) return "#2F7D5A";
-  if (val >= 45) return "#9A6B1F";
-  return "#A84444";
+  if (val >= 70) return "var(--mc-stat-green)";
+  if (val >= 45) return "var(--mc-stat-amber)";
+  return "var(--mc-stat-red)";
 };
 
 const buildSucursalDetalle = (nombreSucursal, empleados, encBucket) => {
@@ -248,37 +249,33 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
 
   return (
     <div className="admin-page dashboard-page">
-      <header className="dashboard-executive-header">
-        <div className="dashboard-executive-main">
-          <span className="dashboard-eyebrow">McDental Pulse · Administración</span>
-          <h1 className="dashboard-title">Dashboard Global</h1>
-          <p className="dashboard-subtitle">
-            Visión ejecutiva del bienestar organizacional · {empleados.length} colaboradores activos
-          </p>
-        </div>
-        <div className="dashboard-executive-meta">
-          <WeekSelect
-            value={weekSel}
-            onChange={setWeekSel}
-            options={opcionesSemana.map((w) => ({
-              value: w,
-              label: `${w}${w === labelActual ? " · actual" : ""}${w === `${w.slice(0, 4)}-W00` ? " · anterior" : ""}`,
-            }))}
-          />
-          <span className="dashboard-participation-badge">
-            <Icon name="clipboardCheck" size={14} />
-            {participacion}% participación
-          </span>
-        </div>
-      </header>
+      <PageHeader
+        icon="dashboard"
+        eyebrow="McDental Pulse · Administración"
+        title="Dashboard Global"
+        subtitle={`Visión ejecutiva del bienestar organizacional · ${empleados.length} colaboradores activos`}
+      >
+        <WeekSelect
+          value={weekSel}
+          onChange={setWeekSel}
+          options={opcionesSemana.map((w) => ({
+            value: w,
+            label: `${w}${w === labelActual ? " · actual" : ""}${w === `${w.slice(0, 4)}-W00` ? " · anterior" : ""}`,
+          }))}
+        />
+        <span className="dashboard-participation-badge">
+          <Icon name="clipboardCheck" size={14} />
+          {participacion}% participación
+        </span>
+      </PageHeader>
 
       <div className="dashboard-metrics">
         <div className="dashboard-kpi-grid">
-          <KPI iconName="users" label="Empleados" value={empleados.length} color="#2D6A5F" />
-          <KPI iconName="check" label="Contestaron" value={contestaron} sub={`de ${empleados.length}`} color="#3D8B7E" />
-          <KPI iconName="stable" label="Verde" value={verdes} color="#2F7D5A" />
-          <KPI iconName="warning" label="Amarillo" value={amarillos} color="#9A6B1F" />
-          <KPI iconName="critical" label="Rojo" value={rojos} color="#A84444" />
+          <KPI iconName="users" label="Empleados" value={empleados.length} color="var(--mc-stat-teal)" />
+          <KPI iconName="check" label="Contestaron" value={contestaron} sub={`de ${empleados.length}`} color="var(--mc-stat-teal-2)" />
+          <KPI iconName="stable" label="Verde" value={verdes} color="var(--mc-stat-green)" />
+          <KPI iconName="warning" label="Amarillo" value={amarillos} color="var(--mc-stat-amber)" />
+          <KPI iconName="critical" label="Rojo" value={rojos} color="var(--mc-stat-red)" />
         </div>
 
         <Card className="pulse-hero-card dashboard-pulse-feature">
@@ -546,7 +543,7 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
                   {detalleSucursal.filas.map(({ empleado, score, color, sinDatos, status, contestoSemana }) => (
                     <div key={empleado.id} className="dashboard-sucursal-emp-row">
                       <div className="dashboard-sucursal-emp-info">
-                        <Avatar name={empleado.name} size={40} color={color} />
+                        <Avatar name={empleado.name} size={40} color={color} photoUrl={empleado.avatarUrl} />
                         <div className="dashboard-sucursal-emp-text">
                           <div className="dashboard-sucursal-emp-name">{empleado.name}</div>
                           <div className="dashboard-sucursal-emp-puesto">{empleado.puesto || "Sin puesto"}</div>
@@ -589,10 +586,10 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
       <AnimatePresence>
       {sucRiesgoModal && (
         <motion.div className="mc-modal-overlay" onClick={() => setSucRiesgoModal(null)} {...overlayMotion}>
-          <motion.div className="mc-modal psico-suc-modal" onClick={(e) => e.stopPropagation()} {...modalMotion}>
+          <motion.div className="mc-modal psico-suc-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="admin-suc-riesgo-modal-title" {...modalMotion}>
             <div className="psico-suc-modal-head">
               <div>
-                <h2 className="mc-modal-title">
+                <h2 id="admin-suc-riesgo-modal-title" className="mc-modal-title">
                   <Icon name="building" size={18} /> {sucRiesgoModal.suc}
                 </h2>
                 <p className="admin-page-subtitle psico-suc-modal-sub">
@@ -643,7 +640,7 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
               const ps = e.pulse;
               return (
                 <div key={emp.id} className="dashboard-employee-row dashboard-employee-row--alert">
-                  <Avatar name={emp.name} size={40} color="#A84444" />
+                  <Avatar name={emp.name} size={40} color="#A84444" photoUrl={emp.avatarUrl} />
                   <div className="dashboard-employee-info">
                     <div className="dashboard-employee-name">{emp.name}</div>
                     <div className="dashboard-employee-meta">

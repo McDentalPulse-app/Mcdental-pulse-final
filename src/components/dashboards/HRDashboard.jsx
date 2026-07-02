@@ -2,6 +2,7 @@ import React from "react";
 import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
+import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 
 const HRDashboard = ({ users }) => {
@@ -22,21 +23,17 @@ const HRDashboard = ({ users }) => {
 
   return (
     <div className="admin-page dashboard-page">
-      <header className="dashboard-executive-header">
-        <div className="dashboard-executive-main">
-          <span className="dashboard-eyebrow">McDental Pulse · Recursos Humanos</span>
-          <h1 className="dashboard-title">Dashboard RH</h1>
-          <p className="dashboard-subtitle">
-            Gestión administrativa de vacaciones, descuentos y calendario laboral.
-          </p>
-        </div>
-        <div className="dashboard-executive-meta">
-          <span className="dashboard-week-badge">
-            <Icon name="users" size={14} />
-            {empleados.length} colaboradores
-          </span>
-        </div>
-      </header>
+      <PageHeader
+        icon="users"
+        eyebrow="McDental Pulse · Recursos Humanos"
+        title="Dashboard RH"
+        subtitle="Gestión administrativa de vacaciones, descuentos y calendario laboral."
+      >
+        <span className="dashboard-week-badge">
+          <Icon name="users" size={14} />
+          {empleados.length} colaboradores
+        </span>
+      </PageHeader>
 
       <div className="admin-stat-grid">
         {stats.map((s, i) => (

@@ -1,0 +1,73 @@
+/* ============================================================
+   Modo oscuro — Botones secundarios/outline
+   Los semánticos (--edit/--amber/--danger) reusan los MISMOS tokens de
+   badges-pills.css para que el verde de un botón "Editar" coincida con el
+   verde de un pill "Activo" — no redefinir hex por separado acá.
+   .mc-btn-primary NO se toca: ya usa var(--mc-verde-medio), reactivo.
+   ============================================================ */
+
+[data-theme="dark"] .mc-btn-outline--edit {
+  color: var(--mc-badge-verde-texto);
+  border-color: rgba(134, 239, 172, 0.35);
+  background: var(--mc-badge-verde-bg);
+}
+[data-theme="dark"] .mc-btn-outline--edit:hover {
+  background: #1B6B3B;
+  border-color: var(--mc-aqua);
+}
+
+[data-theme="dark"] .mc-btn-outline--amber {
+  color: var(--mc-badge-amarillo-texto);
+  border-color: rgba(252, 211, 77, 0.35);
+  background: var(--mc-badge-amarillo-bg);
+}
+[data-theme="dark"] .mc-btn-outline--amber:hover {
+  background: #8A4111;
+  border-color: #D97706;
+}
+
+[data-theme="dark"] .mc-btn-outline--danger {
+  color: var(--mc-badge-rojo-texto);
+  border-color: rgba(252, 165, 165, 0.35);
+  background: var(--mc-badge-rojo-bg);
+}
+[data-theme="dark"] .mc-btn-outline--danger:hover {
+  background: #932424;
+  border-color: #A84444;
+}
+
+/* Neutrales: no semánticos, tratamiento propio (gris-superficie, no tokens de badge). */
+[data-theme="dark"] .mc-btn-secondary {
+  background: var(--mc-superficie-input);
+  color: var(--mc-texto-secundario);
+  border-color: var(--mc-gris-suave);
+}
+[data-theme="dark"] .mc-btn-secondary:hover {
+  background: var(--mc-superficie-input-focus);
+}
+
+[data-theme="dark"] .mc-btn-outline {
+  background: var(--mc-superficie-card);
+  color: var(--mc-aqua);
+  border-color: var(--mc-gris-suave);
+}
+
+[data-theme="dark"] .expediente-foto-upload {
+  color: var(--mc-badge-verde-texto);
+  border-color: rgba(134, 239, 172, 0.35);
+  background: var(--mc-badge-verde-bg);
+}
+[data-theme="dark"] .expediente-foto-upload:hover {
+  background: #1B6B3B;
+  border-color: var(--mc-aqua);
+}
+
+[data-theme="dark"] .expediente-foto-quitar {
+  color: var(--mc-badge-rojo-texto);
+  border-color: rgba(252, 165, 165, 0.35);
+  background: var(--mc-badge-rojo-bg);
+}
+[data-theme="dark"] .expediente-foto-quitar:hover:not(:disabled) {
+  background: #932424;
+  border-color: #A84444;
+}

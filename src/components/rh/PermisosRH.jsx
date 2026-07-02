@@ -2,6 +2,7 @@ import React from "react";
 import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
+import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { normalizeSucursal } from "../../utils/constants";
 import { useNotification } from "../../contexts/NotificationContext";
@@ -26,12 +27,11 @@ const PermisosRH = ({ permisos, onUpdateEstado }) => {
 
   return (
     <div className="admin-page">
-      <div className="admin-page-header">
-        <h1 className="admin-page-title">Permisos</h1>
-        <p className="admin-page-subtitle">
-          Registro, autorización y seguimiento de permisos administrativos del personal.
-        </p>
-      </div>
+      <PageHeader
+        icon="clipboardCheck"
+        title="Permisos"
+        subtitle="Registro, autorización y seguimiento de permisos administrativos del personal."
+      />
 
       <div className="admin-stat-grid">
         <StatCard iconName="clock" value={pendientes} label="Pendientes" valueClass="admin-stat-value--amber" />

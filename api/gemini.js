@@ -1,7 +1,14 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { createClient } from "@supabase/supabase-js";
 
 // Proxy serverless: la key vive en el servidor (GEMINI_API_KEY), nunca en el bundle.
 const API_KEY = process.env.GEMINI_API_KEY;
+
+// Cliente Supabase con anon key: solo se usa para validar el JWT del caller
+// (auth.getUser verifica el token contra el servidor de auth). No bypasea RLS.
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
+
 const DEFAULT_SYSTEM =
   "Eres el motor de IA de McDental Pulse, un sistema de bienestar organizacional para una clínica dental. " +
   "Respondes siempre en español, de forma concisa, profesional y empática. " +
@@ -15,8 +22,27 @@ export default async function handler(req, res) {
   if (!API_KEY) {
     return res.status(500).json({ error: "GEMINI_API_KEY no configurada en el servidor." });
   }
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    return res.status(500).json({ error: "Supabase no configurado en el servidor." });
+  }
 
-  const { prompt, system } = req.body || {};
+  // Autenticación: exige un JWT de Supabase válido. Sin esto, el endpoint quedaba
+  // público (cualquiera con la URL podía quemar la cuota de Gemini y override del prompt).
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+  if (!token) {
+    return res.status(401).json({ error: "No autenticado." });
+  }
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) {
+    return res.status(401).json({ error: "Sesión inválida." });
+  }
+
+  // Se ignora cualquier 'system' del cliente: el system prompt lo fija el servidor
+  // para que no se pueda sobreescribir el guardarraíl "nunca diagnostiques".
+  const { prompt } = req.body || {};
   if (typeof prompt !== "string" || !prompt.trim()) {
     return res.status(400).json({ error: "Falta 'prompt'." });
   }
@@ -25,7 +51,7 @@ export default async function handler(req, res) {
     const genAI = new GoogleGenerativeAI(API_KEY);
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
-      systemInstruction: system || DEFAULT_SYSTEM,
+      systemInstruction: DEFAULT_SYSTEM,
     });
     const result = await model.generateContent(prompt);
     return res.status(200).json({ text: result.response.text() });

@@ -4,10 +4,17 @@ import { BrowserRouter } from 'react-router-dom'
 import { registerSW } from 'virtual:pwa-register'
 import './index.css'
 import './App.css'
+import './styles/dark/surfaces.css'
+import './styles/dark/badges-pills.css'
+import './styles/dark/buttons.css'
+import './styles/dark/tables-forms.css'
+import './styles/dark/charts.css'
+import './styles/dark/screens.css'
 import App from './App.jsx'
 import { AuthProvider } from './contexts/AuthContext.jsx'
 import { GlobalProvider } from './contexts/GlobalContext.jsx'
 import { NotificationProvider } from './contexts/NotificationContext.jsx'
+import { ThemeProvider } from './contexts/ThemeContext.jsx'
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -63,13 +70,15 @@ if ('serviceWorker' in navigator) {
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <GlobalProvider>
-          <NotificationProvider>
-            <ErrorBoundary><App /></ErrorBoundary>
-          </NotificationProvider>
-        </GlobalProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <GlobalProvider>
+            <NotificationProvider>
+              <ErrorBoundary><App /></ErrorBoundary>
+            </NotificationProvider>
+          </GlobalProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   </StrictMode>,
 )

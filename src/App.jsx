@@ -4,9 +4,7 @@ import { refreshSemana } from "./utils/constants";
 import { useAuth } from "./contexts/AuthContext";
 import { useGlobal } from "./contexts/GlobalContext";
 import { useAppActions } from "./hooks/useAppActions";
-import Login from "./components/auth/Login";
 import LandingPage from "./components/landing/LandingPage";
-import CambiarPassword from './components/auth/CambiarPassword';
 import Loader from './components/ui/Loader';
 
 const AdminLayout = lazy(() => import("./components/layout/AdminLayout"));
@@ -15,14 +13,13 @@ const HRLayout = lazy(() => import("./components/layout/HRLayout"));
 const EmpleadoLayout = lazy(() => import("./components/layout/EmpleadoLayout"));
 
 export default function App() {
-  const { 
-    user, 
-    requiereCambioPassword, 
-    cambiarPasswordActual, 
-    restablecerPasswordUsuario, 
-    inicializarUsuariosPassword 
+  const {
+    user,
+    checkingSession,
+    requiereCambioPassword,
+    restablecerPasswordUsuario,
   } = useAuth();
-  
+
   const globals = useGlobal();
   const actions = useAppActions();
   const location = useLocation();
@@ -36,22 +33,17 @@ export default function App() {
     return () => clearInterval(id);
   }, []);
 
-  if (!user) {
-    return (
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="*" element={<LandingPage />} />
-      </Routes>
-    );
+  // Mientras se restaura la sesión (al abrir/recargar la app) "user" empieza en
+  // null por un instante; sin este guard se ve un flash de la landing/login
+  // antes de saltar al dashboard aunque ya haya sesión activa.
+  if (checkingSession) {
+    return <Loader />;
   }
 
-  if (requiereCambioPassword) {
-    return (
-      <CambiarPassword
-        user={user}
-        onCambiarPassword={cambiarPasswordActual}
-      />
-    );
+  // Sin sesión, o con sesión pero pendiente de cambiar contraseña: la landing
+  // maneja el panel de cambio de contraseña internamente.
+  if (!user || requiereCambioPassword) {
+    return <LandingPage />;
   }
 
   if (!location.pathname.startsWith(`/${user.role}`)) {
@@ -61,7 +53,6 @@ export default function App() {
   const combinedActions = {
     ...actions,
     restablecerPasswordUsuario,
-    inicializarUsuariosPassword
   };
 
   return (
@@ -79,7 +70,7 @@ export default function App() {
         {user.role === 'empleado' && (
           <Route path="/empleado/*" element={<EmpleadoLayout user={user} globals={globals} actions={combinedActions} />} />
         )}
-        
+
         <Route path="*" element={<div style={{ color:"#9ca3af",padding:40,textAlign:"center" }}>Vista en construcción / No encontrada</div>} />
       </Routes>
     </Suspense>

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
+import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { normalizeSucursal } from "../../utils/constants";
 import { useNotification } from "../../contexts/NotificationContext";
@@ -24,13 +25,11 @@ const DescuentosRH = ({ descuentos, empleados, user, onUpdateEstado, onAddDescue
 
   return (
     <div className="admin-page">
-      <div className="admin-page-header admin-page-header--row">
-        <div>
-          <h1 className="admin-page-title">Descuentos</h1>
-          <p className="admin-page-subtitle">
-            Registro y seguimiento de descuentos administrativos del personal.
-          </p>
-        </div>
+      <PageHeader
+        icon="dollar"
+        title="Descuentos"
+        subtitle="Registro y seguimiento de descuentos administrativos del personal."
+      >
         <button
           type="button"
           className="mc-btn-primary mc-btn-with-icon"
@@ -39,7 +38,7 @@ const DescuentosRH = ({ descuentos, empleados, user, onUpdateEstado, onAddDescue
           <Icon name={mostrarFormulario ? "xCircle" : "plus"} size={16} />
           {mostrarFormulario ? "Cancelar" : "Agregar descuento"}
         </button>
-      </div>
+      </PageHeader>
 
       {mostrarFormulario && (
         <Card className="rh-form-panel">
@@ -80,8 +79,8 @@ const DescuentosRH = ({ descuentos, empleados, user, onUpdateEstado, onAddDescue
             }}
           >
             <div className="mc-form-group">
-              <label className="mc-form-label">Empleado</label>
-              <select className="mc-form-select" name="empleadoId" required>
+              <label className="mc-form-label" htmlFor="dr-empleado">Empleado</label>
+              <select id="dr-empleado" className="mc-form-select" name="empleadoId" required>
                 <option value="">Selecciona empleado</option>
                 {empleados
                   .filter(emp => emp.role === "empleado")
@@ -95,29 +94,29 @@ const DescuentosRH = ({ descuentos, empleados, user, onUpdateEstado, onAddDescue
 
             <div className="mc-form-row-2">
               <div className="mc-form-group">
-                <label className="mc-form-label">Tipo de descuento</label>
-                <input className="mc-form-input" name="tipo" placeholder="Ej. Préstamo, Faltante..." required />
+                <label className="mc-form-label" htmlFor="dr-tipo">Tipo de descuento</label>
+                <input id="dr-tipo" className="mc-form-input" name="tipo" placeholder="Ej. Préstamo, Faltante..." required />
               </div>
               <div className="mc-form-group">
-                <label className="mc-form-label">Motivo</label>
-                <input className="mc-form-input" name="motivo" placeholder="Motivo del descuento" required />
+                <label className="mc-form-label" htmlFor="dr-motivo">Motivo</label>
+                <input id="dr-motivo" className="mc-form-input" name="motivo" placeholder="Motivo del descuento" required />
               </div>
             </div>
 
             <div className="mc-form-row-2">
               <div className="mc-form-group">
-                <label className="mc-form-label">Fecha</label>
-                <input className="mc-form-input" name="fecha" type="date" required />
+                <label className="mc-form-label" htmlFor="dr-fecha">Fecha</label>
+                <input id="dr-fecha" className="mc-form-input" name="fecha" type="date" required />
               </div>
               <div className="mc-form-group">
-                <label className="mc-form-label">Monto</label>
-                <input className="mc-form-input" name="monto" type="number" placeholder="0.00" required />
+                <label className="mc-form-label" htmlFor="dr-monto">Monto</label>
+                <input id="dr-monto" className="mc-form-input" name="monto" type="number" placeholder="0.00" required />
               </div>
             </div>
 
             <div className="mc-form-group">
-              <label className="mc-form-label">Observaciones</label>
-              <input className="mc-form-input" name="observaciones" placeholder="Observaciones opcionales" />
+              <label className="mc-form-label" htmlFor="dr-observaciones">Observaciones</label>
+              <input id="dr-observaciones" className="mc-form-input" name="observaciones" placeholder="Observaciones opcionales" />
             </div>
 
             <div className="rh-form-actions">

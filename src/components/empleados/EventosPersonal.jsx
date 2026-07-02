@@ -2,6 +2,7 @@ import React from "react";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
 import StatCard from "../common/StatCard";
+import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { normalizeSucursal } from "../../utils/constants";
 import {
@@ -69,12 +70,11 @@ const EventosPersonal = ({ users }) => {
 
   return (
     <div className="admin-page eventos-personal-page">
-      <div className="admin-page-header">
-        <h1 className="admin-page-title">Cumpleaños y Aniversarios</h1>
-        <p className="admin-page-subtitle">
-          Recordatorios automáticos de cumpleaños y aniversarios laborales del equipo.
-        </p>
-      </div>
+      <PageHeader
+        icon="cake"
+        title="Cumpleaños y Aniversarios"
+        subtitle="Recordatorios automáticos de cumpleaños y aniversarios laborales del equipo."
+      />
 
       <div className="admin-stat-grid">
         <StatCard iconName="cake" value={hoy} label="Eventos hoy" valueClass="admin-stat-value--red" />

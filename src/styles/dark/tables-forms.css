@@ -1,0 +1,74 @@
+/* ============================================================
+   Modo oscuro — Tablas y formularios
+   ============================================================ */
+
+/* ── Tablas ── */
+[data-theme="dark"] .mc-table thead th {
+  background: var(--mc-superficie-th);
+  color: var(--mc-texto-secundario);
+}
+[data-theme="dark"] .mc-table tbody td {
+  border-bottom: 1px solid var(--mc-gris-suave);
+  color: var(--mc-texto-secundario);
+}
+[data-theme="dark"] .mc-table tbody tr:hover {
+  background: rgba(20, 200, 182, 0.10);
+}
+[data-theme="dark"] .mc-table-name {
+  color: var(--mc-texto-titulo);
+}
+[data-theme="dark"] .mc-table-muted {
+  color: var(--mc-texto-secundario);
+}
+[data-theme="dark"] .mc-table-empty {
+  color: var(--mc-texto-secundario);
+}
+
+/* ── Formularios (inputs/selects/textareas de modales y páginas) ── */
+[data-theme="dark"] .mc-form-label {
+  color: var(--mc-texto-titulo);
+}
+[data-theme="dark"] .mc-form-input,
+[data-theme="dark"] .mc-form-select,
+[data-theme="dark"] .mc-form-textarea,
+[data-theme="dark"] .list-filter-input,
+[data-theme="dark"] .list-filter-select,
+[data-theme="dark"] .table-search {
+  background: var(--mc-superficie-input);
+  color: var(--mc-texto-titulo);
+  border-color: var(--mc-gris-suave);
+}
+[data-theme="dark"] .mc-form-input::placeholder,
+[data-theme="dark"] .mc-form-textarea::placeholder,
+[data-theme="dark"] .list-filter-input::placeholder,
+[data-theme="dark"] .table-search::placeholder {
+  color: var(--mc-texto-secundario);
+}
+[data-theme="dark"] .mc-form-input:focus,
+[data-theme="dark"] .mc-form-select:focus,
+[data-theme="dark"] .mc-form-textarea:focus,
+[data-theme="dark"] .list-filter-input:focus,
+[data-theme="dark"] .list-filter-select:focus,
+[data-theme="dark"] .table-search:focus {
+  background: var(--mc-superficie-input-focus);
+}
+[data-theme="dark"] .list-filter-count {
+  color: var(--mc-texto-secundario);
+}
+
+[data-theme="dark"] .mc-file-input-wrap,
+[data-theme="dark"] .mc-file-input-text {
+  background: var(--mc-superficie-input);
+  color: var(--mc-texto-secundario);
+}
+[data-theme="dark"] .mc-file-input-wrap:hover {
+  background: var(--mc-superficie-input-focus);
+}
+
+/* select options: en la mayoría de navegadores heredan color/background del
+   <select> salvo Firefox/algunos casos, se fuerza explícito por robustez. */
+[data-theme="dark"] .mc-form-select option,
+[data-theme="dark"] .list-filter-select option {
+  background: var(--mc-superficie-input);
+  color: var(--mc-texto-titulo);
+}

@@ -32,3 +32,9 @@ dist-ssr
 .claude/
 .agents/
 skills-lock.json
+
+# Migración Firebase -> Supabase: reporte con datos reales, no va al repo
+scripts/migration-report.json
+
+# Supabase CLI: cache local del link al proyecto (puede incluir connection strings)
+supabase/.temp/

@@ -2,6 +2,7 @@ import React from "react";
 import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
+import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { formatSemanaDisplay, normalizeWeek } from "../../utils/constants";
 import { getPulseStatus } from "../../utils/pulseScore";
@@ -24,12 +25,11 @@ const HistorialEmpleado = ({ user, encuestas }) => {
 
   return (
     <div className="admin-page empleado-page">
-      <div className="admin-page-header">
-        <h1 className="admin-page-title">Mi historial</h1>
-        <p className="admin-page-subtitle">
-          Consulta privada de tus mediciones semanales de bienestar.
-        </p>
-      </div>
+      <PageHeader
+        icon="history"
+        title="Mi historial"
+        subtitle="Consulta privada de tus mediciones semanales de bienestar."
+      />
 
       <div className="admin-stat-grid">
         <StatCard iconName="chart" value={historial.length} label="Encuestas registradas" valueClass="admin-stat-value--green" />

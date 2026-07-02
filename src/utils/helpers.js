@@ -136,7 +136,6 @@ export const normalizeFechaCumpleanosInput = (value) => {
 };
 
 const MAX_SHORT_EMPLEADO_ID = 9999;
-const DEFAULT_NEXT_EMPLEADO_ID = 100;
 
 export const isShortEmpleadoId = (value) => {
   const num = Number(value);
@@ -152,18 +151,11 @@ export const getEmpleadoNumericId = (user) => {
   return null;
 };
 
-/** Siguiente ID corto consecutivo para nuevos empleados. */
-export const getNextEmpleadoId = (usuarios = []) => {
-  const shortIds = usuarios.map(getEmpleadoNumericId).filter((id) => id !== null);
-  if (shortIds.length === 0) return DEFAULT_NEXT_EMPLEADO_ID;
-  return Math.max(...shortIds) + 1;
-};
-
 export const formatEmpleadoIdForDisplay = (user) => {
   const shortId = getEmpleadoNumericId(user);
   if (shortId !== null) return String(shortId);
   if (user?.id != null && user.id !== "") {
-    return `${user.id} (ID largo, revisar en Firebase)`;
+    return String(user.id);
   }
   return "Sin ID";
 };

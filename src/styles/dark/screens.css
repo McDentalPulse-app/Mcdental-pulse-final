@@ -1,0 +1,237 @@
+/* ============================================================
+   Modo oscuro — Overrides específicos por pantalla
+   Encontrados con auditoría automática de contraste (WCAG) sobre las 4
+   rutas por rol × todas las pantallas. Selectores puntuales que no viven
+   en los componentes base (Card/tabla/form/badge) ya cubiertos en
+   surfaces.css / tables-forms.css / badges-pills.css / buttons.css.
+   ============================================================ */
+
+/* ── Tarjeta de empleado individual (lista de Empleados) ── */
+[data-theme="dark"] .emp-card-name {
+  color: var(--mc-texto-titulo);
+}
+[data-theme="dark"] .emp-card-role,
+[data-theme="dark"] .emp-card-footer {
+  color: var(--mc-texto-secundario);
+}
+
+/* ── Expedientes: fila "Nombre: X" / "Puesto: X" etc. ── */
+[data-theme="dark"] .expediente-data-row {
+  color: var(--mc-texto-titulo);
+}
+
+/* ── Dashboard: contador junto a "Estable/Atención/..." en Distribución del equipo ── */
+[data-theme="dark"] .psico-dist-count {
+  color: var(--mc-texto-titulo);
+}
+/* .psico-part-pct (5% del anillo) NO se toca: su fondo real es un círculo
+   blanco fijo (::before, pseudo-elemento no detectable por auditoría DOM),
+   ya tiene buen contraste tal cual. */
+
+/* ── RH: nombre de sucursal en Reportes RH, texto de pendientes en Dashboard RH ── */
+[data-theme="dark"] .rh-sucursal-name {
+  color: var(--mc-texto-titulo);
+}
+[data-theme="dark"] .rh-pending-item {
+  color: var(--mc-texto-secundario);
+}
+
+/* ── Empleado: título de encuesta rápida, texto de pregunta, título vacío ── */
+[data-theme="dark"] .empleado-quick-title,
+[data-theme="dark"] .empleado-question-text,
+[data-theme="dark"] .empleado-empty-title {
+  color: var(--mc-texto-titulo);
+}
+
+/* ── AI Engine: chip de empleado (avatar + nombre + Pulse Score). El fondo
+   fijo blanco del chip es lo único que hace falta pisar — el tinte de color
+   semántico del Pulse Score dentro (JS inline, ${color}14) ya funciona bien
+   sobre cualquier fondo. .ai-engine-tab--active y .ai-gen-btn NO se tocan:
+   su fondo real es un pill/gradiente vivo (var(--grad-accent)) pintado por
+   un hijo posicionado encima, no por su propio background. ── */
+[data-theme="dark"] .ai-engine-pulse-chip {
+  background: var(--mc-superficie-card);
+  border-color: var(--mc-gris-suave);
+}
+[data-theme="dark"] .ai-engine-pulse-chip-name {
+  color: var(--mc-texto-titulo);
+}
+[data-theme="dark"] .ai-engine-tab {
+  background: var(--mc-superficie-input);
+  color: var(--mc-texto-secundario);
+  border-color: var(--mc-gris-suave);
+}
+
+/* ── Mensajes: lista de conversaciones, header del chat, burbujas, input ── */
+[data-theme="dark"] .mensajes-sidebar-head-main {
+  color: var(--mc-texto-titulo);
+}
+[data-theme="dark"] .mensajes-conv-item {
+  background: var(--mc-superficie-card);
+  border-bottom-color: var(--mc-gris-suave);
+}
+[data-theme="dark"] .mensajes-conv-item:hover {
+  background: var(--mc-superficie-input-focus);
+}
+[data-theme="dark"] .mensajes-conv-item--active {
+  background: rgba(20, 200, 182, 0.14);
+}
+[data-theme="dark"] .mensajes-chat-name {
+  color: var(--mc-texto-titulo);
+}
+[data-theme="dark"] .mensajes-chat-meta,
+[data-theme="dark"] .mensajes-private-pill {
+  color: var(--mc-texto-secundario);
+}
+[data-theme="dark"] .mensajes-bubble {
+  background: var(--mc-superficie-card);
+  color: var(--mc-texto-titulo);
+  border-color: var(--mc-gris-suave);
+}
+[data-theme="dark"] .mensajes-composer-input {
+  background: var(--mc-superficie-input);
+  color: var(--mc-texto-titulo);
+  border-color: var(--mc-gris-suave);
+}
+
+/* ── Reportes: título hero, tarjetas de exportación ── */
+[data-theme="dark"] .reportes-hero-heading,
+[data-theme="dark"] .reportes-export-btn-title {
+  color: var(--mc-texto-titulo);
+}
+[data-theme="dark"] .reportes-export-btn-desc {
+  color: var(--mc-texto-secundario);
+}
+[data-theme="dark"] .reportes-export-btn {
+  background: var(--mc-superficie-card);
+  border-color: var(--mc-gris-suave);
+}
+
+/* ── Config: tarjetas de umbral de semáforo, items de rol/privacidad ── */
+[data-theme="dark"] .config-threshold-card {
+  background: var(--mc-superficie-card);
+  border-color: var(--mc-gris-suave);
+}
+[data-theme="dark"] .config-role-item,
+[data-theme="dark"] .config-privacy-item {
+  background: var(--mc-superficie-input);
+  border-color: var(--mc-gris-suave);
+}
+[data-theme="dark"] .config-role-name {
+  color: var(--mc-texto-titulo);
+}
+[data-theme="dark"] .config-role-desc,
+[data-theme="dark"] .config-privacy-item {
+  color: var(--mc-texto-secundario);
+}
+/* .config-threshold-label--verde/amarillo/rojo: colores saturados (#16a34a
+   etc.) ya tienen buen contraste sobre la nueva superficie oscura, no se
+   tocan — solo la tarjeta contenedora necesitaba oscurecerse. Pero el
+   override genérico de .mc-form-label (tables-forms.css) los pisaba por
+   tener 2 clases de especificidad contra la 1 clase de estos modificadores
+   — se restauran acá con el selector compuesto real. */
+[data-theme="dark"] label.mc-form-label.config-threshold-label--verde { color: #4ADE80; }
+[data-theme="dark"] label.mc-form-label.config-threshold-label--amarillo { color: #FBBF24; }
+[data-theme="dark"] label.mc-form-label.config-threshold-label--rojo { color: #F87171; }
+
+/* ── Encuestas (Gestión de Encuestas): lista de preguntas ── */
+[data-theme="dark"] .encuesta-list {
+  background: var(--mc-superficie-input);
+  border-color: var(--mc-gris-suave);
+}
+[data-theme="dark"] .encuesta-item {
+  border-bottom-color: var(--mc-gris-suave);
+}
+[data-theme="dark"] .encuesta-tipo {
+  background: rgba(20, 200, 182, 0.14);
+}
+
+/* ── Listas genéricas (Cumpleaños y Aniversarios, y cualquier .admin-list-item) ── */
+[data-theme="dark"] .admin-list-item {
+  background: var(--mc-superficie-input);
+  border-color: var(--mc-gris-suave);
+}
+[data-theme="dark"] .admin-list-item-title {
+  color: var(--mc-texto-titulo);
+}
+[data-theme="dark"] .admin-list-item-meta {
+  color: var(--mc-texto-secundario);
+}
+[data-theme="dark"] .admin-list-item-body {
+  color: var(--mc-texto-secundario);
+}
+
+/* ── Psicóloga: tarjetas de prioridad y de empleado en Seguimiento ── */
+[data-theme="dark"] .psico-priority-card,
+[data-theme="dark"] .psico-priority-card--verde,
+[data-theme="dark"] .psico-priority-card--amarillo,
+[data-theme="dark"] .psico-priority-card--rojo,
+[data-theme="dark"] .psico-emp-card {
+  background: var(--mc-superficie-card);
+}
+
+/* ── Encuesta de empleado: barra de progreso, botones de escala/opción ── */
+[data-theme="dark"] .empleado-progress-track {
+  background: rgba(255, 255, 255, 0.10);
+}
+[data-theme="dark"] .empleado-scale-btn,
+[data-theme="dark"] .empleado-option-btn {
+  background: var(--mc-superficie-input);
+  color: var(--mc-texto-titulo);
+  border-color: var(--mc-gris-suave);
+}
+[data-theme="dark"] .empleado-scale-btn--active,
+[data-theme="dark"] .empleado-option-btn--active {
+  background: rgba(20, 200, 182, 0.18);
+}
+
+/* ── Dashboard: filas de "Score por Sucursal" (fondo blanco fijo en reposo;
+   el hover ya está cubierto por .mc-row-hover genérico) ── */
+[data-theme="dark"] .dashboard-sucursal-rank-row {
+  background: var(--mc-superficie-card);
+}
+[data-theme="dark"] .dashboard-sucursal-rank-row:hover {
+  background: rgba(20, 200, 182, 0.10);
+}
+[data-theme="dark"] .dashboard-sucursal-rank-name {
+  color: var(--mc-texto-titulo);
+}
+
+/* ── Encuestas: texto de cada pregunta en la lista ── */
+[data-theme="dark"] .encuesta-text {
+  color: var(--mc-texto-titulo);
+}
+
+/* ── Psicóloga (Seguimiento): nombre de empleado, estado ok/pendiente ── */
+[data-theme="dark"] .psico-emp-name {
+  color: var(--mc-texto-titulo);
+}
+[data-theme="dark"] .psico-emp-status--ok { color: #4ADE80; }
+[data-theme="dark"] .psico-emp-status--pending { color: #FBBF24; }
+
+/* ── RH: párrafos de "Lectura administrativa" en Reportes RH (sin className,
+   texto suelto dentro de .rh-report-insight) ── */
+[data-theme="dark"] .rh-report-insight {
+  color: var(--mc-texto-secundario);
+}
+
+/* ── Encuesta de empleado: header "Progreso" / "X de Y preguntas" ── */
+[data-theme="dark"] .empleado-progress-head {
+  color: var(--mc-texto-titulo);
+}
+
+/* ── Mensajes: nombre en la lista de conversaciones ── */
+[data-theme="dark"] .mensajes-conv-name {
+  color: var(--mc-texto-titulo);
+}
+
+/* ── Dashboard: "X contestaron" (negrita), score junto a la barra de sucursal ── */
+[data-theme="dark"] .psico-part-row strong {
+  color: var(--mc-texto-titulo);
+}
+[data-theme="dark"] .dashboard-sucursal-rank-score {
+  color: var(--mc-texto-titulo);
+}
+[data-theme="dark"] .psico-priority-name {
+  color: var(--mc-texto-titulo);
+}

@@ -3,6 +3,7 @@ import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import Badge from "../common/Badge";
 import KPI from "../common/KPI";
+import PageHeader from "../common/PageHeader";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import { SUCURSALES, semanaActual, normalizeSucursal, sucursalMatches, formatSemanaDisplay, isSemanaActual } from "../../utils/constants";
@@ -70,7 +71,7 @@ const EmpleadosList = ({
     const vacacionesEmp = vacaciones.filter(v => v.empleadoId === selected.id);
     const descuentosEmp = descuentos.filter(d => d.empleadoId === selected.id);
     const reconocimientosEmp = reconocimientos.filter(r =>
-  Number(r.empleadoId) === Number(selected.id) ||
+  r.empleadoId === selected.id ||
   r.empleado === selected.name ||
   r.nombre === selected.name
 );
@@ -94,14 +95,14 @@ const EmpleadosList = ({
         <div className="detail-grid-top">
           <Card className="detail-card-main">
             <div className="detail-emp-header">
-              <Avatar name={selected.name} size={56} color={semaforoColor[sem]} />
+              <Avatar name={selected.name} size={56} color={semaforoColor[sem]} photoUrl={selected.avatarUrl} />
 
               <div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: "#004D40" }}>
+                <div style={{ fontSize: 22, fontWeight: 900, color: "var(--mc-texto-titulo)" }}>
                   {selected.name}
                 </div>
 
-                <div style={{ fontSize: 13, color: "#6b7280" }}>
+                <div style={{ fontSize: 13, color: "var(--mc-texto-secundario)" }}>
                   {selected.puesto} · {normalizeSucursal(selected.sucursal)}
                 </div>
 
@@ -125,12 +126,12 @@ const EmpleadosList = ({
   </button>
 )}
             <div className="detail-info-grid">
-              <div><span style={{ color: "#9ca3af" }}>Nombre:</span> {selected.name}</div>
-              <div><span style={{ color: "#9ca3af" }}>Puesto:</span> {selected.puesto}</div>
-              <div><span style={{ color: "#9ca3af" }}>Sucursal:</span> {normalizeSucursal(selected.sucursal)}</div>
-              <div><span style={{ color: "#9ca3af" }}>Antigüedad:</span> {formatAntiguedadEmpleado(selected)}</div>
-              <div><span style={{ color: "#9ca3af" }}>ID empleado:</span> {formatEmpleadoIdForDisplay(selected)}</div>
-              <div><span style={{ color: "#9ca3af" }}>Estado:</span> Activo</div>
+              <div><span style={{ color: "var(--mc-texto-secundario)" }}>Nombre:</span> {selected.name}</div>
+              <div><span style={{ color: "var(--mc-texto-secundario)" }}>Puesto:</span> {selected.puesto}</div>
+              <div><span style={{ color: "var(--mc-texto-secundario)" }}>Sucursal:</span> {normalizeSucursal(selected.sucursal)}</div>
+              <div><span style={{ color: "var(--mc-texto-secundario)" }}>Antigüedad:</span> {formatAntiguedadEmpleado(selected)}</div>
+              <div><span style={{ color: "var(--mc-texto-secundario)" }}>ID empleado:</span> {formatEmpleadoIdForDisplay(selected)}</div>
+              <div><span style={{ color: "var(--mc-texto-secundario)" }}>Estado:</span> Activo</div>
             </div>
 
             {role !== "rh" && (
@@ -158,14 +159,14 @@ const EmpleadosList = ({
                   </div>
                 </div>
 
-                <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 12 }}>
+                <div style={{ fontWeight: 800, fontSize: 14, color: "var(--mc-texto-titulo)", marginBottom: 12 }}>
                   Evolución Pulse
                 </div>
 
                 {trend.length > 1 ? (
                   <LineChart data={trend} color={ps.color} />
                 ) : (
-                  <div style={{ color: "#9ca3af", fontSize: 13 }}>
+                  <div style={{ color: "var(--mc-texto-secundario)", fontSize: 13 }}>
                     Sin suficientes datos para graficar.
                   </div>
                 )}
@@ -175,7 +176,7 @@ const EmpleadosList = ({
 
           {role !== "rh" && (
             <Card className="detail-card-side">
-              <div style={{ fontWeight: 800, fontSize: 14, color: "#004D40", marginBottom: 14 }}>
+              <div style={{ fontWeight: 800, fontSize: 14, color: "var(--mc-texto-titulo)", marginBottom: 14 }}>
                 Riesgos IA
               </div>
 
@@ -188,19 +189,19 @@ const EmpleadosList = ({
                   <RiskBar
                     label="Riesgo Renuncia"
                     value={riesgos.renuncia}
-                    color={riesgos.renuncia > 60 ? "#ef4444" : riesgos.renuncia > 30 ? "#f97316" : "#22c55e"}
+                    color={riesgos.renuncia > 60 ? "var(--mc-stat-red)" : riesgos.renuncia > 30 ? "var(--mc-stat-amber)" : "var(--mc-stat-green)"}
                   />
 
                   <RiskBar
                     label="Riesgo Burnout"
                     value={riesgos.burnout}
-                    color={riesgos.burnout > 60 ? "#ef4444" : riesgos.burnout > 30 ? "#f97316" : "#22c55e"}
+                    color={riesgos.burnout > 60 ? "var(--mc-stat-red)" : riesgos.burnout > 30 ? "var(--mc-stat-amber)" : "var(--mc-stat-green)"}
                   />
 
                   <RiskBar
                     label="Riesgo Emocional"
                     value={riesgos.emocional}
-                    color={riesgos.emocional > 60 ? "#ef4444" : riesgos.emocional > 30 ? "#f97316" : "#22c55e"}
+                    color={riesgos.emocional > 60 ? "var(--mc-stat-red)" : riesgos.emocional > 30 ? "var(--mc-stat-amber)" : "var(--mc-stat-green)"}
                   />
                 </>
               )}
@@ -214,7 +215,7 @@ const EmpleadosList = ({
               <div className="detail-section-title">Historial de encuestas</div>
               <div className="detail-list-scroll">
               {encEmp.length === 0 ? (
-                <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin encuestas registradas</div>
+                <div style={{ color: "var(--mc-texto-secundario)", fontSize: 13 }}>Sin encuestas registradas</div>
               ) : (
                 encEmp.map(e => (
                   <div key={e.id} className="detail-list-item">
@@ -233,12 +234,12 @@ const EmpleadosList = ({
               <div className="detail-section-title">Notas psicológicas</div>
               <div className="detail-list-scroll">
               {notasEmp.length === 0 ? (
-                <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin notas registradas</div>
+                <div style={{ color: "var(--mc-texto-secundario)", fontSize: 13 }}>Sin notas registradas</div>
               ) : (
                 notasEmp.map(n => (
                   <div key={n.id} className="detail-list-item-block">
-                    <div style={{ color: "#374151" }}>{n.texto}</div>
-                    <div style={{ color: "#9ca3af", fontSize: 11 }}>{n.fecha}</div>
+                    <div style={{ color: "var(--mc-texto-titulo)" }}>{n.texto}</div>
+                    <div style={{ color: "var(--mc-texto-secundario)", fontSize: 11 }}>{n.fecha}</div>
                   </div>
                 ))
               )}
@@ -252,19 +253,19 @@ const EmpleadosList = ({
             <div className="detail-section-title">Vacaciones</div>
             <div className="detail-list-scroll">
             {vacacionesEmp.length === 0 ? (
-              <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin vacaciones registradas</div>
+              <div style={{ color: "var(--mc-texto-secundario)", fontSize: 13 }}>Sin vacaciones registradas</div>
             ) : (
               vacacionesEmp.map(v => (
                 <div key={v.id} className="detail-list-item-block">
                   <strong>{v.estado}</strong> · {v.fechaInicio || v.inicio || v.desde} al {v.fechaFin || v.fin || v.hasta}
                   <br />
-                  <span style={{ color: "#64748b" }}>
+                  <span style={{ color: "var(--mc-texto-secundario)" }}>
                     {v.dias} días · {v.motivo}
                   </span>
                   {v.comentarioRH && (
                     <>
                       <br />
-                      <span style={{ color: "#64748b" }}>
+                      <span style={{ color: "var(--mc-texto-secundario)" }}>
                         Comentario RH: {v.comentarioRH}
                       </span>
                     </>
@@ -280,13 +281,13 @@ const EmpleadosList = ({
               <div className="detail-section-title">Descuentos</div>
               <div className="detail-list-scroll">
               {descuentosEmp.length === 0 ? (
-                <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin descuentos</div>
+                <div style={{ color: "var(--mc-texto-secundario)", fontSize: 13 }}>Sin descuentos</div>
               ) : (
                 descuentosEmp.map(d => (
                   <div key={d.id} className="detail-list-item-block">
                     <strong>{d.estado}</strong> · {d.concepto || d.motivo}
                     <br />
-                    <span style={{ color: "#64748b" }}>
+                    <span style={{ color: "var(--mc-texto-secundario)" }}>
                       {d.monto ? `$${d.monto}` : ""}
                     </span>
                   </div>
@@ -300,19 +301,19 @@ const EmpleadosList = ({
             <div className="detail-section-title">Reconocimientos</div>
             <div className="detail-list-scroll">
             {reconocimientosEmp.length === 0 ? (
-              <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin reconocimientos</div>
+              <div style={{ color: "var(--mc-texto-secundario)", fontSize: 13 }}>Sin reconocimientos</div>
             ) : (
               reconocimientosEmp.map(r => (
                 <div key={r.id} className="detail-list-item-block">
                   <strong>{r.titulo || r.tipo || r.categoria}</strong>
 <br />
-<span style={{ color: "#64748b" }}>
+<span style={{ color: "var(--mc-texto-secundario)" }}>
   {r.descripcion || r.motivo || r.comentario}
 </span>
 {r.otorgadoPor && (
   <>
     <br />
-    <span style={{ color: "#9ca3af", fontSize: 12 }}>
+    <span style={{ color: "var(--mc-texto-secundario)", fontSize: 12 }}>
       Otorgado por: {r.otorgadoPor}
     </span>
   </>
@@ -320,7 +321,7 @@ const EmpleadosList = ({
 {r.fecha && (
   <>
     <br />
-    <span style={{ color: "#9ca3af", fontSize: 12 }}>
+    <span style={{ color: "var(--mc-texto-secundario)", fontSize: 12 }}>
       Fecha: {r.fecha}
     </span>
   </>
@@ -336,13 +337,13 @@ const EmpleadosList = ({
               <div className="detail-section-title">Reportes confidenciales</div>
               <div className="detail-list-scroll">
               {reportesEmp.length === 0 ? (
-                <div style={{ color: "#9ca3af", fontSize: 13 }}>Sin reportes confidenciales</div>
+                <div style={{ color: "var(--mc-texto-secundario)", fontSize: 13 }}>Sin reportes confidenciales</div>
               ) : (
                 reportesEmp.map(r => (
                   <div key={r.id} className="detail-list-item-block">
                     <strong>{r.fecha || "Reporte"}</strong>
                     <br />
-                    <span style={{ color: "#64748b" }}>
+                    <span style={{ color: "var(--mc-texto-secundario)" }}>
                       {r.resumen || r.texto || r.motivo || r.descripcion}
                     </span>
                   </div>
@@ -358,12 +359,11 @@ const EmpleadosList = ({
 
   return (
     <div className="list-page">
-      <div className="list-page-header admin-page-header admin-page-header--row">
-        <div>
-          <h2 className="admin-page-title">Empleados</h2>
-          <p className="admin-page-subtitle">Directorio del equipo con bienestar y semáforo por colaborador.</p>
-        </div>
-      </div>
+      <PageHeader
+        icon="users"
+        title="Empleados"
+        subtitle="Directorio del equipo con bienestar y semáforo por colaborador."
+      />
 
       <Card className="list-page-sticky list-card-spaced">
         <div className="list-filters-grid">
@@ -417,7 +417,7 @@ const EmpleadosList = ({
             >
               <Card>
                 <div className="emp-card-top">
-                  <Avatar name={emp.name} size={36} color={semaforoColor[sem]} />
+                  <Avatar name={emp.name} size={36} color={semaforoColor[sem]} photoUrl={emp.avatarUrl} />
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="emp-card-name">{emp.name}</div>

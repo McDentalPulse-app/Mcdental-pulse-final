@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
+import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { useNotification } from "../../contexts/NotificationContext";
 import { getPreguntasActivas, DEFAULT_OPCIONES_RIESGO } from "../../utils/encuestaPreguntas";
@@ -68,7 +69,7 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
       score >= 60 ? "amarillo" :
       "rojo";
 
-    onSubmit({
+    const ok = await onSubmit({
       empleadoId: user.id,
       semana: getISOWeek(),
       respuestas,
@@ -77,7 +78,7 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
       fecha: new Date().toISOString().slice(0, 10)
     });
 
-    setEnviada(true);
+    if (ok) setEnviada(true);
   };
 
   if (yaContesto || enviada) {
@@ -98,12 +99,11 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
 
   return (
     <div className="admin-page empleado-page empleado-form-narrow">
-      <div className="admin-page-header">
-        <h1 className="admin-page-title">Mi encuesta</h1>
-        <p className="admin-page-subtitle">
-          Semana {semanaDisplay} · Tus respuestas son confidenciales.
-        </p>
-      </div>
+      <PageHeader
+        icon="clipboard"
+        title="Mi encuesta"
+        subtitle={`Semana ${semanaDisplay} · Tus respuestas son confidenciales.`}
+      />
 
       <Card className="empleado-progress-card">
         <div className="empleado-progress-head">

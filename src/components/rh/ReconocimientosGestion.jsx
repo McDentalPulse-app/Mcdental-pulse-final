@@ -4,6 +4,7 @@ import { useNotification } from "../../contexts/NotificationContext";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
 import StatCard from "../common/StatCard";
+import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { normalizeSucursal } from "../../utils/constants";
 
@@ -23,13 +24,13 @@ const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) 
   ];
 
   const otorgar = async () => {
-    const empleado = empleados.find(e => e.id === Number(empleadoId));
+    const empleado = empleados.find(e => String(e.id) === String(empleadoId));
     if (!empleado) { toast.warning("Selecciona un empleado."); return; }
     if (!comentario.trim()) { toast.warning("Escribe un comentario para el reconocimiento."); return; }
     if (diplomaArchivo) {
       const continuar = await confirm({
         title: "Otorgar sin diploma",
-        description: "El diploma no se subirá todavía porque Firebase Storage no está activo.\n\n¿Deseas otorgar el reconocimiento sin diploma?",
+        description: "La carga de diplomas todavía no está disponible.\n\n¿Deseas otorgar el reconocimiento sin diploma?",
         variant: "warning",
         confirmText: "Otorgar sin diploma",
       });
@@ -47,12 +48,11 @@ const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) 
 
   return (
     <div className="admin-page">
-      <div className="admin-page-header">
-        <h1 className="admin-page-title">Reconocimientos</h1>
-        <p className="admin-page-subtitle">
-          Otorga y consulta reconocimientos al personal por desempeño, actitud y valores McDental.
-        </p>
-      </div>
+      <PageHeader
+        icon="award"
+        title="Reconocimientos"
+        subtitle="Otorga y consulta reconocimientos al personal por desempeño, actitud y valores McDental."
+      />
 
       <div className="admin-stat-grid">
         <StatCard iconName="award" value={reconocimientos.length} label="Reconocimientos totales" valueClass="admin-stat-value--green" />
@@ -64,22 +64,23 @@ const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) 
           <SectionTitle icon="plus">Otorgar reconocimiento</SectionTitle>
           <div className="mc-form-grid">
             <div className="mc-form-group">
-              <label className="mc-form-label">Empleado</label>
-              <select className="mc-form-select" value={empleadoId} onChange={(e) => setEmpleadoId(e.target.value)}>
+              <label className="mc-form-label" htmlFor="rg-empleado">Empleado</label>
+              <select id="rg-empleado" className="mc-form-select" value={empleadoId} onChange={(e) => setEmpleadoId(e.target.value)}>
                 {empleados.map(e => (
                   <option key={e.id} value={e.id}>{e.name} · {normalizeSucursal(e.sucursal)} · {e.puesto}</option>
                 ))}
               </select>
             </div>
             <div className="mc-form-group">
-              <label className="mc-form-label">Categoría</label>
-              <select className="mc-form-select" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+              <label className="mc-form-label" htmlFor="rg-categoria">Categoría</label>
+              <select id="rg-categoria" className="mc-form-select" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
                 {categorias.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div className="mc-form-group">
-              <label className="mc-form-label">Comentario</label>
+              <label className="mc-form-label" htmlFor="rg-comentario">Comentario</label>
               <textarea
+                id="rg-comentario"
                 className="mc-form-textarea"
                 value={comentario}
                 onChange={(e) => setComentario(e.target.value)}
@@ -88,13 +89,14 @@ const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) 
               />
             </div>
             <div className="mc-form-group">
-              <label className="mc-form-label">Diploma del reconocimiento</label>
+              <label className="mc-form-label" htmlFor="rg-diploma">Diploma del reconocimiento</label>
               <label className="mc-file-input-wrap">
                 <span className="mc-file-input-icon"><Icon name="paperclip" size={18} /></span>
                 <span className="mc-file-input-text">
                   {diplomaArchivo ? diplomaArchivo.name : "Seleccionar diploma (PDF o imagen)"}
                 </span>
                 <input
+                  id="rg-diploma"
                   type="file"
                   accept=".pdf,image/*"
                   className="mc-file-input-overlay"
@@ -103,7 +105,7 @@ const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) 
               </label>
               <div className="mc-form-hint mc-form-hint--warn">
                 <Icon name="alert" size={14} />
-                <span>Adjunto preparado. La carga del diploma se activará cuando Firebase Storage esté habilitado.</span>
+                <span>Adjunto preparado. La carga de diplomas todavía no está disponible.</span>
               </div>
             </div>
             <button type="button" className="mc-btn-primary mc-btn-with-icon" onClick={otorgar}>

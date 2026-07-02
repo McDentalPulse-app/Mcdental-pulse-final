@@ -107,7 +107,6 @@
 .sidebar.sidebar--rail { width: 72px; }
 .sidebar--rail .sidebar-brand-text,
 .sidebar--rail .sidebar-brand-sub,
-.sidebar--rail .sidebar-ai-badge,
 .sidebar--rail .sidebar-nav-label,
 .sidebar--rail .sidebar-nav-badge,
 .sidebar--rail .sidebar-user-text,
@@ -127,7 +126,8 @@
 }
 .sidebar--rail .sidebar-nav-btn { justify-content: center; padding-left: 0; padding-right: 0; }
 .sidebar--rail .sidebar-user { justify-content: center; }
-.sidebar--rail .sidebar-logout { justify-content: center; }
+.sidebar--rail .sidebar-logout,
+.sidebar--rail .sidebar-theme-toggle { justify-content: center; }
 
 /* ── Mobile tabbar: indicador deslizante ── */
 .mobile-tab { position: relative; }

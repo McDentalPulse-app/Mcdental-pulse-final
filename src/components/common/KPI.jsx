@@ -5,9 +5,9 @@ import Icon from "../ui/Icon";
 
 const KPI = ({ label, value, sub, color = UI.verdeMedio, iconName }) => (
   <Card className="mc-kpi">
-    <div className="mc-kpi-glow" style={{ background: `${color}10` }} />
+    <div className="mc-kpi-glow" style={{ background: `color-mix(in srgb, ${color} 6%, transparent)` }} />
     {iconName && (
-      <div className="mc-kpi-icon" style={{ background: `${color}12`, color }}>
+      <div className="mc-kpi-icon" style={{ background: `color-mix(in srgb, ${color} 7%, transparent)`, color }}>
         <Icon name={iconName} size={20} />
       </div>
     )}

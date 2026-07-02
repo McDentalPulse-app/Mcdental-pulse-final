@@ -122,15 +122,6 @@
   100% { box-shadow: 0 0 0 0 rgba(20, 200, 182, 0); }
 }
 
-.gw-logo {
-  display: block;
-  width: 220px;
-  max-width: 70%;
-  height: auto;
-  margin: 26px 0 18px;
-  filter: drop-shadow(0 8px 22px rgba(4, 26, 24, 0.5));
-}
-
 .gw-title {
   margin: 0;
   font-size: clamp(48px, 7vw, 86px);
@@ -184,6 +175,13 @@
   animation: gwFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
 }
 
+/* ── Escenario: contiene el flip card + el panel de cambio de contraseña ── */
+.gw-stage {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+}
+
 /* ── Flip card: portal (frente) ↔ login (atrás) ── */
 .gw-card-flip {
   position: relative;
@@ -191,6 +189,37 @@
   max-width: 380px;
   perspective: 1200px;           /* menos = más profundidad/volumen en el giro */
   perspective-origin: center;
+  /* Misma curva que gwFadeUp (ease-out suave): coordinada con el panel que entra encima. */
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* Con el panel de cambio de contraseña encima: ambos usan fondo "glass"
+   semi-transparente, así que si no se apaga el de abajo se ve "a través". */
+.gw-card-flip.is-behind {
+  opacity: 0;
+}
+
+/* ── Panel de cambio de contraseña: desliza de derecha a izquierda sobre el flip card ──
+   Selector compuesto (.gw-card.gw-changepass-panel) a propósito: el elemento lleva
+   ambas clases y .gw-card (más abajo en este archivo) también define position,
+   así que por orden de cascada le ganaría a una regla de una sola clase. */
+.gw-card.gw-changepass-panel {
+  position: absolute;
+  inset: 0;
+  top: 0;
+  width: 100%;
+  max-width: 380px;
+  transform: translateX(112%);
+  opacity: 0;
+  pointer-events: none;
+  /* Misma curva ease-out en transform y opacity, misma duración: entran como
+     un solo movimiento en vez de sentirse como dos animaciones desincronizadas. */
+  transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 5;
+}
+.gw-card.gw-changepass-panel.is-visible {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
 }
 .gw-card-inner {
   display: grid;                 /* ambas caras en la misma celda → altura = cara más alta */
@@ -362,7 +391,6 @@
     text-align: center;
   }
   .gw-left { text-align: center; }
-  .gw-logo { margin-inline: auto; }
   .gw-subtext { margin-inline: auto; }
   .gw-features { justify-content: center; }
   .gw-title { font-size: clamp(44px, 12vw, 64px); }
@@ -380,4 +408,5 @@
   .gw-left, .gw-right { animation: none; }
   .gw-pulse-line { stroke-dashoffset: 0; }
   .gw-card-inner, .gw-card-face { transition: none; }   /* flip y swap instantáneos */
+  .gw-changepass-panel { transition: none; }             /* deslizamiento instantáneo */
 }

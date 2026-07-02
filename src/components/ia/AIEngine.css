@@ -3,60 +3,9 @@
    Scoped bajo .ai-engine-page. Reusa tokens de marca.
    ============================================================ */
 
-/* ── HERO oscuro glass + aura ── */
-.ai-engine-page .ai-engine-header {
-  position: relative;
-  z-index: 5;                /* su WeekSelect debe desplegarse sobre lo de abajo */
-  overflow: visible;
-  background: var(--grad-brand);
-  border: 1px solid rgba(20, 200, 182, 0.28);
-  border-radius: var(--mc-radio-xl, 22px);
-  box-shadow: 0 26px 64px -30px rgba(4, 35, 31, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  color: #fff;
-  padding: 22px 24px;
-}
-.ai-hero-bg {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  border-radius: inherit;
-  overflow: hidden;          /* recorta la aura sin recortar el dropdown del header */
-  pointer-events: none;
-  /* Vida por opacity (no mueve geometría → el clip redondeado no re-rasteriza →
-     sin jitter en las esquinas). Las auras quedan estáticas. */
-  animation: aiBreathe 9s ease-in-out infinite;
-}
-.ai-hero-bg::before,
-.ai-hero-bg::after {
-  content: "";
-  position: absolute;
-  border-radius: 50%;
-}
-.ai-hero-bg::before {
-  width: 300px; height: 300px;
-  top: -130px; right: -60px;
-  background: radial-gradient(circle, rgba(20, 200, 182, 0.5), transparent 70%);
-}
-.ai-hero-bg::after {
-  width: 220px; height: 220px;
-  bottom: -120px; left: 18%;
-  background: radial-gradient(circle, rgba(16, 116, 99, 0.55), transparent 70%);
-}
-@keyframes aiBreathe {
-  0%, 100% { opacity: 0.78; }
-  50% { opacity: 1; }
-}
-.ai-engine-page .ai-engine-header > *:not(.ai-hero-bg) { position: relative; z-index: 1; }
-
-.ai-engine-page .ai-engine-header-icon {
-  background: rgba(20, 200, 182, 0.2);
-  color: #EAFFFB;
-  border: 1px solid rgba(20, 200, 182, 0.35);
-  box-shadow: 0 0 32px -6px rgba(20, 200, 182, 0.6);
-}
-.ai-engine-page .ai-engine-header .admin-page-title { color: #fff; }
-.ai-engine-page .ai-engine-header .admin-page-subtitle { color: rgba(255, 255, 255, 0.7); }
-
+/* Header: ver .premium-page-header en App.css (patrón nacido acá, ahora compartido
+   por <PageHeader> en todas las pantallas). Solo queda el badge de estado, propio
+   de esta página. */
 .ai-engine-page .ai-engine-status-badge {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(20, 200, 182, 0.4);
@@ -234,7 +183,6 @@
 
 /* ── Accesibilidad ── */
 @media (prefers-reduced-motion: reduce) {
-  .ai-hero-bg,
   .ai-status-dot, .ai-loading-head .ai-spark { animation: none; }
   .ai-engine-page .admin-stat-grid > *,
   .ai-output-reveal, .ai-case-card { animation: none; }

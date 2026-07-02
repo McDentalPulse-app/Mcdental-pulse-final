@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useTheme } from "../../contexts/ThemeContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { notify } from "../../utils/notify";
 import logoSmall from "../../assets/logos/logo-small.png";
@@ -12,6 +13,7 @@ const RAIL_KEY = "mcdental_sidebar_rail";
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const active = location.pathname.split("/").pop() || "dashboard";
@@ -31,7 +33,7 @@ const Sidebar = () => {
   const navItems = {
     admin: [
       { key: "dashboard", icon: "dashboard", label: "Dashboard" },
-      { key: "ai", icon: "ai", label: "AI Engine", badge: "NEW" },
+      { key: "ai", icon: "ai", label: "AI Engine" },
       { key: "empleados", icon: "users", label: "Empleados" },
       { key: "usuarios", icon: "userCog", label: "Gestión de Personal" },
       { key: "expedientes", icon: "folder", label: "Expedientes" },
@@ -44,7 +46,7 @@ const Sidebar = () => {
     ],
     psicologa: [
       { key: "dashboard", icon: "dashboard", label: "Dashboard" },
-      { key: "ai", icon: "ai", label: "AI Engine", badge: "NEW" },
+      { key: "ai", icon: "ai", label: "AI Engine" },
       { key: "seguimiento", icon: "target", label: "Seguimiento" },
       { key: "confidenciales", icon: "lock", label: "Reportes Confidenciales" },
       { key: "empleados", icon: "users", label: "Empleados" },
@@ -114,10 +116,6 @@ const Sidebar = () => {
             <span className="sidebar-brand-sub">Bienestar organizacional</span>
           </div>
         </div>
-        <div className="sidebar-ai-badge">
-          <Icon name="sparkles" size={11} />
-          AI Engine
-        </div>
       </div>
 
       <nav className="sidebar-nav">
@@ -154,12 +152,22 @@ const Sidebar = () => {
 
       <div className="sidebar-footer">
         <div className="sidebar-user">
-          <Avatar name={user?.name || ""} size={36} color="#3D8B7E" />
+          <Avatar name={user?.name || ""} size={36} color="#3D8B7E" photoUrl={user?.avatarUrl} />
           <div className="sidebar-user-text" style={{ minWidth: 0 }}>
             <div className="sidebar-user-name">{user?.name?.split(" ")[0] || ""}</div>
             <div className="sidebar-user-role">{user?.role || ""}</div>
           </div>
         </div>
+        <button
+          type="button"
+          className="sidebar-theme-toggle"
+          onClick={toggleTheme}
+          title={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+          aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+        >
+          <Icon name={theme === "dark" ? "sun" : "moon"} size={14} />
+          <span className="sidebar-logout-label">{theme === "dark" ? "Modo claro" : "Modo oscuro"}</span>
+        </button>
         <button type="button" className="sidebar-logout" onClick={handleLogout} title="Cerrar sesión" aria-label="Cerrar sesión">
           <Icon name="logout" size={14} />
           <span className="sidebar-logout-label">Cerrar sesión</span>
@@ -226,7 +234,7 @@ const Sidebar = () => {
           >
             <div className="mobile-sheet-handle" />
             <div className="mobile-sheet-user">
-              <Avatar name={user?.name || ""} size={40} color="#3D8B7E" />
+              <Avatar name={user?.name || ""} size={40} color="#3D8B7E" photoUrl={user?.avatarUrl} />
               <div style={{ minWidth: 0 }}>
                 <div className="sidebar-user-name">{user?.name?.split(" ")[0] || ""}</div>
                 <div className="sidebar-user-role">{user?.role || ""}</div>
@@ -248,6 +256,9 @@ const Sidebar = () => {
                 );
               })}
             </div>
+            <button type="button" className="mobile-sheet-logout" onClick={toggleTheme} style={{ marginBottom: 8 }}>
+              <Icon name={theme === "dark" ? "sun" : "moon"} size={16} /> {theme === "dark" ? "Modo claro" : "Modo oscuro"}
+            </button>
             <button type="button" className="mobile-sheet-logout" onClick={handleLogout}>
               <Icon name="logout" size={16} /> Cerrar sesión
             </button>

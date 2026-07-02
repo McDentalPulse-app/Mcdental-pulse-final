@@ -8,7 +8,7 @@ reportes confidenciales clínicos y un motor de IA. PWA en español, cuatro role
 ## Stack
 
 - **Frontend:** React 19 + Vite + React Router 7 (PWA con `vite-plugin-pwa`)
-- **Datos:** Firebase Firestore (SDK web) · Storage para archivos de expediente
+- **Datos:** Supabase (Postgres + Row Level Security) · Supabase Auth · Supabase Storage para archivos de expediente
 - **IA:** Google Gemini (`gemini-2.5-flash`) vía proxy serverless (la key vive en el servidor)
 - **Iconos:** lucide-react · estilos en `src/index.css` (tokens) y `src/App.css`
 
@@ -26,7 +26,7 @@ Copia `.env.example` a `.env.local` y rellena:
 
 | Variable | Dónde | Descripción |
 |---|---|---|
-| `VITE_FIREBASE_*` | cliente | Config pública del SDK de Firebase (no son secretos) |
+| `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` | cliente | Config pública del SDK de Supabase (no son secretos; la seguridad la da RLS) |
 | `GEMINI_API_KEY` | **servidor** | Key de Gemini. Sin prefijo `VITE_` → no entra al bundle. La consume `api/gemini.js`. En producción se configura en Vercel → Environment Variables |
 
 > ⚠️ La IA se llama a través del proxy `api/gemini.js`. Nunca pongas la key de Gemini con prefijo `VITE_` (quedaría expuesta en el bundle del navegador).
@@ -35,12 +35,15 @@ Copia `.env.example` a `.env.local` y rellena:
 
 ```
 api/gemini.js            Proxy serverless de Gemini (key server-side)
+supabase/
+  migrations/            Schema SQL + RLS policies + Storage policies
+  functions/             Edge Functions (admin-create-usuario, admin-reset-password)
 src/
   components/            UI por rol (admin, rh, psicologia, empleados, ia, layout, common…)
   contexts/              Auth, Global, Notification, Theme
-  services/firestore/    Acceso a datos (una función por operación)
+  services/supabase/     Acceso a datos (una función por operación)
   utils/                 pulseScore, constants (semanas), helpers, analysisEngine…
-  config/                firebase, theme, constants
+  config/                supabase, theme, constants
 ```
 
 ## Despliegue
@@ -94,6 +97,7 @@ src/
 - `geminiService.js` (código muerto que referenciaba la key en cliente) eliminado.
 - `.env` y `.env.local` fuera del control de versiones.
 
-> **Deuda conocida** (del audit de seguridad): la autenticación es casera (contraseñas
-> en texto plano en Firestore, sin Firebase Auth real); los roles solo se aplican en el
-> frontend. Pendiente de migrar a Firebase Authentication.
+#### 🔐 Migración a Supabase
+La autenticación casera con contraseñas en texto plano se reemplazó por **Supabase Auth**
+(hash nativo, sesiones JWT) y las reglas de acceso permisivas por **RLS granular por rol**
+en Postgres. Detalle completo en `supabase/migrations/`.
