@@ -11,6 +11,7 @@ import WeekSelect from "../common/WeekSelect";
 import PageHeader from "../common/PageHeader";
 import { semanaActual, normalizeSucursal, formatSemanaDisplay } from "../../utils/constants";
 import { getPulseStatus } from "../../utils/pulseScore";
+import { esEmpleadoActivo } from "../../utils/helpers";
 
 const SEMAFORO_META = {
   verde: { label: "Estable", color: "#22c55e" },
@@ -22,7 +23,7 @@ const SEMAFORO_META = {
 const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }) => {
   const { usuarios: USERS } = useGlobal();
   const { user } = useAuth();
-  const empleados = USERS.filter(u => u.role === "empleado");
+  const empleados = USERS.filter(esEmpleadoActivo);
 
   // Semanas como "buckets" por etiqueta de display: las pre-lanzamiento
   // (2025-W15, 2026-W01 viejo) se juntan en "2026-W00"; lanzamiento+ = "2026-W01"…

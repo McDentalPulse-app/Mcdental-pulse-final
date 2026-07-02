@@ -159,3 +159,8 @@ export const formatEmpleadoIdForDisplay = (user) => {
   }
   return "Sin ID";
 };
+
+/** Empleado activo: la plantilla operativa. Los inactivos (baja) se excluyen
+ *  de dashboards, KPIs, encuestas, mensajes y selects de acción — pero se
+ *  conservan en Expedientes y Gestión de Personal (historial/reactivación). */
+export const esEmpleadoActivo = (u) => u?.role === "empleado" && !u?.inactivo;

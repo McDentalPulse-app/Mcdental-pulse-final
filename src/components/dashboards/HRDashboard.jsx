@@ -4,9 +4,10 @@ import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
 import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
+import { esEmpleadoActivo } from "../../utils/helpers";
 
 const HRDashboard = ({ users }) => {
-  const empleados = users.filter(u => u.role === "empleado");
+  const empleados = users.filter(esEmpleadoActivo);
 
   const stats = [
     { label: "Empleados activos", value: empleados.length, iconName: "users", valueClass: "admin-stat-value--green" },

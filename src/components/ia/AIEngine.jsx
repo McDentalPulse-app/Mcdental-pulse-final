@@ -21,6 +21,7 @@ import MarkdownLite from "../common/MarkdownLite";
 import WeekSelect from "../common/WeekSelect";
 import PageHeader from "../common/PageHeader";
 import "./AIEngine.css";
+import { esEmpleadoActivo } from "../../utils/helpers";
 
 
 const AIOutput = ({ text, loading, placeholder }) => {
@@ -79,7 +80,7 @@ const AIEngine = ({ encuestas, mensajes, notas, userRole, permisos = [], descuen
   const [chatHistory, setChatHistory] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
 
-  const empleados = useMemo(() => USERS.filter(u => u.role === "empleado"), [USERS]);
+  const empleados = useMemo(() => USERS.filter(esEmpleadoActivo), [USERS]);
 
   // Filtro por semana (buckets): pre-lanzamiento juntas en "2026-W00", lanzamiento+ "2026-W01"…
   const semanasRaw = [...new Set(

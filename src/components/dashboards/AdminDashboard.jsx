@@ -14,6 +14,7 @@ import { SUCURSALES, semanaActual, normalizeSucursal, sucursalMatches, formatSem
 import { getPulseStatus } from "../../utils/pulseScore";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import "./AdminDashboard.css";
+import { esEmpleadoActivo } from "../../utils/helpers";
 
 // Variantes compartidas para la entrada/salida de modales (Motion library)
 const overlayMotion = {
@@ -105,7 +106,7 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
   const [sucursalModal, setSucursalModal] = useState(null);
   const [sucRiesgoModal, setSucRiesgoModal] = useState(null);
 
-  const empleados = USERS.filter((u) => u.role === "empleado");
+  const empleados = USERS.filter(esEmpleadoActivo);
 
   // Semanas como "buckets" (pre-lanzamiento juntas en "2026-W00"; lanzamiento+ "2026-W01"…).
   const semanasRaw = [...new Set(

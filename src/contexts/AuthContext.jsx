@@ -53,11 +53,21 @@ export const AuthProvider = ({ children }) => {
     if (error || !data || !VALID_ROLES.has(data.role)) {
       setUser(null);
       setRequiereCambioPassword(false);
-      return;
+      return null;
+    }
+
+    // Empleado dado de baja: se cierra la sesión de Auth y no entra. Cubre
+    // tanto el login activo como la restauración de sesión al abrir la app.
+    if (data.inactivo) {
+      await supabase.auth.signOut();
+      setUser(null);
+      setRequiereCambioPassword(false);
+      return { inactivo: true };
     }
 
     setUser(mapUsuarioRow(data));
     setRequiereCambioPassword(!!data.debe_cambiar_password || loginConTemporalRef.current);
+    return { inactivo: false };
   };
 
   useEffect(() => {
@@ -106,7 +116,10 @@ export const AuthProvider = ({ children }) => {
         throw new Error("Usuario o contraseña incorrectos");
       }
 
-      await cargarPerfil(data.user.id);
+      const perfil = await cargarPerfil(data.user.id);
+      if (perfil?.inactivo) {
+        throw new Error("Tu cuenta está desactivada. Contacta a administración.");
+      }
       return true;
     } finally {
       setLoadingAuth(false);

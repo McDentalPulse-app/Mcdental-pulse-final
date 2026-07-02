@@ -6,6 +6,7 @@ import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { normalizeSucursal } from "../../utils/constants";
 import { useNotification } from "../../contexts/NotificationContext";
+import { esEmpleadoActivo } from "../../utils/helpers";
 
 const DescuentosRH = ({ descuentos, empleados, user, onUpdateEstado, onAddDescuento }) => {
   const { toast } = useNotification();
@@ -83,7 +84,7 @@ const DescuentosRH = ({ descuentos, empleados, user, onUpdateEstado, onAddDescue
               <select id="dr-empleado" className="mc-form-select" name="empleadoId" required>
                 <option value="">Selecciona empleado</option>
                 {empleados
-                  .filter(emp => emp.role === "empleado")
+                  .filter(esEmpleadoActivo)
                   .map(emp => (
                     <option key={emp.id} value={emp.id}>
                       {emp.name} - {normalizeSucursal(emp.sucursal)}

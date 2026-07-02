@@ -7,12 +7,13 @@ import StatCard from "../common/StatCard";
 import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { normalizeSucursal } from "../../utils/constants";
+import { esEmpleadoActivo } from "../../utils/helpers";
 
 const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) => {
   const { usuarios: USERS } = useGlobal();
   const { toast, confirm } = useNotification();
 
-  const empleados = users.filter((u) => u.role === "empleado");
+  const empleados = users.filter(esEmpleadoActivo);
   const [empleadoId, setEmpleadoId] = useState(empleados[0]?.id || "");
   const [categoria, setCategoria] = useState("Excelente actitud");
   const [comentario, setComentario] = useState("");

@@ -14,6 +14,7 @@ import LineChart from "../common/LineChart";
 import RiskBar from "../common/RiskBar";
 import { formatAntiguedadEmpleado, resolveFechaIngreso, formatEmpleadoIdForDisplay } from "../../utils/helpers";
 import Icon from "../ui/Icon";
+import { esEmpleadoActivo } from "../../utils/helpers";
 
 const EmpleadosList = ({
   encuestas,
@@ -34,7 +35,7 @@ const EmpleadosList = ({
   const [busqueda, setBusqueda] = useState("");
   const [selected, setSelected] = useState(null);
 
-  const empleados = USERS.filter(u => u.role === "empleado");
+  const empleados = USERS.filter(esEmpleadoActivo);
   const puedeRestablecer = currentUser?.role === "admin" && typeof onRestablecerPassword === "function";
 
   const getUltimoSemaforo = (empId) => {

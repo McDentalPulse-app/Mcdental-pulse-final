@@ -96,6 +96,14 @@ Este archivo conserva el estado actual de la interacción y del proyecto para re
 *   **Verificado E2E en UI** (Playwright): renombrar sandra galvan → "sandra prueba" desde Gestión de Personal como rh; tabla y pantalla Empleados muestran el cambio al instante (propagación vía `setUsuarios` del GlobalContext — todos los consumidores leen del contexto); login con username nuevo + `emp123` → panel de cambio forzado; username viejo rechazado. Estado restaurado después (sandra y maricruz de vuelta a su estado estándar).
 *   **Propagación en la app**: dentro de la sesión, todo consume `usuarios` del GlobalContext por id → un edit se refleja en todas las pantallas. Nota: registros históricos con nombre denormalizado (p. ej. `otorgadoPor` en reconocimientos viejos) conservan el nombre de aquel momento — esperado. Otras sesiones abiertas ven el cambio al recargar (usuarios no está en realtime).
 
+## 🚫 Feature: `inactivo` ahora es funcional (2026-07-02, noche)
+
+*   **Antes**: "Desactivar empleado" solo cambiaba el pill en Gestión de Personal — el desactivado podía seguir entrando y contaba en todos los KPIs.
+*   **Bloqueo de login**: `cargarPerfil` (AuthContext) cierra la sesión de Auth si `inactivo=true` — cubre login activo (mensaje "Tu cuenta está desactivada. Contacta a administración.") y restauración de sesión al abrir la app. Sesiones ya abiertas se expulsan al recargar.
+*   **Exclusión de dashboards**: helper `esEmpleadoActivo` (utils/helpers.js) aplicado en 11 consumidores: AdminDashboard, PsicologaDashboard, HRDashboard, Reportes (5 sitios), AIEngine, Mensajes, PsicologaSeguimiento, EmpleadosList, ReconocimientosGestion, DescuentosRH (select), EventosPersonal (cumpleaños, todos los roles).
+*   **Conservan inactivos a propósito**: ExpedienteIntegral (archivo/historial, comentado en código) y GestionUsuarios (para reactivar).
+*   **Verificado E2E**: login de inactiva rechazado con mensaje; HR dashboard 99→98 colaboradores; fuera de Empleados; visible en Gestión con botón Activar; reactivada vuelve a entrar.
+
 ## 🔑 Estado de cuentas al cierre (2026-07-02 tarde)
 
 *   Temporal estándar: `emp123` + `debe_cambiar_password=true`. Entrar con `emp123` SIEMPRE fuerza cambio (blindaje AuthContext), aunque el flag esté apagado.

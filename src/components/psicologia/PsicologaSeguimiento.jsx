@@ -11,11 +11,12 @@ import PulseScoreBadge from "../common/PulseScoreBadge";
 import { semaforoColor } from "../../config/theme";
 import { semanaActual, normalizeSucursal, sucursalMatches, isSemanaActual, formatSemanaDisplay } from "../../utils/constants";
 import { calcPulseScore, getPulseStatus } from "../../utils/pulseScore";
+import { esEmpleadoActivo } from "../../utils/helpers";
 
 const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
   const { usuarios: USERS } = useGlobal();
 
-  const empleados = USERS.filter(u => u.role === "empleado");
+  const empleados = USERS.filter(esEmpleadoActivo);
   const semanaEnc = encuestas.filter(e => isSemanaActual(e.semana));
   const [nuevaNota, setNuevaNota] = useState({ empId: null, texto: "" });
   const [empleadoDetalle, setEmpleadoDetalle] = useState(null);

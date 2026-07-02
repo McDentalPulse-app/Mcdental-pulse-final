@@ -43,6 +43,8 @@ const ExpedienteIntegral = ({
   const { toast } = useNotification();
   const [subiendoFoto, setSubiendoFoto] = useState(false);
 
+ // A propósito INCLUYE inactivos: el expediente es archivo/historial y debe
+ // seguir consultable tras la baja (los dashboards sí los excluyen).
  const empleados = users.filter(u => u.role === "empleado");
 const [filtroSucursalExp, setFiltroSucursalExp] = useState("Todas");
 const [empleadoId, setEmpleadoId] = useState(empleados[0]?.id || "");

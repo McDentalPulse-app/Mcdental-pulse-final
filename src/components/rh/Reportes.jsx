@@ -4,6 +4,7 @@ import SectionTitle from "../common/SectionTitle";
 import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { semanaActual, normalizeSucursal, sucursalMatches, isSemanaActual, formatSemanaDisplay } from "../../utils/constants";
+import { esEmpleadoActivo } from "../../utils/helpers";
 
 const Reportes = ({ users = [], encuestas = [] }) => {
   const [sucursalReporte, setSucursalReporte] = useState("Todas");
@@ -13,7 +14,7 @@ const Reportes = ({ users = [], encuestas = [] }) => {
     ...Array.from(
       new Set(
         users
-          .filter((u) => u.role === "empleado")
+          .filter(esEmpleadoActivo)
           .map((u) => normalizeSucursal(u.sucursal))
           .filter(Boolean)
       )
@@ -21,7 +22,7 @@ const Reportes = ({ users = [], encuestas = [] }) => {
   ];
 
   const descargarEmpleadosCSV = () => {
-    const empleados = users.filter((u) => u.role === "empleado");
+    const empleados = users.filter(esEmpleadoActivo);
     const limpiarCSV = (valor) => {
       const texto = String(valor ?? "").replace(/"/g, '""');
       return `"${texto}"`;
@@ -64,7 +65,7 @@ const Reportes = ({ users = [], encuestas = [] }) => {
   };
 
   const descargarReporteMensualExcel = () => {
-    const empleados = users.filter((u) => u.role === "empleado");
+    const empleados = users.filter(esEmpleadoActivo);
     const mesActual = new Date().toISOString().slice(0, 7);
     const limpiarCSV = (valor) => {
       const texto = String(valor ?? "").replace(/"/g, '""');
@@ -111,7 +112,7 @@ const Reportes = ({ users = [], encuestas = [] }) => {
 
   const descargarReporteSucursalExcel = () => {
     const empleados = users
-      .filter((u) => u.role === "empleado")
+      .filter(esEmpleadoActivo)
       .filter((u) => sucursalReporte === "Todas" || sucursalMatches(u.sucursal, sucursalReporte));
     const limpiarCSV = (valor) => {
       const texto = String(valor ?? "").replace(/"/g, '""');
@@ -152,7 +153,7 @@ const Reportes = ({ users = [], encuestas = [] }) => {
   };
 
   const descargarReporteSemanalExcel = () => {
-    const empleados = users.filter((u) => u.role === "empleado");
+    const empleados = users.filter(esEmpleadoActivo);
     const limpiarCSV = (valor) => {
       const texto = String(valor ?? "").replace(/"/g, '""');
       return `"${texto}"`;

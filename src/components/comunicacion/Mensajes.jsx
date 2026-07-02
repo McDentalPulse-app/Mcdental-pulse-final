@@ -5,6 +5,7 @@ import PageHeader from "../common/PageHeader";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
 import { getPsicologaPrincipal, formatUsuarioMensajesMeta } from "../../utils/psicologa";
+import { esEmpleadoActivo } from "../../utils/helpers";
 
 // Orden cronológico: los ids son uuid (no ordenables), se ordena por fecha (ISO, sortable como string).
 const porTiempo = (a, b) => String(a.fecha || "").localeCompare(String(b.fecha || ""));
@@ -24,7 +25,7 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
   const bodyRef = useRef(null);
 
   const psicologa = getPsicologaPrincipal(USERS);
-  const empleados = USERS.filter(u => u.role === "empleado");
+  const empleados = USERS.filter(esEmpleadoActivo);
   const getUserById = (id) => USERS.find(u => u.id === id);
 
   const conversaciones = user.role === "psicologa"
