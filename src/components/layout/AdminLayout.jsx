@@ -15,6 +15,7 @@ import Card from '../common/Card';
 import Icon from '../ui/Icon';
 import GestionUsuarios from '../admin/GestionUsuarios';
 import GestionEncuestas from '../admin/GestionEncuestas';
+import Perfil from '../common/Perfil';
 
 export default function AdminLayout({ user, globals, actions }) {
   const { usuarios: USERS } = useGlobal();
@@ -46,6 +47,7 @@ export default function AdminLayout({ user, globals, actions }) {
                 <p className="admin-restricted-text">Este canal es privado y solo está disponible para empleados y psicóloga.</p>
               </Card>
             } />
+            <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Routes>
         </div>

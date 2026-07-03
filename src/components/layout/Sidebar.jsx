@@ -43,6 +43,7 @@ const Sidebar = () => {
       { key: "reportes", icon: "trending", label: "Reportes" },
       { key: "confidenciales", icon: "lock", label: "Reportes Confidenciales" },
       { key: "config", icon: "settings", label: "Config" },
+      { key: "perfil", icon: "user", label: "Mi perfil" },
     ],
     psicologa: [
       { key: "dashboard", icon: "dashboard", label: "Dashboard" },
@@ -52,6 +53,7 @@ const Sidebar = () => {
       { key: "empleados", icon: "users", label: "Empleados" },
       { key: "expedientes", icon: "folder", label: "Expedientes" },
       { key: "mensajes", icon: "message", label: "Mensajes" },
+      { key: "perfil", icon: "user", label: "Mi perfil" },
     ],
     rh: [
       { key: "dashboard", icon: "dashboard", label: "Dashboard RH" },
@@ -63,6 +65,8 @@ const Sidebar = () => {
       { key: "eventospersonal", icon: "cake", label: "Cumpleaños y Aniversarios" },
       { key: "reconocimientos", icon: "award", label: "Reconocimientos" },
       { key: "reportesrh", icon: "trending", label: "Reportes RH" },
+      { key: "bolsa", icon: "briefcase", label: "Bolsa de trabajo" },
+      { key: "perfil", icon: "user", label: "Mi perfil" },
     ],
     empleado: [
       { key: "inicio", icon: "home", label: "Inicio" },
@@ -72,6 +76,7 @@ const Sidebar = () => {
       { key: "reconocimientos", icon: "award", label: "Reconocimientos" },
       { key: "reporteconfidencial", icon: "lock", label: "Reporte Confidencial" },
       { key: "mensajes", icon: "message", label: "Mensajes" },
+      { key: "perfil", icon: "user", label: "Mi perfil" },
     ],
   };
 
@@ -151,13 +156,19 @@ const Sidebar = () => {
       </nav>
 
       <div className="sidebar-footer">
-        <div className="sidebar-user">
+        <button
+          type="button"
+          className="sidebar-user sidebar-user--link"
+          onClick={() => navigate(`/${user.role}/perfil`)}
+          title="Ver mi perfil"
+          aria-label="Ver mi perfil"
+        >
           <Avatar name={user?.name || ""} size={36} color="#3D8B7E" photoUrl={user?.avatarUrl} />
           <div className="sidebar-user-text" style={{ minWidth: 0 }}>
             <div className="sidebar-user-name">{user?.name?.split(" ")[0] || ""}</div>
             <div className="sidebar-user-role">{user?.role || ""}</div>
           </div>
-        </div>
+        </button>
         <button
           type="button"
           className="sidebar-theme-toggle"
@@ -233,13 +244,19 @@ const Sidebar = () => {
             transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 32 }}
           >
             <div className="mobile-sheet-handle" />
-            <div className="mobile-sheet-user">
+            <button
+              type="button"
+              className="mobile-sheet-user mobile-sheet-user--link"
+              onClick={() => irA("perfil")}
+              aria-label="Ver mi perfil"
+            >
               <Avatar name={user?.name || ""} size={40} color="#3D8B7E" photoUrl={user?.avatarUrl} />
               <div style={{ minWidth: 0 }}>
                 <div className="sidebar-user-name">{user?.name?.split(" ")[0] || ""}</div>
                 <div className="sidebar-user-role">{user?.role || ""}</div>
               </div>
-            </div>
+              <Icon name="user" size={16} className="mobile-sheet-user-chevron" />
+            </button>
             <div className="mobile-sheet-list">
               {tabsExtra.map((item) => {
                 const isActive = active === item.key;

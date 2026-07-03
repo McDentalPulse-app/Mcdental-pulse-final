@@ -124,6 +124,22 @@ Petición: la mayoría del personal usa la app **desde el teléfono**, así que 
 *   **Densidad**: `.empleado-quick-card` en ≤480 pasó de `min-height:168` a `132` (el `meta{flex:1}` dejaba espacio muerto) — mismo diseño, menos scroll (ahora se ve la 4ª tarjeta de un vistazo).
 *   **Verificación final**: cero overflow, **cero superficies blancas en dark**, todos los controles reales ≥44px, modales OK claro/oscuro, `npm run build` ✓. Cambio **puramente aditivo** (82 líneas, 0 borrados) en 2 archivos: `screens.css` + `mobile-polish.css`.
 
+## 👤 Nuevas secciones: Mi perfil (4 roles) + Bolsa de trabajo RH (2026-07-03)
+
+Pedido por dirección: (1) sección **Perfil** en los 4 roles con info propia + **cada quien sube/quita su propia foto** (antes solo admin/psicóloga desde Expedientes); solo la foto es editable, resto solo lectura; debe verse **premium**. (2) **Bolsa de trabajo** en RH (llegarán candidatos filtrados de otra app aún no lista) → mostrar **"en desarrollo"**.
+
+*   **Migración `00000000000025_avatar_self_service.sql` — APLICADA a prod** ✅. Aditiva: `avatars_insert/update/delete_own` (storage, cada quien su `avatars/<id>.jpg` vía `current_usuario_id()`), `usuarios_update_own`, y se amplió el trigger `prevent_usuario_privilege_escalation` para **acotar el self-update a solo `avatar_url`** (un no-admin/rh sobre su fila no puede tocar username/inactivo/etc.). Registrada en el ledger `supabase_migrations.schema_migrations`.
+    *   ⚠️ **Cómo se aplicó (importante para el futuro)**: el CLI `supabase db push` **falló** — el `pooler-url` guardado tiene password inválida (SASL 28P01) y el usuario **no tiene** la contraseña de BD. Se aplicó vía **Management API** `POST https://api.supabase.com/v1/projects/<ref>/database/query` con un **Personal Access Token** (`sbp_...`) en `Authorization: Bearer`. **Cloudflare devuelve 403 (error 1010) con el User-Agent de urllib** → hay que mandar un User-Agent de navegador. Esta vía **no necesita** la contraseña de BD, solo el PAT. project ref: `tpacyimxktipnkcgmhql`.
+    *   🔐 **Rotar el PAT usado** (quedó en el historial del chat): supabase.com/dashboard/account/tokens.
+*   **Frontend**:
+    *   `src/components/common/Perfil.jsx` (compartido): hero premium con `Avatar` grande + subir/quitar foto (reusa `avatarService` + patrón de `ExpedienteIntegral`, con `user.id`; actualiza `setUser` **y** `setUsuarios` para reflejar en sidebar al instante) + grid de info solo lectura. Ruta `perfil` en los 4 layouts.
+    *   `src/components/rh/BolsaTrabajo.jsx`: estado "en desarrollo" premium (badge ámbar + 3 pasos del flujo futuro). Ruta `bolsa` en HRLayout.
+    *   `Sidebar.jsx`: navItems `perfil` (4 roles) + `bolsa` (rh); bloque de usuario del sidebar y de la hoja "Más" ahora **clickeable → /rol/perfil**.
+    *   `Icon.jsx`: icono `briefcase` (lucide). Estilos premium en `App.css` (aditivo, superficies vía `.mc-card`, textos con variables puente, acentos teal, sin blancos fijos).
+*   **Verificado**: E2E con Playwright — un **empleado sube y quita su propia foto** (valida la RLS self-service) ✓; prueba **negativa de seguridad**: como empleado, `avatar_url` permitido pero `username`/`inactivo` **BLOQUEADOS** por el trigger ✓; cero superficies blancas en dark en las pantallas nuevas; `npm run build` ✓ (a temp dir — ver nota dist). Cuentas restauradas a `emp123`+flag, Playwright desinstalado, scripts en scratchpad (no commiteados).
+*   **⏳ PENDIENTE (mañana 2026-07-04+)**: **commit + push** de estos cambios (deploy Vercel). El código está **sin commitear** en el working tree: nuevos `Perfil.jsx`, `BolsaTrabajo.jsx`, migración 025; modificados `Sidebar.jsx`, 4 layouts, `Icon.jsx`, `App.css`. La migración YA está en prod, así que al desplegar el frontend el self-service funciona de inmediato.
+*   **Nota `dist/`**: `dist/assets` volvió a quedar propiedad de **root** (residuo). Para build local: `sudo rm -rf dist`. No afecta el deploy (Vercel compila en su entorno).
+
 ## 🔑 Estado de cuentas al cierre (2026-07-02 tarde)
 
 *   Temporal estándar: `emp123` + `debe_cambiar_password=true`. Entrar con `emp123` SIEMPRE fuerza cambio (blindaje AuthContext), aunque el flag esté apagado.
@@ -131,4 +147,4 @@ Petición: la mayoría del personal usa la app **desde el teléfono**, así que 
 *   `maricruz izaguirre` (rh): `emp123` + flag=true (útil para sesiones admin/rh de prueba vía API).
 *   `ana salas` (psicologa) y resto de empleados: `emp123` + flag=true.
 *   `luz gomez`: contraseña propia previa a esta sesión, flag=false (legítimo).
-*   **Nota (auditoría móvil 2026-07-02 noche 2)**: se usaron 4 cuentas (1 activa por rol, elegidas por la BD) con contraseña temporal de auditoría; al cierre se **restauraron a `emp123`+flag** vía service role. Si la cuenta admin elegida fue `mario`, ahora está en `emp123`+flag (entrar con `emp123` fuerza cambio).
+*   **Nota (auditoría móvil 2026-07-02 noche 2 y features Perfil 2026-07-03)**: en ambas sesiones se usaron 4 cuentas (1 activa por rol, elegidas por la BD) con contraseña temporal de auditoría; al cierre se **restauraron a `emp123`+flag** vía service role. La cuenta empleado elegida (`kevin hopolito`) se usó para probar subir/quitar foto — quedó con `avatar_url=null` (sin foto) y `emp123`+flag. Si la cuenta admin elegida fue `mario`, ahora está en `emp123`+flag (entrar con `emp123` fuerza cambio).

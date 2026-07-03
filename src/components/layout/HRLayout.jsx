@@ -11,6 +11,8 @@ import ReconocimientosGestion from '../rh/ReconocimientosGestion';
 import ReportesRH from '../rh/ReportesRH';
 import GestionUsuarios from '../admin/GestionUsuarios';
 import EmpleadosList from '../empleados/EmpleadosList';
+import BolsaTrabajo from '../rh/BolsaTrabajo';
+import Perfil from '../common/Perfil';
 
 export default function HRLayout({ user, globals, actions }) {
   const { usuarios: USERS } = useGlobal();
@@ -33,6 +35,8 @@ export default function HRLayout({ user, globals, actions }) {
             <Route path="eventospersonal" element={<EventosPersonal users={USERS} />} />
             <Route path="reconocimientos" element={<ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />} />
             <Route path="reportesrh" element={<ReportesRH vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} />} />
+            <Route path="bolsa" element={<BolsaTrabajo />} />
+            <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Routes>
         </div>

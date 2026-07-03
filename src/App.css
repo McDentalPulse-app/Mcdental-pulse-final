@@ -7891,3 +7891,304 @@
 
 /* Admin: una sola tarjeta a ancho completo en el grid de dashboard */
 .dashboard-grid-2--single { grid-template-columns: 1fr; }
+
+/* ============================================================
+   Mi perfil (compartido 4 roles) + Bolsa de trabajo (RH)
+   Aditivo. Superficies vía .mc-card (ya temático claro/oscuro).
+   Acentos teal + textos con variables puente (--mc-texto-titulo /
+   --mc-texto-secundario, existen en ambos modos). Sin blancos fijos.
+   ============================================================ */
+
+/* ---- Mi perfil: hero ---- */
+.perfil-hero {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  flex-wrap: wrap;
+}
+.perfil-hero-bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(130% 150% at 100% 0%, rgba(20, 200, 182, 0.13), transparent 60%);
+  pointer-events: none;
+}
+.perfil-avatar-wrap {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.perfil-avatar-wrap .mc-avatar {
+  border: 3px solid rgba(20, 200, 182, 0.35);
+  box-shadow: 0 12px 32px -14px rgba(14, 140, 122, 0.55);
+}
+.perfil-foto-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  min-width: 148px;
+}
+.perfil-foto-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 9px 16px;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.perfil-foto-btn--primary {
+  background: linear-gradient(135deg, var(--mc-verde) 0%, var(--brand-400) 100%);
+  color: #fff;
+  box-shadow: 0 8px 20px -10px rgba(14, 140, 122, 0.7);
+}
+.perfil-foto-btn--primary:hover { transform: translateY(-1px); }
+.perfil-foto-btn--ghost {
+  background: transparent;
+  color: var(--mc-texto-secundario);
+  border-color: var(--mc-superficie-card-border, rgba(10, 59, 54, 0.16));
+}
+.perfil-foto-btn--ghost:hover { background: rgba(239, 68, 68, 0.08); color: #DC2626; border-color: rgba(239, 68, 68, 0.3); }
+[data-theme="dark"] .perfil-foto-btn--ghost:hover { color: #FCA5A5; }
+.perfil-foto-btn[aria-disabled="true"] { opacity: 0.6; pointer-events: none; }
+
+.perfil-hero-main {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 200px;
+}
+.perfil-role-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(20, 200, 182, 0.14);
+  color: var(--mc-verde-medio);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+[data-theme="dark"] .perfil-role-badge { color: var(--brand-300); }
+.perfil-name {
+  margin: 12px 0 4px;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+  color: var(--mc-texto-titulo);
+}
+.perfil-hero-sub {
+  font-size: 14px;
+  color: var(--mc-texto-secundario);
+}
+
+/* ---- Mi perfil: tarjeta de información ---- */
+.perfil-info-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--mc-texto-secundario);
+}
+.perfil-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+.perfil-info-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(20, 200, 182, 0.05);
+  border: 1px solid var(--mc-superficie-card-border, rgba(10, 59, 54, 0.08));
+}
+.perfil-info-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: rgba(20, 200, 182, 0.12);
+  color: var(--mc-verde-medio);
+}
+[data-theme="dark"] .perfil-info-icon { color: var(--brand-300); }
+.perfil-info-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.perfil-info-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--mc-texto-secundario);
+}
+.perfil-info-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mc-texto-titulo);
+  word-break: break-word;
+}
+.perfil-info-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 16px;
+  font-size: 12.5px;
+  color: var(--mc-texto-secundario);
+}
+
+/* ---- Bolsa de trabajo: estado "en desarrollo" ---- */
+.bolsa-empty {
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  padding: 40px 24px;
+}
+.bolsa-empty-bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(100% 100% at 50% 0%, rgba(20, 200, 182, 0.1), transparent 65%);
+  pointer-events: none;
+}
+.bolsa-empty-icon {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  margin: 0 auto 16px;
+  border-radius: 22px;
+  background: rgba(20, 200, 182, 0.12);
+  color: var(--mc-verde-medio);
+  border: 1.5px solid rgba(20, 200, 182, 0.25);
+}
+[data-theme="dark"] .bolsa-empty-icon { color: var(--brand-300); }
+.bolsa-badge {
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+  margin-bottom: 12px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  background: rgba(251, 191, 36, 0.15);
+  color: #B45309;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+}
+[data-theme="dark"] .bolsa-badge { color: #FBBF24; }
+.bolsa-empty-title {
+  position: relative;
+  z-index: 1;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--mc-texto-titulo);
+  margin-bottom: 10px;
+}
+.bolsa-empty-text {
+  position: relative;
+  z-index: 1;
+  max-width: 520px;
+  margin: 0 auto;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--mc-texto-secundario);
+}
+.bolsa-steps {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-top: 28px;
+  text-align: left;
+}
+.bolsa-step {
+  position: relative;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(20, 200, 182, 0.05);
+  border: 1px solid var(--mc-superficie-card-border, rgba(10, 59, 54, 0.08));
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bolsa-step-num {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  color: rgba(20, 200, 182, 0.22);
+}
+.bolsa-step-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: rgba(20, 200, 182, 0.12);
+  color: var(--mc-verde-medio);
+}
+[data-theme="dark"] .bolsa-step-icon { color: var(--brand-300); }
+.bolsa-step-label {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--mc-texto-titulo);
+}
+.bolsa-step-desc {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--mc-texto-secundario);
+}
+
+/* ---- Sidebar/hoja "Más": bloque de usuario clickeable → Mi perfil ---- */
+.sidebar-user--link {
+  width: 100%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  border-radius: 12px;
+  transition: background 0.15s ease;
+}
+.sidebar-user--link:hover { background: rgba(20, 200, 182, 0.09); }
+.mobile-sheet-user--link {
+  width: 100%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+.mobile-sheet-user-chevron {
+  margin-left: auto;
+  opacity: 0.55;
+  flex-shrink: 0;
+}

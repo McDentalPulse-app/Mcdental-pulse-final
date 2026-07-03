@@ -9,6 +9,7 @@ import PermisosEmpleado from '../empleados/PermisosEmpleado';
 import ReconocimientosEmpleado from '../empleados/ReconocimientosEmpleado';
 import ReporteConfidencialEmpleado from '../empleados/ReporteConfidencialEmpleado';
 import Mensajes from '../comunicacion/Mensajes';
+import Perfil from '../common/Perfil';
 
 import { getPsicologaPrincipal } from '../../utils/psicologa';
 
@@ -35,6 +36,7 @@ export default function EmpleadoLayout({ user, globals, actions }) {
             <Route path="reconocimientos" element={<ReconocimientosEmpleado user={user} reconocimientos={reconocimientos} />} />
             <Route path="reporteconfidencial" element={<ReporteConfidencialEmpleado user={user} onSubmit={addReporteConfidencial} />} />
             <Route path="mensajes" element={<Mensajes user={user} mensajes={userMensajes} onSend={(msg)=>sendMensaje({...msg,para:psicologaId})} onMarkRead={marcarMensajesLeidos}/>} />
+            <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="inicio" replace />} />
           </Routes>
         </div>
