@@ -25,6 +25,13 @@ a,
     -webkit-text-size-adjust: 100%;
   }
 
+  /* Área segura superior: con viewport-fit=cover (PWA/notch) el contenido va
+     edge-to-edge y el header de cada página quedaba bajo la barra de estado.
+     En navegador sin notch, inset-top=0 → sin cambio. */
+  .app-main {
+    padding-top: calc(14px + env(safe-area-inset-top));
+  }
+
   body {
     /* Sin rebote de scroll encadenado al body (sensación de web, no de app) */
     overscroll-behavior-y: contain;
@@ -90,6 +97,50 @@ a,
     width: 44px;
     height: 44px;
     font-size: 15px;
+  }
+
+  /* Densidad: las tarjetas del Inicio del empleado se apilan 1×fila en teléfono
+     y el min-height:168 + meta flex:1 dejaba mucho espacio muerto → más scroll.
+     Se compacta el alto (mismo diseño y elementos) para ver más de un vistazo. */
+  .empleado-quick-card {
+    min-height: 132px;
+  }
+}
+
+/* Tap targets ≥44px en controles que no pasan por .mc-form-* ni .mc-btn-*
+   (detectados en auditoría móvil): selector de semana, pestañas del AI Engine,
+   botón generar, filtros de listas/búsqueda y el composer de mensajes. En claro
+   y oscuro. No cambia el ancho ni el diseño, solo asegura el alto cómodo. */
+@media (max-width: 768px) {
+  .week-select-trigger,
+  .ai-engine-tab,
+  .ai-gen-btn,
+  .list-filter-input,
+  .list-filter-select,
+  .table-search,
+  .mensajes-composer-input,
+  .mensajes-composer .mc-btn-primary {
+    min-height: 44px;
+  }
+}
+
+/* Modales en móvil: el tabbar inferior (position:fixed) tapaba los botones de
+   acción del modal (Guardar/Cancelar) — el overlay queda atrapado en el
+   stacking-context de .app-main, por debajo del tabbar. Con un modal abierto se
+   oculta el tabbar (patrón estándar: el modal toma el foco). :has() cubre TODOS
+   los modales de una vez vía la clase compartida .mc-modal-overlay; reaparece al
+   cerrar. Además, el modal y sus botones respetan el área segura inferior. */
+@media (max-width: 768px) {
+  body:has(.mc-modal-overlay) .mobile-tabbar {
+    display: none;
+  }
+  .mc-modal-overlay,
+  .mc-notify-overlay {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+  .mc-modal,
+  .mc-notify-modal {
+    max-height: calc(100dvh - 24px - env(safe-area-inset-bottom));
   }
 }
 

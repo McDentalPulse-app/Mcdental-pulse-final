@@ -271,3 +271,34 @@
   color: #EAFFFB;
   border-color: rgba(20, 200, 182, 0.4);
 }
+
+/* ── Gestión de Personal (admin/rh): la tarjeta móvil de cada usuario fija
+   background:var(--mc-blanco) y texto verde-oscuro en App.css, sin variable
+   puente. En oscuro salía BLANCA (200 ocurrencias en la auditoría). Se lleva a
+   superficie oscura + texto legible, igual que .mc-card / rank-row. ── */
+[data-theme="dark"] .gestion-personal-mobile-card {
+  background: var(--mc-superficie-card);
+  border-color: var(--mc-superficie-card-border);
+}
+[data-theme="dark"] .gestion-personal-mobile-name {
+  color: var(--mc-texto-titulo);
+}
+[data-theme="dark"] .gestion-personal-mobile-user,
+[data-theme="dark"] .gestion-personal-mobile-sucursal {
+  color: var(--mc-texto-secundario);
+}
+
+/* ── Mensajes (móvil): en ≤768px el wrapper del chat y la barra de composición
+   fijan background:var(--mc-blanco) (media queries de App.css), así que en
+   oscuro salían blancos. Se acota al mismo breakpoint para no tocar el desktop
+   (donde el layout es transparente). El input ya está cubierto (más arriba). ── */
+@media (max-width: 768px) {
+  [data-theme="dark"] .mensajes-layout {
+    background: var(--mc-superficie-card);
+    border-color: var(--mc-superficie-card-border);
+  }
+  [data-theme="dark"] .mensajes-composer {
+    background: var(--mc-superficie-card);
+    border-top-color: var(--mc-superficie-card-border);
+  }
+}

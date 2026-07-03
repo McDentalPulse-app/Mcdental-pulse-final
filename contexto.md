@@ -110,6 +110,20 @@ Este archivo conserva el estado actual de la interacción y del proyecto para re
 *   **Fix landing** (`LandingPage.css` + `.jsx`): media query ≤560px que compacta el hero (título con clamp menor, chips decorativos y ECG ocultos, `align-items: flex-start`) para que la tarjeta con su CTA entre en la primera pantalla **incluso en 320×568 (iPhone SE1)**; al voltear al login, `scrollIntoView` de la tarjeta completa + `focus({preventScroll})`; el panel de cambio de contraseña ya no usa `inset:0` (cortaba "Volver" si su contenido excedía el alto del stage — ahora `top/left/right` + `min-height:100%`).
 *   **Barrido móvil de toda la app**: 16 pantallas (empleado @320/@390: inicio, encuesta, vacaciones, mensajes, historial · rh @360: dashboard, usuarios, vacaciones, calendario, empleados, reconocimientos) con detector de overflow-x programático → **cero desbordes**; verificación visual de encuesta (escala 1-10 táctil), tabbar y cards correctas. La base ya era sólida (media queries de App.css + mobile-polish.css de esta sesión).
 
+## 📱 Pulido integral móvil — 4 roles (2026-07-02, noche 2)
+
+Petición: la mayoría del personal usa la app **desde el teléfono**, así que debe quedar "muy bien en cualquier teléfono". Decisión del usuario: barrido **parejo por los 4 roles**, **pulido integral sin rediseñar**.
+
+*   **Auditoría programática (Playwright, 34 pantallas × 4 anchos 320/360/390/430)**: la base ya era muy sólida — **cero overflow-x** en todos lados; la mayoría de "tap targets chicos" resultaron falsos positivos (leyendas/etiquetas). Se corrió un **detector de superficies blancas en dark** (near-white opaco, área ≥2500px²) que encontró los gaps reales. Scripts en scratchpad (no commiteados): `prep-accounts`, `sweep`, `dark-white-detector`, `tap-targets`, `modal-probe`/`modal-footer`, `restore-accounts`.
+*   **Fix dark mode (el hallazgo grande)** — dos focos de fugas blancas, todo lo demás dark limpio (`src/styles/dark/screens.css`):
+    *   `.gestion-personal-mobile-card` fijaba `background:var(--mc-blanco)` + nombre `--mc-verde-oscuro` sin variable puente → **200 tarjetas blancas** en dark (admin+rh/usuarios). Override a `--mc-superficie-card` + texto `--mc-texto-titulo/-secundario` (patrón `.dashboard-sucursal-rank-row`).
+    *   `.mensajes-layout` + `.mensajes-composer` (media queries ≤768 de App.css) → blancos en dark; override acotado a ≤768 para no tocar el desktop (input ya cubierto).
+*   **Tap targets reales ≥44px** (`src/styles/mobile-polish.css`, ≤768): `week-select-trigger`, `ai-engine-tab`, `ai-gen-btn`, `list-filter-input/select`, `table-search`, `mensajes-composer-input` y botón enviar (30–42px → 44). Se dejaron las filas de sucursal "Sin datos" (33px, no accionables).
+*   **Modales vs tabbar (bug real de UX)**: el tabbar (`position:fixed`) tapaba los botones Guardar/Cancelar del modal — el overlay (`z-index:1000`) queda atrapado en el stacking-context de `.app-main`, por debajo del tabbar (`z:200`), así que subir z-index no basta. Fix: `body:has(.mc-modal-overlay) .mobile-tabbar { display:none }` (≤768) — oculta el tabbar con cualquier modal abierto (clase compartida cubre todos), reaparece al cerrar. + `max-height`/`padding-bottom` del modal respetan `env(safe-area-inset-bottom)`. Verificado E2E: Guardar ahora visible y clickeable.
+*   **Área segura superior**: `.app-main` en móvil no incluía `safe-area-inset-top` → con `viewport-fit=cover` (PWA/notch) el header quedaba bajo la barra de estado. `padding-top: calc(14px + env(safe-area-inset-top))` (inofensivo en navegador sin notch).
+*   **Densidad**: `.empleado-quick-card` en ≤480 pasó de `min-height:168` a `132` (el `meta{flex:1}` dejaba espacio muerto) — mismo diseño, menos scroll (ahora se ve la 4ª tarjeta de un vistazo).
+*   **Verificación final**: cero overflow, **cero superficies blancas en dark**, todos los controles reales ≥44px, modales OK claro/oscuro, `npm run build` ✓. Cambio **puramente aditivo** (82 líneas, 0 borrados) en 2 archivos: `screens.css` + `mobile-polish.css`.
+
 ## 🔑 Estado de cuentas al cierre (2026-07-02 tarde)
 
 *   Temporal estándar: `emp123` + `debe_cambiar_password=true`. Entrar con `emp123` SIEMPRE fuerza cambio (blindaje AuthContext), aunque el flag esté apagado.
@@ -117,3 +131,4 @@ Este archivo conserva el estado actual de la interacción y del proyecto para re
 *   `maricruz izaguirre` (rh): `emp123` + flag=true (útil para sesiones admin/rh de prueba vía API).
 *   `ana salas` (psicologa) y resto de empleados: `emp123` + flag=true.
 *   `luz gomez`: contraseña propia previa a esta sesión, flag=false (legítimo).
+*   **Nota (auditoría móvil 2026-07-02 noche 2)**: se usaron 4 cuentas (1 activa por rol, elegidas por la BD) con contraseña temporal de auditoría; al cierre se **restauraron a `emp123`+flag** vía service role. Si la cuenta admin elegida fue `mario`, ahora está en `emp123`+flag (entrar con `emp123` fuerza cambio).
