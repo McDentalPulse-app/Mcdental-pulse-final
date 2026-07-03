@@ -62,9 +62,13 @@ export default function LandingPage() {
     logout();
   };
 
-  // Al voltear hacia el login, foco en el input usuario
+  // Al voltear hacia el login: la tarjeta completa a la vista (en teléfonos
+  // chicos el hero la empuja bajo el fold) y foco en el input usuario.
+  // preventScroll evita que el focus dispare su propio scroll a mitad de camino.
   useEffect(() => {
-    if (flipped) userRef.current?.focus();
+    if (!flipped) return;
+    userRef.current?.closest(".gw-stage")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    userRef.current?.focus({ preventScroll: true });
   }, [flipped]);
 
   useEffect(() => {

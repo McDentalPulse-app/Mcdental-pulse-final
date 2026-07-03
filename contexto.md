@@ -104,6 +104,12 @@ Este archivo conserva el estado actual de la interacción y del proyecto para re
 *   **Conservan inactivos a propósito**: ExpedienteIntegral (archivo/historial, comentado en código) y GestionUsuarios (para reactivar).
 *   **Verificado E2E**: login de inactiva rechazado con mensaje; HR dashboard 99→98 colaboradores; fuera de Empleados; visible en Gestión con botón Activar; reactivada vuelve a entrar.
 
+## 📱 Fix: landing en teléfonos + barrido móvil (2026-07-02, noche)
+
+*   **Bug reportado**: en teléfonos los botones de la landing "se esconden o no aparecen". Causa: `.gw-wrapper` centra vertical con contenido más alto que el viewport — en ≤360px la tarjeta de acceso quedaba bajo el fold sin indicio visual (la página sí scrolleaba, pero parecía que no había botón).
+*   **Fix landing** (`LandingPage.css` + `.jsx`): media query ≤560px que compacta el hero (título con clamp menor, chips decorativos y ECG ocultos, `align-items: flex-start`) para que la tarjeta con su CTA entre en la primera pantalla **incluso en 320×568 (iPhone SE1)**; al voltear al login, `scrollIntoView` de la tarjeta completa + `focus({preventScroll})`; el panel de cambio de contraseña ya no usa `inset:0` (cortaba "Volver" si su contenido excedía el alto del stage — ahora `top/left/right` + `min-height:100%`).
+*   **Barrido móvil de toda la app**: 16 pantallas (empleado @320/@390: inicio, encuesta, vacaciones, mensajes, historial · rh @360: dashboard, usuarios, vacaciones, calendario, empleados, reconocimientos) con detector de overflow-x programático → **cero desbordes**; verificación visual de encuesta (escala 1-10 táctil), tabbar y cards correctas. La base ya era sólida (media queries de App.css + mobile-polish.css de esta sesión).
+
 ## 🔑 Estado de cuentas al cierre (2026-07-02 tarde)
 
 *   Temporal estándar: `emp123` + `debe_cambiar_password=true`. Entrar con `emp123` SIEMPRE fuerza cambio (blindaje AuthContext), aunque el flag esté apagado.

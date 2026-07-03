@@ -204,8 +204,13 @@
    así que por orden de cascada le ganaría a una regla de una sola clase. */
 .gw-card.gw-changepass-panel {
   position: absolute;
-  inset: 0;
+  /* top/left/right SIN bottom: alto propio (min-height compensa si es más
+     bajo que el flip card). Con inset:0 el alto quedaba forzado al del stage
+     y overflow:hidden cortaba el botón "Volver" en pantallas chicas. */
   top: 0;
+  left: 0;
+  right: 0;
+  min-height: 100%;
   width: 100%;
   max-width: 380px;
   transform: translateX(112%);
@@ -396,10 +401,46 @@
   .gw-title { font-size: clamp(44px, 12vw, 64px); }
 }
 
-@media (max-width: 480px) {
-  .gw-wrapper { padding: 28px 18px; }
+/* Teléfonos: el objetivo es que la tarjeta de acceso (con su botón) entre en
+   la PRIMERA pantalla incluso en 320×568. Se compacta el hero, se ocultan los
+   chips decorativos y el centrado vertical pasa a flujo normal con scroll. */
+@media (max-width: 560px) {
+  .gw-wrapper {
+    align-items: flex-start;
+    padding: 20px 16px calc(28px + env(safe-area-inset-bottom));
+  }
+  .gw-container { gap: 18px; }
+  .gw-badge { padding: 5px 12px; font-size: 10px; }
+  .gw-title {
+    font-size: clamp(32px, 10.5vw, 42px);
+    letter-spacing: -1px;
+    margin-top: 10px;
+  }
+  .gw-subtext {
+    margin-top: 10px;
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+  /* Decorativos: en pantalla chica el espacio es para el acceso */
+  .gw-features { display: none; }
+  .gw-pulse-svg { display: none; }
+
   .gw-card { max-width: 100%; }
-  .gw-pulse-svg { bottom: 4%; height: 140px; }
+  .gw-card-header { padding: 12px 18px; }
+  .gw-card-body { padding: 20px 18px; }
+  .gw-auth-icon { width: 52px; height: 52px; margin-bottom: 12px; }
+  .gw-auth-icon svg { width: 22px; height: 22px; }
+  .gw-card-title { font-size: 18px; }
+  .gw-card-text { margin-bottom: 16px; font-size: 13px; }
+  .gw-btn { min-height: 48px; }
+  .gw-card-footer { padding: 10px 16px; font-size: 10px; }
+  .gw-flip-back { min-height: 44px; margin-top: 10px; }
+
+  /* Formulario (login / cambio de contraseña): más compacto para que el
+     botón principal entre completo incluso en 320×568. */
+  .gw-login-body .gw-auth-icon { width: 44px; height: 44px; margin-bottom: 8px; }
+  .gw-login-body .auth-field { margin-top: 10px; }
+  .gw-login-body .auth-btn { margin-top: 16px; }
 }
 
 /* Respeta accesibilidad: sin animaciones de movimiento */
