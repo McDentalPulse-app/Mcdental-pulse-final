@@ -48,8 +48,11 @@ src/
 
 ## Despliegue
 
-- **Producción:** `McDentalPulse-app/Mcdental-pulse-final` (rama `develop`)
-- **Backup:** `MCDentalSist/MCDentalPulseBackUp` (rama `main`)
+- **Producción:** `McDentalPulse-app/Mcdental-pulse-final` (remoto `prod`, rama `main`)
+- **Backup:** `MCDentalSist/MCDentalPulseBackUp` (remoto `origin`, rama `main`)
+
+> La rama viva de producción es **`main`**. La rama `develop` de `prod` quedó obsoleta
+> (varios commits atrás) y no se usa para desplegar.
 
 ---
 
