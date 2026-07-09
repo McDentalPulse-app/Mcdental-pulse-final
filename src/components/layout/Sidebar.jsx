@@ -75,6 +75,7 @@ const Sidebar = () => {
       { key: "permisosempleado", icon: "vacation", label: "Vacaciones" },
       { key: "reconocimientos", icon: "award", label: "Reconocimientos" },
       { key: "reporteconfidencial", icon: "lock", label: "Reporte Confidencial" },
+      { key: "soporte", icon: "wrench", label: "Soporte TI" },
       { key: "mensajes", icon: "message", label: "Mensajes" },
       { key: "perfil", icon: "user", label: "Mi perfil" },
     ],

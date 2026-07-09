@@ -8,6 +8,7 @@ import HistorialEmpleado from '../empleados/HistorialEmpleado';
 import PermisosEmpleado from '../empleados/PermisosEmpleado';
 import ReconocimientosEmpleado from '../empleados/ReconocimientosEmpleado';
 import ReporteConfidencialEmpleado from '../empleados/ReporteConfidencialEmpleado';
+import SoporteTI from '../empleados/SoporteTI';
 import Mensajes from '../comunicacion/Mensajes';
 import Perfil from '../common/Perfil';
 
@@ -35,6 +36,7 @@ export default function EmpleadoLayout({ user, globals, actions }) {
             <Route path="permisosempleado" element={<PermisosEmpleado user={user} vacaciones={vacaciones} permisos={permisos} onEnviarSolicitudEmpleado={addSolicitudEmpleadoRH}/>} />
             <Route path="reconocimientos" element={<ReconocimientosEmpleado user={user} reconocimientos={reconocimientos} />} />
             <Route path="reporteconfidencial" element={<ReporteConfidencialEmpleado user={user} onSubmit={addReporteConfidencial} />} />
+            <Route path="soporte" element={<SoporteTI user={user} />} />
             <Route path="mensajes" element={<Mensajes user={user} mensajes={userMensajes} onSend={(msg)=>sendMensaje({...msg,para:psicologaId})} onMarkRead={marcarMensajesLeidos}/>} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="inicio" replace />} />
