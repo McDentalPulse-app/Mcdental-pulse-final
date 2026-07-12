@@ -94,26 +94,42 @@ const SoporteTI = ({ user }) => {
       />
 
       <Card className="empleado-form-card">
+        <SectionTitle icon="wrench">Nuevo ticket</SectionTitle>
+
         <div className="mc-form-grid">
-          <div className="mc-form-group">
-            <label>Categoría</label>
-            <select value={categoria} onChange={(e) => setCategoria(e.target.value)}>
-              {CATEGORIAS.map((c) => (
-                <option key={c.value} value={c.value}>{c.label}</option>
-              ))}
-            </select>
+          <div className="mc-form-row-2">
+            <div className="mc-form-group">
+              <label className="mc-form-label" htmlFor="st-categoria">Categoría</label>
+              <select
+                id="st-categoria"
+                className="mc-form-select"
+                value={categoria}
+                onChange={(e) => setCategoria(e.target.value)}
+              >
+                {CATEGORIAS.map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="mc-form-group">
+              <label className="mc-form-label" htmlFor="st-prioridad">Prioridad</label>
+              <select
+                id="st-prioridad"
+                className="mc-form-select"
+                value={prioridad}
+                onChange={(e) => setPrioridad(e.target.value)}
+              >
+                {PRIORIDADES.map((p) => (
+                  <option key={p.value} value={p.value}>{p.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="mc-form-group">
-            <label>Prioridad</label>
-            <select value={prioridad} onChange={(e) => setPrioridad(e.target.value)}>
-              {PRIORIDADES.map((p) => (
-                <option key={p.value} value={p.value}>{p.label}</option>
-              ))}
-            </select>
-          </div>
-          <div className="mc-form-group mc-form-group-full">
-            <label>Asunto</label>
+            <label className="mc-form-label" htmlFor="st-asunto">Asunto</label>
             <input
+              id="st-asunto"
+              className="mc-form-input"
               type="text"
               maxLength={200}
               value={asunto}
@@ -121,19 +137,21 @@ const SoporteTI = ({ user }) => {
               placeholder="Ej. No enciende mi computadora"
             />
           </div>
-          <div className="mc-form-group mc-form-group-full">
-            <label>Descripción</label>
+          <div className="mc-form-group">
+            <label className="mc-form-label" htmlFor="st-descripcion">Descripción</label>
             <textarea
+              id="st-descripcion"
+              className="mc-form-textarea"
               rows={5}
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
               placeholder="Cuéntanos qué pasa, desde cuándo y qué has intentado."
             />
           </div>
+          <button type="button" className="mc-btn-primary mc-btn-with-icon" disabled={enviando} onClick={enviar}>
+            <Icon name="wrench" size={16} /> {enviando ? "Enviando…" : "Enviar ticket"}
+          </button>
         </div>
-        <button type="button" className="mc-btn-primary mc-btn-with-icon" disabled={enviando} onClick={enviar}>
-          <Icon name="wrench" size={16} /> {enviando ? "Enviando…" : "Enviar ticket"}
-        </button>
       </Card>
     </div>
   );
