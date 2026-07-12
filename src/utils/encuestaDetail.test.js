@@ -7,6 +7,8 @@ import {
   getComentarioAbierto,
   buildEncuestaDetalleItems,
   getEncuestaSemaforo,
+  readRiesgoRenuncia,
+  readProblemaPersonal,
 } from "./encuestaDetail";
 
 // El jsonb `respuestas` convive en DOS formatos: objeto indexado por id de pregunta
@@ -151,6 +153,60 @@ describe("buildEncuestaDetalleItems", () => {
     const items = buildEncuestaDetalleItems(encuesta, PREGUNTAS);
 
     expect(items.filter((i) => !i.esAbierta)).toHaveLength(1);
+  });
+});
+
+describe("readRiesgoRenuncia", () => {
+  // El jsonb `respuestas` se indexa por el ID de la pregunta — un UUID en producción.
+  // Leerlo con la clave numérica 9 (lo que hacía el motor de riesgo) devolvía siempre
+  // undefined: la respuesta a "¿Has pensado en renunciar?" se guardaba y se ignoraba.
+  const UUID_RIESGO = "d7d1eea0-7924-486f-aaae-ceb5a38aa20d";
+  const PREGS = [
+    { id: "aaa", tipo: "escala", area: "Emocional" },
+    { id: UUID_RIESGO, tipo: "opcion", area: "Riesgo" },
+  ];
+
+  it("lee la respuesta por el id de la pregunta, aunque sea un UUID", () => {
+    const encuesta = { respuestas: { [UUID_RIESGO]: "Sí, seriamente" } };
+    expect(readRiesgoRenuncia(encuesta, PREGS)).toBe("Sí, seriamente");
+  });
+
+  it("localiza la pregunta por tipo 'opcion', sin depender de su posición", () => {
+    const desordenadas = [PREGS[1], PREGS[0]];
+    const encuesta = { respuestas: { [UUID_RIESGO]: "Algo" } };
+    expect(readRiesgoRenuncia(encuesta, desordenadas)).toBe("Algo");
+  });
+
+  it("cae a las claves legacy (9 / p9) para los datos viejos", () => {
+    expect(readRiesgoRenuncia({ respuestas: { 9: "Algo" } }, [])).toBe("Algo");
+    expect(readRiesgoRenuncia({ respuestas: { p9: "No" } }, [])).toBe("No");
+  });
+
+  it("devuelve null si no hay respuesta", () => {
+    expect(readRiesgoRenuncia({ respuestas: {} }, PREGS)).toBeNull();
+    expect(readRiesgoRenuncia(null, PREGS)).toBeNull();
+  });
+});
+
+describe("readProblemaPersonal", () => {
+  const UUID_PERSONAL = "723e3d9a-0156-4356-b1a0-f512db057153";
+  const PREGS = [{ id: UUID_PERSONAL, tipo: "sino", area: "Personal" }];
+
+  it("lee por el id de la pregunta de área Personal", () => {
+    expect(readProblemaPersonal({ respuestas: { [UUID_PERSONAL]: "Sí" } }, PREGS)).toBe("Sí");
+  });
+
+  it("cae a la clave legacy 7", () => {
+    expect(readProblemaPersonal({ respuestas: { 7: "No" } }, [])).toBe("No");
+  });
+
+  it("no confunde la pregunta de carga (también tipo sino) con la de problema personal", () => {
+    const pregs = [
+      { id: "carga", tipo: "sino", area: "Carga" },
+      { id: UUID_PERSONAL, tipo: "sino", area: "Personal" },
+    ];
+    const encuesta = { respuestas: { carga: "Sí", [UUID_PERSONAL]: "No" } };
+    expect(readProblemaPersonal(encuesta, pregs)).toBe("No");
   });
 });
 

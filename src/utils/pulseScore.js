@@ -1,3 +1,5 @@
+import { readRiesgoRenuncia } from "./encuestaDetail";
+
 const SCORE_SIN_DATOS = {
   score: null,
   promedio: null,
@@ -91,7 +93,15 @@ const riskFromBand = (score, bandMin, bandMax, riskMin, riskMax) => {
   return Math.round(riskMin + ratio * (riskMax - riskMin));
 };
 
-export const getEmployeeAIRisks = (score, encuestasEmpleado = []) => {
+/**
+ * Riesgos derivados del score, más el "bump" por la respuesta a "¿Has pensado en renunciar?".
+ *
+ * `preguntas` hace falta porque el jsonb `respuestas` se indexa por el ID de la pregunta (un
+ * UUID en producción): sin la lista de preguntas no se sabe qué clave leer. Antes se buscaba
+ * la clave numérica 9, que no existe en los datos, así que el bump NUNCA se aplicaba.
+ * Sin `preguntas` sigue funcionando el fallback a las claves legacy.
+ */
+export const getEmployeeAIRisks = (score, encuestasEmpleado = [], preguntas = []) => {
   if (!tieneScoreValido(score)) {
     return { ...RIESGOS_SIN_DATOS };
   }
@@ -120,10 +130,7 @@ export const getEmployeeAIRisks = (score, encuestasEmpleado = []) => {
   }
 
   const latest = encuestasEmpleado[0];
-  const riesgoRenunciaResp =
-    latest?.respuestas?.[9] ??
-    latest?.respuestas?.p9 ??
-    latest?.respuestas?.riesgoRenuncia;
+  const riesgoRenunciaResp = readRiesgoRenuncia(latest, preguntas);
 
   if (riesgoRenunciaResp === "Sí, seriamente") {
     renuncia = Math.min(95, renuncia + 15);
@@ -142,10 +149,10 @@ export const getEmployeeAIRisks = (score, encuestasEmpleado = []) => {
   };
 };
 
-export const calcRiesgos = (empId, encuestas) => {
+export const calcRiesgos = (empId, encuestas, preguntas = []) => {
   const surveys = getEmployeeSurveys(empId, encuestas);
   const latestScore = getLatestEmployeeScore(empId, encuestas);
-  return getEmployeeAIRisks(latestScore, surveys);
+  return getEmployeeAIRisks(latestScore, surveys, preguntas);
 };
 
 export const getPulseStatus = (score) => {

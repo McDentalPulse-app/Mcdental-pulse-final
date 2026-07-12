@@ -28,7 +28,9 @@ const EmpleadosList = ({
   currentUser,
   onRestablecerPassword
 }) => {
-  const { usuarios: USERS } = useGlobal();
+  // encuestaPreguntas hace falta para leer la respuesta de riesgo de renuncia: el jsonb
+  // `respuestas` se indexa por el id de la pregunta, no por un número fijo.
+  const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
   const [filtroSucursal, setFiltroSucursal] = useState("Todas");
   const [filtroSemaforo, setFiltroSemaforo] = useState("Todos");
@@ -85,7 +87,7 @@ const EmpleadosList = ({
       label: formatSemanaDisplay(e.semana).replace("2026-", ""),
       v: e.score
     }));
-    const riesgos = calcRiesgos(selected.id, encuestas);
+    const riesgos = calcRiesgos(selected.id, encuestas, encuestaPreguntas);
 
     return (
       <div className="detail-page admin-page">

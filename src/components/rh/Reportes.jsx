@@ -6,8 +6,9 @@ import Icon from "../ui/Icon";
 import { semanaActual, normalizeSucursal, sucursalMatches, isSemanaActual, formatSemanaDisplay } from "../../utils/constants";
 import { esEmpleadoActivo } from "../../utils/helpers";
 import { tieneScoreValido } from "../../utils/pulseScore";
+import { readRiesgoRenuncia, readProblemaPersonal, getComentarioAbierto } from "../../utils/encuestaDetail";
 
-const Reportes = ({ users = [], encuestas = [] }) => {
+const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
   const [sucursalReporte, setSucursalReporte] = useState("Todas");
   const [mostrarSelectorSucursal, setMostrarSelectorSucursal] = useState(false);
   const sucursalesReporte = [
@@ -169,9 +170,11 @@ const Reportes = ({ users = [], encuestas = [] }) => {
         nombre: emp?.name || "Empleado no encontrado", sucursal: normalizeSucursal(emp?.sucursal) || "Sin sucursal",
         puesto: emp?.puesto || "Sin puesto", semana: formatSemanaDisplay(encuesta.semana) || "", fecha: encuesta.fecha || "",
         score: encuesta.score, semaforo: encuesta.semaforo || "Sin datos",
-        riesgoRenuncia: encuesta.respuestas?.[9] || encuesta.respuestas?.p9 || "",
-        problemaPersonal: encuesta.respuestas?.[7] || encuesta.respuestas?.p7 || "",
-        comentario: encuesta.respuestas?.[10] || encuesta.respuestas?.p10 || ""
+        // El jsonb `respuestas` se indexa por el id de la pregunta (un UUID), no por un
+        // número: buscar la clave 9 / 7 / 10 dejaba estas tres columnas SIEMPRE vacías.
+        riesgoRenuncia: readRiesgoRenuncia(encuesta, preguntas) || "",
+        problemaPersonal: readProblemaPersonal(encuesta, preguntas) || "",
+        comentario: getComentarioAbierto(encuesta, preguntas) || ""
       };
     });
     const encabezados = ["Nombre", "Sucursal", "Puesto", "Semana", "Fecha", "Score", "Semaforo", "Riesgo renuncia", "Problema personal", "Comentario"];

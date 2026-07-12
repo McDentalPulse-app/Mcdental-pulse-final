@@ -278,38 +278,76 @@ describe("getEmployeeAIRisks", () => {
     expect(r.emocional).toBe(5);
   });
 
-  it("'Sí, seriamente' en la pregunta 9 sube el riesgo de renuncia 15 puntos", () => {
-    const base = getEmployeeAIRisks(75);
-    const conRiesgo = getEmployeeAIRisks(75, [enc("a", "2026-W01", 75, { 9: "Sí, seriamente" })]);
+  // El jsonb `respuestas` se indexa por el ID de la pregunta — en producción, un UUID.
+  // El motor de riesgo lo leía con la clave numérica 9, que NO existe en los datos, así que
+  // el bump de riesgo de renuncia nunca llegaba a aplicarse: la respuesta a "¿Has pensado en
+  // renunciar?" se guardaba y se ignoraba. Estos tests leen por el id real de la pregunta.
+  const P_RIESGO = { id: "d7d1eea0-7924-486f-aaae-ceb5a38aa20d", tipo: "opcion", area: "Riesgo" };
+  const PREGUNTAS = [{ id: "7edd4569-...", tipo: "escala" }, P_RIESGO];
+
+  it("'Sí, seriamente' sube el riesgo de renuncia 15 puntos", () => {
+    const base = getEmployeeAIRisks(75, [], PREGUNTAS);
+    const conRiesgo = getEmployeeAIRisks(
+      75,
+      [enc("a", "2026-W01", 75, { [P_RIESGO.id]: "Sí, seriamente" })],
+      PREGUNTAS
+    );
 
     expect(conRiesgo.renuncia).toBe(base.renuncia + 15);
   });
 
   it("'Algo' sube el riesgo de renuncia 8 puntos", () => {
-    const base = getEmployeeAIRisks(75);
-    const conRiesgo = getEmployeeAIRisks(75, [enc("a", "2026-W01", 75, { 9: "Algo" })]);
+    const base = getEmployeeAIRisks(75, [], PREGUNTAS);
+    const conRiesgo = getEmployeeAIRisks(
+      75,
+      [enc("a", "2026-W01", 75, { [P_RIESGO.id]: "Algo" })],
+      PREGUNTAS
+    );
 
     expect(conRiesgo.renuncia).toBe(base.renuncia + 8);
   });
 
-  it("acepta la clave legacy 'p9' además de '9'", () => {
-    const con9 = getEmployeeAIRisks(75, [enc("a", "2026-W01", 75, { 9: "Sí, seriamente" })]);
-    const conP9 = getEmployeeAIRisks(75, [enc("a", "2026-W01", 75, { p9: "Sí, seriamente" })]);
+  it("'No' no sube nada", () => {
+    const base = getEmployeeAIRisks(75, [], PREGUNTAS);
+    const conNo = getEmployeeAIRisks(
+      75,
+      [enc("a", "2026-W01", 75, { [P_RIESGO.id]: "No" })],
+      PREGUNTAS
+    );
 
-    expect(conP9.renuncia).toBe(con9.renuncia);
+    expect(conNo.renuncia).toBe(base.renuncia);
+  });
+
+  it("sigue aceptando las claves legacy (9 / p9) de los datos viejos", () => {
+    const porId = getEmployeeAIRisks(
+      75,
+      [enc("a", "2026-W01", 75, { [P_RIESGO.id]: "Sí, seriamente" })],
+      PREGUNTAS
+    );
+    const legacy9 = getEmployeeAIRisks(75, [enc("a", "2026-W01", 75, { 9: "Sí, seriamente" })]);
+    const legacyP9 = getEmployeeAIRisks(75, [enc("a", "2026-W01", 75, { p9: "Sí, seriamente" })]);
+
+    expect(legacy9.renuncia).toBe(porId.renuncia);
+    expect(legacyP9.renuncia).toBe(porId.renuncia);
   });
 
   it("el riesgo de renuncia nunca pasa de 95 aunque el score sea pésimo", () => {
-    const r = getEmployeeAIRisks(0, [enc("a", "2026-W01", 0, { 9: "Sí, seriamente" })]);
+    const r = getEmployeeAIRisks(
+      0,
+      [enc("a", "2026-W01", 0, { [P_RIESGO.id]: "Sí, seriamente" })],
+      PREGUNTAS
+    );
     expect(r.renuncia).toBeLessThanOrEqual(95);
   });
 
   it("solo mira la encuesta más reciente (la primera del array ya ordenado)", () => {
     const surveys = [
-      enc("a", "2026-W02", 75, { 9: "No" }),
-      enc("a", "2026-W01", 75, { 9: "Sí, seriamente" }),
+      enc("a", "2026-W02", 75, { [P_RIESGO.id]: "No" }),
+      enc("a", "2026-W01", 75, { [P_RIESGO.id]: "Sí, seriamente" }),
     ];
-    // La más reciente dice "No", así que no debe aplicarse el bump de la vieja.
-    expect(getEmployeeAIRisks(75, surveys).renuncia).toBe(getEmployeeAIRisks(75).renuncia);
+    // La más reciente dice "No": no debe aplicarse el bump de la vieja.
+    expect(getEmployeeAIRisks(75, surveys, PREGUNTAS).renuncia).toBe(
+      getEmployeeAIRisks(75, [], PREGUNTAS).renuncia
+    );
   });
 });
