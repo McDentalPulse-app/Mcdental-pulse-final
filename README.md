@@ -128,6 +128,35 @@ src/
   (estos cambios no añaden ninguno), y ponerlo en bloqueante dejaría CI en rojo permanente.
   Conviene activarlo cuando esa deuda esté saldada.
 
+#### 🔒 Seguridad (segunda tanda)
+- **Las Edge Functions llevaban 10 días sin desplegar.** Los arreglos de las funciones de
+  administración estaban en el repo, pero las versiones **desplegadas** eran del 2026-07-02: el
+  código estaba corregido y el fallo seguía vivo en producción. Las Edge Functions **no se
+  despliegan con Vercel** — viven en Supabase y necesitan su propio `supabase functions deploy`.
+  Ya están desplegadas y verificadas contra el bundle que corre en producción.
+  *(Es la misma trampa que documenta la entrada del 2026-07-11 sobre los tickets. Merece una
+  comprobación fija: después de tocar `supabase/functions/`, mirar la fecha de despliegue real.)*
+- **El receptor de un mensaje podía reescribir lo que le mandaron.** La policy se llamaba
+  `mensajes_update_mark_read`, pero RLS es *row*-level, no *column*-level: concedía `UPDATE` de la
+  **fila entera**. El receptor podía cambiar el `texto` del mensaje, o el `de_id` para atribuírselo
+  a otra persona. La **migración 032** añade un trigger que acota el cambio al flag de leído —
+  mismo patrón que ya protegía `public.usuarios`.
+- **CORS acotado** en las Edge Functions (antes `*`), configurable con el secreto `ALLOWED_ORIGINS`
+  sin tocar código. Y `admin-create-usuario` **valida el username**: un valor de solo caracteres
+  inválidos se saneaba hasta quedar en nada y creaba una cuenta inutilizable.
+
+#### 🐛 Corregido
+- **El prompt que se le mandaba a la IA decía `emocional=undefined`.** Tercera aparición del mismo
+  malentendido sobre el jsonb `respuestas`: se leía con las claves del dataset legacy
+  (`respuestas.emocional`, `.estres`, `.motivacion`) sobre un objeto indexado por el id de la
+  pregunta. **La IA llevaba meses analizando el bienestar de la plantilla sin ver ni una sola de sus
+  respuestas de escala** — solo el score agregado. Todas las lecturas pasan ahora por los helpers de
+  `encuestaDetail.js`, que localizan la pregunta por su tipo y leen por su id.
+
+#### 🧹 Dependencias
+- **Fuera `firebase-admin` y el script de migración de Firestore**, que ya cumplió su función. Era
+  el origen de las 6 vulnerabilidades `moderate` que reportaba `npm audit`. **Ahora: 0.**
+
 ### 2026-07-11 · Soporte TI para todos los roles, con estado del ticket
 
 #### ✨ Añadido
