@@ -18,6 +18,10 @@ export const useAppActions = () => {
 
   const { user } = useAuth();
   const {
+    // Los arrays se leen para poder revertir un update optimista si la escritura falla.
+    vacaciones,
+    permisos,
+    descuentos,
     setVacaciones,
     setPermisos,
     setDescuentos,
@@ -61,10 +65,16 @@ export const useAppActions = () => {
     const ids = new Set(pendientes.map(m => m.id));
     setMensajes(prev => prev.map(m => ids.has(m.id) ? { ...m, leido: true } : m));
 
-    try {
-      await Promise.all(pendientes.map(m => marcarMensajeLeido(m.id)));
-    } catch (error) {
-      console.error("Error marcando mensajes como leídos:", error);
+    // allSettled (y no all) para saber cuáles fallaron: revertir solo esos evita
+    // marcar como no leído un mensaje que sí se persistió.
+    const resultados = await Promise.allSettled(pendientes.map(m => marcarMensajeLeido(m.id)));
+    const fallidos = new Set(
+      pendientes.filter((_, i) => resultados[i].status === "rejected").map(m => m.id)
+    );
+
+    if (fallidos.size) {
+      console.error("Error marcando mensajes como leídos:", resultados.find(r => r.reason)?.reason);
+      setMensajes(prev => prev.map(m => fallidos.has(m.id) ? { ...m, leido: false } : m));
     }
   };
 
@@ -86,23 +96,29 @@ export const useAppActions = () => {
   };
 
   const updateVacacionEstado = async (id, estado, comentarioRH = "") => {
+    const previo = vacaciones.find(v => v.id === id);
     setVacaciones(prev => prev.map(v => v.id === id ? { ...v, estado, comentarioRH } : v));
 
     try {
       await updateEstadoVacacionDb(id, estado, comentarioRH);
     } catch (error) {
       console.error("Error actualizando vacación:", error);
+      // Sin revertir, la UI seguiría mostrando "aprobado" mientras la base sigue
+      // en "pendiente", y la contradicción persiste hasta que se recargue.
+      if (previo) setVacaciones(prev => prev.map(v => v.id === id ? previo : v));
       notify.toast.error("No se pudo actualizar la vacación.");
     }
   };
 
   const updatePermisoEstado = async (id, estado, comentarioRH = "") => {
+    const previo = permisos.find(p => p.id === id);
     setPermisos(prev => prev.map(p => p.id === id ? { ...p, estado, comentarioRH } : p));
 
     try {
       await updateEstadoPermisoDb(id, estado, comentarioRH);
     } catch (error) {
       console.error("Error actualizando permiso:", error);
+      if (previo) setPermisos(prev => prev.map(p => p.id === id ? previo : p));
       notify.toast.error("No se pudo actualizar el permiso.");
     }
   };
@@ -146,12 +162,14 @@ export const useAppActions = () => {
   };
 
   const updateDescuentoEstado = async (id, estado) => {
+    const previo = descuentos.find(d => d.id === id);
     setDescuentos(prev => prev.map(d => d.id === id ? { ...d, estado } : d));
 
     try {
       await updateDescuentoEstadoDb(id, estado);
     } catch (error) {
       console.error("Error actualizando descuento:", error);
+      if (previo) setDescuentos(prev => prev.map(d => d.id === id ? previo : d));
       notify.toast.error("No se pudo actualizar el descuento.");
     }
   };
