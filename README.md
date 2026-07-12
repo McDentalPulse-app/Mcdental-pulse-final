@@ -28,6 +28,8 @@ Copia `.env.example` a `.env.local` y rellena:
 |---|---|---|
 | `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` | cliente | Config pública del SDK de Supabase (no son secretos; la seguridad la da RLS) |
 | `GEMINI_API_KEY` | **servidor** | Key de Gemini. Sin prefijo `VITE_` → no entra al bundle. La consume `api/gemini.js`. En producción se configura en Vercel → Environment Variables |
+| `MCTIC_API_URL` | **servidor** | URL de MCTIC (sistema de tickets de TI), p. ej. `https://mctic.vercel.app`. La consume `api/soporte-ticket.js` |
+| `MCTIC_INTEGRATION_KEY` | **servidor** | Clave de servicio de MCTIC. **Debe ser idéntica** a la que tiene MCTIC en su propio entorno, o rechazará los tickets con 401 |
 
 > ⚠️ La IA se llama a través del proxy `api/gemini.js`. Nunca pongas la key de Gemini con prefijo `VITE_` (quedaría expuesta en el bundle del navegador).
 
@@ -35,6 +37,9 @@ Copia `.env.example` a `.env.local` y rellena:
 
 ```
 api/gemini.js            Proxy serverless de Gemini (key server-side)
+api/soporte-ticket.js    Proxy serverless a MCTIC: alta (POST) y consulta (GET) de tickets
+                         de TI. Valida el JWT de Supabase; la clave de integración vive
+                         en el servidor y nunca llega al navegador
 supabase/
   migrations/            Schema SQL + RLS policies + Storage policies
   functions/             Edge Functions (admin-create-usuario, admin-reset-password)
@@ -57,6 +62,42 @@ src/
 ---
 
 ## Changelog
+
+### 2026-07-11 · Soporte TI para todos los roles, con estado del ticket
+
+#### ✨ Añadido
+- **Todos los roles pueden abrir un ticket de TI**, no solo los empleados. La pantalla de
+  Soporte TI existía pero solo estaba enrutada en `EmpleadoLayout` y en el menú del rol
+  `empleado`, así que admin, RH y psicóloga no tenían puerta de entrada. El proxy ya aceptaba
+  a cualquier usuario autenticado: el cambio es de **acceso**, no de lógica.
+  `SoporteTI` se mueve de `components/empleados/` a `components/common/` y se añade la ruta
+  `soporte` + el ítem de menú en los layouts de admin, RH y psicóloga.
+- **"Mis tickets": el estado del ticket, dentro de Pulse.** La integración era de un solo
+  sentido (se mandaba el ticket y no había forma de saber en qué iba). Ahora la pantalla lista
+  los tickets del propio usuario con su chip de estado (Abierto / En progreso / Resuelto /
+  Cerrado), categoría, prioridad y fecha.
+  `api/soporte-ticket.js` atiende `GET`: valida el JWT y pide a MCTIC los tickets del **correo
+  del token**, así que nadie puede consultar los de otra persona.
+
+#### 🎨 Corregido (estilos)
+- **El formulario del ticket no usaba el sistema de diseño.** Los campos iban como `<label>`,
+  `<select>`, `<input>` y `<textarea>` **pelados, sin clase**, así que el navegador los pintaba
+  con su apariencia por defecto en ambos temas. Ahora usan `mc-form-label`, `mc-form-input`,
+  `mc-form-select` y `mc-form-textarea`, que ya traen sus reglas de modo oscuro en
+  `styles/dark/tables-forms.css` — **sin escribir CSS nuevo**.
+- `mc-form-grid` es de una sola columna: categoría y prioridad pasan a `mc-form-row-2` para ir
+  lado a lado (y colapsar en móvil). Se elimina `mc-form-group-full`, una clase que **no existe**
+  en el proyecto y no hacía nada. Se añaden `id`/`htmlFor` para enfocar el campo al pulsar su etiqueta.
+- Los chips de estado reusan las variantes de `mc-status-pill` ya existentes, que traen modo oscuro.
+
+#### 🐛 Corregido (producción)
+- **La función de tickets nunca había llegado a producción.** El commit que la creó vivía solo en
+  el repo de **respaldo** (`origin`); el remoto que despliega es **`prod`**. Además, al proyecto de
+  Vercel le faltaban `MCTIC_API_URL` y `MCTIC_INTEGRATION_KEY`, así que el proxy cortaba con 500
+  antes de llamar a MCTIC. Con ambas cosas resueltas, el envío de tickets **funciona por primera
+  vez** (verificado de punta a punta con una sesión real).
+
+> Recordatorio: `git push origin main` **no despliega**. Producción sale del remoto `prod`.
 
 ### 2026-07-02 · sesión 2 (credenciales, sync en vivo, fondo neón, PWA)
 
