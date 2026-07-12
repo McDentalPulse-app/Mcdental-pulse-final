@@ -9,6 +9,7 @@ import {
   getEncuestaSemaforo,
   readRiesgoRenuncia,
   readProblemaPersonal,
+  resumenEscalas,
 } from "./encuestaDetail";
 
 // El jsonb `respuestas` convive en DOS formatos: objeto indexado por id de pregunta
@@ -185,6 +186,41 @@ describe("readRiesgoRenuncia", () => {
   it("devuelve null si no hay respuesta", () => {
     expect(readRiesgoRenuncia({ respuestas: {} }, PREGS)).toBeNull();
     expect(readRiesgoRenuncia(null, PREGS)).toBeNull();
+  });
+});
+
+describe("resumenEscalas", () => {
+  // Lo consume el prompt que se manda a la IA. Antes leía respuestas.emocional /
+  // .estres / .motivacion — claves legacy que no existen en un jsonb indexado por
+  // UUID, así que cada análisis salía con "emocional=undefined, estres=undefined".
+  const PREGS = [
+    { id: "u1", tipo: "escala", area: "Emocional" },
+    { id: "u2", tipo: "escala", area: "Estrés" },
+    { id: "u3", tipo: "sino", area: "Carga" },
+    { id: "u4", tipo: "abierta", area: "Comentarios" },
+  ];
+
+  it("resume solo las escalas, etiquetadas por su área", () => {
+    const encuesta = { respuestas: { u1: 8, u2: 6, u3: "Sí", u4: "hola" } };
+    expect(resumenEscalas(encuesta, PREGS)).toBe("Emocional=8, Estrés=6");
+  });
+
+  it("nunca produce 'undefined' (que era justo el bug)", () => {
+    const encuesta = { respuestas: { u1: 8 } };
+    const resumen = resumenEscalas(encuesta, PREGS);
+
+    expect(resumen).not.toMatch(/undefined/);
+    expect(resumen).toBe("Emocional=8");
+  });
+
+  it("sin respuestas devuelve cadena vacía, no basura", () => {
+    expect(resumenEscalas({ respuestas: {} }, PREGS)).toBe("");
+    expect(resumenEscalas(null, PREGS)).toBe("");
+    expect(resumenEscalas({ respuestas: { u1: 8 } }, [])).toBe("");
+  });
+
+  it("incluye el 0, que es una respuesta válida", () => {
+    expect(resumenEscalas({ respuestas: { u1: 0 } }, PREGS)).toBe("Emocional=0");
   });
 });
 

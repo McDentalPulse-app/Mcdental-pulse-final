@@ -143,6 +143,25 @@ export const readRiesgoRenuncia = (encuesta, preguntas = []) => {
   return null;
 };
 
+/**
+ * Resumen compacto de las respuestas de escala: "Emocional=8, Estrés=6, Motivación=7".
+ *
+ * Lo usa el contexto que se manda a la IA, que hasta ahora leía `respuestas.emocional`,
+ * `respuestas.estres` y `respuestas.motivacion` — claves del dataset legacy que NO existen
+ * en un jsonb indexado por el id de la pregunta. El prompt salía literalmente con
+ * "emocional=undefined, estres=undefined, mot=undefined".
+ */
+export const resumenEscalas = (encuesta, preguntas = []) =>
+  preguntas
+    .filter((p) => p.tipo === "escala")
+    .map((p) => {
+      const valor = readRespuesta(encuesta?.respuestas, p.id);
+      if (isEmpty(valor)) return null;
+      return `${p.area || p.texto || "Escala"}=${valor}`;
+    })
+    .filter(Boolean)
+    .join(", ");
+
 /** Igual que la anterior, para "¿Tienes algún problema personal...?" (la de tipo "sino" de área Personal). */
 export const readProblemaPersonal = (encuesta, preguntas = []) => {
   const respuestas = encuesta?.respuestas;

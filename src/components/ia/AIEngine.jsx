@@ -15,6 +15,7 @@ import { semaforoColor, semaforoBg, semaforoLabel } from "../../config/theme";
 import { semanaActual, normalizeSucursal, formatSemanaDisplay } from "../../utils/constants";
 import { calcularAntiguedad, resolveFechaIngreso } from "../../utils/helpers";
 import { calcPulseScore, getPulseStatus, calcRiesgos, tieneScoreValido } from "../../utils/pulseScore";
+import { resumenEscalas } from "../../utils/encuestaDetail";
 import { callAI } from "../../utils/analysisEngine";
 import { analyzeEmployeeAI } from "../../utils/aiRiskEngine";
 import MarkdownLite from "../common/MarkdownLite";
@@ -162,7 +163,11 @@ const RESUMEN_LIMITE = 8;
     const riesgos = calcRiesgos(emp.id, encuestasSemana, encuestaPreguntas);
     const notasEmp = notas.filter(n => n.empleadoId === emp.id);
     const msgsEmp = mensajes.filter(m => m.de === emp.id || m.para === emp.id).slice(-6);
-    return `EXPEDIENTE: ${emp.name} | ${normalizeSucursal(emp.sucursal)} | ${emp.puesto} | Antigüedad: ${calcularAntiguedad(resolveFechaIngreso(emp))}Tendencia: ${pulse.tendencia}\nRiesgos: Renuncia ${riesgos.renuncia}%, Burnout ${riesgos.burnout}%, Emocional ${riesgos.emocional}%\nEncuestas (${enc.length} semanas): ${enc.slice(0,5).map(e=>`${e.semana}: emocional=${e.respuestas.emocional}, estres=${e.respuestas.estres}, mot=${e.respuestas.motivacion}, score=${e.score}`).join(" | ")}\nNotas psicóloga: ${notasEmp.map(n=>n.texto).join(" | ") || "Ninguna"}\nMensajes: ${msgsEmp.map(m=>{const u=USERS.find(x=>x.id===m.de);return `${u?.name}: "${m.texto.slice(0,60)}"`;}).join(" | ") || "Ninguno"}`;
+    // Las escalas se leen por el id de la pregunta. Antes se leían con las claves legacy
+    // (respuestas.emocional / .estres / .motivacion), que no existen en un jsonb indexado
+    // por UUID: el prompt salía con "emocional=undefined, estres=undefined, mot=undefined".
+    const escalas = (e) => resumenEscalas(e, encuestaPreguntas) || "sin detalle";
+    return `EXPEDIENTE: ${emp.name} | ${normalizeSucursal(emp.sucursal)} | ${emp.puesto} | Antigüedad: ${calcularAntiguedad(resolveFechaIngreso(emp))}Tendencia: ${pulse.tendencia}\nRiesgos: Renuncia ${riesgos.renuncia}%, Burnout ${riesgos.burnout}%, Emocional ${riesgos.emocional}%\nEncuestas (${enc.length} semanas): ${enc.slice(0,5).map(e=>`${e.semana}: ${escalas(e)}, score=${e.score}`).join(" | ")}\nNotas psicóloga: ${notasEmp.map(n=>n.texto).join(" | ") || "Ninguna"}\nMensajes: ${msgsEmp.map(m=>{const u=USERS.find(x=>x.id===m.de);return `${u?.name}: "${m.texto.slice(0,60)}"`;}).join(" | ") || "Ninguno"}`;
   };
 
   const generarResumen = async () => {
