@@ -37,17 +37,6 @@ export const getCanonicalAdminFechas = (name) => {
   return ADMIN_FECHAS_BY_NAME[key] || null;
 };
 
-/** Aplica fechas canónicas a un usuario si coincide por nombre. */
-export const applyCanonicalAdminDates = (user) => {
-  const canonical = getCanonicalAdminFechas(user?.name);
-  if (!canonical) return user;
-  return {
-    ...user,
-    fechaIngreso: canonical.fechaIngreso,
-    fechaCumpleanos: canonical.fechaCumpleanos,
-  };
-};
-
 /** Validación temporal: avisa en consola si hay cumpleaños duplicados entre administrativos. */
 export const auditAdministrativeFechas = () => {
   const byBirthday = {};
