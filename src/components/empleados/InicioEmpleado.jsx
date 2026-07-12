@@ -5,7 +5,7 @@ import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import { semanaDisplay, normalizeSucursal, isSemanaActual, formatSemanaDisplay } from "../../utils/constants";
-import { calcPulseScore } from "../../utils/pulseScore";
+import { calcPulseScore, tieneScoreValido } from "../../utils/pulseScore";
 
 const InicioEmpleado = ({ user, encuestas, mensajes, setActive }) => {
   const mis = encuestas.filter(e => e.empleadoId === user.id);
@@ -13,7 +13,7 @@ const InicioEmpleado = ({ user, encuestas, mensajes, setActive }) => {
   const ultimo = mis.sort((a, b) => b.semana.localeCompare(a.semana))[0];
   const noLeidos = mensajes.filter(m => m.para === user.id && !m.leido).length;
   const ps = calcPulseScore(user.id, encuestas);
-  const tieneEvaluacion = !ps.sinDatos && Number.isFinite(Number(ps.score));
+  const tieneEvaluacion = !ps.sinDatos && tieneScoreValido(ps.score);
 
   const quickLinks = [
     {
@@ -121,9 +121,9 @@ const InicioEmpleado = ({ user, encuestas, mensajes, setActive }) => {
                 <span className="empleado-history-week">
                   <Icon name="clipboard" size={14} /> {formatSemanaDisplay(e.semana)}
                 </span>
-                <Badge tipo={Number.isFinite(Number(e.score)) ? e.semaforo : "amarillo"} />
+                <Badge tipo={tieneScoreValido(e.score) ? e.semaforo : "amarillo"} />
                 <span className="empleado-history-score">
-                  {Number.isFinite(Number(e.score)) ? e.score : "—"} pts
+                  {tieneScoreValido(e.score) ? e.score : "—"} pts
                 </span>
               </div>
             ))}

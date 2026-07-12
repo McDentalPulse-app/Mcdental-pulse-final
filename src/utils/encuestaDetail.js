@@ -109,6 +109,78 @@ export const hasSensitiveContent = (text) => {
 export const getPreguntaAbierta = (preguntas = []) =>
   preguntas.find((p) => p.tipo === "abierta") || null;
 
+/**
+ * La pregunta de riesgo de renuncia ("¿Has pensado en renunciar?"). Se localiza por tipo,
+ * igual que getPreguntaAbierta: es la única de tipo "opcion" de la encuesta.
+ */
+export const getPreguntaRiesgoRenuncia = (preguntas = []) =>
+  preguntas.find((p) => p.tipo === "opcion") || null;
+
+/**
+ * Lee la respuesta a la pregunta de riesgo de renuncia.
+ *
+ * El jsonb `respuestas` se indexa por el ID de la pregunta — en producción, un UUID. El
+ * motor de riesgo lo leía con la clave numérica 9, que no existe en los datos, así que la
+ * respuesta más importante de la encuesta se guardaba y se ignoraba: el bump de riesgo
+ * nunca se aplicaba. Se lee por el id real, conservando las claves legacy por si quedara
+ * alguna fila del dataset viejo.
+ */
+export const readRiesgoRenuncia = (encuesta, preguntas = []) => {
+  const respuestas = encuesta?.respuestas;
+  if (!respuestas) return null;
+
+  const pregunta = getPreguntaRiesgoRenuncia(preguntas);
+  if (pregunta) {
+    const valor = readRespuesta(respuestas, pregunta.id);
+    if (!isEmpty(valor)) return String(valor);
+  }
+
+  for (const legacy of [9, "p9", "riesgoRenuncia", "riesgo"]) {
+    const valor = readRespuesta(respuestas, legacy);
+    if (!isEmpty(valor)) return String(valor);
+  }
+
+  return null;
+};
+
+/**
+ * Resumen compacto de las respuestas de escala: "Emocional=8, Estrés=6, Motivación=7".
+ *
+ * Lo usa el contexto que se manda a la IA, que hasta ahora leía `respuestas.emocional`,
+ * `respuestas.estres` y `respuestas.motivacion` — claves del dataset legacy que NO existen
+ * en un jsonb indexado por el id de la pregunta. El prompt salía literalmente con
+ * "emocional=undefined, estres=undefined, mot=undefined".
+ */
+export const resumenEscalas = (encuesta, preguntas = []) =>
+  preguntas
+    .filter((p) => p.tipo === "escala")
+    .map((p) => {
+      const valor = readRespuesta(encuesta?.respuestas, p.id);
+      if (isEmpty(valor)) return null;
+      return `${p.area || p.texto || "Escala"}=${valor}`;
+    })
+    .filter(Boolean)
+    .join(", ");
+
+/** Igual que la anterior, para "¿Tienes algún problema personal...?" (la de tipo "sino" de área Personal). */
+export const readProblemaPersonal = (encuesta, preguntas = []) => {
+  const respuestas = encuesta?.respuestas;
+  if (!respuestas) return null;
+
+  const pregunta = preguntas.find((p) => p.tipo === "sino" && /personal/i.test(p.area || ""));
+  if (pregunta) {
+    const valor = readRespuesta(respuestas, pregunta.id);
+    if (!isEmpty(valor)) return String(valor);
+  }
+
+  for (const legacy of [7, "p7", "personal"]) {
+    const valor = readRespuesta(respuestas, legacy);
+    if (!isEmpty(valor)) return String(valor);
+  }
+
+  return null;
+};
+
 export const getPreguntaAbiertaTexto = (preguntas = []) =>
   getPreguntaAbierta(preguntas)?.texto || OPEN_QUESTION_FALLBACK;
 

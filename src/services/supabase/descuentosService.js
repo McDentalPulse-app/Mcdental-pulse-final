@@ -1,4 +1,5 @@
 import { supabase } from "../../config/supabase";
+import { fetchAll } from "./fetchAll";
 
 // descuentos tiene 2 FKs a usuarios (empleado_id, responsable_id) — hay que
 // especificar cuál usar en el embed, si no PostgREST tira PGRST201 (ambiguo).
@@ -22,12 +23,13 @@ const mapDescuento = (row) => ({
 });
 
 export const getDescuentos = async () => {
-  const { data, error } = await supabase.from("descuentos").select(SELECT_CON_EMPLEADO);
-  if (error) {
+  try {
+    const rows = await fetchAll(() => supabase.from("descuentos").select(SELECT_CON_EMPLEADO));
+    return rows.map(mapDescuento);
+  } catch (error) {
     console.error("Error al obtener descuentos:", error);
-    throw new Error("No se pudieron cargar los descuentos.");
+    throw new Error("No se pudieron cargar los descuentos.", { cause: error });
   }
-  return data.map(mapDescuento);
 };
 
 export const addDescuento = async ({ empleadoId, tipo, motivo, observaciones, monto, fecha, responsableId, responsable }) => {

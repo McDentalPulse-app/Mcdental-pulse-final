@@ -1,4 +1,5 @@
 import { supabase } from "../../config/supabase";
+import { fetchAll } from "./fetchAll";
 
 const mapReporte = (row) => ({
   id: row.id,
@@ -12,12 +13,13 @@ const mapReporte = (row) => ({
 });
 
 export const getReportesConfidenciales = async () => {
-  const { data, error } = await supabase.from("reportes_confidenciales").select("*");
-  if (error) {
+  try {
+    const rows = await fetchAll(() => supabase.from("reportes_confidenciales").select("*"));
+    return rows.map(mapReporte);
+  } catch (error) {
     console.error("Error al obtener reportes confidenciales:", error);
-    throw new Error("No se pudieron cargar los reportes confidenciales.");
+    throw new Error("No se pudieron cargar los reportes confidenciales.", { cause: error });
   }
-  return data.map(mapReporte);
 };
 
 // La visibilidad (antes hardcodeada como visiblePara: ["admin","psicologa"]) ahora la resuelve RLS.

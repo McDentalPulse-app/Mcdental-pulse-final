@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "../_shared/cors.ts";
+import { corsFor } from "../_shared/cors.ts";
 import { TEMP_PASSWORD } from "../_shared/username.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -7,6 +7,7 @@ const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 Deno.serve(async (req) => {
+  const corsHeaders = corsFor(req);
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -51,13 +52,23 @@ Deno.serve(async (req) => {
 
     const { data: usuarioObjetivo, error: usuarioError } = await adminClient
       .from("usuarios")
-      .select("auth_user_id")
+      .select("auth_user_id, role")
       .eq("id", usuarioId)
       .single();
 
     if (usuarioError || !usuarioObjetivo?.auth_user_id) {
       return new Response(JSON.stringify({ error: "Usuario no encontrado." }), {
         status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Sin esta guarda, un 'rh' podía restablecer la contraseña de un 'admin' a la temporal
+    // y entrar como él — una escalada equivalente a cambiarse el rol, que las migraciones
+    // 023/025 sí bloquean. RH conserva el reset del resto de usuarios.
+    if (callerPerfil.role !== "admin" && usuarioObjetivo.role === "admin") {
+      return new Response(JSON.stringify({ error: "Solo un administrador puede restablecer la contraseña de otro administrador." }), {
+        status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

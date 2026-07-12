@@ -1,7 +1,7 @@
 import React from "react";
 import Icon from "../ui/Icon";
 import Badge from "../common/Badge";
-import { getPulseStatus } from "../../utils/pulseScore";
+import { getPulseStatus, tieneScoreValido } from "../../utils/pulseScore";
 import { formatSemanaDisplay } from "../../utils/constants";
 import {
   buildEncuestaDetalleItems,
@@ -12,7 +12,7 @@ import {
 const EncuestaDetalleModal = ({ encuesta, empleado, preguntas, onClose }) => {
   if (!encuesta) return null;
 
-  const score = Number.isFinite(Number(encuesta.score)) ? Number(encuesta.score) : null;
+  const score = tieneScoreValido(encuesta.score) ? Number(encuesta.score) : null;
   const status = getPulseStatus(score);
   const semaforo = getEncuestaSemaforo(encuesta);
   const items = buildEncuestaDetalleItems(encuesta, preguntas);

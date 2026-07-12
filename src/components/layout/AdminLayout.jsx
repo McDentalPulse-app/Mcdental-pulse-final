@@ -19,7 +19,7 @@ import Perfil from '../common/Perfil';
 import SoporteTI from '../common/SoporteTI';
 
 export default function AdminLayout({ user, globals, actions }) {
-  const { usuarios: USERS } = useGlobal();
+  const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
   const { encuestas, mensajes, notas, permisos, descuentos, reconocimientos, reportesConfidenciales, vacaciones, archivosExpediente } = globals;
   const { restablecerPasswordUsuario, subirArchivoExpediente, addReconocimiento } = actions;
@@ -37,7 +37,7 @@ export default function AdminLayout({ user, globals, actions }) {
             <Route path="expedientes" element={<ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} archivosExpediente={archivosExpediente} onSubirArchivoExpediente={subirArchivoExpediente} />} />
             <Route path="reconocimientos" element={<ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />} />
             <Route path="eventospersonal" element={<EventosPersonal users={USERS} />} />
-            <Route path="reportes" element={<Reportes users={USERS} encuestas={encuestas} />} />
+            <Route path="reportes" element={<Reportes users={USERS} encuestas={encuestas} preguntas={encuestaPreguntas} />} />
             <Route path="confidenciales" element={<ReportesConfidencialesPanel reportes={reportesConfidenciales} />} />
             <Route path="config" element={<Config />} />
             <Route path="encuestas" element={<GestionEncuestas encuestas={encuestas} />} />

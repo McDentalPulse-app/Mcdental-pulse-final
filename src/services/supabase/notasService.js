@@ -1,4 +1,5 @@
 import { supabase } from "../../config/supabase";
+import { fetchAll } from "./fetchAll";
 
 const mapNota = (row) => ({
   id: row.id,
@@ -11,12 +12,13 @@ const mapNota = (row) => ({
 
 // Gateado por RLS a psicologa/admin.
 export const getNotasPsicologicas = async () => {
-  const { data, error } = await supabase.from("notas_psicologicas").select("*");
-  if (error) {
+  try {
+    const rows = await fetchAll(() => supabase.from("notas_psicologicas").select("*"));
+    return rows.map(mapNota);
+  } catch (error) {
     console.error("Error al obtener notas psicológicas:", error);
-    throw new Error("No se pudieron cargar las notas.");
+    throw new Error("No se pudieron cargar las notas.", { cause: error });
   }
-  return data.map(mapNota);
 };
 
 export const addNota = async ({ empleadoId, autorId, autor, texto }) => {

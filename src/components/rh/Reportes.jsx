@@ -5,8 +5,10 @@ import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { semanaActual, normalizeSucursal, sucursalMatches, isSemanaActual, formatSemanaDisplay } from "../../utils/constants";
 import { esEmpleadoActivo } from "../../utils/helpers";
+import { tieneScoreValido } from "../../utils/pulseScore";
+import { readRiesgoRenuncia, readProblemaPersonal, getComentarioAbierto } from "../../utils/encuestaDetail";
 
-const Reportes = ({ users = [], encuestas = [] }) => {
+const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
   const [sucursalReporte, setSucursalReporte] = useState("Todas");
   const [mostrarSelectorSucursal, setMostrarSelectorSucursal] = useState(false);
   const sucursalesReporte = [
@@ -29,7 +31,7 @@ const Reportes = ({ users = [], encuestas = [] }) => {
     };
     const getUltimaEncuesta = (empleadoId) => {
       return encuestas
-        .filter((e) => e.empleadoId === empleadoId && Number.isFinite(Number(e.score)))
+        .filter((e) => e.empleadoId === empleadoId && tieneScoreValido(e.score))
         .sort((a, b) => String(b.semana || "").localeCompare(String(a.semana || "")))[0];
     };
     const filas = empleados.map((emp) => {
@@ -41,7 +43,7 @@ const Reportes = ({ users = [], encuestas = [] }) => {
         usuario: emp.user || "",
         estatus: "Activo",
         semana: ultima?.semana ? formatSemanaDisplay(ultima.semana) : "Sin datos",
-        score: Number.isFinite(Number(ultima?.score)) ? Number(ultima.score) : "Sin datos",
+        score: tieneScoreValido(ultima?.score) ? Number(ultima.score) : "Sin datos",
         semaforo: ultima?.semaforo || "Sin datos"
       };
     });
@@ -74,7 +76,7 @@ const Reportes = ({ users = [], encuestas = [] }) => {
     const encuestasDelMes = encuestas.filter((e) => String(e.fecha || "").startsWith(mesActual));
     const getEncuestasEmpleado = (empleadoId) => {
       return encuestasDelMes
-        .filter((e) => e.empleadoId === empleadoId && Number.isFinite(Number(e.score)))
+        .filter((e) => e.empleadoId === empleadoId && tieneScoreValido(e.score))
         .sort((a, b) => String(b.semana || "").localeCompare(String(a.semana || "")));
     };
     const filas = empleados.map((emp) => {
@@ -87,7 +89,7 @@ const Reportes = ({ users = [], encuestas = [] }) => {
         nombre: emp.name || "", sucursal: normalizeSucursal(emp.sucursal) || "", puesto: emp.puesto || "",
         encuestasContestadas: encEmpleado.length, ultimaSemana: ultima?.semana ? formatSemanaDisplay(ultima.semana) : "Sin datos",
         scorePromedioMes: promedio,
-        scoreActual: Number.isFinite(Number(ultima?.score)) ? Number(ultima.score) : "Sin datos",
+        scoreActual: tieneScoreValido(ultima?.score) ? Number(ultima.score) : "Sin datos",
         semaforo: ultima?.semaforo || "Sin datos"
       };
     });
@@ -120,7 +122,7 @@ const Reportes = ({ users = [], encuestas = [] }) => {
     };
     const getUltimaEncuesta = (empleadoId) => {
       return encuestas
-        .filter((e) => e.empleadoId === empleadoId && Number.isFinite(Number(e.score)))
+        .filter((e) => e.empleadoId === empleadoId && tieneScoreValido(e.score))
         .sort((a, b) => String(b.semana || "").localeCompare(String(a.semana || "")))[0];
     };
     const filas = empleados.map((emp) => {
@@ -128,7 +130,7 @@ const Reportes = ({ users = [], encuestas = [] }) => {
       return {
         nombre: emp.name || "", sucursal: normalizeSucursal(emp.sucursal) || "", puesto: emp.puesto || "",
         ultimaSemana: ultima?.semana ? formatSemanaDisplay(ultima.semana) : "Sin datos",
-        scoreActual: Number.isFinite(Number(ultima?.score)) ? Number(ultima.score) : "Sin datos",
+        scoreActual: tieneScoreValido(ultima?.score) ? Number(ultima.score) : "Sin datos",
         semaforo: ultima?.semaforo || "Sin datos"
       };
     });
@@ -159,7 +161,7 @@ const Reportes = ({ users = [], encuestas = [] }) => {
       return `"${texto}"`;
     };
     const encuestasSemana = encuestas.filter(
-      (e) => isSemanaActual(e.semana) && Number.isFinite(Number(e.score))
+      (e) => isSemanaActual(e.semana) && tieneScoreValido(e.score)
     );
     const getEmpleado = (empleadoId) => empleados.find((emp) => emp.id === empleadoId);
     const filas = encuestasSemana.map((encuesta) => {
@@ -168,9 +170,11 @@ const Reportes = ({ users = [], encuestas = [] }) => {
         nombre: emp?.name || "Empleado no encontrado", sucursal: normalizeSucursal(emp?.sucursal) || "Sin sucursal",
         puesto: emp?.puesto || "Sin puesto", semana: formatSemanaDisplay(encuesta.semana) || "", fecha: encuesta.fecha || "",
         score: encuesta.score, semaforo: encuesta.semaforo || "Sin datos",
-        riesgoRenuncia: encuesta.respuestas?.[9] || encuesta.respuestas?.p9 || "",
-        problemaPersonal: encuesta.respuestas?.[7] || encuesta.respuestas?.p7 || "",
-        comentario: encuesta.respuestas?.[10] || encuesta.respuestas?.p10 || ""
+        // El jsonb `respuestas` se indexa por el id de la pregunta (un UUID), no por un
+        // número: buscar la clave 9 / 7 / 10 dejaba estas tres columnas SIEMPRE vacías.
+        riesgoRenuncia: readRiesgoRenuncia(encuesta, preguntas) || "",
+        problemaPersonal: readProblemaPersonal(encuesta, preguntas) || "",
+        comentario: getComentarioAbierto(encuesta, preguntas) || ""
       };
     });
     const encabezados = ["Nombre", "Sucursal", "Puesto", "Semana", "Fecha", "Score", "Semaforo", "Riesgo renuncia", "Problema personal", "Comentario"];

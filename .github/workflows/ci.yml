@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      # No bloqueante A PROPÓSITO: el repo arrastra ~101 errores de lint previos a
+      # este workflow (no introducidos por él). Ponerlo en bloqueante dejaría CI en
+      # rojo permanente y la señal dejaría de servir. Se ejecuta para que la deuda
+      # sea visible y no crezca; pásalo a bloqueante (quitando continue-on-error)
+      # en cuanto esos errores estén saldados.
+      - name: Lint (informativo)
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Tests
+        run: npm run test
+
+      # El build no necesita secretos: vite.config.js solo carga env en el servidor
+      # de desarrollo (apply: 'serve'), no al compilar.
+      - name: Build
+        run: npm run build
+
+      # Guardarraíl del hallazgo A1: el roster real de empleados vivía en
+      # src/data/initialData.js y Rollup no podía descartarlo por tree-shaking, así que
+      # nombres, fechas de nacimiento y contraseñas acababan servidos en el bundle
+      # público. Este paso impide la regresión.
+      #
+      # Los marcadores son deliberadamente estrechos para no dar falsos positivos:
+      #   - `pass:"…"`  -> un objeto de usuario con contraseña embebida.
+      #   - admin123 / psico123 / rh123 -> solo existían dentro de ese roster.
+      # `emp123` NO se vigila: es la contraseña temporal legítima (TEMP_PASSWORD), y
+      # `fechaNacimiento` tampoco: es un campo real que AuthContext mapea desde la BD.
+      - name: Verificar que no se filtre el roster al bundle
+        run: |
+          if grep -rniE "pass:[[:space:]]*[\"']|admin123|psico123|rh123" dist/assets/ ; then
+            echo "::error::Roster de empleados detectado en el bundle de producción (ver hallazgo A1)."
+            exit 1
+          fi
+          echo "OK: sin roster ni contraseñas en el bundle."

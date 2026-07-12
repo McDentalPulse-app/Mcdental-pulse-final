@@ -1,4 +1,5 @@
 import { supabase } from "../../config/supabase";
+import { fetchAll } from "./fetchAll";
 
 const SELECT_CON_EMPLEADO = "*, usuarios(name, sucursal, puesto)";
 
@@ -19,12 +20,13 @@ const mapPermiso = (row) => ({
 });
 
 export const getPermisos = async () => {
-  const { data, error } = await supabase.from("permisos").select(SELECT_CON_EMPLEADO);
-  if (error) {
+  try {
+    const rows = await fetchAll(() => supabase.from("permisos").select(SELECT_CON_EMPLEADO));
+    return rows.map(mapPermiso);
+  } catch (error) {
     console.error("Error al obtener permisos:", error);
-    throw new Error("No se pudieron cargar los permisos.");
+    throw new Error("No se pudieron cargar los permisos.", { cause: error });
   }
-  return data.map(mapPermiso);
 };
 
 export const addPermiso = async ({ empleadoId, fecha, hora, motivo, comentario, origen }) => {

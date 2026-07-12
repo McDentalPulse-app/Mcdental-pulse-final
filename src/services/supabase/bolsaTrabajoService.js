@@ -1,4 +1,5 @@
 import { supabase } from "../../config/supabase";
+import { fetchAll } from "./fetchAll";
 
 // Candidatos que llegan desde la app de reclutamiento McDental Talent.
 // La tabla candidatos_bolsa la escribe Talent (service_role); aquí solo se lee.
@@ -23,15 +24,16 @@ const mapCandidato = (row) => ({
 });
 
 export const getCandidatosBolsa = async () => {
-  const { data, error } = await supabase
-    .from("candidatos_bolsa")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) {
+  try {
+    const data = await fetchAll(() =>
+      supabase
+        .from("candidatos_bolsa")
+        .select("*")
+        .order("created_at", { ascending: false })
+    );
+    return data.map(mapCandidato);
+  } catch (error) {
     console.error("Error al obtener la bolsa de trabajo:", error);
-    throw new Error("No se pudieron cargar los candidatos.");
+    throw new Error("No se pudieron cargar los candidatos.", { cause: error });
   }
-
-  return data.map(mapCandidato);
 };

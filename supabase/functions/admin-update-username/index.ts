@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "../_shared/cors.ts";
+import { corsFor } from "../_shared/cors.ts";
 import { usernameToSyntheticEmail } from "../_shared/username.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -13,6 +13,7 @@ const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 // usuarios.synthetic_email. Es idempotente: llamarla con el username actual
 // re-sincroniza los emails (útil para reparar desincronizaciones).
 Deno.serve(async (req) => {
+  const corsHeaders = corsFor(req);
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -60,12 +61,18 @@ Deno.serve(async (req) => {
 
     const { data: objetivo, error: objetivoError } = await adminClient
       .from("usuarios")
-      .select("id, auth_user_id, synthetic_email")
+      .select("id, auth_user_id, synthetic_email, role")
       .eq("id", usuarioId)
       .single();
 
     if (objetivoError || !objetivo?.auth_user_id) {
       return json({ error: "Usuario no encontrado." }, 404);
+    }
+
+    // Esta función reescribe auth.users.email, que es la credencial real de login: sin esta
+    // guarda un 'rh' podía cambiar el username de un 'admin' y dejarlo sin poder entrar.
+    if (callerPerfil.role !== "admin" && objetivo.role === "admin") {
+      return json({ error: "Solo un administrador puede cambiar el nombre de usuario de otro administrador." }, 403);
     }
 
     // Disponibilidad: nadie más puede tener ese email sintético.

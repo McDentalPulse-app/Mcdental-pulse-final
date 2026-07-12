@@ -1,4 +1,5 @@
 import { supabase } from "../../config/supabase";
+import { fetchAll } from "./fetchAll";
 
 const SELECT_CON_EMPLEADO = "*, usuarios(name, sucursal, puesto)";
 
@@ -20,12 +21,13 @@ const mapVacacion = (row) => ({
 });
 
 export const getVacaciones = async () => {
-  const { data, error } = await supabase.from("vacaciones").select(SELECT_CON_EMPLEADO);
-  if (error) {
+  try {
+    const rows = await fetchAll(() => supabase.from("vacaciones").select(SELECT_CON_EMPLEADO));
+    return rows.map(mapVacacion);
+  } catch (error) {
     console.error("Error al obtener vacaciones:", error);
-    throw new Error("No se pudieron cargar las vacaciones.");
+    throw new Error("No se pudieron cargar las vacaciones.", { cause: error });
   }
-  return data.map(mapVacacion);
 };
 
 export const addVacacion = async ({ empleadoId, fechaInicio, fechaFin, dias, motivo, comentario, origen }) => {

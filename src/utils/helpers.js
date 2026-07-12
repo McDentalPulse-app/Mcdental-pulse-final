@@ -1,5 +1,3 @@
-import { getCanonicalAdminFechas } from "./adminEmployeeDates";
-
 export const calcularAntiguedad = (fechaIngreso) => {
   if (!fechaIngreso) return "No registrada";
 
@@ -27,21 +25,23 @@ export const calcularAntiguedad = (fechaIngreso) => {
   return str.trim() || "Menos de 1 mes";
 };
 
-/** Fecha de ingreso canónica (YYYY-MM-DD). Administrativos: por nombre, no por id. */
-export const resolveFechaIngreso = (user) => {
-  const canonical = getCanonicalAdminFechas(user?.name);
-  if (canonical?.fechaIngreso) return canonical.fechaIngreso;
-  return user?.fechaIngreso || "";
-};
+/**
+ * Fecha de ingreso (YYYY-MM-DD).
+ *
+ * Antes existía un override por nombre para los 14 administrativos, que se aplicaba
+ * POR ENCIMA de la base. Se eliminó: eran datos personales viviendo en el código, y
+ * además tapaba el hecho de que esas fechas nunca se habían guardado en la base.
+ * Ya están sincronizadas en `usuarios.fecha_ingreso`, que es ahora la única fuente.
+ */
+export const resolveFechaIngreso = (user) => user?.fechaIngreso || "";
 
 /**
- * Cumpleaños canónico (MM-DD).
- * Administrativos: mapa por nombre. Legacy: fechaNacimiento solo si no hay fechaCumpleanos.
+ * Cumpleaños (MM-DD).
+ *
+ * Se conserva el fallback a `fechaNacimiento` (fecha completa del dataset legacy de
+ * Firestore) para los usuarios que aún no tengan `fechaCumpleanos` poblado.
  */
 export const resolveFechaCumpleanos = (user) => {
-  const canonical = getCanonicalAdminFechas(user?.name);
-  if (canonical?.fechaCumpleanos) return canonical.fechaCumpleanos;
-
   const explicit = user?.fechaCumpleanos;
   if (explicit != null && String(explicit).trim() !== "") {
     return String(explicit).trim();

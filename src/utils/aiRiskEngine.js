@@ -1,4 +1,4 @@
-import { calcPulseScore, getPulseStatus } from "./pulseScore";
+import { calcPulseScore, getPulseStatus, tieneScoreValido } from "./pulseScore";
 
 // Motor de reglas de riesgo local (sin IA externa): a partir del expediente de
 // un empleado deriva prioridad, lista de riesgos y recomendación. Extraído de
@@ -13,14 +13,14 @@ const STATUS_SIN_DATOS = {
 
 export const analyzeEmployeeAI = (empleado, encuestas, permisos = [], descuentos = [], reconocimientos = [], reportesConfidenciales = [], USERS = []) => {
   const encuestasEmpleado = encuestas.filter(e => e.empleadoId === empleado.id);
-  const encuestasConScore = encuestasEmpleado.filter(e => Number.isFinite(Number(e.score)));
+  const encuestasConScore = encuestasEmpleado.filter(e => tieneScoreValido(e.score));
   const permisosEmpleado = permisos.filter(p => p.empleadoId === empleado.id);
   const descuentosEmpleado = descuentos.filter(d => d.empleadoId === empleado.id);
   const reconocimientosEmpleado = reconocimientos.filter(r => r.empleadoId === empleado.id);
   const reportesEmpleado = reportesConfidenciales.filter(r => r.empleadoId === empleado.id);
 
   const pulseResult = calcPulseScore(empleado.id, encuestas);
-  const tieneDatosReales = !pulseResult.sinDatos && Number.isFinite(Number(pulseResult.score));
+  const tieneDatosReales = !pulseResult.sinDatos && tieneScoreValido(pulseResult.score);
   const pulse = tieneDatosReales ? pulseResult.score : null;
   const status = tieneDatosReales ? getPulseStatus(pulse) : STATUS_SIN_DATOS;
 

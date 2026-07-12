@@ -19,7 +19,7 @@ import { getPermisos } from "../services/supabase/permisosService";
 import { getDescuentos } from "../services/supabase/descuentosService";
 import { getArchivosExpediente } from "../services/supabase/archivosExpedienteService";
 import { getNotasPsicologicas } from "../services/supabase/notasService";
-import { getUsuarios, getEncuestaPreguntas } from "../services/supabase/usuariosService";
+import { getUsuarios, getUsuariosDirectorio, getEncuestaPreguntas } from "../services/supabase/usuariosService";
 import { normalizePreguntasList } from "../utils/encuestaPreguntas";
 
 const GlobalContext = createContext();
@@ -77,8 +77,15 @@ export const GlobalProvider = ({ children }) => {
         let dbDescuentos = null;
         let dbNotas = null;
 
-        // Base data for everyone
-        promises.push(getUsuarios().then(res => dbUsuarios = res).catch(() => { huboError = true; }));
+        // Base data for everyone.
+        // La PII de la plantilla (teléfono, email, fechas) solo la necesitan los roles
+        // que gestionan expedientes y altas. Un empleado lee el directorio, que no la
+        // trae — así deja de poder sacar los datos personales de sus compañeros
+        // (migración 030). El RLS lo garantiza aunque el cliente pidiera otra cosa.
+        const puedeVerPII = role === "admin" || role === "rh" || role === "psicologa";
+        const cargarUsuarios = puedeVerPII ? getUsuarios : getUsuariosDirectorio;
+
+        promises.push(cargarUsuarios().then(res => dbUsuarios = res).catch(() => { huboError = true; }));
         promises.push(getEncuestaPreguntas().then(res => dbPreguntas = res).catch(() => { huboError = true; }));
 
         // Encuestas y mensajes y reconocimientos: admin, psicologa, empleado

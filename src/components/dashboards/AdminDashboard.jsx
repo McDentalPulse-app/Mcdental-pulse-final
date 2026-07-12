@@ -11,7 +11,7 @@ import SectionTitle from "../common/SectionTitle";
 import WeekSelect from "../common/WeekSelect";
 import PageHeader from "../common/PageHeader";
 import { SUCURSALES, semanaActual, normalizeSucursal, sucursalMatches, formatSemanaDisplay } from "../../utils/constants";
-import { getPulseStatus } from "../../utils/pulseScore";
+import { getPulseStatus, tieneScoreValido } from "../../utils/pulseScore";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import "./AdminDashboard.css";
 import { esEmpleadoActivo } from "../../utils/helpers";
@@ -110,7 +110,7 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
 
   // Semanas como "buckets" (pre-lanzamiento juntas en "2026-W00"; lanzamiento+ "2026-W01"…).
   const semanasRaw = [...new Set(
-    encuestas.filter((e) => Number.isFinite(Number(e.score))).map((e) => String(e.semana))
+    encuestas.filter((e) => tieneScoreValido(e.score)).map((e) => String(e.semana))
   )];
   const bucketWeeks = {};
   semanasRaw.forEach((w) => { (bucketWeeks[formatSemanaDisplay(w)] ||= []).push(w); });
@@ -123,12 +123,12 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
   // Encuesta más reciente del empleado dentro del bucket; y score previo (tendencia).
   const encDelBucket = (empId) =>
     encuestas
-      .filter((e) => e.empleadoId === empId && Number.isFinite(Number(e.score)) && selRawWeeks.includes(String(e.semana)))
+      .filter((e) => e.empleadoId === empId && tieneScoreValido(e.score) && selRawWeeks.includes(String(e.semana)))
       .sort((a, b) => String(b.semana).localeCompare(String(a.semana)))[0];
   const scorePrevio = (empId) => {
     const minSel = [...selRawWeeks].sort()[0] || "";
     const prev = encuestas
-      .filter((e) => e.empleadoId === empId && Number.isFinite(Number(e.score)) && String(e.semana) < minSel)
+      .filter((e) => e.empleadoId === empId && tieneScoreValido(e.score) && String(e.semana) < minSel)
       .sort((a, b) => String(b.semana).localeCompare(String(a.semana)))[0];
     return prev ? Math.round(Number(prev.score)) : null;
   };
@@ -609,7 +609,7 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
                     <div className="psico-suc-emp-meta">{emp.puesto}</div>
                   </div>
                   <div className="psico-suc-emp-right">
-                    <span className="psico-suc-emp-score">Score {Number.isFinite(Number(score)) ? score : "—"} {tendencia}</span>
+                    <span className="psico-suc-emp-score">Score {tieneScoreValido(score) ? score : "—"} {tendencia}</span>
                     <Badge tipo={nivel} />
                   </div>
                 </div>

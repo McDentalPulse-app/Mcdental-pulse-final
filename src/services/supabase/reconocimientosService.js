@@ -1,4 +1,5 @@
 import { supabase } from "../../config/supabase";
+import { fetchAll } from "./fetchAll";
 
 // reconocimientos tiene 2 FKs a usuarios (empleado_id, otorgado_por) — hay que
 // especificar cuál usar en el embed, si no PostgREST tira PGRST201 (ambiguo).
@@ -18,12 +19,13 @@ const mapReconocimiento = (row) => ({
 });
 
 export const getReconocimientos = async () => {
-  const { data, error } = await supabase.from("reconocimientos").select(SELECT_CON_EMPLEADO);
-  if (error) {
+  try {
+    const rows = await fetchAll(() => supabase.from("reconocimientos").select(SELECT_CON_EMPLEADO));
+    return rows.map(mapReconocimiento);
+  } catch (error) {
     console.error("Error al obtener reconocimientos:", error);
-    throw new Error("No se pudieron cargar los reconocimientos.");
+    throw new Error("No se pudieron cargar los reconocimientos.", { cause: error });
   }
-  return data.map(mapReconocimiento);
 };
 
 export const addReconocimiento = async ({ empleadoId, categoria, comentario, otorgadoPorId, otorgadoPor }) => {

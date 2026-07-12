@@ -10,7 +10,7 @@ import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import { semaforoColor } from "../../config/theme";
 import { semanaActual, normalizeSucursal, sucursalMatches, isSemanaActual, formatSemanaDisplay } from "../../utils/constants";
-import { calcPulseScore, getPulseStatus } from "../../utils/pulseScore";
+import { calcPulseScore, getPulseStatus, tieneScoreValido } from "../../utils/pulseScore";
 import { esEmpleadoActivo } from "../../utils/helpers";
 
 const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
@@ -245,7 +245,7 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
                               <div className="psico-history-label">Medición semanal</div>
                             </div>
                             <div className="psico-history-score">
-                              <div>{Number.isFinite(Number(e.score)) ? Number(e.score) : 50} pts</div>
+                              <div>{tieneScoreValido(e.score) ? `${Number(e.score)} pts` : "— pts"}</div>
                               <div style={{ color: s.color }}>{s.label}</div>
                             </div>
                           </div>

@@ -63,6 +63,100 @@ src/
 
 ## Changelog
 
+### 2026-07-12 · Auditoría: endurecimiento de seguridad, datos y calidad
+
+#### 🔒 Seguridad
+- **El dataset legacy de usuarios sale del código y del bundle.** `src/data/initialData.js`
+  conservaba el roster que sirvió de origen para la migración a Supabase. Ya no lo consumía
+  nadie —la fuente de verdad es `public.usuarios`—, pero **no se eliminaba por tree-shaking**:
+  Rollup no puede descartar un export cuyo valor sale de una llamada a función
+  (`USERS_RAW.map(applyCanonicalAdminDates)`), así que acababa incluido en el JavaScript de
+  producción. Se elimina el dataset y se conserva solo lo que `GlobalContext` importa de verdad.
+- **Las tres Edge Functions de administración validan el rol del objetivo, no solo el del
+  llamador.** Las migraciones 023/025 restringen los cambios de rol con un trigger
+  `BEFORE UPDATE`, pero las Edge Functions usan `service_role` (que no pasa por RLS) y el
+  trigger no cubre `INSERT`. `admin-create-usuario`, `admin-reset-password` y
+  `admin-update-username` autorizaban con `["admin","rh"]` y después actuaban sobre el usuario
+  objetivo sin volver a comprobar su rol. Ahora las tres exigen ser `admin` para asignar un rol
+  privilegiado o para actuar sobre otro `admin`. La operativa de RH sobre el resto de usuarios
+  no cambia.
+
+#### 🐛 Corregido
+- **Una encuesta sin score se contaba como un 0.** El guard que decidía si un score era válido
+  estaba replicado a mano en **29 sitios**: `Number.isFinite(Number(e.score))`. Pero
+  `Number(null) === 0`, así que una encuesta sin score no se descartaba: entraba como un cero
+  real, con el semáforo y la prioridad de riesgo que eso implica. Las 29 copias se sustituyen
+  por un único predicado, `tieneScoreValido()`, que acepta el `0` (una respuesta real) y
+  descarta `null` / `""`. **En producción no había ninguna fila afectada** (36 encuestas,
+  ninguna con score nulo): ningún dato de los dashboards cambia.
+- **Se cierra el origen del score nulo.** Si la encuesta se quedaba sin ninguna pregunta de tipo
+  escala, el cálculo dividía entre cero (`Math.round((0 / 0) * 100)` es `NaN`) y `NaN` se
+  serializa a JSON **como `null`**. La fórmula se extrae a `calcularScoreEncuesta()`, ahora una
+  función pura y testeada que falla de forma explícita en vez de devolver `NaN`.
+- **Las aprobaciones ya no se contradicen con la base.** Vacaciones, permisos, descuentos y
+  mensajes leídos pintaban el cambio en la UI **antes** de escribir, y si la escritura fallaba
+  solo mostraban un aviso: nunca revertían. La pantalla se quedaba en «Aprobado» mientras la
+  base seguía en «pendiente», hasta recargar. Las cuatro acciones revierten ahora al estado
+  previo.
+
+#### ⚡ Datos y rendimiento
+- **Se elimina el riesgo de truncado silencioso.** Ninguna lectura tenía `.limit()` ni
+  `.range()`. PostgREST corta las respuestas en `max-rows` (1000 por defecto) **sin dar error**:
+  al superar esa cifra, los dashboards habrían calculado promedios y participación sobre datos
+  incompletos sin que nadie lo notara. El nuevo helper `fetchAll()` pagina hasta agotar la
+  tabla, con la misma semántica de antes. *(Hoy hay 36 encuestas: es prevención.)*
+- **RLS se evaluaba una vez por fila.** Las policies llamaban a `current_role()` directamente y
+  Postgres la re-ejecutaba por cada fila escaneada. Envolverla en `(select ...)` permite al
+  planner promoverla a InitPlan: una sola evaluación por consulta.
+
+#### 🗄️ Base de datos (ya aplicadas en producción)
+- **Migración 028** — Recrea las 40 policies afectadas con el subselect de InitPlan. Misma
+  lógica, mismos nombres, **mismos permisos**: solo cambia la forma de la expresión.
+- **Migración 029** — `encuestas.score` pasa a `NOT NULL` + `CHECK (0..100)` y `semaforo` queda
+  acotado a `verde` / `amarillo` / `rojo`. Una encuesta sin score válido deja de ser posible
+  **por construcción**, no solo por código.
+- El historial de migraciones iba por la **025** aunque los archivos llegaban a la **027**: las
+  026 y 027 se habían aplicado a mano, fuera de `db push`, y nunca se registraron. Se verificó
+  que sí estaban en la base y se registraron las cuatro (026–029).
+
+#### 🧪 Tests y CI
+- **De 0 a 95 tests.** Se añade `vitest` con cobertura sobre `pulseScore`, `aiRiskEngine` y
+  `encuestaDetail` — las funciones puras que sostienen el Pulse Score y la detección de riesgo.
+  **Fueron estos tests los que destaparon el bug del score nulo**; no se buscaba.
+- **CI** (`.github/workflows/ci.yml`): `lint → test → build`. El paso de lint queda **no
+  bloqueante** a propósito: el repo arrastra 101 errores de lint anteriores a este trabajo
+  (estos cambios no añaden ninguno), y ponerlo en bloqueante dejaría CI en rojo permanente.
+  Conviene activarlo cuando esa deuda esté saldada.
+
+#### 🔒 Seguridad (segunda tanda)
+- **Las Edge Functions llevaban 10 días sin desplegar.** Los arreglos de las funciones de
+  administración estaban en el repo, pero las versiones **desplegadas** eran del 2026-07-02: el
+  código estaba corregido y el fallo seguía vivo en producción. Las Edge Functions **no se
+  despliegan con Vercel** — viven en Supabase y necesitan su propio `supabase functions deploy`.
+  Ya están desplegadas y verificadas contra el bundle que corre en producción.
+  *(Es la misma trampa que documenta la entrada del 2026-07-11 sobre los tickets. Merece una
+  comprobación fija: después de tocar `supabase/functions/`, mirar la fecha de despliegue real.)*
+- **El receptor de un mensaje podía reescribir lo que le mandaron.** La policy se llamaba
+  `mensajes_update_mark_read`, pero RLS es *row*-level, no *column*-level: concedía `UPDATE` de la
+  **fila entera**. El receptor podía cambiar el `texto` del mensaje, o el `de_id` para atribuírselo
+  a otra persona. La **migración 032** añade un trigger que acota el cambio al flag de leído —
+  mismo patrón que ya protegía `public.usuarios`.
+- **CORS acotado** en las Edge Functions (antes `*`), configurable con el secreto `ALLOWED_ORIGINS`
+  sin tocar código. Y `admin-create-usuario` **valida el username**: un valor de solo caracteres
+  inválidos se saneaba hasta quedar en nada y creaba una cuenta inutilizable.
+
+#### 🐛 Corregido
+- **El prompt que se le mandaba a la IA decía `emocional=undefined`.** Tercera aparición del mismo
+  malentendido sobre el jsonb `respuestas`: se leía con las claves del dataset legacy
+  (`respuestas.emocional`, `.estres`, `.motivacion`) sobre un objeto indexado por el id de la
+  pregunta. **La IA llevaba meses analizando el bienestar de la plantilla sin ver ni una sola de sus
+  respuestas de escala** — solo el score agregado. Todas las lecturas pasan ahora por los helpers de
+  `encuestaDetail.js`, que localizan la pregunta por su tipo y leen por su id.
+
+#### 🧹 Dependencias
+- **Fuera `firebase-admin` y el script de migración de Firestore**, que ya cumplió su función. Era
+  el origen de las 6 vulnerabilidades `moderate` que reportaba `npm audit`. **Ahora: 0.**
+
 ### 2026-07-11 · Soporte TI para todos los roles, con estado del ticket
 
 #### ✨ Añadido

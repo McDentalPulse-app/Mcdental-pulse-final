@@ -10,7 +10,7 @@ import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import { normalizeSucursal, sucursalMatches, formatSemanaDisplay } from "../../utils/constants";
 
-import { calcPulseScore, getPulseStatus } from "../../utils/pulseScore";
+import { calcPulseScore, getPulseStatus, tieneScoreValido } from "../../utils/pulseScore";
 import { getSignedUrlArchivoExpediente } from "../../services/supabase/archivosExpedienteService";
 import { subirAvatarUsuario, quitarAvatarUsuario } from "../../services/supabase/avatarService";
 import { notify } from "../../utils/notify";
@@ -431,7 +431,7 @@ const empleado =
               ) : (
                 encuestasEmpleado.map((enc) => {
                   const sem = getEncuestaSemaforo(enc);
-                  const encScore = Number.isFinite(Number(enc.score)) ? Number(enc.score) : "—";
+                  const encScore = tieneScoreValido(enc.score) ? Number(enc.score) : "—";
                   return (
                     <div key={`${enc.empleadoId}-${enc.semana}-${enc.fecha || ""}`} className="expediente-encuesta-row">
                       <div className="expediente-encuesta-main">

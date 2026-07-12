@@ -14,7 +14,8 @@ import { semaforoColor, semaforoBg, semaforoLabel } from "../../config/theme";
 
 import { semanaActual, normalizeSucursal, formatSemanaDisplay } from "../../utils/constants";
 import { calcularAntiguedad, resolveFechaIngreso } from "../../utils/helpers";
-import { calcPulseScore, getPulseStatus, calcRiesgos } from "../../utils/pulseScore";
+import { calcPulseScore, getPulseStatus, calcRiesgos, tieneScoreValido } from "../../utils/pulseScore";
+import { resumenEscalas } from "../../utils/encuestaDetail";
 import { callAI } from "../../utils/analysisEngine";
 import { analyzeEmployeeAI } from "../../utils/aiRiskEngine";
 import MarkdownLite from "../common/MarkdownLite";
@@ -68,7 +69,9 @@ const AICard = ({ icon = "ai", title, desc, onGenerate, output, loading }) => (
 );
 
 const AIEngine = ({ encuestas, mensajes, notas, userRole, permisos = [], descuentos = [], reconocimientos = [], reportesConfidenciales = [] }) => {
-  const { usuarios: USERS } = useGlobal();
+  // encuestaPreguntas hace falta para leer la respuesta de riesgo de renuncia: el jsonb
+  // `respuestas` se indexa por el id de la pregunta, no por un número fijo.
+  const { usuarios: USERS, encuestaPreguntas } = useGlobal();
   const { toast } = useNotification();
   const reduce = useReducedMotion();
   const pillTransition = reduce ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 32 };
@@ -84,7 +87,7 @@ const AIEngine = ({ encuestas, mensajes, notas, userRole, permisos = [], descuen
 
   // Filtro por semana (buckets): pre-lanzamiento juntas en "2026-W00", lanzamiento+ "2026-W01"…
   const semanasRaw = [...new Set(
-    encuestas.filter(e => Number.isFinite(Number(e.score))).map(e => String(e.semana))
+    encuestas.filter(e => tieneScoreValido(e.score)).map(e => String(e.semana))
   )];
   const bucketWeeks = {};
   semanasRaw.forEach(w => { (bucketWeeks[formatSemanaDisplay(w)] ||= []).push(w); });
@@ -142,7 +145,7 @@ const RESUMEN_LIMITE = 8;
   const buildContexto = () => {
     const resumen = empleados.map(emp => {
       const pulse = calcPulseScore(emp.id, encuestasSemana);
-      const riesgos = calcRiesgos(emp.id, encuestasSemana);
+      const riesgos = calcRiesgos(emp.id, encuestasSemana, encuestaPreguntas);
       const enc = encuestasSemana.filter(e => e.empleadoId === emp.id).sort((a,b)=>String(b.semana).localeCompare(String(a.semana))).slice(0,3);
       return `- ${emp.name} (${normalizeSucursal(emp.sucursal)}, ${emp.puesto}): Pulse Score ${pulse.score} (${pulse.nivel}), tendencia ${pulse.tendencia}, riesgo renuncia ${riesgos.renuncia}%, burnout ${riesgos.burnout}%, emocional ${riesgos.emocional}%, últimos scores: ${enc.map(e=>e.score).join(",")}`;
     }).join("\n");
@@ -157,10 +160,14 @@ const RESUMEN_LIMITE = 8;
   const buildEmpContexto = (emp) => {
     const enc = encuestasSemana.filter(e => e.empleadoId === emp.id).sort((a,b)=>String(b.semana).localeCompare(String(a.semana)));
     const pulse = calcPulseScore(emp.id, encuestasSemana);
-    const riesgos = calcRiesgos(emp.id, encuestasSemana);
+    const riesgos = calcRiesgos(emp.id, encuestasSemana, encuestaPreguntas);
     const notasEmp = notas.filter(n => n.empleadoId === emp.id);
     const msgsEmp = mensajes.filter(m => m.de === emp.id || m.para === emp.id).slice(-6);
-    return `EXPEDIENTE: ${emp.name} | ${normalizeSucursal(emp.sucursal)} | ${emp.puesto} | Antigüedad: ${calcularAntiguedad(resolveFechaIngreso(emp))}Tendencia: ${pulse.tendencia}\nRiesgos: Renuncia ${riesgos.renuncia}%, Burnout ${riesgos.burnout}%, Emocional ${riesgos.emocional}%\nEncuestas (${enc.length} semanas): ${enc.slice(0,5).map(e=>`${e.semana}: emocional=${e.respuestas.emocional}, estres=${e.respuestas.estres}, mot=${e.respuestas.motivacion}, score=${e.score}`).join(" | ")}\nNotas psicóloga: ${notasEmp.map(n=>n.texto).join(" | ") || "Ninguna"}\nMensajes: ${msgsEmp.map(m=>{const u=USERS.find(x=>x.id===m.de);return `${u?.name}: "${m.texto.slice(0,60)}"`;}).join(" | ") || "Ninguno"}`;
+    // Las escalas se leen por el id de la pregunta. Antes se leían con las claves legacy
+    // (respuestas.emocional / .estres / .motivacion), que no existen en un jsonb indexado
+    // por UUID: el prompt salía con "emocional=undefined, estres=undefined, mot=undefined".
+    const escalas = (e) => resumenEscalas(e, encuestaPreguntas) || "sin detalle";
+    return `EXPEDIENTE: ${emp.name} | ${normalizeSucursal(emp.sucursal)} | ${emp.puesto} | Antigüedad: ${calcularAntiguedad(resolveFechaIngreso(emp))}Tendencia: ${pulse.tendencia}\nRiesgos: Renuncia ${riesgos.renuncia}%, Burnout ${riesgos.burnout}%, Emocional ${riesgos.emocional}%\nEncuestas (${enc.length} semanas): ${enc.slice(0,5).map(e=>`${e.semana}: ${escalas(e)}, score=${e.score}`).join(" | ")}\nNotas psicóloga: ${notasEmp.map(n=>n.texto).join(" | ") || "Ninguna"}\nMensajes: ${msgsEmp.map(m=>{const u=USERS.find(x=>x.id===m.de);return `${u?.name}: "${m.texto.slice(0,60)}"`;}).join(" | ") || "Ninguno"}`;
   };
 
   const generarResumen = async () => {

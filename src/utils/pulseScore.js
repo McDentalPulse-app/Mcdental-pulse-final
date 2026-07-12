@@ -1,3 +1,5 @@
+import { readRiesgoRenuncia } from "./encuestaDetail";
+
 const SCORE_SIN_DATOS = {
   score: null,
   promedio: null,
@@ -15,10 +17,61 @@ const RIESGOS_SIN_DATOS = {
   conflicto: null,
 };
 
+/**
+ * Único predicado de "este score es un dato real".
+ *
+ * No usar `Number.isFinite(Number(x))` suelto: Number(null) === 0 y Number("") === 0,
+ * así que una encuesta SIN score se colaba como un score de 0 — semáforo rojo y
+ * prioridad "Crítica" para alguien de quien no sabemos nada. Esas filas existen: la
+ * migración de Firestore escribió score: null cuando el origen no traía score
+ * (scripts/migrate-firestore-to-supabase.mjs:317) y la columna es nullable.
+ *
+ * Ojo: 0 SÍ es válido — es una respuesta real, no un dato ausente.
+ */
+export const tieneScoreValido = (valor) =>
+  valor !== null && valor !== undefined && valor !== "" && Number.isFinite(Number(valor));
+
+/** Semáforo a partir del score. Mismos umbrales que getPulseStatus (80 / 60). */
+export const semaforoDeScore = (score) =>
+  score >= 80 ? "verde" : score >= 60 ? "amarillo" : "rojo";
+
+/**
+ * Calcula el Pulse Score de una encuesta: media de las preguntas de escala (1-10),
+ * normalizada a 0-100.
+ *
+ * Devuelve un resultado explícito en vez de un número suelto, porque hay dos formas
+ * de NO poder calcularlo y la UI las distingue:
+ *   - `sin-preguntas-escala`: la encuesta no tiene ninguna pregunta de escala. Dividir
+ *     entre cero daba NaN, que al serializarse a JSON viajaba como null y acababa
+ *     guardando una encuesta sin score (y con semáforo "rojo", porque NaN >= 60 es falso).
+ *   - `faltan-respuestas`: el empleado dejó alguna escala sin contestar.
+ *
+ * Nunca devuelve NaN.
+ */
+export const calcularScoreEncuesta = (preguntas = [], respuestas = {}) => {
+  const escala = preguntas.filter((p) => p.tipo === "escala");
+  if (!escala.length) {
+    return { ok: false, motivo: "sin-preguntas-escala" };
+  }
+
+  const valores = escala
+    .map((p) => Number(respuestas[p.id]))
+    .filter((valor) => Number.isFinite(valor));
+
+  if (valores.length !== escala.length) {
+    return { ok: false, motivo: "faltan-respuestas" };
+  }
+
+  const suma = valores.reduce((acc, valor) => acc + valor, 0);
+  const score = Math.round((suma / (escala.length * 10)) * 100);
+
+  return { ok: true, score, semaforo: semaforoDeScore(score) };
+};
+
 export const getEmployeeSurveys = (employeeId, encuestas) =>
   encuestas
     .filter((e) => e.empleadoId === employeeId)
-    .filter((e) => Number.isFinite(Number(e.score)))
+    .filter((e) => tieneScoreValido(e.score))
     .sort((a, b) => b.semana.localeCompare(a.semana));
 
 export const getLatestEmployeeScore = (employeeId, encuestas) => {
@@ -40,8 +93,16 @@ const riskFromBand = (score, bandMin, bandMax, riskMin, riskMax) => {
   return Math.round(riskMin + ratio * (riskMax - riskMin));
 };
 
-export const getEmployeeAIRisks = (score, encuestasEmpleado = []) => {
-  if (score == null || !Number.isFinite(Number(score))) {
+/**
+ * Riesgos derivados del score, más el "bump" por la respuesta a "¿Has pensado en renunciar?".
+ *
+ * `preguntas` hace falta porque el jsonb `respuestas` se indexa por el ID de la pregunta (un
+ * UUID en producción): sin la lista de preguntas no se sabe qué clave leer. Antes se buscaba
+ * la clave numérica 9, que no existe en los datos, así que el bump NUNCA se aplicaba.
+ * Sin `preguntas` sigue funcionando el fallback a las claves legacy.
+ */
+export const getEmployeeAIRisks = (score, encuestasEmpleado = [], preguntas = []) => {
+  if (!tieneScoreValido(score)) {
     return { ...RIESGOS_SIN_DATOS };
   }
 
@@ -69,10 +130,7 @@ export const getEmployeeAIRisks = (score, encuestasEmpleado = []) => {
   }
 
   const latest = encuestasEmpleado[0];
-  const riesgoRenunciaResp =
-    latest?.respuestas?.[9] ??
-    latest?.respuestas?.p9 ??
-    latest?.respuestas?.riesgoRenuncia;
+  const riesgoRenunciaResp = readRiesgoRenuncia(latest, preguntas);
 
   if (riesgoRenunciaResp === "Sí, seriamente") {
     renuncia = Math.min(95, renuncia + 15);
@@ -91,14 +149,14 @@ export const getEmployeeAIRisks = (score, encuestasEmpleado = []) => {
   };
 };
 
-export const calcRiesgos = (empId, encuestas) => {
+export const calcRiesgos = (empId, encuestas, preguntas = []) => {
   const surveys = getEmployeeSurveys(empId, encuestas);
   const latestScore = getLatestEmployeeScore(empId, encuestas);
-  return getEmployeeAIRisks(latestScore, surveys);
+  return getEmployeeAIRisks(latestScore, surveys, preguntas);
 };
 
 export const getPulseStatus = (score) => {
-  if (score == null || !Number.isFinite(Number(score))) {
+  if (!tieneScoreValido(score)) {
     return {
       label: "Sin datos",
       semaforo: "Sin evaluación",
