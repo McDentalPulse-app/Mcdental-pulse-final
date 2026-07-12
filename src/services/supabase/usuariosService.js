@@ -19,12 +19,29 @@ const mapUsuario = (row) =>
     avatarUrl: row.avatar_url,
   };
 
+// Fila completa, con PII (teléfono, email, fechas). El RLS de la migración 030 solo
+// la deja leer a admin/rh/psicologa; a cualquier otro rol le devolvería únicamente su
+// propia fila, así que los demás deben usar getUsuariosDirectorio().
 export const getUsuarios = async () => {
   try {
     const rows = await fetchAll(() => supabase.from("usuarios").select("*"));
     return rows.map(mapUsuario);
   } catch (error) {
     console.error("Error al obtener usuarios:", error);
+    throw new Error("No se pudieron cargar los usuarios.", { cause: error });
+  }
+};
+
+// Directorio sin PII (migración 030): id, nombre, rol, sucursal, puesto, avatar e
+// inactivo. Es lo único que un empleado necesita de sus compañeros — pintar a la
+// psicóloga en Mensajes y poco más. Los campos ausentes quedan undefined en
+// mapUsuario, igual que hoy quedan los nulos.
+export const getUsuariosDirectorio = async () => {
+  try {
+    const rows = await fetchAll(() => supabase.from("usuarios_directorio").select("*"));
+    return rows.map(mapUsuario);
+  } catch (error) {
+    console.error("Error al obtener el directorio de usuarios:", error);
     throw new Error("No se pudieron cargar los usuarios.", { cause: error });
   }
 };
