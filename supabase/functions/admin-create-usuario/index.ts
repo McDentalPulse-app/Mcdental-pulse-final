@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "../_shared/cors.ts";
+import { corsFor } from "../_shared/cors.ts";
 import { usernameToSyntheticEmail, TEMP_PASSWORD } from "../_shared/username.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -7,6 +7,7 @@ const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 Deno.serve(async (req) => {
+  const corsHeaders = corsFor(req);
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -66,6 +67,17 @@ Deno.serve(async (req) => {
     }
 
     const syntheticEmail = usernameToSyntheticEmail(username);
+
+    // usernameToSyntheticEmail() sanea el username quitando todo lo que no sea
+    // [a-z0-9._-]. Un username compuesto solo de caracteres inválidos ("###") queda en
+    // nada y produce el email "@mcdental.internal", que crearía una cuenta inutilizable.
+    // admin-update-username ya validaba esto; aquí faltaba.
+    if (syntheticEmail.startsWith("@")) {
+      return new Response(JSON.stringify({ error: "Nombre de usuario inválido." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Cliente service_role: única forma de crear usuarios en auth.users.
     const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
