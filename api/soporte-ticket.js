@@ -11,7 +11,7 @@ const CATEGORIES = new Set(["HARDWARE", "SOFTWARE", "RED", "CUENTAS", "OTRO"]);
 const PRIORITIES = new Set(["BAJA", "MEDIA", "ALTA", "CRITICA"]);
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
+  if (req.method !== "POST" && req.method !== "GET") {
     return res.status(405).json({ error: "Método no permitido." });
   }
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
@@ -31,6 +31,24 @@ export default async function handler(req, res) {
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   if (authError || !user) {
     return res.status(401).json({ error: "Sesión inválida." });
+  }
+
+  // GET: los tickets del propio usuario, para mostrar su estado. El correo sale del JWT
+  // verificado, así que nadie puede pedir los tickets de otra persona.
+  if (req.method === "GET") {
+    try {
+      const resp = await fetch(
+        `${MCTIC_API_URL}/api/v1/integrations/helpdesk/tickets?requester=${encodeURIComponent(user.email)}`,
+        { headers: { "X-Integration-Key": MCTIC_INTEGRATION_KEY } },
+      );
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
+        return res.status(502).json({ error: "No se pudieron consultar tus tickets." });
+      }
+      return res.status(200).json({ tickets: data?.data ?? [] });
+    } catch {
+      return res.status(502).json({ error: "No se pudo contactar al sistema de soporte." });
+    }
   }
 
   const { subject, description, category, priority, name } = req.body || {};
