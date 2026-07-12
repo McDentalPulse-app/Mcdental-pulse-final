@@ -53,6 +53,18 @@ Deno.serve(async (req) => {
       });
     }
 
+    // El insert de abajo usa service_role, que bypassa RLS, y el trigger
+    // prevent_usuario_privilege_escalation (mig 023/025) solo cubre UPDATE — así que sin
+    // esta guarda un 'rh' podía crear una cuenta 'admin' y entrar con la temporal,
+    // saltándose la restricción de rol que esas migraciones cierran para el UPDATE.
+    // Solo un admin puede asignar un rol privilegiado al crear.
+    if (callerPerfil?.role !== "admin" && role !== "empleado") {
+      return new Response(JSON.stringify({ error: "Solo un administrador puede crear usuarios con un rol distinto de empleado." }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const syntheticEmail = usernameToSyntheticEmail(username);
 
     // Cliente service_role: única forma de crear usuarios en auth.users.

@@ -51,13 +51,23 @@ Deno.serve(async (req) => {
 
     const { data: usuarioObjetivo, error: usuarioError } = await adminClient
       .from("usuarios")
-      .select("auth_user_id")
+      .select("auth_user_id, role")
       .eq("id", usuarioId)
       .single();
 
     if (usuarioError || !usuarioObjetivo?.auth_user_id) {
       return new Response(JSON.stringify({ error: "Usuario no encontrado." }), {
         status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Sin esta guarda, un 'rh' podía restablecer la contraseña de un 'admin' a la temporal
+    // y entrar como él — una escalada equivalente a cambiarse el rol, que las migraciones
+    // 023/025 sí bloquean. RH conserva el reset del resto de usuarios.
+    if (callerPerfil.role !== "admin" && usuarioObjetivo.role === "admin") {
+      return new Response(JSON.stringify({ error: "Solo un administrador puede restablecer la contraseña de otro administrador." }), {
+        status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

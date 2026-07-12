@@ -60,12 +60,18 @@ Deno.serve(async (req) => {
 
     const { data: objetivo, error: objetivoError } = await adminClient
       .from("usuarios")
-      .select("id, auth_user_id, synthetic_email")
+      .select("id, auth_user_id, synthetic_email, role")
       .eq("id", usuarioId)
       .single();
 
     if (objetivoError || !objetivo?.auth_user_id) {
       return json({ error: "Usuario no encontrado." }, 404);
+    }
+
+    // Esta función reescribe auth.users.email, que es la credencial real de login: sin esta
+    // guarda un 'rh' podía cambiar el username de un 'admin' y dejarlo sin poder entrar.
+    if (callerPerfil.role !== "admin" && objetivo.role === "admin") {
+      return json({ error: "Solo un administrador puede cambiar el nombre de usuario de otro administrador." }, 403);
     }
 
     // Disponibilidad: nadie más puede tener ese email sintético.
