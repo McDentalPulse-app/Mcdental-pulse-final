@@ -1,4 +1,5 @@
 import { supabase } from "../../config/supabase";
+import { fetchAll } from "./fetchAll";
 
 const mapMensaje = (row) => ({
   id: row.id,
@@ -10,12 +11,13 @@ const mapMensaje = (row) => ({
 });
 
 export const getMensajes = async () => {
-  const { data, error } = await supabase.from("mensajes").select("*");
-  if (error) {
+  try {
+    const rows = await fetchAll(() => supabase.from("mensajes").select("*"));
+    return rows.map(mapMensaje);
+  } catch (error) {
     console.error("Error al obtener mensajes:", error);
-    throw new Error("No se pudieron cargar los mensajes.");
+    throw new Error("No se pudieron cargar los mensajes.", { cause: error });
   }
-  return data.map(mapMensaje);
 };
 
 export const sendMensaje = async ({ de, para, texto, fecha }) => {

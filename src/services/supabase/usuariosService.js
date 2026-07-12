@@ -1,4 +1,5 @@
 import { supabase } from "../../config/supabase";
+import { fetchAll } from "./fetchAll";
 
 const mapUsuario = (row) =>
   row && {
@@ -19,12 +20,13 @@ const mapUsuario = (row) =>
   };
 
 export const getUsuarios = async () => {
-  const { data, error } = await supabase.from("usuarios").select("*");
-  if (error) {
+  try {
+    const rows = await fetchAll(() => supabase.from("usuarios").select("*"));
+    return rows.map(mapUsuario);
+  } catch (error) {
     console.error("Error al obtener usuarios:", error);
-    throw new Error("No se pudieron cargar los usuarios.");
+    throw new Error("No se pudieron cargar los usuarios.", { cause: error });
   }
-  return data.map(mapUsuario);
 };
 
 export const updateUsuario = async (id, updates) => {

@@ -1,4 +1,5 @@
 import { supabase } from "../../config/supabase";
+import { fetchAll } from "./fetchAll";
 
 const mapEncuesta = (row) => ({
   id: row.id,
@@ -11,12 +12,13 @@ const mapEncuesta = (row) => ({
 });
 
 export const getEncuestas = async () => {
-  const { data, error } = await supabase.from("encuestas").select("*");
-  if (error) {
+  try {
+    const rows = await fetchAll(() => supabase.from("encuestas").select("*"));
+    return rows.map(mapEncuesta);
+  } catch (error) {
     console.error("Error al obtener encuestas:", error);
-    throw new Error("No se pudieron cargar las encuestas.");
+    throw new Error("No se pudieron cargar las encuestas.", { cause: error });
   }
-  return data.map(mapEncuesta);
 };
 
 // Suscripción realtime a nuevas encuestas. Requiere que la tabla esté en la

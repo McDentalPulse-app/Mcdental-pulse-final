@@ -1,4 +1,5 @@
 import { supabase } from "../../config/supabase";
+import { fetchAll } from "./fetchAll";
 
 const BUCKET = "expedientes";
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -14,12 +15,13 @@ const mapArchivo = (row) => ({
 });
 
 export const getArchivosExpediente = async () => {
-  const { data, error } = await supabase.from("archivos_expediente").select("*");
-  if (error) {
+  try {
+    const rows = await fetchAll(() => supabase.from("archivos_expediente").select("*"));
+    return rows.map(mapArchivo);
+  } catch (error) {
     console.error("Error al obtener archivos de expediente:", error);
-    throw new Error("No se pudieron cargar los archivos del expediente.");
+    throw new Error("No se pudieron cargar los archivos del expediente.", { cause: error });
   }
-  return data.map(mapArchivo);
 };
 
 // Sube el archivo al bucket privado y registra su metadata. Lanza si excede MAX_BYTES.
