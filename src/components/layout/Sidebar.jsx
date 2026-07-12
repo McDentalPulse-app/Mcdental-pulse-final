@@ -43,6 +43,7 @@ const Sidebar = () => {
       { key: "reportes", icon: "trending", label: "Reportes" },
       { key: "confidenciales", icon: "lock", label: "Reportes Confidenciales" },
       { key: "config", icon: "settings", label: "Config" },
+      { key: "soporte", icon: "wrench", label: "Soporte TI" },
       { key: "perfil", icon: "user", label: "Mi perfil" },
     ],
     psicologa: [
@@ -53,6 +54,7 @@ const Sidebar = () => {
       { key: "empleados", icon: "users", label: "Empleados" },
       { key: "expedientes", icon: "folder", label: "Expedientes" },
       { key: "mensajes", icon: "message", label: "Mensajes" },
+      { key: "soporte", icon: "wrench", label: "Soporte TI" },
       { key: "perfil", icon: "user", label: "Mi perfil" },
     ],
     rh: [
@@ -66,6 +68,7 @@ const Sidebar = () => {
       { key: "reconocimientos", icon: "award", label: "Reconocimientos" },
       { key: "reportesrh", icon: "trending", label: "Reportes RH" },
       { key: "bolsa", icon: "briefcase", label: "Bolsa de trabajo" },
+      { key: "soporte", icon: "wrench", label: "Soporte TI" },
       { key: "perfil", icon: "user", label: "Mi perfil" },
     ],
     empleado: [

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import Card from "../common/Card";
-import PageHeader from "../common/PageHeader";
-import SectionTitle from "../common/SectionTitle";
+import Card from "./Card";
+import PageHeader from "./PageHeader";
+import SectionTitle from "./SectionTitle";
 import Icon from "../ui/Icon";
 import { supabase } from "../../config/supabase";
 import { useNotification } from "../../contexts/NotificationContext";

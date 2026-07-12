@@ -10,6 +10,7 @@ import EmpleadosList from '../empleados/EmpleadosList';
 import ExpedienteIntegral from '../empleados/ExpedienteIntegral';
 import Mensajes from '../comunicacion/Mensajes';
 import Perfil from '../common/Perfil';
+import SoporteTI from '../common/SoporteTI';
 
 export default function PsicologaLayout({ user, globals, actions }) {
   const { usuarios: USERS } = useGlobal();
@@ -30,6 +31,7 @@ export default function PsicologaLayout({ user, globals, actions }) {
             <Route path="empleados" element={<EmpleadosList encuestas={encuestas} notas={notas} role="psicologa" currentUser={user} onRestablecerPassword={restablecerPasswordUsuario} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} />} />
             <Route path="expedientes" element={<ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} />} />
             <Route path="mensajes" element={<Mensajes user={user} mensajes={mensajes} onSend={sendMensaje} onMarkRead={marcarMensajesLeidos}/>} />
+            <Route path="soporte" element={<SoporteTI user={user} />} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Routes>

@@ -8,7 +8,7 @@ import HistorialEmpleado from '../empleados/HistorialEmpleado';
 import PermisosEmpleado from '../empleados/PermisosEmpleado';
 import ReconocimientosEmpleado from '../empleados/ReconocimientosEmpleado';
 import ReporteConfidencialEmpleado from '../empleados/ReporteConfidencialEmpleado';
-import SoporteTI from '../empleados/SoporteTI';
+import SoporteTI from '../common/SoporteTI';
 import Mensajes from '../comunicacion/Mensajes';
 import Perfil from '../common/Perfil';
 
