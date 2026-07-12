@@ -5,11 +5,16 @@ import { isPsicologaPrincipal, getPsicologaPrincipal, formatUsuarioMensajesMeta 
 // `usuarios_directorio` (migración 030), que NO trae el `username`. Estos tests fijan
 // que encontrar a la psicóloga —de lo que depende que un empleado pueda escribirle—
 // sigue funcionando sin ese campo.
+//
+// El nombre de la psicóloga principal aparece aquí porque psicologa.js lo lleva
+// hardcodeado en su propia comprobación (`key.includes("ANA GORETTY")`): testearlo
+// exige usarlo. El resto de los datos son inventados — no se meten empleados reales
+// en los tests.
 
-const psicologa = { id: "p1", name: "LIC. ANA GORETTY SALAS", role: "psicologa", user: "ana salas" };
+const psicologa = { id: "p1", name: "ANA GORETTY", role: "psicologa", user: "ana salas" };
 // Lo que ve hoy un empleado: sin `user`, porque la vista no expone el username.
-const psicologaDirectorio = { id: "p1", name: "LIC. ANA GORETTY SALAS", role: "psicologa" };
-const empleado = { id: "e1", name: "SANDRA GALVAN", role: "empleado" };
+const psicologaDirectorio = { id: "p1", name: "ANA GORETTY", role: "psicologa" };
+const empleado = { id: "e1", name: "EMPLEADA DE PRUEBA", role: "empleado" };
 
 describe("isPsicologaPrincipal", () => {
   it("la identifica por nombre, sin necesitar el username", () => {
@@ -20,8 +25,8 @@ describe("isPsicologaPrincipal", () => {
     expect(isPsicologaPrincipal(psicologa)).toBe(true);
   });
 
-  it("ignora las tildes y el prefijo 'LIC.' al comparar el nombre", () => {
-    expect(isPsicologaPrincipal({ name: "Ana Goretty Salas", role: "psicologa" })).toBe(true);
+  it("ignora las tildes y las mayúsculas al comparar el nombre", () => {
+    expect(isPsicologaPrincipal({ name: "Ana Goretty", role: "psicologa" })).toBe(true);
   });
 
   it("no confunde a alguien que no es psicóloga", () => {
