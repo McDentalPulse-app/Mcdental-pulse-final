@@ -40,6 +40,28 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: "Sesión inválida." });
   }
 
+  // Rate limiting (migración 033). Sin esto, un usuario autenticado podía llamar a la IA
+  // en bucle y quemar la cuota de Gemini. Esta función corre en serverless y no tiene
+  // memoria entre invocaciones, así que el contador vive en la base: la RPC comprueba y
+  // registra en la misma transacción, y es security definer — el cliente no puede tocar
+  // el contador ni borrarlo para saltarse el límite.
+  const supabaseUsuario = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
+  const { data: cuota, error: cuotaError } = await supabaseUsuario.rpc("consumir_cuota_ia");
+
+  if (cuotaError) {
+    console.error("Error comprobando la cuota de IA:", cuotaError);
+    return res.status(500).json({ error: "No se pudo verificar tu cuota de IA." });
+  }
+
+  const permiso = Array.isArray(cuota) ? cuota[0] : cuota;
+  if (!permiso?.permitido) {
+    return res.status(429).json({
+      error: `Has alcanzado el límite de ${permiso?.limite ?? 30} consultas a la IA por hora. Inténtalo de nuevo más tarde.`,
+    });
+  }
+
   // Se ignora cualquier 'system' del cliente: el system prompt lo fija el servidor
   // para que no se pueda sobreescribir el guardarraíl "nunca diagnostiques".
   const { prompt } = req.body || {};
