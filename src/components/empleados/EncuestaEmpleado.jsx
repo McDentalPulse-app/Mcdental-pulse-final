@@ -6,6 +6,7 @@ import Icon from "../ui/Icon";
 import { useNotification } from "../../contexts/NotificationContext";
 import { getPreguntasActivas, DEFAULT_OPCIONES_RIESGO } from "../../utils/encuestaPreguntas";
 import { getISOWeek, semanaDisplay, isSemanaActual } from "../../utils/constants";
+import { calcularScoreEncuesta } from "../../utils/pulseScore";
 
 const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
   const { encuestaPreguntas: ENCUESTA_PREGUNTAS } = useGlobal();
@@ -40,14 +41,16 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
     : 0;
 
   const handleSubmit = async () => {
-    const preguntasConScore = preguntas.filter((p) => p.tipo === "escala");
+    const resultado = calcularScoreEncuesta(preguntas, respuestas);
 
-    const valoresNumericos = preguntasConScore
-      .map((p) => Number(respuestas[p.id]))
-      .filter((valor) => Number.isFinite(valor));
-
-    if (valoresNumericos.length !== preguntasConScore.length) {
-      toast.warning("Faltan respuestas numéricas para calcular el Pulse Score.");
+    if (!resultado.ok) {
+      if (resultado.motivo === "sin-preguntas-escala") {
+        toast.error(
+          "La encuesta no tiene preguntas de escala, así que no se puede calcular tu Pulse Score. Avisa a administración."
+        );
+      } else {
+        toast.warning("Faltan respuestas numéricas para calcular el Pulse Score.");
+      }
       return;
     }
 
@@ -58,23 +61,12 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
     });
     if (!confirmar) return;
 
-    const score = Math.round(
-      (valoresNumericos.reduce((acc, valor) => acc + valor, 0) /
-        (valoresNumericos.length * 10)) *
-        100
-    );
-
-    const semaforo =
-      score >= 80 ? "verde" :
-      score >= 60 ? "amarillo" :
-      "rojo";
-
     const ok = await onSubmit({
       empleadoId: user.id,
       semana: getISOWeek(),
       respuestas,
-      score,
-      semaforo,
+      score: resultado.score,
+      semaforo: resultado.semaforo,
       fecha: new Date().toISOString().slice(0, 10)
     });
 

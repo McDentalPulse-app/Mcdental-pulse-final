@@ -14,7 +14,7 @@ import { semaforoColor, semaforoBg, semaforoLabel } from "../../config/theme";
 
 import { semanaActual, normalizeSucursal, formatSemanaDisplay } from "../../utils/constants";
 import { calcularAntiguedad, resolveFechaIngreso } from "../../utils/helpers";
-import { calcPulseScore, getPulseStatus, calcRiesgos } from "../../utils/pulseScore";
+import { calcPulseScore, getPulseStatus, calcRiesgos, tieneScoreValido } from "../../utils/pulseScore";
 import { callAI } from "../../utils/analysisEngine";
 import { analyzeEmployeeAI } from "../../utils/aiRiskEngine";
 import MarkdownLite from "../common/MarkdownLite";
@@ -84,7 +84,7 @@ const AIEngine = ({ encuestas, mensajes, notas, userRole, permisos = [], descuen
 
   // Filtro por semana (buckets): pre-lanzamiento juntas en "2026-W00", lanzamiento+ "2026-W01"…
   const semanasRaw = [...new Set(
-    encuestas.filter(e => Number.isFinite(Number(e.score))).map(e => String(e.semana))
+    encuestas.filter(e => tieneScoreValido(e.score)).map(e => String(e.semana))
   )];
   const bucketWeeks = {};
   semanasRaw.forEach(w => { (bucketWeeks[formatSemanaDisplay(w)] ||= []).push(w); });

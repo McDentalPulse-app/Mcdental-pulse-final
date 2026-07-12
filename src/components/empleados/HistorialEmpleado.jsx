@@ -5,7 +5,7 @@ import SectionTitle from "../common/SectionTitle";
 import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { formatSemanaDisplay, normalizeWeek } from "../../utils/constants";
-import { getPulseStatus } from "../../utils/pulseScore";
+import { getPulseStatus, tieneScoreValido } from "../../utils/pulseScore";
 
 const HistorialEmpleado = ({ user, encuestas }) => {
   const historial = encuestas
@@ -58,7 +58,7 @@ const HistorialEmpleado = ({ user, encuestas }) => {
                   </div>
                   <div className="empleado-timeline-score">
                     <div className="empleado-timeline-points" style={{ color: status.color }}>
-                      {Number.isFinite(Number(e.score)) ? Number(e.score) : 50} pts
+                      {tieneScoreValido(e.score) ? `${Number(e.score)} pts` : "— pts"}
                     </div>
                     <span className="mc-status-pill" style={{ background: status.bg, color: status.color }}>
                       {status.label}

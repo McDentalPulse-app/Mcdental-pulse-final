@@ -10,7 +10,7 @@ import GroupedBarChart from "../common/GroupedBarChart";
 import WeekSelect from "../common/WeekSelect";
 import PageHeader from "../common/PageHeader";
 import { semanaActual, normalizeSucursal, formatSemanaDisplay } from "../../utils/constants";
-import { getPulseStatus } from "../../utils/pulseScore";
+import { getPulseStatus, tieneScoreValido } from "../../utils/pulseScore";
 import { esEmpleadoActivo } from "../../utils/helpers";
 
 const SEMAFORO_META = {
@@ -28,7 +28,7 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
   // Semanas como "buckets" por etiqueta de display: las pre-lanzamiento
   // (2025-W15, 2026-W01 viejo) se juntan en "2026-W00"; lanzamiento+ = "2026-W01"…
   const semanasRaw = [...new Set(
-    encuestas.filter(e => Number.isFinite(Number(e.score))).map(e => String(e.semana))
+    encuestas.filter(e => tieneScoreValido(e.score)).map(e => String(e.semana))
   )];
   const bucketWeeks = {}; // etiqueta -> [semanas ISO crudas]
   semanasRaw.forEach(w => {
@@ -45,13 +45,13 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
   // Encuesta más reciente del empleado dentro del bucket seleccionado.
   const encDelBucket = (empId) =>
     encuestas
-      .filter(e => e.empleadoId === empId && Number.isFinite(Number(e.score)) && selRawWeeks.includes(String(e.semana)))
+      .filter(e => e.empleadoId === empId && tieneScoreValido(e.score) && selRawWeeks.includes(String(e.semana)))
       .sort((a, b) => String(b.semana).localeCompare(String(a.semana)))[0];
   // Score de la encuesta anterior al bucket (para la tendencia ↑↓).
   const scorePrevio = (empId) => {
     const minSel = [...selRawWeeks].sort()[0] || "";
     const prev = encuestas
-      .filter(e => e.empleadoId === empId && Number.isFinite(Number(e.score)) && String(e.semana) < minSel)
+      .filter(e => e.empleadoId === empId && tieneScoreValido(e.score) && String(e.semana) < minSel)
       .sort((a, b) => String(b.semana).localeCompare(String(a.semana)))[0];
     return prev ? Math.round(Number(prev.score)) : null;
   };
@@ -306,7 +306,7 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
                 <div className="psico-priority-foot">
                   <span className="psico-priority-stat">
                     <Icon name="activity" size={14} />
-                    Score {Number.isFinite(Number(score)) ? score : "—"}
+                    Score {tieneScoreValido(score) ? score : "—"}
                   </span>
                   <span className="psico-priority-stat">
                     <Icon name="trending" size={14} />
@@ -344,7 +344,7 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
                     <div className="psico-suc-emp-meta">{emp.puesto}</div>
                   </div>
                   <div className="psico-suc-emp-right">
-                    <span className="psico-suc-emp-score">Score {Number.isFinite(Number(score)) ? score : "—"} {tendencia}</span>
+                    <span className="psico-suc-emp-score">Score {tieneScoreValido(score) ? score : "—"} {tendencia}</span>
                     <Badge tipo={nivel} />
                   </div>
                 </div>
