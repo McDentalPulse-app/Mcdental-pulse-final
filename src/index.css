@@ -120,6 +120,60 @@
      .list-page acabó con gap:0 mientras las otras 26 pantallas tenían 20px. */
   --mc-ritmo-pagina: 20px;
 
+  /* ─────────────────────────────────────────────────────────────────────────────
+     Tokens que sustituyen a src/styles/dark/.
+
+     Cada uno era un par (valor en claro, valor en oscuro) escrito en dos sitios: el color
+     en App.css y su gemelo en un archivo de overrides a 4.000 líneas de distancia. Por eso
+     el modo oscuro se olvidaba: nadie se acuerda del archivo lejano.
+
+     Muchos overrides eran el MISMO par repetido, así que aquí son un solo token.
+     ───────────────────────────────────────────────────────────────────────────── */
+
+  /* Texto principal sobre una superficie (etiquetas de formulario, títulos de fila, datos
+     destacados). Sustituye a 7 overrides idénticos. */
+  --mc-texto-fuerte: var(--mc-texto);
+  /* Texto de apoyo (subtítulos, cuerpos de lista, botones secundarios). Sustituye a 3. */
+  --mc-texto-apagado: var(--mc-slate-600);
+
+  /* Superficie "sutil": un escalón por debajo de la tarjeta (botón secundario, fila de lista,
+     zona de subida de archivo). Sustituye a 3 overrides. */
+  --mc-superficie-sutil: var(--mc-slate-100);
+  --mc-superficie-sutil-hover: var(--mc-slate-200);
+  /* Faltaba en claro: solo estaba definido en oscuro, así que en claro no resolvía a nada. */
+  --mc-superficie-input-focus: var(--mc-brand-suave);
+
+  /* Botón de contorno: en claro el verde de marca; en oscuro tiene que aclararse o desaparece
+     sobre el fondo. --mc-verde-medio no cambia con el tema (es un color de marca), por eso
+     necesitaba override. */
+  --mc-btn-outline-fg: var(--mc-verde-medio);
+
+  /* Botón "Editar": el juego completo, para que no haya que recordar cuatro valores sueltos. */
+  --mc-btn-edit-fg: var(--mc-verde-medio);
+  --mc-btn-edit-borde: rgba(14, 140, 122, 0.35);
+  --mc-btn-edit-bg: var(--mc-brand-suave);
+  --mc-btn-edit-bg-hover: var(--mc-verde-claro);
+
+  --mc-borde-modal: rgba(0, 109, 91, 0.08);
+
+  /* El telón de fondo de la app. Son degradados decorativos genuinamente distintos por tema
+     (no un color que se invierte), así que el token guarda el degradado entero. */
+  --mc-fondo-shell: var(--mc-gris-perla);
+  --mc-fondo-app:
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(20, 200, 182, 0.16) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 0% 100%, rgba(16, 116, 99, 0.13) 0%, transparent 55%),
+    linear-gradient(180deg, var(--mc-slate-50) 0%, var(--mc-gris-fondo) 100%);
+  --mc-fondo-rejilla:
+    linear-gradient(rgba(10, 51, 46, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10, 51, 46, 0.09) 1px, transparent 1px);
+  --mc-fondo-aurora:
+    radial-gradient(circle 340px at 96% 0%, rgba(20, 200, 182, 0.22), transparent 72%),
+    radial-gradient(circle 380px at 2% 96%, rgba(16, 116, 99, 0.20), transparent 72%);
+  --mc-fondo-aurora-filtro: blur(16px);
+  --mc-fondo-aurora-anim: appMainOrbFloat 18s ease-in-out infinite;
+  --mc-fondo-sweep: transparent;
+  --mc-fondo-sweep-anim: none;
+
   /* ── Glassmorphism layer ── */
   --glass-bg: rgba(255, 255, 255, 0.10);
   --glass-bg-strong: rgba(255, 255, 255, 0.16);
@@ -328,6 +382,48 @@
 
   /* Rojo y ámbar aquí son pasteles claros: encima va texto oscuro. */
   --mc-texto-sobre-alerta: var(--brand-950);
+
+  /* ── La otra mitad de los tokens que sustituyen a src/styles/dark/.
+        Los valores están transcritos tal cual de los overrides que reemplazan, para que el
+        aspecto en oscuro no cambie. ── */
+
+  --mc-texto-fuerte: var(--mc-texto-titulo);
+  --mc-texto-apagado: var(--mc-texto-secundario);
+
+  --mc-superficie-sutil: var(--mc-superficie-input);
+  --mc-superficie-sutil-hover: var(--mc-superficie-input-focus);
+  --mc-superficie-input-focus: #123A33;
+
+  --mc-btn-outline-fg: var(--mc-aqua);
+
+  --mc-btn-edit-fg: var(--mc-badge-verde-texto);
+  --mc-btn-edit-borde: rgba(134, 239, 172, 0.35);
+  --mc-btn-edit-bg: var(--mc-badge-verde-bg);
+  --mc-btn-edit-bg-hover: #1B6B3B;
+
+  --mc-borde-modal: rgba(255, 255, 255, 0.08);
+
+  --mc-fondo-shell: #071613;
+  --mc-fondo-app:
+    radial-gradient(ellipse 90% 50% at 50% -10%, rgba(14, 140, 122, 0.20) 0%, transparent 60%),
+    linear-gradient(180deg, #081815 0%, #060F0D 55%, #081A16 100%);
+  --mc-fondo-rejilla:
+    linear-gradient(rgba(70, 214, 197, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(70, 214, 197, 0.055) 1px, transparent 1px);
+  --mc-fondo-aurora:
+    radial-gradient(circle 420px at 88% -4%, rgba(20, 200, 182, 0.20), transparent 68%),
+    radial-gradient(circle 460px at -6% 100%, rgba(34, 211, 238, 0.12), transparent 70%),
+    radial-gradient(circle 300px at 55% 118%, rgba(138, 233, 221, 0.08), transparent 75%);
+  --mc-fondo-aurora-filtro: none;
+  --mc-fondo-aurora-anim: mcAuroraDrift 32s ease-in-out infinite;
+  --mc-fondo-sweep: conic-gradient(
+    from 210deg at 50% 50%,
+    transparent 0deg,
+    rgba(20, 200, 182, 0.07) 40deg,
+    rgba(34, 211, 238, 0.05) 80deg,
+    transparent 130deg
+  );
+  --mc-fondo-sweep-anim: mcAuroraSweep 46s linear infinite;
   --mc-ambar-apagado: #FCD34D;
 
   /* Series: mismos tonos, versiones claras. Un #2563EB sobre #0A2420 casi no se ve. */
