@@ -185,6 +185,11 @@
      oscuro (abajo), que es lo que faltaba en los desplegables, selects y submenús
      — los que se quedaban blancos.
      ═════════════════════════════════════════════════════════════════════ */
+  /* Fondo suave de marca. --mc-verde-claro NO cambia con el tema (y no debe: también se
+     usa como TEXTO claro sobre badges oscuros). Este token es solo para fondos, y sí
+     cambia: es lo que dejaba blancos los chips y las zonas suaves en modo oscuro. */
+  --mc-brand-suave: var(--mc-verde-claro);
+
   --mc-slate-900: #0F172A;   /* texto muy fuerte */
   --mc-slate-700: #334155;   /* texto fuerte */
   --mc-slate-600: #475569;
@@ -262,6 +267,10 @@
      verde de la marca en vez de verse gris sucio). Esto es lo que arregla los
      desplegables, selects y submenús que se quedaban blancos.
      ═════════════════════════════════════════════════════════════════════ */
+  /* Fondo suave de marca: en oscuro, un tinte del acento sobre el fondo, no un pastel
+     atenuado (que se vería gris sucio). */
+  --mc-brand-suave: rgba(20, 200, 182, 0.10);
+
   --mc-slate-900: #F1F5F9;
   --mc-slate-700: #E2E8F0;
   --mc-slate-600: #CBD5E1;

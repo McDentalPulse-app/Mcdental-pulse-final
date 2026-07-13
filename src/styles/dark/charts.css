@@ -11,17 +11,9 @@
 [data-theme="dark"] svg.dashboard-bar-chart line {
   stroke: rgba(255, 255, 255, 0.14);
 }
-[data-theme="dark"] svg.dashboard-bar-chart text[fill="#94a3b8"],
-[data-theme="dark"] svg.dashboard-bar-chart text[fill="#64748b"] {
-  fill: var(--mc-texto-secundario);
-}
 
 /* LineChart: labels de valor/eje. El punto (círculo) mantiene su borde
    blanco fijo — funciona igual de bien como "halo" sobre fondo oscuro. */
-[data-theme="dark"] svg.dashboard-line-chart text[fill="#334155"],
-[data-theme="dark"] svg.dashboard-line-chart text[fill="#64748b"] {
-  fill: var(--mc-texto-secundario);
-}
 
 /* MiniBar (Riesgo por sucursal / mini-gráficos de barra vertical) */
 [data-theme="dark"] .mc-minibar-bar--empty {
