@@ -675,12 +675,12 @@ const RESUMEN_LIMITE = 8;
               <div className="ai-exp-metrics">
                 <div className="ai-exp-metric">
                   <div className="ai-exp-metric-label">Pulse Score™</div>
-                  <div className="ai-exp-metric-value" style={{ color: a.nivelColor(status.nivel) }}>{a.pulse}</div>
+                  <div className="ai-exp-metric-value" style={{ color: nivelColor(a.status.nivel) }}>{a.pulse}</div>
                   <div className="ai-exp-metric-sub">{a.status.label}</div>
                 </div>
                 <div className="ai-exp-metric">
                   <div className="ai-exp-metric-label">Semáforo</div>
-                  <div className="ai-exp-metric-value ai-exp-metric-value--sm" style={{ color: a.nivelColor(status.nivel) }}>{a.status.semaforo}</div>
+                  <div className="ai-exp-metric-value ai-exp-metric-value--sm" style={{ color: nivelColor(a.status.nivel) }}>{a.status.semaforo}</div>
                   <div className="ai-exp-metric-sub">Estado actual</div>
                 </div>
                 <div className="ai-exp-metric">
