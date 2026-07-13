@@ -115,7 +115,7 @@
 
 .ai-loading-head {
   display: inline-flex; align-items: center; gap: 8px;
-  color: var(--mc-verde-medio, var(--mc-verde)); font-weight: 600; margin-bottom: 12px;
+  color: var(--mc-marca-texto); font-weight: 600; margin-bottom: 12px;
 }
 .ai-loading-head .ai-spark { animation: aiSparkSpin 1.4s ease-in-out infinite; }
 @keyframes aiSparkSpin {

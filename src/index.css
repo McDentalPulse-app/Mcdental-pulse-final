@@ -171,6 +171,19 @@
 
   --mc-borde-modal: rgba(0, 109, 91, 0.08);
 
+  /* Badge neutro y pill de "vacaciones": no son del semáforo ni de marca, tienen su propio
+     hue (índigo / azul en oscuro). Por eso no podían salir de ningún token existente. */
+  --mc-badge-neutro-bg: var(--mc-slate-100);
+  --mc-badge-neutro-texto: var(--mc-slate-600);
+  --mc-pill-vacaciones-bg: var(--mc-brand-suave);
+
+  /* El verde de marca USADO COMO TEXTO O ICONO. Distinto de --mc-verde-medio, que es el color
+     de marca en sí (y como tal no debe cambiar: se usa también de fondo).
+     Sobre el fondo oscuro, #0E8C7A da 3:1 — apagado y costoso de leer. Como texto tiene que
+     aclararse. 31 reglas lo usaban así, y era la causa de "algunas letras no son legibles". */
+  --mc-marca-texto: var(--mc-verde-medio);
+  --mc-icono-accion: var(--mc-marca-texto);
+
   /* El telón de fondo de la app. Son degradados decorativos genuinamente distintos por tema
      (no un color que se invierte), así que el token guarda el degradado entero. */
   --mc-fondo-shell: var(--mc-gris-perla);
@@ -427,6 +440,13 @@
   --mc-btn-danger-borde-hover: #A84444;
 
   --mc-borde-modal: rgba(255, 255, 255, 0.08);
+
+  --mc-badge-neutro-bg: #312E81;
+  --mc-badge-neutro-texto: #A5B4FC;
+  --mc-pill-vacaciones-bg: #1E3A8A;
+
+  --mc-marca-texto: var(--mc-aqua);
+  --mc-icono-accion: #46D6C5;
 
   --mc-fondo-shell: #071613;
   --mc-fondo-app:

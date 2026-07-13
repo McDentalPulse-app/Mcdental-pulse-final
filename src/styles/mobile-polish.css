@@ -147,7 +147,7 @@ a,
 /* El toggle de tema del bottom-sheet reutiliza .mobile-sheet-logout (rojo);
    con clase propia recupera un color neutro de acción en ambos temas. */
 .mobile-sheet-theme {
-  color: var(--mc-verde-medio) !important;
+  color: var(--mc-marca-texto) !important;
 }
 [data-theme="dark"] .mobile-sheet-theme {
   color: var(--brand-300) !important;
