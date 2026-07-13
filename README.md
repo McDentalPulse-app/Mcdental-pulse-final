@@ -63,6 +63,100 @@ src/
 
 ## Changelog
 
+### 2026-07-13 · El modo oscuro deja de ser un parche
+
+> Rehacer los estilos para que el tema oscuro **forme parte del sistema** en vez de ir por detrás
+> arreglándolo. Se retiran las **710 líneas** de `src/styles/dark/` (7 archivos, 180 reglas de
+> override) y el color pasa a decidirse en **un solo sitio**: los tokens de `src/index.css`.
+> Resultado medido: **0 reglas `[data-theme="dark"]`** fuera del bloque de tokens.
+
+#### 🎯 La causa raíz eran tres capas, cada una tapando la siguiente
+
+1. **Los colores vivían en JavaScript.** `pulseScore.js` devolvía `{ color: "#22c55e" }` y los
+   componentes lo aplicaban como `style={{ color }}`. Un estilo inline **gana por especificidad**:
+   ninguna regla CSS de tema oscuro podía alcanzarlo. Por eso los overrides no bastaban. *(50 hex en
+   JS → 0.)*
+2. **`App.css` tenía 379 hex escritos a pelo** *(→ 0; solo quedan máscaras `#000` y comentarios)*.
+3. **Y algunos tokens tampoco cambiaban de tema**: `--mc-texto`, `--mc-blanco`, `--mc-verde-oscuro`
+   y los cuatro tokens de borde (que eran blanco puro).
+
+Había **seis paletas distintas para el mismo verde de semáforo** (`#059669`, `#22c55e`, `#2F7D5A`,
+`#006D5B`…), repartidas entre `index.css`, `pulseScore.js`, `theme.js`, los dos dashboards y
+`constants.js`.
+
+#### 🔍 Lo que apareció al medir en vez de mirar
+
+Se escribió una comprobación que **resuelve todos los tokens en tema oscuro y mide la luminancia**
+de cada declaración, en lugar de revisar pantallas a ojo. Encontró fallos que llevaban ahí desde
+siempre:
+
+- **31 reglas pintaban texto e iconos con `--mc-verde-medio` (`#0E8C7A`)**, que no cambia con el
+  tema. Sobre el fondo oscuro da **3:1**: apagado y costoso de leer. El verde de marca **como
+  texto** tiene que aclararse en oscuro — y es distinto del verde de marca *en sí*, que también se
+  usa de fondo y no debe cambiar. Token `--mc-marca-texto`.
+- **Los botones rojo y ámbar eran ilegibles en oscuro.** Fijaban el texto en blanco, pero en tema
+  oscuro su fondo es un **pastel claro** (`#FCA5A5`, `#FCD34D`). Y forzar texto oscuro habría roto
+  el tema claro, donde esos mismos fondos son `#A84444` / `#9A6B1F`. **Si el fondo se invierte con
+  el tema, el texto tiene que invertirse con él**: ningún color fijo sirve. Contraste verificado en
+  los 4 casos (5.87 / 8.98 / 4.67 / 11.82 : 1, todos pasan WCAG AA).
+- **`.list-filter-select option` no tenía fondo.** El desplegable **abierto lo pinta el sistema
+  operativo**, no la página: sin fondo explícito sale **blanco** aunque la app esté en oscuro. Era
+  el "submenú blanco" reportado.
+- **El bloque `prefers-reduced-motion` llevaba `[data-theme="dark"]`**, así que en tema claro **no
+  se aplicaba**: quien pedía "sin movimiento" seguía viendo el fondo animarse.
+- **La pill de la pestaña activa del AI Engine nunca se pintó, en ningún tema.** La regla
+  `.ai-engine-tab > *` (que sube el icono y el texto por encima de la pill) alcanzaba **también a la
+  propia pill** y —con más especificidad— le quitaba el `position: absolute`. Sin él, un `<span>`
+  vacío mide **0×0**. En claro no se notaba; en oscuro dejó texto oscuro sobre fondo oscuro.
+
+#### 🧹 Deduplicación
+
+Los 180 overrides no eran 180 decisiones: eran **el mismo par repetido**.
+
+| Par (claro → oscuro) | Token único | Reglas que absorbe |
+|---|---|---|
+| `--mc-texto` → `--mc-texto-titulo` | `--mc-texto-fuerte` | 10 |
+| `slate-600/700` → `--mc-texto-secundario` | `--mc-texto-apagado` | 5 |
+| `slate-100/50` → `--mc-superficie-input` | `--mc-superficie-sutil` | 3 |
+
+Y `.expediente-foto-upload` / `-quitar` resultaron ser los botones **"editar" y "borrar"
+duplicados**, con su propia copia de los colores… y por tanto su propio override duplicado.
+
+#### 🧱 Otros arreglos de estructura
+
+- **Doble scroll en las listas** (Expedientes, Gestión de Personal). `.list-page` usaba
+  `max-height: calc(100vh - 56px)`, y **`max-height` no da una altura definida**: el contenedor se
+  dimensiona por su contenido (la tabla entera) y solo *después* se recorta. La tabla, con `flex: 1;
+  min-height: 0`, nunca recibía una altura contra la que encoger. Con `height` sí. De paso se va el
+  `56px` mágico, que era el padding de `.app-main` copiado a mano.
+- **Un solo ritmo vertical** (`--mc-ritmo-pagina`). 26 pantallas usaban `.admin-page` (gap 20px) y 2
+  usaban `.list-page` (**gap 0** — cabecera pegada al contenido, y sin `margin: 0 auto`, ni
+  centrada). Había además **tres reglas de gap peleándose** en móvil (16/12/12px); la de 16px era
+  **código muerto**.
+- **En desarrollo, el `ErrorBoundary` muestra el error en pantalla.** Antes atrapaba la excepción,
+  pintaba "Algo no salió como esperábamos" y mandaba la causa a la consola: desde fuera eso se ve
+  igual que "no carga", sin ninguna pista. En producción se sigue ocultando.
+
+#### ⚠️ Lecciones (las tres son la misma)
+
+- **Un `sed` sobre nombres de props es un refactor de API disfrazado de buscar-y-reemplazar.** Hay
+  que comprobar **quién recibe**, no solo quién envía: `<RiskBar color=…>` cuando el componente
+  espera `slug` **no da error** — React ignora la prop en silencio y usa el valor por defecto. Se
+  añade una auditoría que cruza cada `<Componente prop=…>` contra la firma real.
+- **Un `sed` sobre expresiones tiene que anclar la expresión completa.** Sustituir el trozo
+  `status.color` dentro de `a.status.color` deja el `a.` colgando: `a.nivelColor(...)`. Reventaba
+  "Expedientes IA" y ni el build ni el lint lo veían — `a` existe, así que `no-undef` no protesta.
+- **Verificar la intención, no la coincidencia.** Un `grep -q 'nivelTinte'` daba verde porque
+  encontraba el **uso**, no el **import**. La app no cargaba.
+
+#### 🛠 Base técnica
+
+Tailwind v4 (`@tailwindcss/vite`, config CSS-first) queda instalado y disponible para código nuevo,
+con `@custom-variant dark` enganchado al `data-theme` que ya ponía `ThemeContext`. **Se descartó
+migrar las 25 pantallas existentes a Tailwind**: al medirlo, el trabajo caro (reescribir 10.500
+líneas) no compraba nada — el valor estaba en sacar los colores de JS y montar la capa de tokens, y
+eso ya estaba hecho. `DESIGN.md` recoge la regla nº1: **ningún hex fuera de `src/index.css`**.
+
 ### 2026-07-12 · Auditoría completa: seguridad, escalabilidad, concurrencia y calidad
 
 > Auditoría de la app (escalabilidad, multiusuario, concurrencia, índices, seguridad) y
