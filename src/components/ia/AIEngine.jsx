@@ -294,7 +294,7 @@ const RESUMEN_LIMITE = 8;
               key={emp.id}
               type="button"
               className="ai-engine-pulse-chip"
-              style={{ borderColor: `${nivelColor(ps.slug)}40` }}
+              style={{ borderColor: nivelTinte(ps.slug, 25) }}
               onClick={() => { setTab("expedientes"); analizarEmpleado(emp); }}
             >
               <Avatar name={emp.name} size={32} slug={ps.slug} photoUrl={emp.avatarUrl} />

@@ -202,7 +202,7 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
               </div>
 
               <div className="psico-detail-kpis">
-                <div className="psico-detail-pulse" style={{ background: nivelBadgeBg(status.nivel), borderColor: `${nivelColor(status.nivel)}33` }}>
+                <div className="psico-detail-pulse" style={{ background: nivelBadgeBg(status.nivel), borderColor: nivelTinte(status.nivel, 20) }}>
                   <div className="psico-detail-pulse-label" style={{ color: nivelColor(status.nivel) }}>Pulse Score</div>
                   <div className="psico-detail-pulse-value" style={{ color: nivelColor(status.nivel) }}>{score}</div>
                   <div className="psico-detail-pulse-status" style={{ color: nivelColor(status.nivel) }}>{status.label}</div>

@@ -42,7 +42,7 @@ const EncuestaDetalleModal = ({ encuesta, empleado, preguntas, onClose }) => {
         <div className="encuesta-detalle-kpis">
           <div
             className="encuesta-detalle-pulse"
-            style={{ background: nivelBadgeBg(status.nivel), borderColor: `${nivelColor(status.nivel)}33` }}
+            style={{ background: nivelBadgeBg(status.nivel), borderColor: nivelTinte(status.nivel, 20) }}
           >
             <div className="encuesta-detalle-pulse-label" style={{ color: nivelColor(status.nivel) }}>Pulse Score</div>
             <div className="encuesta-detalle-pulse-value" style={{ color: nivelColor(status.nivel) }}>
