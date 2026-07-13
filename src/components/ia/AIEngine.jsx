@@ -325,7 +325,11 @@ const RESUMEN_LIMITE = 8;
                   aria-hidden="true"
                 />
               )}
-              <Icon name={t.icon} size={14} color={isActive ? "var(--brand-950)" : undefined} /> {t.label}
+              {/* El label va en un <span> a propósito: como nodo de texto suelto NO es un
+                  elemento, así que la regla que sube los hijos por encima de la pill no lo
+                  alcanzaba y la pill se lo comía. */}
+              <Icon name={t.icon} size={14} color={isActive ? "var(--brand-950)" : undefined} />
+              <span className="ai-engine-tab-label">{t.label}</span>
             </button>
           );
         })}
