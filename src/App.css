@@ -1421,7 +1421,7 @@
 .mc-kpi-label {
   font-size: 13px;
   font-weight: 700;
-  color: var(--mc-texto);
+  color: var(--mc-texto-apagado);
   margin-top: 8px;
   position: relative;
   z-index: 1;
@@ -1516,7 +1516,7 @@
 }
 
 .mc-minibar-val--empty {
-  color: var(--mc-slate-400);
+  color: var(--mc-texto-apagado);
   font-weight: 600;
 }
 
@@ -1564,7 +1564,7 @@
 
 .mc-minibar-label {
   font-size: 10px;
-  color: var(--mc-slate-600);
+  color: var(--mc-texto-apagado);
   text-align: center;
   max-width: 100%;
   overflow: hidden;
@@ -1699,7 +1699,7 @@
    veía al principio. Ambos tokens cambian con el tema, así que ya no necesita override. */
 .list-filter-select option {
   background: var(--mc-superficie-input);
-  color: var(--mc-texto);
+  color: var(--mc-texto-fuerte);
 }
 
 .list-filter-input:focus,
@@ -1757,7 +1757,7 @@
 .emp-card-name {
   font-weight: 800;
   font-size: 13px;
-  color: var(--mc-texto);
+  color: var(--mc-texto-fuerte);
   line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1806,6 +1806,8 @@
   font-size: 14px;
   outline: none;
   flex-shrink: 0;
+  background: var(--mc-superficie-sutil);
+  color: var(--mc-texto-fuerte);
 }
 
 .table-search:focus {
@@ -1851,6 +1853,7 @@
   border-bottom: 1px solid var(--mc-slate-100);
   font-size: 13px;
   vertical-align: middle;
+  color: var(--mc-texto-apagado);
 }
 
 .mc-table tbody tr:hover {
@@ -1859,11 +1862,11 @@
 
 .mc-table-name {
   font-weight: 700;
-  color: var(--mc-texto);
+  color: var(--mc-texto-fuerte);
 }
 
 .mc-table-muted {
-  color: var(--mc-slate-600);
+  color: var(--mc-texto-apagado);
 }
 
 .mc-table-empty {
@@ -2101,6 +2104,7 @@
   gap: 10px;
   font-size: 13px;
   margin-bottom: 16px;
+  color: var(--mc-texto-fuerte);
 }
 
 .detail-stats-grid {
@@ -2111,14 +2115,14 @@
 }
 
 .detail-stat-box {
-  background: var(--mc-slate-50);
+  background: var(--mc-superficie-sutil);
   padding: 12px;
   border-radius: 12px;
 }
 
 .detail-stat-label {
   font-size: 11px;
-  color: var(--mc-slate-400);
+  color: var(--mc-texto-apagado);
 }
 
 .detail-stat-value {
@@ -2247,7 +2251,9 @@
   .mc-form-textarea,
   .mensajes-composer-input {
     min-height: 44px;
-  }
+  background: var(--mc-superficie-sutil);
+  color: var(--mc-texto-fuerte);
+}
 
   .mc-form-textarea {
     min-height: 96px;
@@ -3150,7 +3156,7 @@
   padding-right: 4px;
   border: 1px solid var(--mc-gris-suave);
   border-radius: 14px;
-  background: var(--mc-slate-50);
+  background: var(--mc-superficie-sutil);
 }
 
 .encuesta-item {
@@ -3177,7 +3183,7 @@
 }
 
 .encuesta-text {
-  color: var(--mc-slate-700);
+  color: var(--mc-texto-fuerte);
   word-break: break-word;
 }
 
@@ -3626,8 +3632,9 @@
 .config-privacy-item {
   padding: 14px 16px;
   border-radius: 12px;
-  background: var(--mc-slate-50);
+  background: var(--mc-superficie-sutil);
   border: 1px solid var(--mc-gris-suave);
+  color: var(--mc-texto-apagado);
 }
 
 .config-privacy-item {
@@ -3638,7 +3645,7 @@
 
 .config-role-name {
   font-weight: 800;
-  color: var(--mc-texto);
+  color: var(--mc-texto-fuerte);
   margin-bottom: 4px;
 }
 
@@ -3755,6 +3762,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  background: var(--mc-superficie-sutil);
 }
 
 .mc-file-input-overlay {
@@ -3784,7 +3792,7 @@
 }
 
 .expediente-data-row {
-  color: var(--mc-slate-700);
+  color: var(--mc-texto-fuerte);
   line-height: 1.85;
   font-size: 14px;
 }
@@ -3979,7 +3987,7 @@
 .ai-engine-pulse-chip-name {
   font-size: 12px;
   font-weight: 700;
-  color: var(--mc-texto);
+  color: var(--mc-texto-fuerte);
   margin-bottom: 2px;
 }
 
@@ -4063,7 +4071,7 @@
   border-radius: 12px;
   background: var(--mc-gris-perla);
   border: 1px solid var(--mc-gris-suave);
-  color: var(--mc-slate-700);
+  color: var(--mc-texto-apagado);
   line-height: 1.5;
 }
 
@@ -4340,7 +4348,7 @@
 }
 
 .rh-report-insight {
-  color: var(--mc-slate-700);
+  color: var(--mc-texto-apagado);
   line-height: 1.7;
   font-size: 14px;
 }
@@ -4799,6 +4807,7 @@
   align-items: center;
   gap: 8px;
   min-width: 0;
+  color: var(--mc-texto-fuerte);
 }
 
 .mensajes-active-badge {
@@ -4988,7 +4997,7 @@
   padding: 12px 14px;
   border-radius: 16px;
   background: var(--mc-superficie);
-  color: var(--mc-texto);
+  color: var(--mc-texto-fuerte);
   border: 1px solid var(--mc-gris-suave);
 }
 
@@ -5287,7 +5296,7 @@
 .empleado-scale-btn,
 .empleado-option-btn {
   border: 1px solid var(--mc-gris-suave);
-  background: var(--mc-superficie);
+  background: var(--mc-superficie-sutil);
   color: var(--mc-texto-titulo);
   font-weight: 800;
   font-family: inherit;
@@ -7901,24 +7910,24 @@
     display: flex; align-items: center; gap: 10px;
     padding: 8px 4px 12px; border-bottom: 1px solid var(--mc-gris-suave); margin-bottom: 8px;
   }
-  .mobile-sheet-user .sidebar-user-name { color: var(--mc-texto); }
+  .mobile-sheet-user .sidebar-user-name { color: var(--mc-texto-fuerte); }
   .mobile-sheet-user .sidebar-user-role { color: var(--mc-texto-secundario); }
   .mobile-sheet-list { display: flex; flex-direction: column; gap: 2px; }
   .mobile-sheet-item {
     display: flex; align-items: center; gap: 12px;
     padding: 12px 10px; border-radius: 12px; border: none; background: transparent;
-    font-family: inherit; font-size: 15px; font-weight: 600; color: var(--mc-texto);
+    font-family: inherit; font-size: 15px; font-weight: 600; color: var(--mc-texto-fuerte);
     cursor: pointer; text-align: left; width: 100%;
   }
   .mobile-sheet-item--active { background: var(--mc-brand-suave); color: var(--mc-texto-titulo); }
   .mobile-sheet-icon {
     display: grid; place-items: center; width: 32px; height: 32px;
-    border-radius: 9px; background: var(--mc-gris-perla); color: var(--mc-verde-medio); flex-shrink: 0;
+    border-radius: 9px; background: var(--mc-superficie-sutil); color: var(--mc-verde-medio); flex-shrink: 0;
   }
   .mobile-sheet-item--active .mobile-sheet-icon { background: rgba(20, 200, 182, 0.18); }
   .mobile-sheet-logout {
     width: 100%; margin-top: 10px; padding: 12px; border-radius: 12px;
-    border: 1px solid var(--mc-gris-suave); background: var(--mc-gris-perla);
+    border: 1px solid var(--mc-gris-suave); background: var(--mc-superficie-sutil);
     color: var(--mc-error-texto); font-weight: 700; font-family: inherit; cursor: pointer;
     display: flex; align-items: center; justify-content: center; gap: 8px;
   }
