@@ -8,6 +8,7 @@ import {
   getEncuestaSemaforo,
   formatEncuestaFecha,
 } from "../../utils/encuestaDetail";
+import { nivelColor, nivelBadgeBg, nivelTinte } from "../../config/theme";
 
 const EncuestaDetalleModal = ({ encuesta, empleado, preguntas, onClose }) => {
   if (!encuesta) return null;
@@ -41,13 +42,13 @@ const EncuestaDetalleModal = ({ encuesta, empleado, preguntas, onClose }) => {
         <div className="encuesta-detalle-kpis">
           <div
             className="encuesta-detalle-pulse"
-            style={{ background: status.bg, borderColor: `${status.color}33` }}
+            style={{ background: nivelBadgeBg(status.nivel), borderColor: nivelTinte(status.nivel, 20) }}
           >
-            <div className="encuesta-detalle-pulse-label" style={{ color: status.color }}>Pulse Score</div>
-            <div className="encuesta-detalle-pulse-value" style={{ color: status.color }}>
+            <div className="encuesta-detalle-pulse-label" style={{ color: nivelColor(status.nivel) }}>Pulse Score</div>
+            <div className="encuesta-detalle-pulse-value" style={{ color: nivelColor(status.nivel) }}>
               {score ?? "—"}
             </div>
-            <div className="encuesta-detalle-pulse-status" style={{ color: status.color }}>{status.label}</div>
+            <div className="encuesta-detalle-pulse-status" style={{ color: nivelColor(status.nivel) }}>{status.label}</div>
           </div>
 
           <div className="encuesta-detalle-meta-box">

@@ -137,7 +137,7 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
                     <Avatar
                       name={c.usuario.name}
                       size={36}
-                      color={activo ? "#00897B" : "#64748b"}
+                      color={activo ? "var(--mc-verde)" : "var(--mc-texto-secundario)"}
                       photoUrl={c.usuario.avatarUrl}
                     />
 
@@ -171,7 +171,7 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
             ) : (
               <>
                 <div className="mensajes-chat-head">
-                  <Avatar name={selected.usuario.name} size={40} color="#00897B" photoUrl={selected.usuario.avatarUrl} />
+                  <Avatar name={selected.usuario.name} size={40} color="var(--mc-verde)" photoUrl={selected.usuario.avatarUrl} />
                   <div>
                     <div className="mensajes-chat-name">{selected.usuario.name}</div>
                     <div className="mensajes-chat-meta">{formatUsuarioMensajesMeta(selected.usuario)}</div>

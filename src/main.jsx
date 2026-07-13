@@ -5,13 +5,6 @@ import { registerSW } from 'virtual:pwa-register'
 import './index.css'
 import './App.css'
 import './styles/mobile-polish.css'
-import './styles/dark/surfaces.css'
-import './styles/dark/badges-pills.css'
-import './styles/dark/buttons.css'
-import './styles/dark/tables-forms.css'
-import './styles/dark/charts.css'
-import './styles/dark/screens.css'
-import './styles/dark/background.css'
 import App from './App.jsx'
 import { AuthProvider } from './contexts/AuthContext.jsx'
 import { GlobalProvider } from './contexts/GlobalContext.jsx'
@@ -43,6 +36,21 @@ class ErrorBoundary extends React.Component {
             <p style={{ color: '#64748b', margin: '0 0 32px 0', fontSize: 15, lineHeight: 1.6 }}>
               Ha ocurrido un inconveniente inesperado en la plataforma. Por favor, intenta cargar la página de nuevo o cierra la sesión para volver a entrar.
             </p>
+
+            {/* En desarrollo, el error a la vista. Un boundary que solo dice "algo falló" y
+                esconde la causa en la consola convierte cada bug en una adivinanza. En
+                producción se sigue ocultando: al usuario no le sirve un stack trace. */}
+            {import.meta.env.DEV && this.state.error && (
+              <pre style={{
+                textAlign: 'left', background: '#0f172a', color: '#fca5a5', padding: 14,
+                borderRadius: 8, fontSize: 12, lineHeight: 1.5, overflow: 'auto',
+                maxHeight: 260, margin: '0 0 24px 0', whiteSpace: 'pre-wrap',
+              }}>
+                {this.state.error.message}
+                {'\n\n'}
+                {this.state.error.stack}
+              </pre>
+            )}
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
               <button 
                 onClick={() => window.location.reload()}

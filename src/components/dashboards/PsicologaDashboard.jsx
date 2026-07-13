@@ -11,14 +11,8 @@ import WeekSelect from "../common/WeekSelect";
 import PageHeader from "../common/PageHeader";
 import { semanaActual, normalizeSucursal, formatSemanaDisplay } from "../../utils/constants";
 import { getPulseStatus, tieneScoreValido } from "../../utils/pulseScore";
+import { nivelColor, nivelMeta, colorSerie } from "../../config/theme";
 import { esEmpleadoActivo } from "../../utils/helpers";
-
-const SEMAFORO_META = {
-  verde: { label: "Estable", color: "#22c55e" },
-  amarillo: { label: "Atención", color: "#f59e0b" },
-  rojo: { label: "Foco rojo", color: "#ef4444" },
-  "sin-datos": { label: "Sin datos", color: "#94a3b8" },
-};
 
 const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }) => {
   const { usuarios: USERS } = useGlobal();
@@ -81,7 +75,7 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
   const mensajesNoLeidos = mensajes.filter(m => m.para === user?.id && !m.leido).length;
 
   // Tendencia del bienestar por oficina: Pulse Score promedio por sucursal y semana.
-  const TREND_COLORS = ["#0E8C7A", "#2563eb", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#65a30d"];
+  
   const empSucursal = {};
   USERS.forEach(u => { empSucursal[u.id] = normalizeSucursal(u.sucursal) || "Sin sucursal"; });
 
@@ -103,7 +97,7 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
     .filter(suc => semanas.some(b => officeWeek[suc][b]))
     .map((suc, i) => ({
       label: suc,
-      color: TREND_COLORS[i % TREND_COLORS.length],
+      color: colorSerie(i),
       values: semanas.map(b => {
         const arr = officeWeek[suc][b];
         return arr ? Math.round(arr.reduce((a, c) => a + c, 0) / arr.length) : null;
@@ -193,8 +187,8 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
                     <div
                       key={k}
                       className="psico-dist-seg"
-                      style={{ flexGrow: dist[k], background: SEMAFORO_META[k].color }}
-                      title={`${SEMAFORO_META[k].label}: ${dist[k]}`}
+                      style={{ flexGrow: dist[k], background: nivelColor(k) }}
+                      title={`${nivelMeta(k).label}: ${dist[k]}`}
                     />
                   ) : null
                 )}
@@ -202,8 +196,8 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
               <div className="psico-dist-legend">
                 {["verde", "amarillo", "rojo", "sin-datos"].map(k => (
                   <div key={k} className="psico-dist-item">
-                    <span className="psico-dist-dot" style={{ background: SEMAFORO_META[k].color }} />
-                    <span className="psico-dist-label">{SEMAFORO_META[k].label}</span>
+                    <span className="psico-dist-dot" style={{ background: nivelColor(k) }} />
+                    <span className="psico-dist-label">{nivelMeta(k).label}</span>
                     <span className="psico-dist-count">{dist[k]}</span>
                   </div>
                 ))}

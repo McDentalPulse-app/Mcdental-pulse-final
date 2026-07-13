@@ -87,7 +87,7 @@
 }
 .sidebar-rail-toggle:hover {
   background: rgba(20, 200, 182, 0.2);
-  color: #fff;
+  color: var(--mc-blanco);
 }
 .sidebar-rail-chevron {
   width: 7px;

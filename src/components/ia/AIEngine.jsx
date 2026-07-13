@@ -10,7 +10,7 @@ import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import RiskBar from "../common/RiskBar";
-import { semaforoColor, semaforoBg, semaforoLabel } from "../../config/theme";
+import { semaforoLabel, nivelColor, nivelTinte } from "../../config/theme";
 
 import { semanaActual, normalizeSucursal, formatSemanaDisplay } from "../../utils/constants";
 import { calcularAntiguedad, resolveFechaIngreso } from "../../utils/helpers";
@@ -294,13 +294,13 @@ const RESUMEN_LIMITE = 8;
               key={emp.id}
               type="button"
               className="ai-engine-pulse-chip"
-              style={{ borderColor: `${ps.color}40` }}
+              style={{ borderColor: nivelTinte(ps.slug, 25) }}
               onClick={() => { setTab("expedientes"); analizarEmpleado(emp); }}
             >
-              <Avatar name={emp.name} size={32} color={ps.color} photoUrl={emp.avatarUrl} />
+              <Avatar name={emp.name} size={32} slug={ps.slug} photoUrl={emp.avatarUrl} />
               <div className="ai-engine-pulse-chip-text">
                 <div className="ai-engine-pulse-chip-name">{emp.name.split(" ")[0]}</div>
-                <PulseScoreBadge score={ps.score} nivel={ps.nivel} color={ps.color} tendencia={ps.tendencia} size="sm" />
+                <PulseScoreBadge score={ps.score} nivel={ps.nivel} slug={ps.slug} tendencia={ps.tendencia} size="sm" />
               </div>
             </button>
           );
@@ -325,7 +325,11 @@ const RESUMEN_LIMITE = 8;
                   aria-hidden="true"
                 />
               )}
-              <Icon name={t.icon} size={14} color={isActive ? "#04231F" : undefined} /> {t.label}
+              {/* El label va en un <span> a propósito: como nodo de texto suelto NO es un
+                  elemento, así que la regla que sube los hijos por encima de la pill no lo
+                  alcanzaba y la pill se lo comía. */}
+              <Icon name={t.icon} size={14} color={isActive ? "var(--brand-950)" : undefined} />
+              <span className="ai-engine-tab-label">{t.label}</span>
             </button>
           );
         })}
@@ -675,17 +679,17 @@ const RESUMEN_LIMITE = 8;
               <div className="ai-exp-metrics">
                 <div className="ai-exp-metric">
                   <div className="ai-exp-metric-label">Pulse Score™</div>
-                  <div className="ai-exp-metric-value" style={{ color: a.status.color }}>{a.pulse}</div>
+                  <div className="ai-exp-metric-value" style={{ color: nivelColor(a.status.nivel) }}>{a.pulse}</div>
                   <div className="ai-exp-metric-sub">{a.status.label}</div>
                 </div>
                 <div className="ai-exp-metric">
                   <div className="ai-exp-metric-label">Semáforo</div>
-                  <div className="ai-exp-metric-value ai-exp-metric-value--sm" style={{ color: a.status.color }}>{a.status.semaforo}</div>
+                  <div className="ai-exp-metric-value ai-exp-metric-value--sm" style={{ color: nivelColor(a.status.nivel) }}>{a.status.semaforo}</div>
                   <div className="ai-exp-metric-sub">Estado actual</div>
                 </div>
                 <div className="ai-exp-metric">
                   <div className="ai-exp-metric-label">Señales detectadas</div>
-                  <div className="ai-exp-metric-value" style={{ color: "#00897B" }}>{a.riesgos.length}</div>
+                  <div className="ai-exp-metric-value" style={{ color: "var(--mc-verde)" }}>{a.riesgos.length}</div>
                   <div className="ai-exp-metric-sub">Riesgos / alertas</div>
                 </div>
               </div>

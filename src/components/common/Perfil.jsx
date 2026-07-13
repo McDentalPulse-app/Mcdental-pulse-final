@@ -95,7 +95,7 @@ export default function Perfil() {
       <Card className="perfil-hero">
         <div className="perfil-hero-bg" aria-hidden="true" />
         <div className="perfil-avatar-wrap">
-          <Avatar name={user.name} size={112} color="#0E8C7A" photoUrl={user.avatarUrl} />
+          <Avatar name={user.name} size={112} color="var(--mc-verde)" photoUrl={user.avatarUrl} />
           <div className="perfil-foto-actions">
             <label className="perfil-foto-btn perfil-foto-btn--primary" aria-disabled={subiendoFoto}>
               <Icon name={subiendoFoto ? "clock" : "sparkles"} size={15} />

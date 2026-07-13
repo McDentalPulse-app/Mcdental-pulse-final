@@ -27,11 +27,14 @@ const MiniBar = ({
         const val = getVal(d);
         const sinDatos = val == null || !Number.isFinite(val);
         const displayVal = sinDatos ? "—" : val;
+        // Antes: "#e8edf2" (gris muy claro, invisible sobre tarjeta oscura) y "#006D5B"
+        // (otro verde distinto al de la marca). Ahora tokens, que cambian con el tema.
+        // `colorFn` la pone el llamador y ya devuelve una variable CSS, no un hex.
         const barColor = sinDatos
-          ? "#e8edf2"
+          ? "var(--mc-riskbar-track)"
           : colorFn
             ? colorFn({ ...d, value: val, v: val, hasData: !sinDatos })
-            : "#006D5B";
+            : "var(--mc-verde)";
         const fullLabel = d.label ?? "";
         const displayLabel = d[labelKey] ?? fullLabel;
         const clickable = interactive && typeof onBarClick === "function";

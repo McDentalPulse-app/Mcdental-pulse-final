@@ -1,5 +1,78 @@
 @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   Tailwind v4
+   ═══════════════════════════════════════════════════════════════════════════
+   SIN preflight (el reset) a propósito, mientras dure la migración: el CSS que
+   ya existe asume los defaults del navegador, y meterle el reset de Tailwind de
+   golpe cambiaría el aspecto de TODA la app antes de haber migrado nada.
+   Se activa al final, cuando App.css ya no exista:
+
+       @import "tailwindcss/preflight.css" layer(base);
+   ═════════════════════════════════════════════════════════════════════════ */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* El tema oscuro NO se activa con la clase `dark` de Tailwind, sino con el
+   atributo data-theme que ThemeContext ya pone en <html> (ThemeContext.jsx:15).
+   Con esto, `dark:` de Tailwind funciona sin tocar el contexto. */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Tokens de Tailwind — TRANSCRITOS de la paleta actual, no inventados.
+   ═══════════════════════════════════════════════════════════════════════════
+   Los semánticos (superficie, texto, borde...) apuntan a variables que CAMBIAN
+   con el tema, así que `bg-superficie` funciona en claro y en oscuro sin
+   escribir `dark:` en ningún sitio. Es lo que hace que el modo oscuro funcione
+   POR CONSTRUCCIÓN en vez de a base de overrides.
+   ═════════════════════════════════════════════════════════════════════════ */
+@theme {
+  /* ── Primitivos: la escala de marca. No cambian con el tema. ── */
+  --color-brand-950: #06201D;
+  --color-brand-900: #0A332E;
+  --color-brand-800: #0C463E;
+  --color-brand-700: #0E5A4F;
+  --color-brand-600: #107463;
+  --color-brand-500: #0E8C7A;
+  --color-brand-400: #19B6A2;
+  --color-brand-300: #46D6C5;
+  --color-brand-200: #8AE9DD;
+  --color-aqua: #14C8B6;
+
+  /* ── Semánticos: SÍ cambian con el tema (ver :root y [data-theme=dark]). ── */
+  --color-fondo: var(--mc-gris-fondo);
+  --color-superficie: var(--mc-superficie);
+  --color-superficie-2: var(--mc-gris-perla);
+  --color-superficie-input: var(--mc-superficie-input);
+  --color-borde: var(--mc-gris-suave);
+  --color-texto: var(--mc-texto);
+  --color-texto-2: var(--mc-texto-secundario);
+  --color-titulo: var(--mc-texto-titulo);
+
+  /* ── Semáforo: un único origen de verdad. Antes había TRES paletas
+         distintas (index.css, pulseScore.js y config/theme.js). ── */
+  --color-verde: var(--mc-semaforo-verde);
+  --color-amarillo: var(--mc-semaforo-amarillo);
+  --color-rojo: var(--mc-semaforo-rojo);
+  --color-verde-bg: var(--mc-badge-verde-bg);
+  --color-verde-fg: var(--mc-badge-verde-texto);
+  --color-amarillo-bg: var(--mc-badge-amarillo-bg);
+  --color-amarillo-fg: var(--mc-badge-amarillo-texto);
+  --color-rojo-bg: var(--mc-badge-rojo-bg);
+  --color-rojo-fg: var(--mc-badge-rojo-texto);
+
+  /* ── Radios, sombras y tipografía: los que ya usa la app. ── */
+  --radius-mc: 16px;
+  --radius-mc-lg: 20px;
+  --radius-mc-xl: 28px;
+  --shadow-mc: var(--mc-sombra);
+  --shadow-mc-suave: var(--mc-sombra-suave);
+  --shadow-mc-card: var(--mc-sombra-card);
+  --font-sans: 'Fira Sans', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Fira Code', monospace;
+}
+
 :root {
   /* ── Brand palette (teal corporativo + glow cyan) ── */
   --mc-verde: #0E8C7A;          /* acción primaria */
@@ -32,6 +105,103 @@
   --mc-sombra-suave: 0 8px 24px -12px rgba(10, 59, 54, 0.16);
   --mc-sombra-card: 0 1px 3px rgba(10, 59, 54, 0.06), 0 6px 20px -14px rgba(10, 59, 54, 0.18);
 
+  /* La tarjeta base (.mc-card) tenía el blanco escrito a pelo en App.css, así que en oscuro
+     dependía de que src/styles/dark/surfaces.css la pisara por encima. Con el aspecto en
+     tokens la tarjeta se tematiza sola y ese override sobra. Mismo aspecto, sin muleta. */
+  --mc-card-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.78) 0%, rgba(246, 251, 250, 0.66) 100%);
+  --mc-card-borde: rgba(255, 255, 255, 0.7);
+  --mc-card-blur: blur(6px) saturate(120%);
+  --mc-card-borde-hover: rgba(20, 200, 182, 0.35);
+  --mc-card-sombra-hover: 0 18px 38px -20px rgba(4, 35, 31, 0.45);
+  --mc-minibar-hover: rgba(255, 255, 255, 0.85);
+
+  /* Ritmo vertical de una pantalla: el hueco entre la cabecera y el contenido, y entre
+     bloques. Va en un token porque estaba escrito a mano en cada contenedor, y así fue como
+     .list-page acabó con gap:0 mientras las otras 26 pantallas tenían 20px. */
+  --mc-ritmo-pagina: 20px;
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+     Tokens que sustituyen a src/styles/dark/.
+
+     Cada uno era un par (valor en claro, valor en oscuro) escrito en dos sitios: el color
+     en App.css y su gemelo en un archivo de overrides a 4.000 líneas de distancia. Por eso
+     el modo oscuro se olvidaba: nadie se acuerda del archivo lejano.
+
+     Muchos overrides eran el MISMO par repetido, así que aquí son un solo token.
+     ───────────────────────────────────────────────────────────────────────────── */
+
+  /* Texto principal sobre una superficie (etiquetas de formulario, títulos de fila, datos
+     destacados). Sustituye a 7 overrides idénticos. */
+  --mc-texto-fuerte: var(--mc-texto);
+  /* Texto de apoyo (subtítulos, cuerpos de lista, botones secundarios). Sustituye a 3. */
+  --mc-texto-apagado: var(--mc-slate-600);
+
+  /* Superficie "sutil": un escalón por debajo de la tarjeta (botón secundario, fila de lista,
+     zona de subida de archivo). Sustituye a 3 overrides. */
+  --mc-superficie-sutil: var(--mc-slate-100);
+  --mc-superficie-sutil-hover: var(--mc-slate-200);
+  /* Faltaba en claro: solo estaba definido en oscuro, así que en claro no resolvía a nada. */
+  --mc-superficie-input-focus: var(--mc-brand-suave);
+
+  /* Botón de contorno: en claro el verde de marca; en oscuro tiene que aclararse o desaparece
+     sobre el fondo. --mc-verde-medio no cambia con el tema (es un color de marca), por eso
+     necesitaba override. */
+  --mc-btn-outline-fg: var(--mc-verde-medio);
+
+  /* Botones de contorno, por intención. El juego completo de cada uno junto, para que no haya
+     que recordar cuatro valores sueltos repartidos por el archivo.
+     `.expediente-foto-upload` y `.expediente-foto-quitar` son clones de "editar" y "borrar":
+     usan estos mismos tokens en vez de tener su propia copia. */
+  --mc-btn-edit-fg: var(--mc-verde-medio);
+  --mc-btn-edit-borde: rgba(14, 140, 122, 0.35);
+  --mc-btn-edit-bg: var(--mc-brand-suave);
+  --mc-btn-edit-bg-hover: var(--mc-verde-claro);
+
+  /* El `color` de estos dos ya usa --mc-badge-*-texto, que cambia con el tema: no necesita
+     token. Solo el borde y los fondos. */
+  --mc-btn-amber-borde: rgba(154, 107, 31, 0.35);
+  --mc-btn-amber-bg: var(--mc-aviso-bg);
+  --mc-btn-amber-bg-hover: var(--mc-badge-amarillo-bg);
+  --mc-btn-amber-borde-hover: var(--mc-semaforo-amarillo);
+
+  --mc-btn-danger-borde: rgba(168, 68, 68, 0.35);
+  --mc-btn-danger-bg: var(--mc-error-bg);
+  --mc-btn-danger-bg-hover: var(--mc-badge-rojo-bg);
+  --mc-btn-danger-borde-hover: var(--mc-rojo-apagado);
+
+  --mc-borde-modal: rgba(0, 109, 91, 0.08);
+
+  /* Badge neutro y pill de "vacaciones": no son del semáforo ni de marca, tienen su propio
+     hue (índigo / azul en oscuro). Por eso no podían salir de ningún token existente. */
+  --mc-badge-neutro-bg: var(--mc-slate-100);
+  --mc-badge-neutro-texto: var(--mc-slate-600);
+  --mc-pill-vacaciones-bg: var(--mc-brand-suave);
+
+  /* El verde de marca USADO COMO TEXTO O ICONO. Distinto de --mc-verde-medio, que es el color
+     de marca en sí (y como tal no debe cambiar: se usa también de fondo).
+     Sobre el fondo oscuro, #0E8C7A da 3:1 — apagado y costoso de leer. Como texto tiene que
+     aclararse. 31 reglas lo usaban así, y era la causa de "algunas letras no son legibles". */
+  --mc-marca-texto: var(--mc-verde-medio);
+  --mc-icono-accion: var(--mc-marca-texto);
+
+  /* El telón de fondo de la app. Son degradados decorativos genuinamente distintos por tema
+     (no un color que se invierte), así que el token guarda el degradado entero. */
+  --mc-fondo-shell: var(--mc-gris-perla);
+  --mc-fondo-app:
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(20, 200, 182, 0.16) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 0% 100%, rgba(16, 116, 99, 0.13) 0%, transparent 55%),
+    linear-gradient(180deg, var(--mc-slate-50) 0%, var(--mc-gris-fondo) 100%);
+  --mc-fondo-rejilla:
+    linear-gradient(rgba(10, 51, 46, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10, 51, 46, 0.09) 1px, transparent 1px);
+  --mc-fondo-aurora:
+    radial-gradient(circle 340px at 96% 0%, rgba(20, 200, 182, 0.22), transparent 72%),
+    radial-gradient(circle 380px at 2% 96%, rgba(16, 116, 99, 0.20), transparent 72%);
+  --mc-fondo-aurora-filtro: blur(16px);
+  --mc-fondo-aurora-anim: appMainOrbFloat 18s ease-in-out infinite;
+  --mc-fondo-sweep: transparent;
+  --mc-fondo-sweep-anim: none;
+
   /* ── Glassmorphism layer ── */
   --glass-bg: rgba(255, 255, 255, 0.10);
   --glass-bg-strong: rgba(255, 255, 255, 0.16);
@@ -46,7 +216,12 @@
   /* ── Gradientes de fondo ── */
   --grad-brand: linear-gradient(150deg, #0A332E 0%, #0E5A4F 45%, #107463 100%);
   --grad-brand-soft: linear-gradient(160deg, #0C463E 0%, #0E8C7A 100%);
-  --grad-accent: linear-gradient(135deg, #14C8B6 0%, #0E8C7A 100%);
+  /* El extremo oscuro era #0E8C7A: un teal de tono medio, el peor escenario posible. El texto
+     oscuro que va encima (--brand-950) daba 4.10:1 y el blanco 4.16:1 — o sea que NINGÚN color
+     de texto pasaba AA. El problema no era el texto, era el degradado. Aclarado a #10A090
+     (mismo teal, un paso más claro), el texto oscuro sube a 5.24:1. Afecta a la pill de las
+     pestañas y al botón "Generar con IA", que comparten este degradado y arrastraban lo mismo. */
+  --grad-accent: linear-gradient(135deg, #14C8B6 0%, #10A090 100%);
 
   /* ── Borders and Radii ── */
   --mc-radio: 16px;
@@ -80,6 +255,88 @@
   /* Texto secundario (labels, subtítulos) que vive sobre superficies que
      pasan a oscuras en fase 2 — mismo patrón: en claro no cambia nada. */
   --mc-texto-secundario: var(--mc-gris-texto);
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     Capa semántica (migración a Tailwind)
+     ═══════════════════════════════════════════════════════════════════════
+     Los VALORES son exactamente los que la app usa hoy en claro: esto no
+     cambia el aspecto, solo le pone nombre a lo que ya había. Lo que sí
+     cambia es que ahora TODOS tienen su equivalente en oscuro (abajo), que
+     es lo que faltaba.
+     ═════════════════════════════════════════════════════════════════════ */
+
+  /* Superficies. --mc-blanco NO cambiaba con el tema: por eso las tarjetas
+     seguían blancas en modo oscuro. Este token sí cambia. */
+  --mc-superficie: var(--mc-blanco);
+  --mc-superficie-input: var(--mc-blanco);
+
+  /* Badges/pills: los pasteles que App.css ya usaba a pelo (#dcfce7, #166534…). */
+  --mc-badge-verde-bg: #DCFCE7;
+  --mc-badge-verde-texto: #166534;
+  --mc-badge-amarillo-bg: #FEF3C7;
+  --mc-badge-amarillo-texto: #92400E;
+  --mc-badge-rojo-bg: #FEE2E2;
+  --mc-badge-rojo-texto: #991B1B;
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     Rampa de grises y superficies de aviso/error.
+     ═══════════════════════════════════════════════════════════════════════
+     App.css tenía ~50 hex sueltos. Estos tokens guardan EXACTAMENTE los valores
+     que ya usaba, así que sustituirlos es un cambio de nombre, no de color: el
+     modo claro no se mueve. Lo que cambia es que ahora tienen equivalente en
+     oscuro (abajo), que es lo que faltaba en los desplegables, selects y submenús
+     — los que se quedaban blancos.
+     ═════════════════════════════════════════════════════════════════════ */
+  /* Fondo suave de marca. --mc-verde-claro NO cambia con el tema (y no debe: también se
+     usa como TEXTO claro sobre badges oscuros). Este token es solo para fondos, y sí
+     cambia: es lo que dejaba blancos los chips y las zonas suaves en modo oscuro. */
+  --mc-brand-suave: var(--mc-verde-claro);
+
+  --mc-slate-900: #0F172A;   /* texto muy fuerte */
+  --mc-slate-700: #334155;   /* texto fuerte */
+  --mc-slate-600: #475569;
+  --mc-slate-500: #64748B;   /* texto secundario (el más usado) */
+  --mc-slate-400: #94A3B8;   /* texto atenuado */
+  --mc-slate-200: #E2E8F0;   /* bordes */
+  --mc-slate-100: #F1F5F9;   /* superficies hundidas */
+  --mc-slate-50:  #F8FAFC;   /* superficies muy suaves */
+  --mc-borde-suave: #EEF2F6; /* separadores */
+
+  /* Avisos (ámbar) y errores (rojo): superficies suaves, no badges. */
+  --mc-aviso-bg: #FFFBEB;
+  --mc-aviso-bg-suave: #FFFDF8;
+  --mc-aviso-bg-fuerte: #FFEDD5;
+  --mc-aviso-borde: #FDE68A;
+  --mc-aviso-texto: #92400E;
+  --mc-error-bg: #FEF2F2;
+  --mc-error-borde: #FECACA;
+  --mc-error-texto: #B91C1C;
+
+  /* Info (azul) */
+  --mc-info-bg: #DBEAFE;
+  --mc-info-texto: #1E40AF;
+
+  /* Rojo/ámbar "apagados" del diseño viejo, que App.css usa en varios sitios. */
+  --mc-rojo-apagado: #A84444;
+
+  /* Texto de los botones rojo y ámbar. NO puede ser un color fijo: su fondo se invierte con
+     el tema. En claro son tonos oscuros (#A84444 / #9A6B1F) y piden texto blanco; en oscuro
+     son pasteles claros (#FCA5A5 / #FCD34D) y piden texto oscuro. Fijar cualquiera de los dos
+     rompe la mitad de los casos. */
+  --mc-texto-sobre-alerta: var(--mc-blanco);
+  --mc-ambar-apagado: #9A6B1F;
+
+  /* Paleta categórica (series de la gráfica de tendencia por sucursal). NO es el
+     semáforo: aquí el color solo distingue una serie de otra, no significa nada.
+     Estaba duplicada como `TREND_COLORS` en AdminDashboard y en PsicologaDashboard. */
+  --mc-serie-1: #0E8C7A;
+  --mc-serie-2: #2563EB;
+  --mc-serie-3: #F59E0B;
+  --mc-serie-4: #EF4444;
+  --mc-serie-5: #8B5CF6;
+  --mc-serie-6: #06B6D4;
+  --mc-serie-7: #EC4899;
+  --mc-serie-8: #65A30D;
 }
 
 /* ── Modo oscuro (fase 2: superficies reales, no solo el fondo) ──
@@ -90,9 +347,146 @@
    --mc-superficie-* y --mc-badge-*, consumidos desde los archivos en
    src/styles/dark/ (overrides aditivos, no tocan App.css). */
 [data-theme="dark"] {
+  /* ═══════════════════════════════════════════════════════════════════════
+     LO QUE FALTABA: el texto y las superficies.
+     ═══════════════════════════════════════════════════════════════════════
+     --mc-texto (#123430, verde muy oscuro) y --mc-blanco NO se redefinían
+     aquí. Resultado: en modo oscuro el texto seguía siendo oscuro y las
+     tarjetas seguían siendo blancas — el motivo real de que el dark
+     "no funcionara del todo". Los overrides de src/styles/dark/ intentaban
+     tapar esto pantalla por pantalla, y por eso quedaban huecos.
+     ═════════════════════════════════════════════════════════════════════ */
+  --mc-texto: #E6F2F0;
+  --mc-superficie: #0F332C;
+  --mc-superficie-input: #0A2420;
+
+  /* El semáforo tampoco cambiaba: un #059669 sobre fondo #0A2420 queda apagado.
+     Se usan las versiones claras que este mismo archivo ya había validado como
+     legibles sobre tarjeta oscura (--mc-stat-green/amber/red). */
+  --mc-semaforo-verde: #86EFAC;
+  --mc-semaforo-amarillo: #FCD34D;
+  --mc-semaforo-rojo: #FCA5A5;
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     La rampa de grises SE INVIERTE.
+     ═══════════════════════════════════════════════════════════════════════
+     Lo que en claro era texto oscuro pasa a claro; lo que era una superficie
+     clara pasa a una transparencia sobre el fondo oscuro (así hereda el tinte
+     verde de la marca en vez de verse gris sucio). Esto es lo que arregla los
+     desplegables, selects y submenús que se quedaban blancos.
+     ═════════════════════════════════════════════════════════════════════ */
+  /* Fondo suave de marca: en oscuro, un tinte del acento sobre el fondo, no un pastel
+     atenuado (que se vería gris sucio). */
+  --mc-brand-suave: rgba(20, 200, 182, 0.10);
+
+  --mc-slate-900: #F1F5F9;
+  --mc-slate-700: #E2E8F0;
+  --mc-slate-600: #CBD5E1;
+  --mc-slate-500: #9DBDB6;
+  --mc-slate-400: #8FA8A3;
+  /* Los bordes en oscuro llevan un tinte de la marca (brand-200), no blanco puro.
+     En una paleta que es toda teal, un borde blanco canta: se lee como un contorno
+     gris ajeno, sobre todo donde el borde es de 1.5px (los chips del AI Engine). */
+  --mc-slate-200: rgba(138, 233, 221, 0.16);
+  --mc-slate-100: rgba(255, 255, 255, 0.06);
+  --mc-slate-50:  rgba(255, 255, 255, 0.03);
+  --mc-borde-suave: rgba(138, 233, 221, 0.12);
+
+  /* Avisos y errores: en oscuro no se atenúa el pastel (quedaría gris sucio), se
+     usa el color a baja opacidad sobre el fondo + texto claro. */
+  --mc-aviso-bg: rgba(252, 211, 77, 0.12);
+  --mc-aviso-bg-suave: rgba(252, 211, 77, 0.06);
+  --mc-aviso-bg-fuerte: rgba(252, 211, 77, 0.18);
+  --mc-aviso-borde: rgba(252, 211, 77, 0.32);
+  --mc-aviso-texto: #FCD34D;
+  --mc-error-bg: rgba(252, 165, 165, 0.12);
+  --mc-error-borde: rgba(252, 165, 165, 0.32);
+  --mc-error-texto: #FCA5A5;
+
+  --mc-info-bg: rgba(96, 165, 250, 0.14);
+  --mc-info-texto: #93C5FD;
+
+  --mc-rojo-apagado: #FCA5A5;
+
+  /* Rojo y ámbar aquí son pasteles claros: encima va texto oscuro. */
+  --mc-texto-sobre-alerta: var(--brand-950);
+
+  /* ── La otra mitad de los tokens que sustituyen a src/styles/dark/.
+        Los valores están transcritos tal cual de los overrides que reemplazan, para que el
+        aspecto en oscuro no cambie. ── */
+
+  --mc-texto-fuerte: var(--mc-texto-titulo);
+  --mc-texto-apagado: var(--mc-texto-secundario);
+
+  --mc-superficie-sutil: var(--mc-superficie-input);
+  --mc-superficie-sutil-hover: var(--mc-superficie-input-focus);
+  --mc-superficie-input-focus: #123A33;
+
+  --mc-btn-outline-fg: var(--mc-aqua);
+
+  --mc-btn-edit-fg: var(--mc-badge-verde-texto);
+  --mc-btn-edit-borde: rgba(134, 239, 172, 0.35);
+  --mc-btn-edit-bg: var(--mc-badge-verde-bg);
+  --mc-btn-edit-bg-hover: #1B6B3B;
+
+  --mc-btn-amber-borde: rgba(252, 211, 77, 0.35);
+  --mc-btn-amber-bg: var(--mc-badge-amarillo-bg);
+  --mc-btn-amber-bg-hover: #8A4111;
+  --mc-btn-amber-borde-hover: #D97706;
+
+  --mc-btn-danger-borde: rgba(252, 165, 165, 0.35);
+  --mc-btn-danger-bg: var(--mc-badge-rojo-bg);
+  --mc-btn-danger-bg-hover: #932424;
+  --mc-btn-danger-borde-hover: #A84444;
+
+  --mc-borde-modal: rgba(255, 255, 255, 0.08);
+
+  --mc-badge-neutro-bg: #312E81;
+  --mc-badge-neutro-texto: #A5B4FC;
+  --mc-pill-vacaciones-bg: #1E3A8A;
+
+  --mc-marca-texto: var(--mc-aqua);
+  --mc-icono-accion: #46D6C5;
+
+  --mc-fondo-shell: #071613;
+  --mc-fondo-app:
+    radial-gradient(ellipse 90% 50% at 50% -10%, rgba(14, 140, 122, 0.20) 0%, transparent 60%),
+    linear-gradient(180deg, #081815 0%, #060F0D 55%, #081A16 100%);
+  --mc-fondo-rejilla:
+    linear-gradient(rgba(70, 214, 197, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(70, 214, 197, 0.055) 1px, transparent 1px);
+  --mc-fondo-aurora:
+    radial-gradient(circle 420px at 88% -4%, rgba(20, 200, 182, 0.20), transparent 68%),
+    radial-gradient(circle 460px at -6% 100%, rgba(34, 211, 238, 0.12), transparent 70%),
+    radial-gradient(circle 300px at 55% 118%, rgba(138, 233, 221, 0.08), transparent 75%);
+  --mc-fondo-aurora-filtro: none;
+  --mc-fondo-aurora-anim: mcAuroraDrift 32s ease-in-out infinite;
+  --mc-fondo-sweep: conic-gradient(
+    from 210deg at 50% 50%,
+    transparent 0deg,
+    rgba(20, 200, 182, 0.07) 40deg,
+    rgba(34, 211, 238, 0.05) 80deg,
+    transparent 130deg
+  );
+  --mc-fondo-sweep-anim: mcAuroraSweep 46s linear infinite;
+  --mc-ambar-apagado: #FCD34D;
+
+  /* Series: mismos tonos, versiones claras. Un #2563EB sobre #0A2420 casi no se ve. */
+  --mc-serie-1: #46D6C5;
+  --mc-serie-2: #60A5FA;
+  --mc-serie-3: #FCD34D;
+  --mc-serie-4: #FCA5A5;
+  --mc-serie-5: #C4B5FD;
+  --mc-serie-6: #67E8F9;
+  --mc-serie-7: #F9A8D4;
+  --mc-serie-8: #BEF264;
+
+  /* Badges en oscuro: fondo saturado + texto claro. Ya estaban definidos más
+     abajo en este mismo bloque; se conservan tal cual. */
+
   --mc-gris-fondo: #0A2420;
   --mc-gris-perla: #0D2B26;
-  --mc-gris-suave: rgba(255, 255, 255, 0.12);
+  --mc-gris-suave: rgba(138, 233, 221, 0.16);
 
   --mc-sombra: 0 18px 48px -16px rgba(0, 0, 0, 0.55), 0 4px 12px -6px rgba(0, 0, 0, 0.35);
   --mc-sombra-suave: 0 8px 24px -12px rgba(0, 0, 0, 0.4);
@@ -113,7 +507,17 @@
   /* Superficies: tarjetas/modales/inputs/tabla, todas un poco más claras que
      el fondo de página para que se distingan como "elevadas". */
   --mc-superficie-card: #0F332C;
-  --mc-superficie-card-border: rgba(255, 255, 255, 0.10);
+  --mc-superficie-card-border: rgba(138, 233, 221, 0.12);
+
+  /* En claro la tarjeta es un "glass" blanco translúcido; en oscuro pasa a superficie sólida
+     elevada sobre el fondo de página. Es el mismo aspecto que ya daba styles/dark/surfaces.css,
+     transcrito aquí para que la tarjeta se tematice sola. */
+  --mc-card-bg: var(--mc-superficie-card);
+  --mc-card-borde: var(--mc-superficie-card-border);
+  --mc-card-blur: none;
+  --mc-card-borde-hover: rgba(20, 200, 182, 0.4);
+  --mc-card-sombra-hover: 0 18px 38px -20px rgba(0, 0, 0, 0.6);
+  --mc-minibar-hover: rgba(138, 233, 221, 0.14);
   --mc-superficie-input: #0A2420;
   --mc-superficie-input-focus: #123A33;
   --mc-superficie-th: rgba(255, 255, 255, 0.04);

@@ -4,11 +4,12 @@ import { calcPulseScore, getPulseStatus, tieneScoreValido } from "./pulseScore";
 // un empleado deriva prioridad, lista de riesgos y recomendación. Extraído de
 // AIEngine.jsx para mantener el componente por debajo del límite de tamaño.
 
+// Sin `color` ni `bg`: los devolvía en hex y nadie los leía ya. El color lo decide el
+// CSS a partir de `nivel` (ver DESIGN.md).
 const STATUS_SIN_DATOS = {
   label: "Sin datos",
   semaforo: "Sin evaluación",
-  color: "#94a3b8",
-  bg: "#f1f5f9"
+  nivel: "sin-datos",
 };
 
 export const analyzeEmployeeAI = (empleado, encuestas, permisos = [], descuentos = [], reconocimientos = [], reportesConfidenciales = [], USERS = []) => {

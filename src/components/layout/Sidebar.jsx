@@ -97,7 +97,7 @@ const Sidebar = () => {
     const ok = await notify.confirm({
       title: "Cerrar sesión",
       description: "¿Seguro que quieres cerrar tu sesión?",
-      variant: "warning",
+      variant: "danger",
       confirmText: "Cerrar sesión",
     });
     if (ok) logout();
@@ -167,7 +167,7 @@ const Sidebar = () => {
           title="Ver mi perfil"
           aria-label="Ver mi perfil"
         >
-          <Avatar name={user?.name || ""} size={36} color="#3D8B7E" photoUrl={user?.avatarUrl} />
+          <Avatar name={user?.name || ""} size={36} color="var(--mc-stat-teal-2)" photoUrl={user?.avatarUrl} />
           <div className="sidebar-user-text" style={{ minWidth: 0 }}>
             <div className="sidebar-user-name">{user?.name?.split(" ")[0] || ""}</div>
             <div className="sidebar-user-role">{user?.role || ""}</div>
@@ -254,7 +254,7 @@ const Sidebar = () => {
               onClick={() => irA("perfil")}
               aria-label="Ver mi perfil"
             >
-              <Avatar name={user?.name || ""} size={40} color="#3D8B7E" photoUrl={user?.avatarUrl} />
+              <Avatar name={user?.name || ""} size={40} color="var(--mc-stat-teal-2)" photoUrl={user?.avatarUrl} />
               <div style={{ minWidth: 0 }}>
                 <div className="sidebar-user-name">{user?.name?.split(" ")[0] || ""}</div>
                 <div className="sidebar-user-role">{user?.role || ""}</div>
