@@ -1292,13 +1292,12 @@
 /* ── Shared components ── */
 .mc-card {
   position: relative;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.78) 0%, rgba(246, 251, 250, 0.66) 100%);
-  -webkit-backdrop-filter: blur(6px) saturate(120%);
-  backdrop-filter: blur(6px) saturate(120%);
+  background: var(--mc-card-bg);
+  -webkit-backdrop-filter: var(--mc-card-blur);
+  backdrop-filter: var(--mc-card-blur);
   border-radius: var(--mc-radio);
   padding: 22px 24px;
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--mc-card-borde);
   box-shadow: var(--mc-sombra-card);
   transition: box-shadow 0.22s ease, border-color 0.22s ease,
               transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1331,8 +1330,8 @@
 }
 
 .mc-card:hover {
-  border-color: rgba(20, 200, 182, 0.35);
-  box-shadow: 0 18px 38px -20px rgba(4, 35, 31, 0.45);
+  border-color: var(--mc-card-borde-hover);
+  box-shadow: var(--mc-card-sombra-hover);
   transform: translateY(-4px);
 }
 .mc-card:hover::after {
@@ -1461,7 +1460,7 @@
 }
 
 .mc-minibar-col--clickable:hover {
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--mc-minibar-hover);
   box-shadow: 0 2px 8px rgba(0, 63, 53, 0.06);
 }
 

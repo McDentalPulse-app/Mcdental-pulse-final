@@ -105,6 +105,16 @@
   --mc-sombra-suave: 0 8px 24px -12px rgba(10, 59, 54, 0.16);
   --mc-sombra-card: 0 1px 3px rgba(10, 59, 54, 0.06), 0 6px 20px -14px rgba(10, 59, 54, 0.18);
 
+  /* La tarjeta base (.mc-card) tenía el blanco escrito a pelo en App.css, así que en oscuro
+     dependía de que src/styles/dark/surfaces.css la pisara por encima. Con el aspecto en
+     tokens la tarjeta se tematiza sola y ese override sobra. Mismo aspecto, sin muleta. */
+  --mc-card-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.78) 0%, rgba(246, 251, 250, 0.66) 100%);
+  --mc-card-borde: rgba(255, 255, 255, 0.7);
+  --mc-card-blur: blur(6px) saturate(120%);
+  --mc-card-borde-hover: rgba(20, 200, 182, 0.35);
+  --mc-card-sombra-hover: 0 18px 38px -20px rgba(4, 35, 31, 0.45);
+  --mc-minibar-hover: rgba(255, 255, 255, 0.85);
+
   /* ── Glassmorphism layer ── */
   --glass-bg: rgba(255, 255, 255, 0.10);
   --glass-bg-strong: rgba(255, 255, 255, 0.16);
@@ -338,6 +348,16 @@
      el fondo de página para que se distingan como "elevadas". */
   --mc-superficie-card: #0F332C;
   --mc-superficie-card-border: rgba(138, 233, 221, 0.12);
+
+  /* En claro la tarjeta es un "glass" blanco translúcido; en oscuro pasa a superficie sólida
+     elevada sobre el fondo de página. Es el mismo aspecto que ya daba styles/dark/surfaces.css,
+     transcrito aquí para que la tarjeta se tematice sola. */
+  --mc-card-bg: var(--mc-superficie-card);
+  --mc-card-borde: var(--mc-superficie-card-border);
+  --mc-card-blur: none;
+  --mc-card-borde-hover: rgba(20, 200, 182, 0.4);
+  --mc-card-sombra-hover: 0 18px 38px -20px rgba(0, 0, 0, 0.6);
+  --mc-minibar-hover: rgba(138, 233, 221, 0.14);
   --mc-superficie-input: #0A2420;
   --mc-superficie-input-focus: #123A33;
   --mc-superficie-th: rgba(255, 255, 255, 0.04);

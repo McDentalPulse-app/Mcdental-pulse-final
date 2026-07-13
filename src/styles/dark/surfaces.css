@@ -3,19 +3,10 @@
    Aditivo: no toca App.css, solo pisa vía [data-theme="dark"].
    ============================================================ */
 
-/* Base de casi toda la app (Card.jsx -> .mc-card). En claro es un glass
-   blanco; en oscuro pasa a una superficie sólida elevada sobre el fondo de
-   página, usando los tokens definidos en index.css. */
-[data-theme="dark"] .mc-card {
-  background: var(--mc-superficie-card);
-  border-color: var(--mc-superficie-card-border);
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-}
-[data-theme="dark"] .mc-card:hover {
-  border-color: rgba(20, 200, 182, 0.4);
-  box-shadow: 0 18px 38px -20px rgba(0, 0, 0, 0.6);
-}
+/* .mc-card ya NO se pisa aquí: su aspecto vive en los tokens --mc-card-* de index.css, que
+   cambian solos con el tema. Este archivo existe para pisar reglas de App.css que escriben
+   el color a pelo; cada vez que una de esas reglas pasa a tokens, su override desaparece.
+   Cuando no quede ninguno, el archivo entero se borra. */
 
 [data-theme="dark"] .mc-modal {
   background: var(--mc-superficie-card);
