@@ -176,6 +176,43 @@
   --mc-badge-rojo-bg: #FEE2E2;
   --mc-badge-rojo-texto: #991B1B;
 
+  /* ═══════════════════════════════════════════════════════════════════════
+     Rampa de grises y superficies de aviso/error.
+     ═══════════════════════════════════════════════════════════════════════
+     App.css tenía ~50 hex sueltos. Estos tokens guardan EXACTAMENTE los valores
+     que ya usaba, así que sustituirlos es un cambio de nombre, no de color: el
+     modo claro no se mueve. Lo que cambia es que ahora tienen equivalente en
+     oscuro (abajo), que es lo que faltaba en los desplegables, selects y submenús
+     — los que se quedaban blancos.
+     ═════════════════════════════════════════════════════════════════════ */
+  --mc-slate-900: #0F172A;   /* texto muy fuerte */
+  --mc-slate-700: #334155;   /* texto fuerte */
+  --mc-slate-600: #475569;
+  --mc-slate-500: #64748B;   /* texto secundario (el más usado) */
+  --mc-slate-400: #94A3B8;   /* texto atenuado */
+  --mc-slate-200: #E2E8F0;   /* bordes */
+  --mc-slate-100: #F1F5F9;   /* superficies hundidas */
+  --mc-slate-50:  #F8FAFC;   /* superficies muy suaves */
+  --mc-borde-suave: #EEF2F6; /* separadores */
+
+  /* Avisos (ámbar) y errores (rojo): superficies suaves, no badges. */
+  --mc-aviso-bg: #FFFBEB;
+  --mc-aviso-bg-suave: #FFFDF8;
+  --mc-aviso-bg-fuerte: #FFEDD5;
+  --mc-aviso-borde: #FDE68A;
+  --mc-aviso-texto: #92400E;
+  --mc-error-bg: #FEF2F2;
+  --mc-error-borde: #FECACA;
+  --mc-error-texto: #B91C1C;
+
+  /* Info (azul) */
+  --mc-info-bg: #DBEAFE;
+  --mc-info-texto: #1E40AF;
+
+  /* Rojo/ámbar "apagados" del diseño viejo, que App.css usa en varios sitios. */
+  --mc-rojo-apagado: #A84444;
+  --mc-ambar-apagado: #9A6B1F;
+
   /* Paleta categórica (series de la gráfica de tendencia por sucursal). NO es el
      semáforo: aquí el color solo distingue una serie de otra, no significa nada.
      Estaba duplicada como `TREND_COLORS` en AdminDashboard y en PsicologaDashboard. */
@@ -216,6 +253,41 @@
   --mc-semaforo-verde: #86EFAC;
   --mc-semaforo-amarillo: #FCD34D;
   --mc-semaforo-rojo: #FCA5A5;
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     La rampa de grises SE INVIERTE.
+     ═══════════════════════════════════════════════════════════════════════
+     Lo que en claro era texto oscuro pasa a claro; lo que era una superficie
+     clara pasa a una transparencia sobre el fondo oscuro (así hereda el tinte
+     verde de la marca en vez de verse gris sucio). Esto es lo que arregla los
+     desplegables, selects y submenús que se quedaban blancos.
+     ═════════════════════════════════════════════════════════════════════ */
+  --mc-slate-900: #F1F5F9;
+  --mc-slate-700: #E2E8F0;
+  --mc-slate-600: #CBD5E1;
+  --mc-slate-500: #9DBDB6;
+  --mc-slate-400: #8FA8A3;
+  --mc-slate-200: rgba(255, 255, 255, 0.12);
+  --mc-slate-100: rgba(255, 255, 255, 0.06);
+  --mc-slate-50:  rgba(255, 255, 255, 0.03);
+  --mc-borde-suave: rgba(255, 255, 255, 0.10);
+
+  /* Avisos y errores: en oscuro no se atenúa el pastel (quedaría gris sucio), se
+     usa el color a baja opacidad sobre el fondo + texto claro. */
+  --mc-aviso-bg: rgba(252, 211, 77, 0.12);
+  --mc-aviso-bg-suave: rgba(252, 211, 77, 0.06);
+  --mc-aviso-bg-fuerte: rgba(252, 211, 77, 0.18);
+  --mc-aviso-borde: rgba(252, 211, 77, 0.32);
+  --mc-aviso-texto: #FCD34D;
+  --mc-error-bg: rgba(252, 165, 165, 0.12);
+  --mc-error-borde: rgba(252, 165, 165, 0.32);
+  --mc-error-texto: #FCA5A5;
+
+  --mc-info-bg: rgba(96, 165, 250, 0.14);
+  --mc-info-texto: #93C5FD;
+
+  --mc-rojo-apagado: #FCA5A5;
+  --mc-ambar-apagado: #FCD34D;
 
   /* Series: mismos tonos, versiones claras. Un #2563EB sobre #0A2420 casi no se ve. */
   --mc-serie-1: #46D6C5;
