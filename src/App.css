@@ -1576,7 +1576,15 @@
   max-width: 1080px;
   width: 100%;
   margin: 0 auto;
-  max-height: calc(100vh - 56px);
+  /* `height`, NO `max-height`. Con max-height la altura del contenedor es AUTO: se dimensiona
+     por su contenido (la tabla entera) y solo después se recorta. La tabla nunca recibe una
+     altura contra la que encogerse, así que crece a lo natural y acaba habiendo dos scrolls:
+     el suyo y el de la página. Con height la altura es definida, el `flex: 1; min-height: 0`
+     de la tabla sí puede encoger, y scrollea solo ella.
+     100% = la caja de contenido de .app-main. Antes era calc(100vh - 56px), que era su padding
+     (28px×2) copiado a mano: si el padding cambia, el número se queda mintiendo. */
+  height: 100%;
+  min-height: 0;
   overflow: hidden;
   gap: var(--mc-ritmo-pagina);
 }
@@ -2157,7 +2165,11 @@
     flex-wrap: wrap;
   }
 
+  /* En móvil no hay scroll interno: scrollea la página entera. Antes se anulaba el
+     `max-height`; ahora hay que anular el `height`, o la lista quedaría encajonada a la
+     altura de la pantalla con su propio scroll dentro. */
   .list-page {
+    height: auto;
     max-height: none;
     overflow: visible;
   }
@@ -3760,9 +3772,11 @@
 }
 
 /* ── Gestión de Personal (Admin + RH) ── */
+/* El `gap: 0` que había aquí ganaba a .list-page por orden de aparición, así que esta pantalla
+   se quedaba fuera del ritmo común aunque .list-page ya estuviera arreglada. Era el tercer
+   gap:0 escondido. El max-width tampoco hace falta: .list-page ya lo pone. */
 .gestion-personal-page {
   max-width: 1080px;
-  gap: 0;
 }
 
 .gestion-personal-header {
