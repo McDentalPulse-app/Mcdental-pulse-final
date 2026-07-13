@@ -8,7 +8,7 @@ import {
   getEncuestaSemaforo,
   formatEncuestaFecha,
 } from "../../utils/encuestaDetail";
-import { nivelColor, nivelBadgeBg } from "../../config/theme";
+import { nivelColor, nivelBadgeBg, nivelTinte } from "../../config/theme";
 
 const EncuestaDetalleModal = ({ encuesta, empleado, preguntas, onClose }) => {
   if (!encuesta) return null;

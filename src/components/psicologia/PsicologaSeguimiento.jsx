@@ -8,7 +8,7 @@ import Icon from "../ui/Icon";
 import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
-import { nivelColor, nivelBadgeBg } from "../../config/theme";
+import { nivelColor, nivelBadgeBg, nivelTinte } from "../../config/theme";
 import { semanaActual, normalizeSucursal, sucursalMatches, isSemanaActual, formatSemanaDisplay } from "../../utils/constants";
 import { calcPulseScore, getPulseStatus, tieneScoreValido } from "../../utils/pulseScore";
 import { esEmpleadoActivo } from "../../utils/helpers";

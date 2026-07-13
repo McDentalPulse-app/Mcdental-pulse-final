@@ -10,7 +10,7 @@ import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import RiskBar from "../common/RiskBar";
-import { semaforoLabel, nivelColor } from "../../config/theme";
+import { semaforoLabel, nivelColor, nivelTinte } from "../../config/theme";
 
 import { semanaActual, normalizeSucursal, formatSemanaDisplay } from "../../utils/constants";
 import { calcularAntiguedad, resolveFechaIngreso } from "../../utils/helpers";
