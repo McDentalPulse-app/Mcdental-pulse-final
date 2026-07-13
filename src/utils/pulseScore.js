@@ -1,10 +1,15 @@
 import { readRiesgoRenuncia } from "./encuestaDetail";
 
+// OJO con `nivel`: en calcPulseScore es la ETIQUETA legible ("Estable"), y en
+// getPulseStatus es el SLUG ("verde"). Mismo nombre, dos significados — herencia del
+// código original, no se renombra para no tocar media app. Se añade `slug`, que es
+// inequívoco y es lo que se usa para pintar: el color lo decide el CSS a partir de él,
+// nunca el JS (ver DESIGN.md).
 const SCORE_SIN_DATOS = {
   score: null,
   promedio: null,
   nivel: "Sin datos",
-  color: "#94a3b8",
+  slug: "sin-datos",
   tendencia: "→",
   sinDatos: true,
 };
@@ -155,44 +160,30 @@ export const calcRiesgos = (empId, encuestas, preguntas = []) => {
   return getEmployeeAIRisks(latestScore, surveys, preguntas);
 };
 
+/**
+ * Estado de un Pulse Score: etiqueta, semáforo y nivel.
+ *
+ * Ya NO devuelve `color` ni `bg`. Devolvía hex (#22c55e, #dcfce7) que los componentes
+ * aplicaban como `style={{ color }}`, y un estilo inline gana por especificidad: ninguna
+ * regla de modo oscuro podía pisarlo. Ese era el motivo real de que el dark no funcionara.
+ *
+ * Ahora se devuelve `nivel` (verde | amarillo | rojo | sin-datos) y el color lo decide el
+ * CSS, que sí conoce el tema. Ver DESIGN.md.
+ */
 export const getPulseStatus = (score) => {
   if (!tieneScoreValido(score)) {
-    return {
-      label: "Sin datos",
-      semaforo: "Sin evaluación",
-      color: "#94a3b8",
-      bg: "#f1f5f9",
-      nivel: "sin-datos",
-    };
+    return { label: "Sin datos", semaforo: "Sin evaluación", nivel: "sin-datos" };
   }
 
   if (score >= 80) {
-    return {
-      label: "Estable",
-      semaforo: "Verde",
-      color: "#22c55e",
-      bg: "#dcfce7",
-      nivel: "verde",
-    };
+    return { label: "Estable", semaforo: "Verde", nivel: "verde" };
   }
 
   if (score >= 60) {
-    return {
-      label: "Atención",
-      semaforo: "Amarillo",
-      color: "#f59e0b",
-      bg: "#fef3c7",
-      nivel: "amarillo",
-    };
+    return { label: "Atención", semaforo: "Amarillo", nivel: "amarillo" };
   }
 
-  return {
-    label: "Crítico",
-    semaforo: "Rojo",
-    color: "#ef4444",
-    bg: "#fee2e2",
-    nivel: "rojo",
-  };
+  return { label: "Crítico", semaforo: "Rojo", nivel: "rojo" };
 };
 
 export const getEmployeeStatus = getPulseStatus;
@@ -221,8 +212,8 @@ export const calcPulseScore = (empId, encuestas) => {
   return {
     score,
     promedio,
-    nivel: status.label,
-    color: status.color,
+    nivel: status.label,   // etiqueta legible ("Estable") — para mostrar
+    slug: status.nivel,    // "verde" | "amarillo" | "rojo" — para pintar (lo resuelve el CSS)
     tendencia,
     sinDatos: false,
   };

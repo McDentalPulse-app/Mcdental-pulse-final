@@ -8,7 +8,7 @@ import Icon from "../ui/Icon";
 import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
-import { semaforoColor } from "../../config/theme";
+import { nivelColor, nivelBadgeBg } from "../../config/theme";
 import { semanaActual, normalizeSucursal, sucursalMatches, isSemanaActual, formatSemanaDisplay } from "../../utils/constants";
 import { calcPulseScore, getPulseStatus, tieneScoreValido } from "../../utils/pulseScore";
 import { esEmpleadoActivo } from "../../utils/helpers";
@@ -111,7 +111,7 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
                 onClick={() => setEmpleadoDetalle(emp)}
               >
                 <div className="psico-emp-top">
-                  <Avatar name={emp.name} size={36} color={semaforoColor[sem] || semaforoColor.verde} photoUrl={emp.avatarUrl} />
+                  <Avatar name={emp.name} size={36} color={nivelColor(sem)} photoUrl={emp.avatarUrl} />
                   <div className="psico-emp-info">
                     <div className="psico-emp-name">{emp.name}</div>
                     <div className="psico-emp-meta">{normalizeSucursal(emp.sucursal)}</div>
@@ -120,7 +120,7 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
                 </div>
 
                 <div className="psico-emp-score">
-                  <PulseScoreBadge score={ps.score} nivel={ps.nivel} color={ps.color} tendencia={ps.tendencia} size="sm" />
+                  <PulseScoreBadge score={ps.score} nivel={ps.nivel} slug={ps.slug} tendencia={ps.tendencia} size="sm" />
                 </div>
 
                 <div className={`psico-emp-status ${contesto ? "psico-emp-status--ok" : "psico-emp-status--pending"}`}>
@@ -202,10 +202,10 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
               </div>
 
               <div className="psico-detail-kpis">
-                <div className="psico-detail-pulse" style={{ background: status.bg, borderColor: `${status.color}33` }}>
-                  <div className="psico-detail-pulse-label" style={{ color: status.color }}>Pulse Score</div>
-                  <div className="psico-detail-pulse-value" style={{ color: status.color }}>{score}</div>
-                  <div className="psico-detail-pulse-status" style={{ color: status.color }}>{status.label}</div>
+                <div className="psico-detail-pulse" style={{ background: nivelBadgeBg(status.nivel), borderColor: `${nivelColor(status.nivel)}33` }}>
+                  <div className="psico-detail-pulse-label" style={{ color: nivelColor(status.nivel) }}>Pulse Score</div>
+                  <div className="psico-detail-pulse-value" style={{ color: nivelColor(status.nivel) }}>{score}</div>
+                  <div className="psico-detail-pulse-status" style={{ color: nivelColor(status.nivel) }}>{status.label}</div>
                 </div>
 
                 <div className="psico-detail-panel">

@@ -9,7 +9,7 @@ import PulseScoreBadge from "../common/PulseScoreBadge";
 import { SUCURSALES, semanaActual, normalizeSucursal, sucursalMatches, formatSemanaDisplay, isSemanaActual } from "../../utils/constants";
 
 import { calcPulseScore, getPulseStatus, calcRiesgos, getEmployeeAverageScore } from "../../utils/pulseScore";
-import { semaforoColor } from "../../config/theme";
+import { nivelColor } from "../../config/theme";
 import LineChart from "../common/LineChart";
 import RiskBar from "../common/RiskBar";
 import { formatAntiguedadEmpleado, resolveFechaIngreso, formatEmpleadoIdForDisplay } from "../../utils/helpers";
@@ -98,7 +98,7 @@ const EmpleadosList = ({
         <div className="detail-grid-top">
           <Card className="detail-card-main">
             <div className="detail-emp-header">
-              <Avatar name={selected.name} size={56} color={semaforoColor[sem]} photoUrl={selected.avatarUrl} />
+              <Avatar name={selected.name} size={56} color={nivelColor(sem)} photoUrl={selected.avatarUrl} />
 
               <div>
                 <div style={{ fontSize: 22, fontWeight: 900, color: "var(--mc-texto-titulo)" }}>
@@ -115,7 +115,7 @@ const EmpleadosList = ({
                     <PulseScoreBadge
                       score={ps.score}
                       nivel={ps.nivel}
-                      color={ps.color}
+                      slug={ps.slug}
                       tendencia={ps.tendencia}
                       size="sm"
                     />
@@ -167,7 +167,7 @@ const EmpleadosList = ({
                 </div>
 
                 {trend.length > 1 ? (
-                  <LineChart data={trend} color={ps.color} />
+                  <LineChart data={trend} slug={ps.slug} />
                 ) : (
                   <div style={{ color: "var(--mc-texto-secundario)", fontSize: 13 }}>
                     Sin suficientes datos para graficar.
@@ -420,7 +420,7 @@ const EmpleadosList = ({
             >
               <Card>
                 <div className="emp-card-top">
-                  <Avatar name={emp.name} size={36} color={semaforoColor[sem]} photoUrl={emp.avatarUrl} />
+                  <Avatar name={emp.name} size={36} color={nivelColor(sem)} photoUrl={emp.avatarUrl} />
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="emp-card-name">{emp.name}</div>
@@ -435,7 +435,7 @@ const EmpleadosList = ({
                     <PulseScoreBadge
                       score={ps.score}
                       nivel={ps.nivel}
-                      color={ps.color}
+                      slug={ps.slug}
                       tendencia={ps.tendencia}
                       size="sm"
                     />

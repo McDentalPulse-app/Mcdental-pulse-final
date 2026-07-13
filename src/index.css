@@ -175,6 +175,18 @@
   --mc-badge-amarillo-texto: #92400E;
   --mc-badge-rojo-bg: #FEE2E2;
   --mc-badge-rojo-texto: #991B1B;
+
+  /* Paleta categórica (series de la gráfica de tendencia por sucursal). NO es el
+     semáforo: aquí el color solo distingue una serie de otra, no significa nada.
+     Estaba duplicada como `TREND_COLORS` en AdminDashboard y en PsicologaDashboard. */
+  --mc-serie-1: #0E8C7A;
+  --mc-serie-2: #2563EB;
+  --mc-serie-3: #F59E0B;
+  --mc-serie-4: #EF4444;
+  --mc-serie-5: #8B5CF6;
+  --mc-serie-6: #06B6D4;
+  --mc-serie-7: #EC4899;
+  --mc-serie-8: #65A30D;
 }
 
 /* ── Modo oscuro (fase 2: superficies reales, no solo el fondo) ──
@@ -197,6 +209,23 @@
   --mc-texto: #E6F2F0;
   --mc-superficie: #0F332C;
   --mc-superficie-input: #0A2420;
+
+  /* El semáforo tampoco cambiaba: un #059669 sobre fondo #0A2420 queda apagado.
+     Se usan las versiones claras que este mismo archivo ya había validado como
+     legibles sobre tarjeta oscura (--mc-stat-green/amber/red). */
+  --mc-semaforo-verde: #86EFAC;
+  --mc-semaforo-amarillo: #FCD34D;
+  --mc-semaforo-rojo: #FCA5A5;
+
+  /* Series: mismos tonos, versiones claras. Un #2563EB sobre #0A2420 casi no se ve. */
+  --mc-serie-1: #46D6C5;
+  --mc-serie-2: #60A5FA;
+  --mc-serie-3: #FCD34D;
+  --mc-serie-4: #FCA5A5;
+  --mc-serie-5: #C4B5FD;
+  --mc-serie-6: #67E8F9;
+  --mc-serie-7: #F9A8D4;
+  --mc-serie-8: #BEF264;
 
   /* Badges en oscuro: fondo saturado + texto claro. Ya estaban definidos más
      abajo en este mismo bloque; se conservan tal cual. */

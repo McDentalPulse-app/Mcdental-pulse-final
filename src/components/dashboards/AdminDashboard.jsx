@@ -12,6 +12,7 @@ import WeekSelect from "../common/WeekSelect";
 import PageHeader from "../common/PageHeader";
 import { SUCURSALES, semanaActual, normalizeSucursal, sucursalMatches, formatSemanaDisplay } from "../../utils/constants";
 import { getPulseStatus, tieneScoreValido } from "../../utils/pulseScore";
+import { nivelColor, nivelMeta, colorSerie } from "../../config/theme";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import "./AdminDashboard.css";
 import { esEmpleadoActivo } from "../../utils/helpers";
@@ -31,14 +32,6 @@ const modalMotion = {
 };
 
 // Igual que el dashboard de Psicóloga (mismos colores/etiquetas)
-const SEMAFORO_META = {
-  verde: { label: "Estable", color: "#22c55e" },
-  amarillo: { label: "Atención", color: "#f59e0b" },
-  rojo: { label: "Foco rojo", color: "#ef4444" },
-  "sin-datos": { label: "Sin datos", color: "#94a3b8" },
-};
-const TREND_COLORS = ["#0E8C7A", "#2563eb", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#65a30d"];
-
 const semaforoToBadge = (semaforo) => {
   if (semaforo === "Verde") return "verde";
   if (semaforo === "Amarillo") return "amarillo";
@@ -47,7 +40,7 @@ const semaforoToBadge = (semaforo) => {
 };
 
 const sucursalScoreColor = (val) => {
-  if (val == null || !Number.isFinite(Number(val))) return "#e2e8f0";
+  if (val == null || !Number.isFinite(Number(val))) return "var(--mc-riskbar-track)";
   if (val >= 70) return "var(--mc-stat-green)";
   if (val >= 45) return "var(--mc-stat-amber)";
   return "var(--mc-stat-red)";
@@ -63,13 +56,13 @@ const buildSucursalDetalle = (nombreSucursal, empleados, encBucket) => {
       const sinDatos = score == null;
       const contestoSemana = !!enc;
       const status = sinDatos
-        ? { label: "Sin evaluación", semaforo: "Sin evaluación", color: "#94a3b8" }
+        ? { label: "Sin evaluación", semaforo: "Sin evaluación", color: "var(--mc-texto-secundario)" }
         : getPulseStatus(score);
 
       return {
         empleado: emp,
         score,
-        color: sinDatos ? "#94a3b8" : status.color,
+        color: sinDatos ? "var(--mc-texto-secundario)" : nivelColor(status.nivel),
         sinDatos,
         status,
         contestoSemana,
@@ -88,7 +81,7 @@ const buildSucursalDetalle = (nombreSucursal, empleados, encBucket) => {
     : null;
   const promedioStatus =
     promedio == null
-      ? { label: "Sin datos", semaforo: "Sin datos", color: "#94a3b8" }
+      ? { label: "Sin datos", semaforo: "Sin datos", color: "var(--mc-texto-secundario)" }
       : getPulseStatus(promedio);
 
   return {
@@ -138,7 +131,7 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
     const score = enc ? Math.round(Number(enc.score)) : null;
     const sinDatos = score == null;
     const status = sinDatos
-      ? { label: "Sin datos", semaforo: "Sin datos", color: "#94a3b8", bg: "#f1f5f9" }
+      ? { label: "Sin datos", semaforo: "Sin datos", color: "var(--mc-texto-secundario)", bg: "var(--mc-gris-perla)" }
       : getPulseStatus(score);
     const prev = sinDatos ? null : scorePrevio(emp.id);
     const tendencia = prev == null ? "→" : score > prev ? "↑" : score < prev ? "↓" : "→";
@@ -147,7 +140,7 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
       score,
       sinDatos,
       status,
-      pulse: { score, color: status.color, nivel: status.label, tendencia },
+      pulse: { score, color: nivelColor(status.nivel), nivel: status.label, tendencia },
     };
   });
 
@@ -204,7 +197,7 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
 
   const avgPulseStatus =
     avgPulse === null
-      ? { label: "Sin datos", semaforo: "Sin datos", color: "#94a3b8", bg: "#f1f5f9" }
+      ? { label: "Sin datos", semaforo: "Sin datos", color: "var(--mc-texto-secundario)", bg: "var(--mc-gris-perla)" }
       : getPulseStatus(avgPulse);
 
   const enFocoRojo = empleadosConDatos.filter((e) => e.status.semaforo === "Rojo");
@@ -239,7 +232,7 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
     .filter((suc) => trendLabels.some((b) => officeWeek[suc][b]))
     .map((suc, i) => ({
       label: suc,
-      color: TREND_COLORS[i % TREND_COLORS.length],
+      color: colorSerie(i),
       values: trendLabels.map((b) => {
         const arr = officeWeek[suc][b];
         return arr ? Math.round(arr.reduce((a, c) => a + c, 0) / arr.length) : null;
@@ -282,13 +275,13 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
         <Card className="pulse-hero-card dashboard-pulse-feature">
           <div className="pulse-hero-top">
             <div className="pulse-hero-icon-wrap">
-              <Icon name="activity" size={22} color="#fff" />
+              <Icon name="activity" size={22} color="var(--mc-blanco)" />
             </div>
             <div className="pulse-hero-label">Pulse Score™</div>
           </div>
           <div className="pulse-hero-value">{avgPulse ?? "—"}</div>
           <div className="pulse-hero-meta">
-            <span className="pulse-hero-status" style={{ color: avgPulseStatus.color }}>
+            <span className="pulse-hero-status" style={{ color: nivelColor(avgPulseStatus.nivel) }}>
               {avgPulseStatus.label}
             </span>
             <span className="pulse-hero-dot">·</span>
@@ -312,8 +305,8 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
                     <div
                       key={k}
                       className="psico-dist-seg"
-                      style={{ flexGrow: dist[k], background: SEMAFORO_META[k].color }}
-                      title={`${SEMAFORO_META[k].label}: ${dist[k]}`}
+                      style={{ flexGrow: dist[k], background: nivelColor(k) }}
+                      title={`${nivelMeta(k).label}: ${dist[k]}`}
                     />
                   ) : null
                 )}
@@ -321,8 +314,8 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
               <div className="psico-dist-legend">
                 {["verde", "amarillo", "rojo", "sin-datos"].map((k) => (
                   <div key={k} className="psico-dist-item">
-                    <span className="psico-dist-dot" style={{ background: SEMAFORO_META[k].color }} />
-                    <span className="psico-dist-label">{SEMAFORO_META[k].label}</span>
+                    <span className="psico-dist-dot" style={{ background: nivelColor(k) }} />
+                    <span className="psico-dist-label">{nivelMeta(k).label}</span>
                     <span className="psico-dist-count">{dist[k]}</span>
                   </div>
                 ))}
@@ -503,7 +496,7 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
                   <>
                     <span
                       className="dashboard-sucursal-kpi-value"
-                      style={{ color: detalleSucursal.promedioStatus.color }}
+                      style={{ color: nivelColor(detalleSucursal.promedioStatus.nivel) }}
                     >
                       {detalleSucursal.promedio}
                     </span>
@@ -641,7 +634,7 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
               const ps = e.pulse;
               return (
                 <div key={emp.id} className="dashboard-employee-row dashboard-employee-row--alert">
-                  <Avatar name={emp.name} size={40} color="#A84444" photoUrl={emp.avatarUrl} />
+                  <Avatar name={emp.name} size={40} color={nivelColor("rojo")} photoUrl={emp.avatarUrl} />
                   <div className="dashboard-employee-info">
                     <div className="dashboard-employee-name">{emp.name}</div>
                     <div className="dashboard-employee-meta">
@@ -652,7 +645,7 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
                   <PulseScoreBadge
                     score={ps.score}
                     nivel={ps.nivel}
-                    color={ps.color}
+                    slug={ps.slug}
                     tendencia={ps.tendencia}
                     size="sm"
                   />

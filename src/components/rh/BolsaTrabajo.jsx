@@ -3,8 +3,12 @@ import PageHeader from "../common/PageHeader";
 import Card from "../common/Card";
 import Icon from "../ui/Icon";
 import { getCandidatosBolsa } from "../../services/supabase/bolsaTrabajoService";
+import { nivelColor } from "../../config/theme";
 
-const semaforoColor = { green: "#16a34a", yellow: "#d97706", red: "#dc2626" };
+// El semáforo de un candidato viene de McDental Talent con las claves en inglés
+// (green/yellow/red). Se traducen a los niveles del sistema para que el color salga del
+// mismo sitio que el resto de la app y reaccione al tema. Antes era otro mapa de hex más.
+const NIVEL_POR_SEMAFORO = { green: "verde", yellow: "amarillo", red: "rojo" };
 const estadoLabel = {
   pending_rh: "Pendiente RH",
   evaluation: "En evaluación",
@@ -61,7 +65,7 @@ export default function BolsaTrabajo() {
 
       {!loading && error && (
         <Card>
-          <p style={{ padding: "1rem", textAlign: "center", color: "#dc2626" }}>
+          <p style={{ padding: "1rem", textAlign: "center", color: "var(--mc-semaforo-rojo)" }}>
             {error}
           </p>
         </Card>
@@ -111,7 +115,7 @@ export default function BolsaTrabajo() {
                       width: 12,
                       height: 12,
                       borderRadius: "50%",
-                      background: semaforoColor[c.semaforo] || "#9ca3af",
+                      background: nivelColor(NIVEL_POR_SEMAFORO[c.semaforo] ?? "sin-datos"),
                       flexShrink: 0,
                     }}
                   />

@@ -99,7 +99,7 @@ const InicioEmpleado = ({ user, encuestas, mensajes, setActive }) => {
         <SectionTitle icon="activity">Mi bienestar</SectionTitle>
         {tieneEvaluacion ? (
           <div className="empleado-pulse-body">
-            <PulseScoreBadge score={ps.score} nivel={ps.nivel} color={ps.color} tendencia={ps.tendencia} size="md" />
+            <PulseScoreBadge score={ps.score} nivel={ps.nivel} slug={ps.slug} tendencia={ps.tendencia} size="md" />
             {ultimo && <Badge tipo={ultimo.semaforo} />}
           </div>
         ) : (

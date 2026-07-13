@@ -6,6 +6,7 @@ import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { formatSemanaDisplay, normalizeWeek } from "../../utils/constants";
 import { getPulseStatus, tieneScoreValido } from "../../utils/pulseScore";
+import { nivelColor, nivelBadgeBg } from "../../config/theme";
 
 const HistorialEmpleado = ({ user, encuestas }) => {
   const historial = encuestas
@@ -57,10 +58,10 @@ const HistorialEmpleado = ({ user, encuestas }) => {
                     <div className="empleado-timeline-label">Resultado semanal de bienestar</div>
                   </div>
                   <div className="empleado-timeline-score">
-                    <div className="empleado-timeline-points" style={{ color: status.color }}>
+                    <div className="empleado-timeline-points" style={{ color: nivelColor(status.nivel) }}>
                       {tieneScoreValido(e.score) ? `${Number(e.score)} pts` : "— pts"}
                     </div>
-                    <span className="mc-status-pill" style={{ background: status.bg, color: status.color }}>
+                    <span className="mc-status-pill" style={{ background: nivelBadgeBg(status.nivel), color: nivelColor(status.nivel) }}>
                       {status.label}
                     </span>
                   </div>

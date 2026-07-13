@@ -2,6 +2,10 @@ import React from "react";
 
 // Barras agrupadas por semana: cada grupo = una semana, cada barra = una oficina
 // con su color y su puntaje. Escala fija 0–100 (dominio del Pulse Score).
+//
+// `s.color` lo pone el llamador y ahora es una variable CSS (colorSerie(i) de config/theme),
+// no un hex: así la gráfica también reacciona al tema. La rejilla y las etiquetas usan
+// tokens; antes eran #e2e8f0 / #94a3b8 / #64748b y desaparecían sobre fondo oscuro.
 const GroupedBarChart = ({ labels = [], series = [], height = 200 }) => {
   const hasData = series.some(s => s.values.some(v => Number.isFinite(Number(v))));
   if (!labels.length || !hasData) return null;
@@ -34,8 +38,8 @@ const GroupedBarChart = ({ labels = [], series = [], height = 200 }) => {
         {/* gridlines + eje Y */}
         {gridVals.map(g => (
           <g key={g}>
-            <line x1={leftPad} y1={yOf(g)} x2={w - rightPad} y2={yOf(g)} stroke="#e2e8f0" strokeWidth="1" />
-            <text x={leftPad - 6} y={yOf(g) + 3} textAnchor="end" fontSize="9" fill="#94a3b8">{g}</text>
+            <line x1={leftPad} y1={yOf(g)} x2={w - rightPad} y2={yOf(g)} stroke="var(--mc-gris-suave)" strokeWidth="1" />
+            <text x={leftPad - 6} y={yOf(g) + 3} textAnchor="end" fontSize="9" fill="var(--mc-texto-secundario)">{g}</text>
           </g>
         ))}
 
@@ -60,7 +64,7 @@ const GroupedBarChart = ({ labels = [], series = [], height = 200 }) => {
                   </g>
                 );
               })}
-              <text x={gx + groupW / 2} y={h - 8} textAnchor="middle" fontSize="11" fontWeight="600" fill="#64748b">
+              <text x={gx + groupW / 2} y={h - 8} textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--mc-texto-secundario)">
                 {lab}
               </text>
             </g>

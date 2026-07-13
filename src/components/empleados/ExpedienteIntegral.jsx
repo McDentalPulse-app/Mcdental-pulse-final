@@ -24,6 +24,7 @@ import {
   resolveFechaIngreso,
 } from "../../utils/helpers";
 import { useNotification } from "../../contexts/NotificationContext";
+import { nivelColor } from "../../config/theme";
 
 const ExpedienteIntegral = ({
   users,
@@ -86,7 +87,7 @@ const empleado =
   const ultimoScore = ps.score;
   const pulseStatus = getPulseStatus(ultimoScore);
   const semaforo = pulseStatus.semaforo;
-  const semaforoColor = pulseStatus.color;
+  const semaforoColor = nivelColor(pulseStatus.nivel);
 
   const esAdmin = currentUser?.role === "admin";
   const esRH = currentUser?.role === "rh" || currentUser?.role === "recursos humanos";
@@ -192,7 +193,7 @@ const empleado =
 
       <div className="admin-stat-grid">
         <Card className="admin-stat-card expediente-foto-card">
-          <Avatar name={empleado.name} size={48} color="#0E8C7A" photoUrl={empleado.avatarUrl} />
+          <Avatar name={empleado.name} size={48} color="var(--mc-verde)" photoUrl={empleado.avatarUrl} />
           {puedeCambiarFoto && (
             <div className="expediente-foto-actions">
               <label className="expediente-foto-upload" aria-disabled={subiendoFoto}>
@@ -219,7 +220,7 @@ const empleado =
           <div className="admin-stat-icon-wrap"><Icon name="heart" size={20} /></div>
           <div className="admin-stat-value admin-stat-value--aqua">{ultimoScore}</div>
           <div className="admin-stat-label">Pulse Score™</div>
-          <div style={{ color: pulseStatus.color, fontWeight: 800, fontSize: 13, marginTop: 4 }}>{pulseStatus.label}</div>
+          <div style={{ color: nivelColor(pulseStatus.nivel), fontWeight: 800, fontSize: 13, marginTop: 4 }}>{pulseStatus.label}</div>
         </Card>
         <Card className="admin-stat-card">
           <div className="admin-stat-icon-wrap"><Icon name="stable" size={20} /></div>
