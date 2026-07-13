@@ -49,7 +49,8 @@
 
 /* ── Tabs: segmented control con pill deslizante ── */
 .ai-engine-page .ai-engine-tab { position: relative; }
-.ai-tab-pill {
+
+.ai-engine-page .ai-tab-pill {
   position: absolute;
   inset: 0;
   z-index: 0;
@@ -57,12 +58,31 @@
   background: var(--grad-accent);
   box-shadow: 0 8px 22px -10px rgba(20, 200, 182, 0.7);
 }
-.ai-engine-page .ai-engine-tab > svg,
-.ai-engine-page .ai-engine-tab { /* texto del tab por encima del pill */ }
-.ai-engine-page .ai-engine-tab > * { position: relative; z-index: 1; }
-.ai-engine-page .ai-engine-tab--active { color: var(--brand-950); }
-/* el fondo activo lo pinta el pill, no la clase base */
-.ai-engine-page .ai-engine-tab--active { background: transparent; }
+
+/* El icono y el texto van POR ENCIMA de la pill. El :not() es lo que hace que esto funcione:
+   antes la regla era `> *`, que también alcanzaba a la propia pill y —con más especificidad
+   (0,2,0) que .ai-tab-pill (0,1,0)— le quitaba el `position: absolute`. Sin absolute, el
+   `inset: 0` no hace nada y un <span> vacío en flujo normal mide 0×0: la pill jamás se pintó,
+   en ningún tema. Solo se notaba en oscuro porque ahí el texto activo (oscuro, pensado para ir
+   sobre el teal) quedaba sobre el fondo oscuro de la página. */
+.ai-engine-page .ai-engine-tab > *:not(.ai-tab-pill) {
+  position: relative;
+  z-index: 1;
+}
+
+/* El fondo activo lo pinta la pill, no la clase base. */
+.ai-engine-page .ai-engine-tab--active {
+  color: var(--brand-950);
+  background: transparent;
+  border-color: transparent;
+}
+
+/* Sin esto sale el aro de foco por defecto del navegador — blanco y grueso sobre fondo
+   oscuro, que es el contorno raro que se veía al hacer clic. */
+.ai-engine-page .ai-engine-tab:focus-visible {
+  outline: 2px solid var(--mc-aqua);
+  outline-offset: 2px;
+}
 
 /* ── Botón Generar con IA: gradiente accent ── */
 .ai-engine-page .ai-gen-btn {

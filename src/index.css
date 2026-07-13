@@ -129,7 +129,12 @@
   /* ── Gradientes de fondo ── */
   --grad-brand: linear-gradient(150deg, #0A332E 0%, #0E5A4F 45%, #107463 100%);
   --grad-brand-soft: linear-gradient(160deg, #0C463E 0%, #0E8C7A 100%);
-  --grad-accent: linear-gradient(135deg, #14C8B6 0%, #0E8C7A 100%);
+  /* El extremo oscuro era #0E8C7A: un teal de tono medio, el peor escenario posible. El texto
+     oscuro que va encima (--brand-950) daba 4.10:1 y el blanco 4.16:1 — o sea que NINGÚN color
+     de texto pasaba AA. El problema no era el texto, era el degradado. Aclarado a #10A090
+     (mismo teal, un paso más claro), el texto oscuro sube a 5.24:1. Afecta a la pill de las
+     pestañas y al botón "Generar con IA", que comparten este degradado y arrastraban lo mismo. */
+  --grad-accent: linear-gradient(135deg, #14C8B6 0%, #10A090 100%);
 
   /* ── Borders and Radii ── */
   --mc-radio: 16px;
