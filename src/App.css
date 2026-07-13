@@ -1940,24 +1940,24 @@
 
 .mc-btn-outline--amber {
   color: var(--mc-badge-amarillo-texto);
-  border-color: rgba(154, 107, 31, 0.35);
-  background: var(--mc-aviso-bg);
+  border-color: var(--mc-btn-amber-borde);
+  background: var(--mc-btn-amber-bg);
 }
 
 .mc-btn-outline--amber:hover {
-  background: var(--mc-badge-amarillo-bg);
-  border-color: var(--mc-semaforo-amarillo);
+  background: var(--mc-btn-amber-bg-hover);
+  border-color: var(--mc-btn-amber-borde-hover);
 }
 
 .mc-btn-outline--danger {
   color: var(--mc-badge-rojo-texto);
-  border-color: rgba(168, 68, 68, 0.35);
-  background: var(--mc-error-bg);
+  border-color: var(--mc-btn-danger-borde);
+  background: var(--mc-btn-danger-bg);
 }
 
 .mc-btn-outline--danger:hover {
-  background: var(--mc-badge-rojo-bg);
-  border-color: var(--mc-rojo-apagado);
+  background: var(--mc-btn-danger-bg-hover);
+  border-color: var(--mc-btn-danger-borde-hover);
 }
 
 /* AI Engine resumen */
@@ -3711,13 +3711,16 @@
   justify-content: center;
 }
 
+/* Son los botones "editar" y "borrar" de siempre, con otro nombre: mismos tokens, no una copia
+   propia de los colores. Antes tenían su propio juego duplicado (y por eso también su propio
+   override en modo oscuro, duplicado igual). */
 .expediente-foto-upload,
 .expediente-foto-quitar {
   padding: 5px 12px;
   border-radius: 999px;
-  border: 1px solid rgba(14, 140, 122, 0.3);
-  background: var(--mc-brand-suave);
-  color: var(--mc-verde-medio);
+  border: 1px solid var(--mc-btn-edit-borde);
+  background: var(--mc-btn-edit-bg);
+  color: var(--mc-btn-edit-fg);
   font-size: 11px;
   font-weight: 700;
   font-family: inherit;
@@ -3725,9 +3728,8 @@
   transition: background 0.18s, border-color 0.18s;
 }
 
-.expediente-foto-upload:hover,
-.expediente-foto-quitar:hover:not(:disabled) {
-  background: var(--mc-brand-suave);
+.expediente-foto-upload:hover {
+  background: var(--mc-btn-edit-bg-hover);
   border-color: var(--mc-aqua);
 }
 
@@ -3738,14 +3740,14 @@
 }
 
 .expediente-foto-quitar {
-  background: var(--mc-error-bg);
+  background: var(--mc-btn-danger-bg);
   color: var(--mc-badge-rojo-texto);
-  border-color: rgba(168, 68, 68, 0.35);
+  border-color: var(--mc-btn-danger-borde);
 }
 
 .expediente-foto-quitar:hover:not(:disabled) {
-  background: var(--mc-badge-rojo-bg);
-  border-color: var(--mc-rojo-apagado);
+  background: var(--mc-btn-danger-bg-hover);
+  border-color: var(--mc-btn-danger-borde-hover);
 }
 
 .mc-file-input-icon {

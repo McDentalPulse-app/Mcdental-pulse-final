@@ -148,11 +148,26 @@
      necesitaba override. */
   --mc-btn-outline-fg: var(--mc-verde-medio);
 
-  /* Botón "Editar": el juego completo, para que no haya que recordar cuatro valores sueltos. */
+  /* Botones de contorno, por intención. El juego completo de cada uno junto, para que no haya
+     que recordar cuatro valores sueltos repartidos por el archivo.
+     `.expediente-foto-upload` y `.expediente-foto-quitar` son clones de "editar" y "borrar":
+     usan estos mismos tokens en vez de tener su propia copia. */
   --mc-btn-edit-fg: var(--mc-verde-medio);
   --mc-btn-edit-borde: rgba(14, 140, 122, 0.35);
   --mc-btn-edit-bg: var(--mc-brand-suave);
   --mc-btn-edit-bg-hover: var(--mc-verde-claro);
+
+  /* El `color` de estos dos ya usa --mc-badge-*-texto, que cambia con el tema: no necesita
+     token. Solo el borde y los fondos. */
+  --mc-btn-amber-borde: rgba(154, 107, 31, 0.35);
+  --mc-btn-amber-bg: var(--mc-aviso-bg);
+  --mc-btn-amber-bg-hover: var(--mc-badge-amarillo-bg);
+  --mc-btn-amber-borde-hover: var(--mc-semaforo-amarillo);
+
+  --mc-btn-danger-borde: rgba(168, 68, 68, 0.35);
+  --mc-btn-danger-bg: var(--mc-error-bg);
+  --mc-btn-danger-bg-hover: var(--mc-badge-rojo-bg);
+  --mc-btn-danger-borde-hover: var(--mc-rojo-apagado);
 
   --mc-borde-modal: rgba(0, 109, 91, 0.08);
 
@@ -400,6 +415,16 @@
   --mc-btn-edit-borde: rgba(134, 239, 172, 0.35);
   --mc-btn-edit-bg: var(--mc-badge-verde-bg);
   --mc-btn-edit-bg-hover: #1B6B3B;
+
+  --mc-btn-amber-borde: rgba(252, 211, 77, 0.35);
+  --mc-btn-amber-bg: var(--mc-badge-amarillo-bg);
+  --mc-btn-amber-bg-hover: #8A4111;
+  --mc-btn-amber-borde-hover: #D97706;
+
+  --mc-btn-danger-borde: rgba(252, 165, 165, 0.35);
+  --mc-btn-danger-bg: var(--mc-badge-rojo-bg);
+  --mc-btn-danger-bg-hover: #932424;
+  --mc-btn-danger-borde-hover: #A84444;
 
   --mc-borde-modal: rgba(255, 255, 255, 0.08);
 
