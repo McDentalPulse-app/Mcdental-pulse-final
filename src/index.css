@@ -1,5 +1,78 @@
 @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   Tailwind v4
+   ═══════════════════════════════════════════════════════════════════════════
+   SIN preflight (el reset) a propósito, mientras dure la migración: el CSS que
+   ya existe asume los defaults del navegador, y meterle el reset de Tailwind de
+   golpe cambiaría el aspecto de TODA la app antes de haber migrado nada.
+   Se activa al final, cuando App.css ya no exista:
+
+       @import "tailwindcss/preflight.css" layer(base);
+   ═════════════════════════════════════════════════════════════════════════ */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* El tema oscuro NO se activa con la clase `dark` de Tailwind, sino con el
+   atributo data-theme que ThemeContext ya pone en <html> (ThemeContext.jsx:15).
+   Con esto, `dark:` de Tailwind funciona sin tocar el contexto. */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Tokens de Tailwind — TRANSCRITOS de la paleta actual, no inventados.
+   ═══════════════════════════════════════════════════════════════════════════
+   Los semánticos (superficie, texto, borde...) apuntan a variables que CAMBIAN
+   con el tema, así que `bg-superficie` funciona en claro y en oscuro sin
+   escribir `dark:` en ningún sitio. Es lo que hace que el modo oscuro funcione
+   POR CONSTRUCCIÓN en vez de a base de overrides.
+   ═════════════════════════════════════════════════════════════════════════ */
+@theme {
+  /* ── Primitivos: la escala de marca. No cambian con el tema. ── */
+  --color-brand-950: #06201D;
+  --color-brand-900: #0A332E;
+  --color-brand-800: #0C463E;
+  --color-brand-700: #0E5A4F;
+  --color-brand-600: #107463;
+  --color-brand-500: #0E8C7A;
+  --color-brand-400: #19B6A2;
+  --color-brand-300: #46D6C5;
+  --color-brand-200: #8AE9DD;
+  --color-aqua: #14C8B6;
+
+  /* ── Semánticos: SÍ cambian con el tema (ver :root y [data-theme=dark]). ── */
+  --color-fondo: var(--mc-gris-fondo);
+  --color-superficie: var(--mc-superficie);
+  --color-superficie-2: var(--mc-gris-perla);
+  --color-superficie-input: var(--mc-superficie-input);
+  --color-borde: var(--mc-gris-suave);
+  --color-texto: var(--mc-texto);
+  --color-texto-2: var(--mc-texto-secundario);
+  --color-titulo: var(--mc-texto-titulo);
+
+  /* ── Semáforo: un único origen de verdad. Antes había TRES paletas
+         distintas (index.css, pulseScore.js y config/theme.js). ── */
+  --color-verde: var(--mc-semaforo-verde);
+  --color-amarillo: var(--mc-semaforo-amarillo);
+  --color-rojo: var(--mc-semaforo-rojo);
+  --color-verde-bg: var(--mc-badge-verde-bg);
+  --color-verde-fg: var(--mc-badge-verde-texto);
+  --color-amarillo-bg: var(--mc-badge-amarillo-bg);
+  --color-amarillo-fg: var(--mc-badge-amarillo-texto);
+  --color-rojo-bg: var(--mc-badge-rojo-bg);
+  --color-rojo-fg: var(--mc-badge-rojo-texto);
+
+  /* ── Radios, sombras y tipografía: los que ya usa la app. ── */
+  --radius-mc: 16px;
+  --radius-mc-lg: 20px;
+  --radius-mc-xl: 28px;
+  --shadow-mc: var(--mc-sombra);
+  --shadow-mc-suave: var(--mc-sombra-suave);
+  --shadow-mc-card: var(--mc-sombra-card);
+  --font-sans: 'Fira Sans', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Fira Code', monospace;
+}
+
 :root {
   /* ── Brand palette (teal corporativo + glow cyan) ── */
   --mc-verde: #0E8C7A;          /* acción primaria */
@@ -80,6 +153,28 @@
   /* Texto secundario (labels, subtítulos) que vive sobre superficies que
      pasan a oscuras en fase 2 — mismo patrón: en claro no cambia nada. */
   --mc-texto-secundario: var(--mc-gris-texto);
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     Capa semántica (migración a Tailwind)
+     ═══════════════════════════════════════════════════════════════════════
+     Los VALORES son exactamente los que la app usa hoy en claro: esto no
+     cambia el aspecto, solo le pone nombre a lo que ya había. Lo que sí
+     cambia es que ahora TODOS tienen su equivalente en oscuro (abajo), que
+     es lo que faltaba.
+     ═════════════════════════════════════════════════════════════════════ */
+
+  /* Superficies. --mc-blanco NO cambiaba con el tema: por eso las tarjetas
+     seguían blancas en modo oscuro. Este token sí cambia. */
+  --mc-superficie: var(--mc-blanco);
+  --mc-superficie-input: var(--mc-blanco);
+
+  /* Badges/pills: los pasteles que App.css ya usaba a pelo (#dcfce7, #166534…). */
+  --mc-badge-verde-bg: #DCFCE7;
+  --mc-badge-verde-texto: #166534;
+  --mc-badge-amarillo-bg: #FEF3C7;
+  --mc-badge-amarillo-texto: #92400E;
+  --mc-badge-rojo-bg: #FEE2E2;
+  --mc-badge-rojo-texto: #991B1B;
 }
 
 /* ── Modo oscuro (fase 2: superficies reales, no solo el fondo) ──
@@ -90,6 +185,22 @@
    --mc-superficie-* y --mc-badge-*, consumidos desde los archivos en
    src/styles/dark/ (overrides aditivos, no tocan App.css). */
 [data-theme="dark"] {
+  /* ═══════════════════════════════════════════════════════════════════════
+     LO QUE FALTABA: el texto y las superficies.
+     ═══════════════════════════════════════════════════════════════════════
+     --mc-texto (#123430, verde muy oscuro) y --mc-blanco NO se redefinían
+     aquí. Resultado: en modo oscuro el texto seguía siendo oscuro y las
+     tarjetas seguían siendo blancas — el motivo real de que el dark
+     "no funcionara del todo". Los overrides de src/styles/dark/ intentaban
+     tapar esto pantalla por pantalla, y por eso quedaban huecos.
+     ═════════════════════════════════════════════════════════════════════ */
+  --mc-texto: #E6F2F0;
+  --mc-superficie: #0F332C;
+  --mc-superficie-input: #0A2420;
+
+  /* Badges en oscuro: fondo saturado + texto claro. Ya estaban definidos más
+     abajo en este mismo bloque; se conservan tal cual. */
+
   --mc-gris-fondo: #0A2420;
   --mc-gris-perla: #0D2B26;
   --mc-gris-suave: rgba(255, 255, 255, 0.12);
