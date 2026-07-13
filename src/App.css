@@ -97,8 +97,11 @@
     padding: 18px 16px;
   }
 
-  .admin-page {
-    gap: 16px;
+  /* En móvil el ritmo se aprieta a 12px. Ojo: aquí ponía 16px, pero era CÓDIGO MUERTO —
+     más abajo había otras dos reglas `.admin-page { gap: 12px }` que lo pisaban, así que lo
+     que se veía siempre fue 12. Ahora hay un solo sitio donde se decide. */
+  :root {
+    --mc-ritmo-pagina: 12px;
   }
 
   .emp-grid {
@@ -1563,14 +1566,19 @@
 }
 
 /* ── List / table pages (Empleados, Gestión) ── */
+/* Expedientes y Gestión de Usuarios. Es una pantalla de lista con scroll interno, y por eso
+   nació con su propio contenedor — pero se le quedaron dos cosas fuera: gap:0 (la cabecera
+   pegada al contenido, cuando las otras 26 pantallas dejan 20px) y sin `margin: 0 auto` (no
+   centrada). Ahora comparte el mismo ritmo que .admin-page. */
 .list-page {
   display: flex;
   flex-direction: column;
   max-width: 1080px;
   width: 100%;
+  margin: 0 auto;
   max-height: calc(100vh - 56px);
   overflow: hidden;
-  gap: 0;
+  gap: var(--mc-ritmo-pagina);
 }
 
 .list-page-header {
@@ -2257,7 +2265,7 @@
   padding-bottom: 8px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--mc-ritmo-pagina);
 }
 
 .admin-page-header {
@@ -5791,9 +5799,8 @@
 
 /* ── Mobile app polish (tablet + phone, PWA-ready) ── */
 @media (max-width: 768px) {
-  .dashboard-page.admin-page {
-    gap: 12px;
-  }
+  /* .dashboard-page.admin-page { gap: 12px } — ya lo da --mc-ritmo-pagina, que vale 12px en
+     este mismo breakpoint. Era una de las tres reglas que se pisaban entre sí. */
 
   .dashboard-executive-header {
     margin-bottom: 14px;
@@ -6155,9 +6162,7 @@
   }
 
   /* ── Global app modules (Dashboard-style compact) ── */
-  .admin-page {
-    gap: 12px;
-  }
+  /* .admin-page { gap: 12px } — lo da --mc-ritmo-pagina. */
 
   .admin-page-header {
     margin-bottom: 0;
@@ -6447,9 +6452,7 @@
     padding-bottom: max(12px, env(safe-area-inset-bottom));
   }
 
-  .admin-page {
-    gap: 12px;
-  }
+  /* .admin-page { gap: 12px } — lo da --mc-ritmo-pagina desde 768px. */
 
   .mc-card {
     padding: 14px 12px;

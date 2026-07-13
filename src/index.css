@@ -115,6 +115,11 @@
   --mc-card-sombra-hover: 0 18px 38px -20px rgba(4, 35, 31, 0.45);
   --mc-minibar-hover: rgba(255, 255, 255, 0.85);
 
+  /* Ritmo vertical de una pantalla: el hueco entre la cabecera y el contenido, y entre
+     bloques. Va en un token porque estaba escrito a mano en cada contenedor, y así fue como
+     .list-page acabó con gap:0 mientras las otras 26 pantallas tenían 20px. */
+  --mc-ritmo-pagina: 20px;
+
   /* ── Glassmorphism layer ── */
   --glass-bg: rgba(255, 255, 255, 0.10);
   --glass-bg-strong: rgba(255, 255, 255, 0.16);
