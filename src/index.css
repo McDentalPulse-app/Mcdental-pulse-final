@@ -276,10 +276,13 @@
   --mc-slate-600: #CBD5E1;
   --mc-slate-500: #9DBDB6;
   --mc-slate-400: #8FA8A3;
-  --mc-slate-200: rgba(255, 255, 255, 0.12);
+  /* Los bordes en oscuro llevan un tinte de la marca (brand-200), no blanco puro.
+     En una paleta que es toda teal, un borde blanco canta: se lee como un contorno
+     gris ajeno, sobre todo donde el borde es de 1.5px (los chips del AI Engine). */
+  --mc-slate-200: rgba(138, 233, 221, 0.16);
   --mc-slate-100: rgba(255, 255, 255, 0.06);
   --mc-slate-50:  rgba(255, 255, 255, 0.03);
-  --mc-borde-suave: rgba(255, 255, 255, 0.10);
+  --mc-borde-suave: rgba(138, 233, 221, 0.12);
 
   /* Avisos y errores: en oscuro no se atenúa el pastel (quedaría gris sucio), se
      usa el color a baja opacidad sobre el fondo + texto claro. */
@@ -313,7 +316,7 @@
 
   --mc-gris-fondo: #0A2420;
   --mc-gris-perla: #0D2B26;
-  --mc-gris-suave: rgba(255, 255, 255, 0.12);
+  --mc-gris-suave: rgba(138, 233, 221, 0.16);
 
   --mc-sombra: 0 18px 48px -16px rgba(0, 0, 0, 0.55), 0 4px 12px -6px rgba(0, 0, 0, 0.35);
   --mc-sombra-suave: 0 8px 24px -12px rgba(0, 0, 0, 0.4);
@@ -334,7 +337,7 @@
   /* Superficies: tarjetas/modales/inputs/tabla, todas un poco más claras que
      el fondo de página para que se distingan como "elevadas". */
   --mc-superficie-card: #0F332C;
-  --mc-superficie-card-border: rgba(255, 255, 255, 0.10);
+  --mc-superficie-card-border: rgba(138, 233, 221, 0.12);
   --mc-superficie-input: #0A2420;
   --mc-superficie-input-focus: #123A33;
   --mc-superficie-th: rgba(255, 255, 255, 0.04);
