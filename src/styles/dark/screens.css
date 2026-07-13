@@ -56,11 +56,13 @@
 [data-theme="dark"] .ai-engine-pulse-chip-name {
   color: var(--mc-texto-titulo);
 }
-[data-theme="dark"] .ai-engine-tab {
-  background: var(--mc-superficie-input);
-  color: var(--mc-texto-secundario);
-  border-color: var(--mc-gris-suave);
-}
+/* .ai-engine-tab ya NO se pisa aquí, y además ROMPÍA la pestaña activa: este selector
+   ([data-theme] + clase = 0,2,0) gana por especificidad a .ai-engine-tab--active (0,1,0),
+   así que en oscuro la pestaña activa se comía los estilos de las inactivas — un fondo
+   opaco encima de la pill teal y el color de texto de una tab apagada. De ahí el texto
+   ilegible.
+   Ya no hace falta: la clase base usa --mc-superficie / --mc-slate-200 / --mc-slate-700,
+   y esos tokens cambian solos con el tema desde la fase 2b. */
 
 /* ── Mensajes: lista de conversaciones, header del chat, burbujas, input ── */
 [data-theme="dark"] .mensajes-sidebar-head-main {

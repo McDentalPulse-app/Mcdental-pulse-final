@@ -226,6 +226,12 @@
 
   /* Rojo/ámbar "apagados" del diseño viejo, que App.css usa en varios sitios. */
   --mc-rojo-apagado: #A84444;
+
+  /* Texto de los botones rojo y ámbar. NO puede ser un color fijo: su fondo se invierte con
+     el tema. En claro son tonos oscuros (#A84444 / #9A6B1F) y piden texto blanco; en oscuro
+     son pasteles claros (#FCA5A5 / #FCD34D) y piden texto oscuro. Fijar cualquiera de los dos
+     rompe la mitad de los casos. */
+  --mc-texto-sobre-alerta: var(--mc-blanco);
   --mc-ambar-apagado: #9A6B1F;
 
   /* Paleta categórica (series de la gráfica de tendencia por sucursal). NO es el
@@ -309,6 +315,9 @@
   --mc-info-texto: #93C5FD;
 
   --mc-rojo-apagado: #FCA5A5;
+
+  /* Rojo y ámbar aquí son pasteles claros: encima va texto oscuro. */
+  --mc-texto-sobre-alerta: var(--brand-950);
   --mc-ambar-apagado: #FCD34D;
 
   /* Series: mismos tonos, versiones claras. Un #2563EB sobre #0A2420 casi no se ve. */

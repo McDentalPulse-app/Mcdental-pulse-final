@@ -97,7 +97,7 @@ const Sidebar = () => {
     const ok = await notify.confirm({
       title: "Cerrar sesión",
       description: "¿Seguro que quieres cerrar tu sesión?",
-      variant: "warning",
+      variant: "danger",
       confirmText: "Cerrar sesión",
     });
     if (ok) logout();

@@ -2455,7 +2455,8 @@
 
 .mc-btn-danger {
   background: var(--mc-rojo-apagado);
-  color: var(--mc-blanco);
+  /* En oscuro el rojo es un pastel claro (#FCA5A5): el blanco fijo desaparecía encima. */
+  color: var(--mc-texto-sobre-alerta);
   border: none;
   padding: 10px 16px;
   border-radius: 10px;
@@ -2811,14 +2812,19 @@
   text-align: left;
 }
 
+/* Heredaba el texto blanco de .mc-btn-primary, y en oscuro el ámbar es un pastel claro
+   (#FCD34D): blanco sobre amarillo no se lee. El texto tampoco puede ser oscuro fijo, porque
+   en claro el ámbar es #9A6B1F y ahí el oscuro tampoco se leería. Va por token. */
 .mc-btn-warning-action {
   background: var(--mc-ambar-apagado);
   border-color: var(--mc-ambar-apagado);
+  color: var(--mc-texto-sobre-alerta);
 }
 
 .mc-btn-warning-action:hover {
   background: var(--mc-badge-amarillo-texto);
   border-color: var(--mc-badge-amarillo-texto);
+  color: var(--mc-texto-sobre-alerta);
 }
 
 .mc-toast-container {

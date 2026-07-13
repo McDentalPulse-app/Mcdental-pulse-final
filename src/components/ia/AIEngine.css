@@ -143,7 +143,7 @@
 
 .ai-action-banner {
   margin-top: 12px; padding: 12px; border-radius: 12px;
-  background: var(--mc-brand-suave); color: var(--brand-800); font-weight: 700;
+  background: var(--mc-brand-suave); color: var(--mc-texto-titulo); font-weight: 700;
 }
 
 /* Predicciones */
@@ -152,7 +152,7 @@
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 .ai-pred-item { padding: 12px; border-radius: 12px; background: var(--mc-superficie); border: 1px solid var(--mc-slate-200); }
-.ai-pred-name { font-weight: 800; color: var(--brand-800); margin-bottom: 4px; }
+.ai-pred-name { font-weight: 800; color: var(--mc-texto-titulo); margin-bottom: 4px; }
 .ai-pred-val { font-weight: 800; color: var(--mc-slate-900); margin-bottom: 6px; }
 .ai-pred-detalle { color: var(--mc-slate-500); font-size: 13px; line-height: 1.5; }
 
@@ -175,7 +175,7 @@
 }
 .ai-exp-block--soft { background: var(--mc-slate-50); }
 .ai-exp-block-title {
-  font-weight: 800; color: var(--brand-800); margin-bottom: 8px;
+  font-weight: 800; color: var(--mc-texto-titulo); margin-bottom: 8px;
   display: flex; align-items: center; gap: 8px;
 }
 .ai-exp-text { color: var(--mc-slate-700); line-height: 1.7; }
