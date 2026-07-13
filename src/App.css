@@ -8035,7 +8035,6 @@
   border-color: var(--mc-superficie-card-border, rgba(10, 59, 54, 0.16));
 }
 .perfil-foto-btn--ghost:hover { background: rgba(239, 68, 68, 0.08); color: var(--mc-semaforo-rojo); border-color: rgba(239, 68, 68, 0.3); }
-[data-theme="dark"] .perfil-foto-btn--ghost:hover { color: var(--mc-semaforo-rojo); }
 .perfil-foto-btn[aria-disabled="true"] { opacity: 0.6; pointer-events: none; }
 
 .perfil-hero-main {
@@ -8055,7 +8054,6 @@
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
-[data-theme="dark"] .perfil-role-badge { color: var(--brand-300); }
 .perfil-name {
   margin: 12px 0 4px;
   font-size: 26px;
@@ -8105,7 +8103,6 @@
   background: rgba(20, 200, 182, 0.12);
   color: var(--mc-marca-texto);
 }
-[data-theme="dark"] .perfil-info-icon { color: var(--brand-300); }
 .perfil-info-text {
   display: flex;
   flex-direction: column;
@@ -8159,7 +8156,6 @@
   color: var(--mc-marca-texto);
   border: 1.5px solid rgba(20, 200, 182, 0.25);
 }
-[data-theme="dark"] .bolsa-empty-icon { color: var(--brand-300); }
 .bolsa-badge {
   position: relative;
   z-index: 1;
@@ -8175,7 +8171,6 @@
   color: var(--mc-aviso-texto);
   border: 1px solid rgba(251, 191, 36, 0.35);
 }
-[data-theme="dark"] .bolsa-badge { color: var(--mc-semaforo-amarillo); }
 .bolsa-empty-title {
   position: relative;
   z-index: 1;
@@ -8230,7 +8225,6 @@
   background: rgba(20, 200, 182, 0.12);
   color: var(--mc-marca-texto);
 }
-[data-theme="dark"] .bolsa-step-icon { color: var(--brand-300); }
 .bolsa-step-label {
   font-size: 14px;
   font-weight: 800;
