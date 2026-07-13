@@ -11,8 +11,10 @@ import Icon from "../ui/Icon";
  * Ahora se le pasa `slug` (un nivel de semáforo) o nada, y el color sale de una variable
  * CSS que cambia con el tema. Los `color-mix()` ya estaban bien: aceptan variables.
  */
-const KPI = ({ label, value, sub, slug, iconName }) => {
-  const color = slug ? nivelColor(slug) : colorMarca;
+const KPI = ({ label, value, sub, slug, color: colorProp, iconName }) => {
+  // `slug` para los KPI de semáforo; `color` (una variable CSS) para los que no lo son,
+  // como "Empleados" o "Contestaron", que son de marca y no tienen nivel.
+  const color = slug ? nivelColor(slug) : (colorProp || colorMarca);
 
   return (
     <Card className="mc-kpi">

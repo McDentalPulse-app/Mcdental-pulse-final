@@ -192,19 +192,19 @@ const EmpleadosList = ({
                   <RiskBar
                     label="Riesgo Renuncia"
                     value={riesgos.renuncia}
-                    color={riesgos.renuncia > 60 ? "var(--mc-stat-red)" : riesgos.renuncia > 30 ? "var(--mc-stat-amber)" : "var(--mc-stat-green)"}
+                    slug={riesgos.renuncia > 60 ? "rojo" : riesgos.renuncia > 30 ? "amarillo" : "verde"}
                   />
 
                   <RiskBar
                     label="Riesgo Burnout"
                     value={riesgos.burnout}
-                    color={riesgos.burnout > 60 ? "var(--mc-stat-red)" : riesgos.burnout > 30 ? "var(--mc-stat-amber)" : "var(--mc-stat-green)"}
+                    slug={riesgos.burnout > 60 ? "rojo" : riesgos.burnout > 30 ? "amarillo" : "verde"}
                   />
 
                   <RiskBar
                     label="Riesgo Emocional"
                     value={riesgos.emocional}
-                    color={riesgos.emocional > 60 ? "var(--mc-stat-red)" : riesgos.emocional > 30 ? "var(--mc-stat-amber)" : "var(--mc-stat-green)"}
+                    slug={riesgos.emocional > 60 ? "rojo" : riesgos.emocional > 30 ? "amarillo" : "verde"}
                   />
                 </>
               )}

@@ -267,9 +267,9 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
         <div className="dashboard-kpi-grid">
           <KPI iconName="users" label="Empleados" value={empleados.length} color="var(--mc-stat-teal)" />
           <KPI iconName="check" label="Contestaron" value={contestaron} sub={`de ${empleados.length}`} color="var(--mc-stat-teal-2)" />
-          <KPI iconName="stable" label="Verde" value={verdes} color="var(--mc-stat-green)" />
-          <KPI iconName="warning" label="Amarillo" value={amarillos} color="var(--mc-stat-amber)" />
-          <KPI iconName="critical" label="Rojo" value={rojos} color="var(--mc-stat-red)" />
+          <KPI iconName="stable" label="Verde" value={verdes} slug="verde" />
+          <KPI iconName="warning" label="Amarillo" value={amarillos} slug="amarillo" />
+          <KPI iconName="critical" label="Rojo" value={rojos} slug="rojo" />
         </div>
 
         <Card className="pulse-hero-card dashboard-pulse-feature">
