@@ -36,6 +36,8 @@ const Sidebar = () => {
       { key: "ai", icon: "ai", label: "AI Engine" },
       { key: "empleados", icon: "users", label: "Empleados" },
       { key: "usuarios", icon: "userCog", label: "Gestión de Personal" },
+      { key: "asistencia", icon: "clock", label: "Asistencia" },
+      { key: "sucursales", icon: "mapPin", label: "Sucursales" },
       { key: "expedientes", icon: "folder", label: "Expedientes" },
       { key: "reconocimientos", icon: "award", label: "Reconocimientos" },
       { key: "eventospersonal", icon: "cake", label: "Cumpleaños y Aniversarios" },
@@ -59,9 +61,12 @@ const Sidebar = () => {
     ],
     rh: [
       { key: "dashboard", icon: "dashboard", label: "Dashboard RH" },
+      { key: "asistencia", icon: "clock", label: "Asistencia" },
       { key: "usuarios", icon: "userCog", label: "Gestión de Personal" },
       { key: "empleados", icon: "users", label: "Empleados" },
       { key: "vacaciones", icon: "vacation", label: "Vacaciones" },
+      { key: "permisos", icon: "clipboardCheck", label: "Permisos" },
+      { key: "horarios", icon: "calendarDays", label: "Horarios" },
       { key: "descuentos", icon: "dollar", label: "Descuentos" },
       { key: "calendario", icon: "calendar", label: "Calendario" },
       { key: "eventospersonal", icon: "cake", label: "Cumpleaños y Aniversarios" },
@@ -73,6 +78,9 @@ const Sidebar = () => {
     ],
     empleado: [
       { key: "inicio", icon: "home", label: "Inicio" },
+      // En posición 2 a propósito: los 4 primeros items son la tabbar del móvil, y el
+      // checador es lo único de esta lista que se usa TODOS los días, dos veces.
+      { key: "checador", icon: "clock", label: "Checador" },
       { key: "encuesta", icon: "clipboardCheck", label: "Mi Encuesta" },
       { key: "historial", icon: "history", label: "Historial" },
       { key: "permisosempleado", icon: "vacation", label: "Vacaciones" },

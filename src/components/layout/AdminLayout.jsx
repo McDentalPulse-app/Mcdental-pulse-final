@@ -15,13 +15,15 @@ import Card from '../common/Card';
 import Icon from '../ui/Icon';
 import GestionUsuarios from '../admin/GestionUsuarios';
 import GestionEncuestas from '../admin/GestionEncuestas';
+import GestionSucursales from '../admin/GestionSucursales';
+import AsistenciaPanel from '../asistencia/AsistenciaPanel';
 import Perfil from '../common/Perfil';
 import SoporteTI from '../common/SoporteTI';
 
 export default function AdminLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
-  const { encuestas, mensajes, notas, permisos, descuentos, reconocimientos, reportesConfidenciales, vacaciones, archivosExpediente } = globals;
+  const { encuestas, mensajes, notas, permisos, descuentos, reconocimientos, reportesConfidenciales, vacaciones, archivosExpediente, horarios } = globals;
   const { restablecerPasswordUsuario, subirArchivoExpediente, addReconocimiento } = actions;
 
   return (
@@ -34,6 +36,11 @@ export default function AdminLayout({ user, globals, actions }) {
             <Route path="ai" element={<AIEngine encuestas={encuestas} mensajes={mensajes} notas={notas} userRole="admin" permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>} />
             <Route path="empleados" element={<EmpleadosList encuestas={encuestas} notas={notas} role="admin" currentUser={user} onRestablecerPassword={restablecerPasswordUsuario} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} />} />
             <Route path="usuarios" element={<GestionUsuarios />} />
+            {/* Sin puedeAnular: el UPDATE de asistencias es exclusivo de RH en el RLS
+                (migración 036), igual que ya pasa con permisos y vacaciones. Ofrecerle a
+                admin un botón de anular que la base va a rechazar sería mentirle. */}
+            <Route path="asistencia" element={<AsistenciaPanel usuarios={USERS} horarios={horarios} permisos={permisos} vacaciones={vacaciones} />} />
+            <Route path="sucursales" element={<GestionSucursales />} />
             <Route path="expedientes" element={<ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} archivosExpediente={archivosExpediente} onSubirArchivoExpediente={subirArchivoExpediente} />} />
             <Route path="reconocimientos" element={<ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />} />
             <Route path="eventospersonal" element={<EventosPersonal users={USERS} />} />

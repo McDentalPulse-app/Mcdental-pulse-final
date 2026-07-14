@@ -4,7 +4,10 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import HRDashboard from '../dashboards/HRDashboard';
 import VacacionesRH from '../rh/VacacionesRH';
+import PermisosRH from '../rh/PermisosRH';
 import DescuentosRH from '../rh/DescuentosRH';
+import AsistenciaPanel from '../asistencia/AsistenciaPanel';
+import GestionHorarios from '../admin/GestionHorarios';
 import CalendarioRH from '../rh/CalendarioRH';
 import EventosPersonal from '../empleados/EventosPersonal';
 import ReconocimientosGestion from '../rh/ReconocimientosGestion';
@@ -18,8 +21,8 @@ import SoporteTI from '../common/SoporteTI';
 export default function HRLayout({ user, globals, actions }) {
   const { usuarios: USERS } = useGlobal();
 
-  const { vacaciones, permisos, descuentos, calendarioExtra, reconocimientos, encuestas, notas, reportesConfidenciales } = globals;
-  const { updateVacacionEstado, updateDescuentoEstado, addDescuento, addReconocimiento } = actions;
+  const { vacaciones, permisos, descuentos, calendarioExtra, reconocimientos, encuestas, notas, reportesConfidenciales, horarios, setHorarios } = globals;
+  const { updateVacacionEstado, updatePermisoEstado, updateDescuentoEstado, addDescuento, addReconocimiento } = actions;
 
   return (
     <div className="app-shell">
@@ -30,7 +33,10 @@ export default function HRLayout({ user, globals, actions }) {
             <Route path="dashboard" element={<HRDashboard users={USERS} />} />
             <Route path="empleados" element={<EmpleadosList encuestas={encuestas} notas={notas} role="rh" currentUser={user} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} />} />
             <Route path="usuarios" element={<GestionUsuarios />} />
+            <Route path="asistencia" element={<AsistenciaPanel usuarios={USERS} horarios={horarios} permisos={permisos} vacaciones={vacaciones} puedeAnular />} />
+            <Route path="horarios" element={<GestionHorarios usuarios={USERS} horarios={horarios} setHorarios={setHorarios} />} />
             <Route path="vacaciones" element={<VacacionesRH vacaciones={vacaciones} onUpdateEstado={updateVacacionEstado} />} />
+            <Route path="permisos" element={<PermisosRH permisos={permisos} onUpdateEstado={updatePermisoEstado} />} />
             <Route path="descuentos" element={<DescuentosRH descuentos={descuentos} empleados={USERS} user={user} onUpdateEstado={updateDescuentoEstado} onAddDescuento={addDescuento} />} />
             <Route path="calendario" element={<CalendarioRH vacaciones={vacaciones} permisos={permisos} eventosExtra={calendarioExtra} />} />
             <Route path="eventospersonal" element={<EventosPersonal users={USERS} />} />
