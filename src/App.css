@@ -8527,3 +8527,26 @@
 
 .horarios-tolerancia input { width: 52px; }
 .horarios-quitar { font-size: 0.75rem; }
+
+/* --- Enrolado de rostros (migración 041) --- */
+
+.enrolar-consentimiento {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 14px auto 0;
+  max-width: 420px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--mc-texto-secundario);
+  cursor: pointer;
+}
+
+.enrolar-consentimiento input { margin-top: 3px; flex-shrink: 0; }
+
+.enrolar-acciones {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 14px;
+}

@@ -78,6 +78,7 @@ Lo que sí hay, en tres capas, ninguna de las cuales pretende ser infalible:
 | **Hay una cara en la foto** | Checar con una foto del techo, del bolsillo o del cielo | Navegador (MediaPipe, `src/utils/rostro.js`) | **Sí** — es la única que bloquea, porque tiene un arreglo trivial: ponte frente a la cámara |
 | **Ventana de salida** (mig. 39) | Fichar entrada y salida seguidas y simular una jornada | RPC | Sí |
 | **Dispositivo** (mig. 40) | La contraseña compartida: un compañero checa por ti | RPC + derivado | No, marca |
+| **Cotejo facial** (mig. 41) | Que la cara de la foto no sea la de esa persona | Servidor (`api/verificar-rostro.js`) | No, marca |
 
 De la capa de dispositivo salen **dos señales de calidad muy distinta**:
 
@@ -96,11 +97,42 @@ valdría cero. Verificado: el intento devuelve *"new row violates row-level secu
 > borrar o falsear — pero hacerlo sale marcado como dispositivo desconocido, que es justo
 > la señal buscada. Esto no es una barrera, es un detector.
 
-> **Lo que falta**: cotejo facial (comparar la cara contra una de referencia). Exige
-> enrolar a la plantilla, un modelo corriendo en el **servidor** (si la comparación la
-> hace el navegador, el navegador puede mentir) y —esto es lo importante— **consentimiento
-> expreso por escrito**: una cara cotejada es dato personal *sensible*, no un simple
-> archivo. Y ni con eso se cubre la *foto de una foto*.
+### Cotejo facial (migración 41)
+
+Dos modelos de **OpenCV Zoo, Apache-2.0** (la licencia fue el criterio: casi todos los
+modelos punteros de este campo —InsightFace y derivados— son *solo para investigación* y
+no se pueden usar en una empresa): **YuNet** detecta la cara y sus 5 puntos, **SFace** la
+convierte en 128 números. Viven en `api/models/` (38 MB) y corren en la función serverless.
+
+**Corre en el servidor, y eso es la feature entera.** Si el navegador calculara el
+parecido, cualquiera mandaría un 99% desde la consola. El cliente solo sube una foto; el
+servidor la baja del bucket privado, la coteja y escribe el resultado con la *service role*.
+Ni `rostros` ni `asistencias.match_score` tienen policy de escritura para el cliente.
+
+**Hay que ALINEAR la cara, no basta con recortarla.** Medido con retratos reales: metiendo
+la foto entera al modelo, la misma persona daba **0.198** de parecido y dos personas
+distintas **0.44** — invertido, peor que aleatorio. Con la cara detectada, rotada y
+escalada a la plantilla canónica: misma persona **0.675**, distintas **0.18-0.24**. El
+umbral (0.363, el que publica OpenCV) **no está ajustado con la plantilla real**: hacerlo
+es parte de poner esto en producción.
+
+**El enrolado lo hace RH, en persona.** Es la regla que sostiene todo: si el empleado
+pudiera enrolarse solo, el compañero que le robó la contraseña enrolaría *su propia cara*
+en la cuenta ajena y a partir de ahí checaría por él con un 99% de parecido — verificado y
+bendecido por el sistema. Verificado contra Postgres: ni siquiera RH puede insertar en
+`rostros` desde el navegador.
+
+**`consentimiento_en` es NOT NULL.** Sin consentimiento no hay fila, y sin fila no hay
+cotejo. Una cara cotejada es dato personal **sensible**, no un archivo más.
+
+**Tres estados, no dos**: `rostro_verificado` es `true` (coincide), `false` (NO coincide —
+lo más grave que dice el sistema) o `null` (no se pudo comprobar: sin enrolar, sin foto, sin
+cara reconocible). Confundir `false` con `null` convertiría "no lo sabemos" en "es un
+fraude".
+
+> **Lo que sigue sin cubrirse**: la *foto de una foto* (enseñarle a la cámara la cara de un
+> compañero en otra pantalla). Detectar eso —*liveness*— es un problema serio que no se
+> resuelve con código propio.
 
 ### `permisos` (ampliado en la migración 38)
 

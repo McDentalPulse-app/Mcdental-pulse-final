@@ -445,7 +445,12 @@ export const detectarDispositivosCompartidos = (checadas = []) => {
 export const requiereRevision = (checada) =>
   !!checada &&
   !checada.anulada &&
-  (checada.ubicacionEstado === "fuera" ||
+  // Lo más grave que puede decir el sistema: la cara de la foto NO es la de esa persona.
+  // Ojo con el === false: null significa "no se pudo comprobar" (sin enrolar, sin cara
+  // reconocible en la foto) y NO es lo mismo. Un `!checada.rostroVerificado` metería a los
+  // dos en el mismo saco y convertiría "no lo sabemos" en "es un fraude".
+  (checada.rostroVerificado === false ||
+    checada.ubicacionEstado === "fuera" ||
     checada.ubicacionEstado === "sin_gps" ||
     checada.dispositivoNuevo === true ||
     // Sin foto pudiendo haberla: el detector de rostro no bloquea si falla, así que una

@@ -51,6 +51,7 @@ alter table public.horarios enable row level security;
 -- (las migraciones corren como 'postgres', cuyo default privilege en Supabase no
 -- incluye SELECT/INSERT/UPDATE). El acceso real lo deciden las policies de abajo.
 grant select, insert, update, delete on public.horarios to authenticated;
+grant select, insert, update, delete on public.horarios to service_role;
 
 -- El empleado ve SU horario (el checador se lo muestra: "hoy entras a las 9:00").
 drop policy if exists horarios_select_own on public.horarios;

@@ -7,6 +7,7 @@ import VacacionesRH from '../rh/VacacionesRH';
 import PermisosRH from '../rh/PermisosRH';
 import DescuentosRH from '../rh/DescuentosRH';
 import AsistenciaPanel from '../asistencia/AsistenciaPanel';
+import EnrolarRostros from '../asistencia/EnrolarRostros';
 import GestionHorarios from '../admin/GestionHorarios';
 import CalendarioRH from '../rh/CalendarioRH';
 import EventosPersonal from '../empleados/EventosPersonal';
@@ -35,6 +36,7 @@ export default function HRLayout({ user, globals, actions }) {
             <Route path="usuarios" element={<GestionUsuarios />} />
             <Route path="asistencia" element={<AsistenciaPanel usuarios={USERS} horarios={horarios} permisos={permisos} vacaciones={vacaciones} puedeAnular />} />
             <Route path="horarios" element={<GestionHorarios usuarios={USERS} horarios={horarios} setHorarios={setHorarios} />} />
+            <Route path="rostros" element={<EnrolarRostros usuarios={USERS} />} />
             <Route path="vacaciones" element={<VacacionesRH vacaciones={vacaciones} onUpdateEstado={updateVacacionEstado} />} />
             <Route path="permisos" element={<PermisosRH permisos={permisos} onUpdateEstado={updatePermisoEstado} />} />
             <Route path="descuentos" element={<DescuentosRH descuentos={descuentos} empleados={USERS} user={user} onUpdateEstado={updateDescuentoEstado} onAddDescuento={addDescuento} />} />

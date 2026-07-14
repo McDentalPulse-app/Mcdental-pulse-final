@@ -85,6 +85,9 @@ alter table public.sucursales enable row level security;
 -- puede hacer qué lo siguen decidiendo las policies; el grant solo deja que RLS
 -- llegue a opinar.
 grant select, insert, update on public.sucursales to authenticated;
+-- service_role también: RLS se lo salta, pero los PRIVILEGIOS de tabla no. Sin esto, las
+-- funciones serverless reciben "permission denied" antes siquiera de llegar a RLS.
+grant select, insert, update on public.sucursales to service_role;
 
 -- Lectura: cualquier usuario autenticado. El empleado necesita saber el nombre de su
 -- clínica y si tiene geocerca para que el checador le diga qué está pasando.

@@ -38,10 +38,13 @@ begin
     select tablename from pg_tables where schemaname = 'public'
   loop
     execute format('grant select, insert, update, delete on public.%I to authenticated', t.tablename);
+    -- service_role también: se salta RLS, pero NO los privilegios de tabla. Sin este grant,
+    -- las funciones serverless (cotejo facial) reciben "permission denied".
+    execute format('grant select, insert, update, delete on public.%I to service_role', t.tablename);
   end loop;
 end $$;
 
-grant usage on schema public to authenticated, anon;
+grant usage on schema public to authenticated, anon, service_role;
 
 
 -- ----------------------------------------------------------------------------

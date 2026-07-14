@@ -17,6 +17,7 @@ import GestionUsuarios from '../admin/GestionUsuarios';
 import GestionEncuestas from '../admin/GestionEncuestas';
 import GestionSucursales from '../admin/GestionSucursales';
 import AsistenciaPanel from '../asistencia/AsistenciaPanel';
+import EnrolarRostros from '../asistencia/EnrolarRostros';
 import Perfil from '../common/Perfil';
 import SoporteTI from '../common/SoporteTI';
 
@@ -41,6 +42,7 @@ export default function AdminLayout({ user, globals, actions }) {
                 admin un botón de anular que la base va a rechazar sería mentirle. */}
             <Route path="asistencia" element={<AsistenciaPanel usuarios={USERS} horarios={horarios} permisos={permisos} vacaciones={vacaciones} />} />
             <Route path="sucursales" element={<GestionSucursales />} />
+            <Route path="rostros" element={<EnrolarRostros usuarios={USERS} />} />
             <Route path="expedientes" element={<ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} archivosExpediente={archivosExpediente} onSubirArchivoExpediente={subirArchivoExpediente} />} />
             <Route path="reconocimientos" element={<ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />} />
             <Route path="eventospersonal" element={<EventosPersonal users={USERS} />} />

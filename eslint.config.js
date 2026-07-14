@@ -22,4 +22,13 @@ export default defineConfig([
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
   },
+  {
+    // api/ y los scripts de build NO corren en el navegador: corren en Node. Sin esto,
+    // ESLint no conoce `process` ni `Buffer` y los marca como variables inexistentes —
+    // eran 10 de los errores que este repo arrastraba, y no eran errores reales.
+    files: ['api/**/*.js', 'scripts/**/*.mjs', 'vite.config.js', 'eslint.config.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 ])

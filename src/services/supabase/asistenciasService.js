@@ -22,6 +22,8 @@ const mapAsistencia = (row) => ({
   selfiePath: row.selfie_path,
   deviceId: row.device_id,
   dispositivoNuevo: row.dispositivo_nuevo,
+  matchScore: row.match_score,
+  rostroVerificado: row.rostro_verificado,
   origen: row.origen,
   anulada: row.anulada,
   notaRh: row.nota_rh,

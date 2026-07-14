@@ -256,6 +256,9 @@ alter table public.asistencias enable row level security;
 --
 -- A 'anon' no se le concede nada: sin sesión no hay nada que ver aquí.
 grant select, insert, update on public.asistencias to authenticated;
+-- service_role: lo necesita api/verificar-rostro.js para escribir el resultado del cotejo.
+-- Saltarse RLS no da privilegios de tabla: son dos cosas distintas y hacen falta las dos.
+grant select, insert, update on public.asistencias to service_role;
 
 -- Lectura: lo suyo cada quien.
 drop policy if exists asistencias_select_own on public.asistencias;

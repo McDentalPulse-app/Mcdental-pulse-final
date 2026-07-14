@@ -54,6 +54,7 @@ alter table public.dispositivos enable row level security;
 -- Lectura: RH y admin (la investigación de una checada sospechosa). El empleado NO ve
 -- esta tabla: no le aporta nada y expone la huella de sus dispositivos.
 grant select on public.dispositivos to authenticated;
+grant select, insert, update on public.dispositivos to service_role;
 
 drop policy if exists dispositivos_select_admin_rh on public.dispositivos;
 create policy dispositivos_select_admin_rh

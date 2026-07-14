@@ -160,6 +160,8 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
   // Por qué está marcada esta checada. Se enseña el motivo, no un icono de alerta a secas:
   // sin saber QUÉ mirar, RH no puede accionar nada y acaba ignorando la lista entera.
   const motivoRevision = (c) => {
+    // La cara primero: es lo más grave que puede decir el sistema.
+    if (c.rostroVerificado === false) return "La cara de la foto NO coincide con la de esta persona.";
     if (compartidos.has(c.id)) return "Este mismo teléfono checó hoy a más de un empleado.";
     if (c.ubicacionEstado === "fuera") return `A ${c.distanciaM} m de ${c.sucursal}: fuera del área permitida.`;
     if (c.dispositivoNuevo) return "Checó desde un teléfono que nunca había usado.";
