@@ -30,6 +30,20 @@ import { calcularHuella, similitud, UMBRAL_MISMA_PERSONA } from "./_rostro.js";
 
 const INTENTOS_ANTES_DE_AVISAR = 3;
 
+/**
+ * Tope duro de intentos fallidos por ventana. NO es la regla de negocio: es el freno de
+ * COSTE.
+ *
+ * Cada llamada a este endpoint cuesta dos inferencias de red neuronal. Sin tope, alguien
+ * con un script puede llamarlo en bucle con fotos que no coinciden y disparar la factura de
+ * CPU de Vercel — no es fraude, es una cuenta que llega a fin de mes. Y como la comprobación
+ * va ANTES de tocar los modelos, un abuso cuesta una consulta a la base, no dos inferencias.
+ *
+ * 12 en 15 minutos es de sobra para una persona que se está peleando con la luz de la mañana
+ * (tras 3 fallos ya se le dice que hable con RH) y ridículamente poco para un bucle.
+ */
+const TOPE_INTENTOS = 12;
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método no permitido." });
@@ -49,6 +63,27 @@ export default async function handler(req, res) {
   }
 
   const supabase = admin();
+
+  const desdeVentana = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+
+  const contarIntentos = async () => {
+    const { count } = await supabase
+      .from("cotejo_intentos")
+      .select("id", { count: "exact", head: true })
+      .eq("empleado_id", quien.id)
+      .gte("creado_en", desdeVentana);
+    return count || 0;
+  };
+
+  // ---------------------------------------------------------------------------
+  // 0. Freno de coste. ANTES de tocar los modelos, que es lo caro.
+  // ---------------------------------------------------------------------------
+  if ((await contarIntentos()) >= TOPE_INTENTOS) {
+    return res.status(429).json({
+      error: "Demasiados intentos fallidos. Espera unos minutos o avisa a Recursos Humanos para que registre tu checada.",
+      bloqueado: true,
+    });
+  }
 
   // ---------------------------------------------------------------------------
   // 1. Cotejo. Se hace ANTES de crear nada.
@@ -141,14 +176,7 @@ export default async function handler(req, res) {
 
   if (fallo) {
     await supabase.from("cotejo_intentos").insert({ empleado_id: quien.id, score });
-
-    const { count } = await supabase
-      .from("cotejo_intentos")
-      .select("id", { count: "exact", head: true })
-      .eq("empleado_id", quien.id)
-      .gte("creado_en", new Date(Date.now() - 15 * 60 * 1000).toISOString());
-
-    const intentos = count || 1;
+    const intentos = (await contarIntentos()) || 1;
 
     // No hay checada. Ni ahora ni al décimo intento: rendirse tras N fallos sería una puerta
     // que al impostor solo le costaría empujar tres veces.

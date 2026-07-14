@@ -23,7 +23,7 @@ create table if not exists public.horarios (
   dia_semana     smallint not null check (dia_semana between 1 and 7),  -- ISO: 1=lunes, 7=domingo
   hora_entrada   time not null,
   hora_salida    time not null,
-  tolerancia_min smallint not null default 10 check (tolerancia_min between 0 and 120),
+  tolerancia_min smallint not null default 15 check (tolerancia_min between 0 and 120),
   created_at     timestamptz not null default now(),
   updated_at     timestamptz not null default now()
 );

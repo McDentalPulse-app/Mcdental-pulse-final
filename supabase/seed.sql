@@ -111,12 +111,12 @@ end $$;
 -- ----------------------------------------------------------------------------
 -- 3. HORARIOS
 --
--- Ana y Beto: lunes a viernes de 9 a 18 (tolerancia 10 min) y sábado corto de 9 a 13.
+-- Ana y Beto: lunes a viernes de 10 a 19 (tolerancia 15 min) y sábado corto de 10 a 14.
 -- Caro se queda SIN horarios a propósito: sirve para comprobar que un empleado sin
 -- turno sale como "descanso" todos los días y no como una montaña de faltas.
 -- ----------------------------------------------------------------------------
 insert into public.horarios (empleado_id, dia_semana, hora_entrada, hora_salida, tolerancia_min)
-select u.id, d.dia, '09:00'::time, case when d.dia = 6 then '13:00'::time else '18:00'::time end, 10
+select u.id, d.dia, '10:00'::time, case when d.dia = 6 then '14:00'::time else '19:00'::time end, 15
 from public.usuarios u
 cross join (select generate_series(1, 6) as dia) d
 where u.username in ('ana', 'beto')
@@ -151,11 +151,11 @@ begin
     continue when v_iso = 7;  -- domingo: no hay turno
 
     -- Ana: siempre a tiempo (entre 8:52 y 9:04).
-    v_entrada_ana := '08:52'::time + (floor(random() * 12) || ' minutes')::interval;
+    v_entrada_ana := '09:52'::time + (floor(random() * 12) || ' minutes')::interval;
     insert into public.asistencias (empleado_id, tipo, fecha, marcada_en, lat, lng, precision_m, sucursal_id, distancia_m, ubicacion_estado)
     values
       (v_ana, 'entrada', v_dia, (v_dia + v_entrada_ana) at time zone c_tz, 22.2331, -97.8611, 12, v_suc, 8, 'dentro'),
-      (v_ana, 'salida',  v_dia, (v_dia + case when v_iso = 6 then '13:05'::time else '18:07'::time end) at time zone c_tz, 22.2331, -97.8611, 14, v_suc, 11, 'dentro');
+      (v_ana, 'salida',  v_dia, (v_dia + case when v_iso = 6 then '14:05'::time else '19:07'::time end) at time zone c_tz, 22.2331, -97.8611, 14, v_suc, 11, 'dentro');
 
     -- Beto: los lunes llega tarde de verdad; el resto de días, justo.
     -- Y un martes de hace un par de semanas, sencillamente no vino (una falta limpia).
@@ -163,19 +163,19 @@ begin
     -- día en que se ejecute el seed.
     continue when v_iso = 2 and v_dia > current_date - 14 and v_dia < current_date - 6;
 
-    v_entrada_beto := case when v_iso = 1 then '09:26'::time else '09:06'::time end;
+    v_entrada_beto := case when v_iso = 1 then '10:26'::time else '10:06'::time end;
     insert into public.asistencias (empleado_id, tipo, fecha, marcada_en, lat, lng, precision_m, sucursal_id, distancia_m, ubicacion_estado)
     values
       (v_beto, 'entrada', v_dia, (v_dia + v_entrada_beto) at time zone c_tz, 22.2331, -97.8611, 18, v_suc, 22, 'dentro'),
-      (v_beto, 'salida',  v_dia, (v_dia + case when v_iso = 6 then '13:00'::time else '18:02'::time end) at time zone c_tz, 22.2331, -97.8611, 20, v_suc, 25, 'dentro');
+      (v_beto, 'salida',  v_dia, (v_dia + case when v_iso = 6 then '14:00'::time else '19:02'::time end) at time zone c_tz, 22.2331, -97.8611, 20, v_suc, 25, 'dentro');
   end loop;
 
   -- Una checada FUERA de la geocerca y otra SIN GPS, para que la sección "requieren
   -- revisión" del panel de RH no salga vacía — que es justo la parte que hay que mirar.
   insert into public.asistencias (empleado_id, tipo, fecha, marcada_en, lat, lng, precision_m, sucursal_id, distancia_m, ubicacion_estado)
   values
-    (v_beto, 'entrada', current_date - 2, ((current_date - 2) + '09:03'::time) at time zone c_tz, 22.3000, -97.9000, 25, v_suc, 8448, 'fuera'),
-    (v_ana,  'salida',  current_date - 3, ((current_date - 3) + '18:10'::time) at time zone c_tz, null, null, null, v_suc, null, 'sin_gps');
+    (v_beto, 'entrada', current_date - 2, ((current_date - 2) + '10:03'::time) at time zone c_tz, 22.3000, -97.9000, 25, v_suc, 8448, 'fuera'),
+    (v_ana,  'salida',  current_date - 3, ((current_date - 3) + '19:10'::time) at time zone c_tz, null, null, null, v_suc, null, 'sin_gps');
 end $$;
 
 -- ----------------------------------------------------------------------------

@@ -365,10 +365,10 @@ export const agruparPor = (dias = [], granularidad = "dia") => {
 
 /**
  * Minutos antes de la hora de salida en que se habilita la checada de salida.
- * DEBE coincidir con c_margen_salida de la RPC registrar_checada (migración 039). Si se
+ * DEBE coincidir con c_margen_salida de la RPC registrar_checada (migración 045). Si se
  * separan, la pantalla ofrecería un botón que el servidor va a rechazar.
  */
-export const MARGEN_SALIDA_MIN = 10;
+export const MARGEN_SALIDA_MIN = 15;
 
 /**
  * ¿Puede ya registrar su salida?

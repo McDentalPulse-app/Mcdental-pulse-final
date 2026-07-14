@@ -1,7 +1,7 @@
 -- ============================================================================
 -- Salida anticipada: irse antes de la hora, con permiso de RH.
 --
--- La ventana de salida (migración 039) abre 10 minutos antes de la hora del turno. Eso
+-- La ventana de salida (migración 039) abre 15 minutos antes de la hora del turno. Eso
 -- deja fuera un caso perfectamente legítimo y cotidiano: "hoy me tengo que ir a las 3".
 --
 -- NO SE INVENTA UN MECANISMO NUEVO. El módulo de `permisos` ya tiene todo lo que hace falta
@@ -60,7 +60,8 @@ set search_path = public
 as $$
 declare
   c_tz            constant text := 'America/Monterrey';
-  c_margen_salida constant interval := interval '10 minutes';
+  -- 15 minutos: pueden fichar la salida un cuarto de hora antes del fin de su turno.
+  c_margen_salida constant interval := interval '15 minutes';
 
   v_sucursal        public.sucursales%rowtype;
   v_nombre_suc      text;

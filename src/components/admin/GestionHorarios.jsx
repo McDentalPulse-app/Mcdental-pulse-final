@@ -17,7 +17,8 @@ const DIAS = [
   { iso: 7, label: "Dom" },
 ];
 
-const DEFECTO = { horaEntrada: "09:00", horaSalida: "18:00", toleranciaMin: 10 };
+// El horario general de la clínica: 10:00 a 19:00, con 15 minutos de tolerancia.
+const DEFECTO = { horaEntrada: "10:00", horaSalida: "19:00", toleranciaMin: 15 };
 
 /**
  * Rejilla de horarios: empleado × día de la semana.

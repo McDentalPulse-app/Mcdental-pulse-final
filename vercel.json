@@ -9,12 +9,14 @@
     "api/enrolar-rostro.js": {
       "includeFiles": "api/models/**",
       "excludeFiles": "node_modules/onnxruntime-node/bin/napi-v6/{darwin,win32}/**",
-      "maxDuration": 30
+      "maxDuration": 30,
+      "memory": 2048
     },
-    "api/verificar-rostro.js": {
+    "api/checar.js": {
       "includeFiles": "api/models/**",
       "excludeFiles": "node_modules/onnxruntime-node/bin/napi-v6/{darwin,win32}/**",
-      "maxDuration": 30
+      "maxDuration": 30,
+      "memory": 2048
     }
   }
 }
