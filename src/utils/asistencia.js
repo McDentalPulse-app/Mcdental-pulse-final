@@ -408,6 +408,33 @@ export const puedeRegistrarSalida = (horario, ahora = new Date(), horaAutorizada
 };
 
 /**
+ * Minutos que dejará de trabajar si sale a `horaSalida` en vez de a la hora de su turno.
+ *
+ * Es lo que se le descuenta: SOLO las horas no trabajadas, no el día entero. Sirve para
+ * decírselo a la cara ANTES de que lo pida — que se entere en la nómina de que pedir salir
+ * dos horas antes le costó dinero es la peor forma posible de descubrir una regla.
+ *
+ * Devuelve 0 si sale igual o después de su hora (no se descuenta nada) o si no tiene turno
+ * ese día (no hay contra qué comparar).
+ */
+export const minutosNoTrabajados = (horaSalida, horario) => {
+  const fin = horaAMinutos(horario?.horaSalida);
+  const salida = horaAMinutos(horaSalida);
+  if (fin == null || salida == null) return 0;
+  return Math.max(0, fin - salida);
+};
+
+/** "3 h 30 min" a partir de minutos. Para hablarle a una persona, no para calcular. */
+export const formatoDuracion = (min) => {
+  if (!Number.isFinite(min) || min <= 0) return "0 min";
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  if (!h) return `${m} min`;
+  if (!m) return `${h} h`;
+  return `${h} h ${m} min`;
+};
+
+/**
  * La hora a la que un permiso APROBADO le autoriza salir hoy, o null.
  *
  * Solo cuenta el aprobado: un permiso pendiente todavía no autoriza nada, y tratarlo como

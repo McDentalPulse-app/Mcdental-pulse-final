@@ -37,7 +37,7 @@ export default function EmpleadoLayout({ user, globals, actions }) {
             <Route path="rostro" element={<MiRostro user={user} />} />
             <Route path="encuesta" element={<EncuestaEmpleado user={user} encuestas={encuestas} onSubmit={addEncuesta}/>} />
             <Route path="historial" element={<HistorialEmpleado user={user} encuestas={encuestas} />} />
-            <Route path="permisosempleado" element={<PermisosEmpleado user={user} vacaciones={vacaciones} permisos={permisos} onEnviarSolicitudEmpleado={addSolicitudEmpleadoRH}/>} />
+            <Route path="permisosempleado" element={<PermisosEmpleado user={user} vacaciones={vacaciones} permisos={permisos} horarios={horarios} onEnviarSolicitudEmpleado={addSolicitudEmpleadoRH}/>} />
             <Route path="reconocimientos" element={<ReconocimientosEmpleado user={user} reconocimientos={reconocimientos} />} />
             <Route path="reporteconfidencial" element={<ReporteConfidencialEmpleado user={user} onSubmit={addReporteConfidencial} />} />
             <Route path="soporte" element={<SoporteTI user={user} />} />

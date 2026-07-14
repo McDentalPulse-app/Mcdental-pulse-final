@@ -8620,3 +8620,6 @@
 .enrolar-lentes p { margin: 0 0 10px; }
 
 .ajuste-fila { padding: 6px 0; }
+
+/* El descuento, en rojo: RH tiene que verlo antes de aprobar, no después de capturarlo. */
+.rh-descuento { color: var(--mc-badge-rojo-texto); }

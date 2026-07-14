@@ -16,6 +16,8 @@ import {
   detectarDispositivosCompartidos,
   puedeRegistrarSalida,
   horaSalidaAutorizada,
+  minutosNoTrabajados,
+  formatoDuracion,
   ESTADOS_DIA,
 } from "./asistencia";
 
@@ -563,5 +565,36 @@ describe("horaSalidaAutorizada", () => {
       { ...base, estado: "aprobado", hora: "14:30" },
     ], "2026-07-14");
     expect(r).toBe("14:30");
+  });
+});
+
+describe("minutosNoTrabajados", () => {
+  // Lo que se le descuenta por salir antes: SOLO las horas que deja de trabajar, no el día
+  // entero. Y se le dice ANTES de pedirlo — enterarse en la nómina de que salir dos horas
+  // antes costó dinero es la peor forma posible de descubrir una regla.
+  const turno = { horaSalida: "18:00:00" };
+
+  it.each([
+    ["15:00", 180], // sale 3 h antes
+    ["17:30", 30],
+    ["18:00", 0],   // sale a su hora: no se descuenta nada
+    ["19:00", 0],   // se queda de más: tampoco se le descuenta (ni se le paga aquí)
+  ])("salir a las %s => %i minutos", (hora, esperado) => {
+    expect(minutosNoTrabajados(hora, turno)).toBe(esperado);
+  });
+
+  it("sin turno ese día no hay nada que descontar", () => {
+    expect(minutosNoTrabajados("15:00", null)).toBe(0);
+  });
+});
+
+describe("formatoDuracion", () => {
+  it.each([
+    [180, "3 h"],
+    [210, "3 h 30 min"],
+    [45, "45 min"],
+    [0, "0 min"],
+  ])("%i min => %s", (min, esperado) => {
+    expect(formatoDuracion(min)).toBe(esperado);
   });
 });
