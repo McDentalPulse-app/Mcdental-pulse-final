@@ -1,6 +1,7 @@
 import { configOk, admin, quienLlama } from "./_auth.js";
 import { analizarFoto, similitud, UMBRAL_MISMA_PERSONA } from "./_rostro.js";
 import { giroCorrecto } from "./_pose.js";
+import { enviarARH } from "./_push.js";
 
 /**
  * Registrar una checada. Es el ÚNICO camino: la RPC ya no la puede llamar el navegador.
@@ -239,6 +240,18 @@ export default async function handler(req, res) {
     }
     await supabase.from("cotejo_intentos").insert({ empleado_id: quien.id, score });
     const intentos = (await contarIntentos()) || 1;
+
+    // Cruzar el umbral de fallos seguidos es la señal más clara de suplantación en el momento:
+    // alguien insiste con una cara que no es la del dueño de la cuenta. Se avisa a RH EXACTAMENTE
+    // al cruzarlo (===), no en cada fallo posterior: si se enviara del 3.º al 12.º intento, RH
+    // recibiría diez avisos del mismo incidente y acabaría silenciándolos todos.
+    if (intentos === INTENTOS_ANTES_DE_AVISAR) {
+      enviarARH({
+        titulo: "Posible suplantación",
+        cuerpo: `Varios intentos fallidos de checar como ${quien.name}. La cara no coincide.`,
+        url: "/rh/asistencia",
+      }).catch(() => {});
+    }
 
     // No hay checada. Ni ahora ni al décimo intento: rendirse tras N fallos sería una puerta
     // que al impostor solo le costaría empujar tres veces.

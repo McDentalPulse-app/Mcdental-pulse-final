@@ -10,7 +10,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 // falla con un error que no dice nada — el checador se pasó una tarde así.
 //
 // Cada endpoint nuevo en api/ hay que añadirlo a esta lista.
-const ENDPOINTS = ['gemini', 'soporte-ticket', 'checar', 'reto', 'enrolar-rostro', 'aprobar-rostro', 'limpiar-fotos']
+const ENDPOINTS = ['gemini', 'soporte-ticket', 'checar', 'reto', 'enrolar-rostro', 'aprobar-rostro', 'aprobar-permiso', 'suscribir-push', 'limpiar-fotos']
 
 function devApiProxy(mode) {
   return {
@@ -77,6 +77,11 @@ export default defineConfig(({ mode }) => ({
     tailwindcss(),
     devApiProxy(mode),
     VitePWA({
+      // injectManifest, no generateSW: se necesita un service worker propio (src/sw.js) para
+      // recibir las notificaciones push. El worker automático no sabe escuchar el evento 'push'.
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       registerType: 'autoUpdate',
       includeAssets: [
         'favicon-32x32.png',
@@ -115,7 +120,11 @@ export default defineConfig(({ mode }) => ({
           },
         ],
       },
-      workbox: {
+      // Con injectManifest, aquí SOLO van las opciones de BUILD (qué precachear). El
+      // comportamiento en tiempo de ejecución —navigateFallback, clientsClaim, skipWaiting— lo
+      // decide ahora src/sw.js, porque el worker es nuestro. Poner esas claves aquí no daría
+      // error pero no haría nada, que es peor: parecería configurado y no lo estaría.
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,webp}'],
         // Fuera del precache lo que solo usa una minoría, y solo a veces:
         //   - MediaPipe (~740 KB): el detector de rostro del checador.
@@ -123,17 +132,6 @@ export default defineConfig(({ mode }) => ({
         // Meterlos aquí sería cobrarle a la psicóloga —que no va a checar ni a importar nada—
         // 1,7 MB al instalar la app. Se descargan bajo demanda y el navegador los cachea.
         globIgnores: ['**/mediapipe/**', '**/exceljs*'],
-        navigateFallback: '/index.html',
-        navigateFallbackDenylist: [
-          /^\/api\//,
-          /firestore\.googleapis\.com/,
-          /firebase/,
-          /googleapis\.com/,
-        ],
-        runtimeCaching: [],
-        cleanupOutdatedCaches: true,
-        clientsClaim: true,
-        skipWaiting: true,
       },
       devOptions: {
         enabled: false,

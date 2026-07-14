@@ -1,5 +1,6 @@
 import { configOk, admin, quienLlama } from "./_auth.js";
 import { similitud } from "./_rostro.js";
+import { enviar } from "./_push.js";
 
 /**
  * Por encima de esto, dos caras DISTINTAS se parecen lo bastante como para que el cotejo pueda
@@ -129,6 +130,16 @@ export default async function handler(req, res) {
     console.error("Error revisando el rostro:", error);
     return res.status(500).json({ error: "No se pudo guardar la revisión." });
   }
+
+  // Avisar al empleado: registró su rostro y estaba esperando el veredicto. Es de los avisos que
+  // más se agradecen — sin él, hay que entrar a mirar cada día "¿ya me aprobaron?".
+  enviar(empleadoId, {
+    titulo: aprobar ? "Rostro verificado" : "Rostro rechazado",
+    cuerpo: aprobar
+      ? "Ya puedes checar tu entrada y salida con la cámara."
+      : `Tus fotos no se aprobaron. ${motivo || "Vuelve a tomarlas con buena luz y de frente."}`,
+    url: "/empleado/rostro",
+  }).catch(() => {});
 
   // Al aprobar (no al rechazar: una cara rechazada no entra al cotejo y no puede confundirse
   // con nadie) se busca a quién se parece demasiado.

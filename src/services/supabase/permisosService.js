@@ -56,17 +56,27 @@ export const addPermiso = async ({ empleadoId, fecha, fechaFin, hora, causa, mot
   return mapPermiso(data);
 };
 
+/**
+ * Aprobar/rechazar pasa por el SERVIDOR (api/aprobar-permiso.js), no por un update directo.
+ *
+ * El motivo es el push: avisar al empleado exige la clave privada de VAPID, que vive solo en el
+ * servidor. La actualización de la fila y el envío del aviso ocurren juntos, del lado seguro.
+ */
 export const updateEstadoPermiso = async (id, estado, comentarioRH = "") => {
-  const { data, error } = await supabase
-    .from("permisos")
-    .update({ estado, comentario_rh: comentarioRH })
-    .eq("id", id)
-    .select(SELECT_CON_EMPLEADO)
-    .single();
+  const { data: sesion } = await supabase.auth.getSession();
+  const token = sesion?.session?.access_token;
+  if (!token) throw new Error("Tu sesión expiró. Vuelve a entrar.");
 
-  if (error) {
-    console.error("Error actualizando permiso:", error);
-    throw new Error("No se pudo actualizar el estado del permiso.");
+  const r = await fetch("/api/aprobar-permiso", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ permisoId: id, estado, comentarioRh: comentarioRH }),
+  });
+
+  const cuerpo = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    console.error("Error actualizando permiso:", cuerpo.error);
+    throw new Error(cuerpo.error || "No se pudo actualizar el estado del permiso.");
   }
-  return mapPermiso(data);
+  return mapPermiso(cuerpo.permiso);
 };

@@ -1,5 +1,6 @@
 import { configOk, admin, quienLlama } from "./_auth.js";
 import { calcularHuella } from "./_rostro.js";
+import { enviarARH } from "./_push.js";
 
 const MIN_FOTOS = 1;
 const MAX_FOTOS = 5; // 3 base + 2 sin lentes
@@ -158,6 +159,18 @@ export default async function handler(req, res) {
   if (errorFotos) {
     console.error("Error guardando las fotos del rostro:", errorFotos);
     return res.status(500).json({ error: "No se pudieron guardar las fotos." });
+  }
+
+  // Si el empleado se registró a sí mismo (queda pendiente), se avisa a RH: hay una cara nueva
+  // esperando revisión, y esa revisión es EL cotejo entero. Sin aviso, las fotos se quedan en la
+  // cola hasta que a alguien se le ocurre mirar — y mientras, esa persona no puede checar.
+  if (estado === "pendiente") {
+    const { data: emp } = await supabase.from("usuarios").select("name").eq("id", destino).single();
+    enviarARH({
+      titulo: "Rostro por revisar",
+      cuerpo: `${emp?.name || "Un empleado"} registró su rostro y espera tu aprobación.`,
+      url: "/rh/rostros",
+    }).catch(() => {});
   }
 
   return res.status(200).json({ ok: true, estado });

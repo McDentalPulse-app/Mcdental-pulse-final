@@ -4,12 +4,14 @@ import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
 import CapturaSelfie from "./CapturaSelfie";
+import AvisoPush from "./AvisoPush";
 import { useNotification } from "../../contexts/NotificationContext";
 import { obtenerUbicacion, textoUbicacion } from "../../utils/geo";
 import { useNavigate } from "react-router-dom";
 import { getDeviceId } from "../../utils/dispositivo";
 import { getMiRostro } from "../../services/supabase/rostrosService";
 import { pedirReto } from "../../services/supabase/asistenciasService";
+import { soportado, estadoPermiso, activar } from "../../services/pushService";
 import { getAjustes } from "../../services/supabase/ajustesService";
 import { RESULTADO, MENSAJE } from "../../utils/rostro";
 import { emparejarChecadas, diaISO, puedeRegistrarSalida, horaSalidaAutorizada, TZ_CLINICA } from "../../utils/asistencia";
@@ -81,6 +83,16 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
   const [reto, setReto] = useState(null);        // "derecha" | "izquierda" | null
   const [girando, setGirando] = useState(false); // ya tiene la frontal; espera la girada
   const esperandoGiroRef = useRef(null);         // el resolve() de la promesa que espera el giro
+
+  // La oferta de activar avisos, que aparece bajo la checada recién hecha (no un modal al entrar).
+  const [ofrecerPush, setOfrecerPush] = useState(false);
+
+  const activarAvisos = async () => {
+    const r = await activar();
+    setOfrecerPush(false);
+    if (r === "granted") toast.success("Listo, te avisaremos aquí.");
+    else if (r === "denied") toast.info("No pasa nada, puedes activarlos luego desde tu perfil.");
+  };
 
   useEffect(() => {
     let vivo = true;
@@ -197,6 +209,12 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
           ? `Entrada registrada a las ${horaCorta(checada.marcadaEn)}.`
           : `Salida registrada a las ${horaCorta(checada.marcadaEn)}. ¡Buen día!`
       );
+
+      // El momento de ofrecer los avisos es JUSTO AHORA, no al abrir la app. Un navegador al que
+      // le saltas con "¿permites notificaciones?" nada más entrar recibe un "no" casi reflejo — y
+      // en iOS ese "no" no se puede volver a pedir sin desinstalar. Aquí la herramienta acaba de
+      // demostrar que sirve, así que la oferta tiene sentido. Solo si aún no ha decidido.
+      if (soportado() && estadoPermiso() === "default") setOfrecerPush(true);
     } finally {
       setEnviando(false);
       cancelarGiro();
@@ -331,6 +349,10 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
           </p>
         )}
       </Card>
+
+      {ofrecerPush && (
+        <AvisoPush onActivar={activarAvisos} onCerrar={() => setOfrecerPush(false)} />
+      )}
 
       <SectionTitle icon="history">Tus checadas de hoy</SectionTitle>
       <Card>
