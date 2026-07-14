@@ -8569,3 +8569,49 @@
 }
 
 .rostro-foto--cargando { background: var(--mc-gris-fondo); }
+
+/* --- Guía de encuadre de la cámara (disparo automático) --- */
+
+.checador-guia {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 62%;
+  aspect-ratio: 3 / 4;
+  border: 3px dashed var(--mc-blanco);
+  border-radius: 50%;
+  opacity: 0.55;
+  pointer-events: none;
+  transition: border-color 0.2s ease, opacity 0.2s ease;
+}
+
+/* Verde y sólido cuando el encuadre es bueno: el empleado ve que va a disparar antes de
+   que dispare, en vez de llevarse un fogonazo por sorpresa. */
+.checador-guia--ok {
+  border-style: solid;
+  border-color: var(--mc-semaforo-verde);
+  opacity: 1;
+}
+
+.checador-guia-pista {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 7px 14px;
+  border-radius: var(--mc-radio);
+  background: var(--mc-badge-neutro-bg);
+  color: var(--mc-badge-neutro-texto);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.checador-guia-pista--ok {
+  background: var(--mc-badge-verde-bg);
+  color: var(--mc-badge-verde-texto);
+}

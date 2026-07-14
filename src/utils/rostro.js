@@ -1,24 +1,23 @@
 /**
  * Detección de rostro en el navegador, para el checador.
  *
- * QUÉ RESUELVE Y QUÉ NO. Esto comprueba que en la foto hay UNA cara — se acabó checar
- * con una foto del techo, del bolsillo o del cielo. NO comprueba que esa cara sea la de
- * quien dice ser: eso es cotejo facial, corre en el servidor y es otra historia.
+ * QUÉ RESUELVE Y QUÉ NO. Esto comprueba que en la foto hay UNA cara — se acabó checar con
+ * una foto del techo, del bolsillo o del cielo — y ayuda a encuadrarla. NO comprueba que
+ * esa cara sea la de quien dice ser: eso es cotejo facial, corre en el servidor y es otra
+ * historia (api/_rostro.js).
  *
- * Aquí, en el cliente, la comprobación es una AYUDA, no un control de seguridad: quien
- * sepa lo que hace puede llamar a la API sin pasar por esta pantalla. Su valor está en
- * hacer que el abuso perezoso —el 90% de los casos— deje de funcionar, y en recortar
- * las fotos a la cara para que el cotejo del servidor tenga algo decente con lo que
- * trabajar.
+ * Aquí, en el cliente, la comprobación es una AYUDA, no un control de seguridad: quien sepa
+ * lo que hace puede llamar a la API sin pasar por esta pantalla. Su valor está en hacer que
+ * el abuso perezoso —el 90% de los casos— deje de funcionar, y en recortar las fotos a la
+ * cara para que el cotejo del servidor tenga algo decente con lo que trabajar.
  *
- * El modelo (225 KB) y el runtime de MediaPipe (~3 MB comprimidos) se cargan BAJO
- * DEMANDA y solo en el checador, no en el arranque de la app. Es un coste real la
- * primera vez que alguien abre la pantalla; después queda en la caché del navegador.
+ * El modelo (225 KB) y el runtime de MediaPipe (~3 MB comprimidos) se cargan BAJO DEMANDA y
+ * solo en las pantallas de cámara, no en el arranque de la app.
  */
 
 let detectorPromesa = null;
 
-/** Carga perezosa: una sola vez por sesión, y solo si alguien abre el checador. */
+/** Carga perezosa: una sola vez por sesión, y solo si alguien abre la cámara. */
 const getDetector = () => {
   if (detectorPromesa) return detectorPromesa;
 
@@ -55,10 +54,9 @@ export const RESULTADO = {
  *
  * Devuelve { resultado, box } donde box es el recuadro de la cara en píxeles del canvas.
  *
- * Si el detector no carga (red caída, navegador viejo) devuelve NO_DISPONIBLE y el
- * checador deja pasar la checada igual. Es deliberado y es la misma regla que con el
- * GPS: una comprobación que se cae NO puede impedirle a alguien fichar su entrada. Se
- * registra, se marca, y RH lo ve.
+ * Si el detector no carga (red caída, navegador viejo) devuelve NO_DISPONIBLE y el checador
+ * deja pasar la checada igual. Es deliberado y es la misma regla que con el GPS: una
+ * comprobación que se cae NO puede impedirle a alguien fichar su entrada.
  */
 export const detectarRostro = async (canvas) => {
   const detector = await getDetector();
@@ -70,8 +68,8 @@ export const detectarRostro = async (canvas) => {
     if (!detections?.length) return { resultado: RESULTADO.SIN_CARA, box: null };
 
     // Más de una cara: o alguien se coló en el encuadre, o hay dos personas delante del
-    // teléfono — que es justo la situación en la que uno checa por el otro. Se rechaza
-    // en vez de elegir "la más grande" y hacer como si nada.
+    // teléfono — que es justo la situación en la que uno checa por el otro. Se rechaza en
+    // vez de elegir "la más grande" y hacer como si nada.
     if (detections.length > 1) return { resultado: RESULTADO.VARIAS_CARAS, box: null };
 
     const bb = detections[0].boundingBox;
@@ -86,12 +84,37 @@ export const detectarRostro = async (canvas) => {
 };
 
 /**
+ * ¿La cara está bien encuadrada como para disparar la foto sola?
+ *
+ * Tres condiciones, y cada una evita una foto inservible:
+ *   - CENTRADA: una cara pegada al borde suele salir cortada, y media cara no coteja.
+ *   - LO BASTANTE GRANDE: si la persona está lejos, la cara tiene pocos píxeles y el
+ *     modelo del servidor recibe una mancha borrosa.
+ *   - NO DEMASIADO GRANDE: pegado al objetivo, la cara sale deformada por la lente y le
+ *     falta la barbilla o la frente, que es donde están los rasgos que se comparan.
+ */
+export const encuadreBueno = (box, anchoVideo, altoVideo) => {
+  if (!box || !anchoVideo || !altoVideo) return { ok: false, pista: "Colócate frente a la cámara." };
+
+  const centroX = (box.x + box.ancho / 2) / anchoVideo;
+  const centroY = (box.y + box.alto / 2) / altoVideo;
+  const proporcion = box.alto / altoVideo;
+
+  if (proporcion < 0.30) return { ok: false, pista: "Acércate un poco." };
+  if (proporcion > 0.75) return { ok: false, pista: "Aléjate un poco." };
+  if (Math.abs(centroX - 0.5) > 0.18 || Math.abs(centroY - 0.5) > 0.18) {
+    return { ok: false, pista: "Centra tu cara en el recuadro." };
+  }
+
+  return { ok: true, pista: "¡Así! No te muevas…" };
+};
+
+/**
  * Recorta el canvas a la cara, con margen.
  *
- * El recorte NO es cosmético: es lo que hará que el cotejo facial del servidor compare
- * caras contra caras, en vez de una cara contra una cara diminuta perdida en medio de
- * una pared. El margen (40%) deja frente y barbilla, que es donde están los rasgos que
- * un modelo de reconocimiento usa.
+ * El recorte NO es cosmético: es lo que hace que el cotejo del servidor compare caras contra
+ * caras, en vez de una cara diminuta perdida en medio de una pared. El margen (40%) deja
+ * frente y barbilla, que es donde están los rasgos que un modelo de reconocimiento usa.
  */
 export const recortarACara = (canvas, box, margen = 0.4) => {
   if (!box) return canvas;

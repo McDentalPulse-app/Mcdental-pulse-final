@@ -89,9 +89,15 @@ export const registrarRostro = async ({ empleadoId, fotos, consentimiento }) => 
     // La carpeta DEBE ser el uuid del empleado: es lo que la policy de storage comprueba
     // para que nadie suba fotos a la carpeta de otro (migración 042).
     const ruta = `${empleadoId}/${Date.now()}-${i}.jpg`;
+
+    // SIN upsert, y no es un detalle: con upsert, Storage necesita LEER la metadata del
+    // objeto antes de escribirlo, y el empleado solo tiene permiso de INSERT en este bucket
+    // (no de SELECT ni de UPDATE). El upload fallaba con un error de RLS que no dice eso.
+    // Es exactamente la trampa que documenta la migración 022 — y aquí el upsert además
+    // sobraba: la ruta lleva un timestamp, así que nunca colisiona.
     const { error } = await supabase.storage
       .from(BUCKET)
-      .upload(ruta, fotos[i], { contentType: "image/jpeg", upsert: true });
+      .upload(ruta, fotos[i], { contentType: "image/jpeg" });
 
     if (error) {
       console.error("Error subiendo la foto de registro:", error);

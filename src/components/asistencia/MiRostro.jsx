@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import PageHeader from "../common/PageHeader";
 import Card from "../common/Card";
 import Icon from "../ui/Icon";
@@ -44,26 +44,46 @@ export default function MiRostro({ user }) {
     return () => { activo = false; };
   }, [user?.id]);
 
+  /**
+   * Guarda una foto capturada (a mano o automáticamente).
+   *
+   * Aquí SÍ se exige ver una cara, al revés que en el checador: si se registra una foto sin
+   * cara como referencia, TODOS los cotejos futuros de esta persona fallarán y nadie
+   * entenderá por qué. Un registro se puede repetir con calma; una checada de las ocho de la
+   * mañana, no.
+   */
+  const guardarFoto = useCallback((foto) => {
+    if (!foto?.blob) {
+      toast.error(MENSAJE[foto?.resultado] || "No se pudo tomar la foto. Inténtalo otra vez.");
+      return;
+    }
+    if (foto.resultado === RESULTADO.NO_DISPONIBLE) {
+      toast.error("No se pudo comprobar la foto. Recarga la página e inténtalo de nuevo.");
+      return;
+    }
+    setFotos((prev) => (prev.length >= TOTAL_FOTOS ? prev : [...prev, foto.blob]));
+  }, [toast]);
+
+  // La cámara dispara sola cuando la cara está bien encuadrada y quieta. Pedirle a alguien
+  // que se encuadre Y pulse un botón, con una mano, es pedirle dos cosas a la vez — y salen
+  // fotos movidas que el servidor luego rechaza.
+  //
+  // Una pausa entre fotos, o las tres se tomarían casi en el mismo instante y serían la
+  // misma imagen: el sentido de tener tres es que sean ángulos distintos.
+  const [enPausa, setEnPausa] = useState(false);
+
+  const onAutoCaptura = useCallback((foto) => {
+    if (enPausa || ocupado) return;
+    guardarFoto(foto);
+    setEnPausa(true);
+    setTimeout(() => setEnPausa(false), 1500);
+  }, [enPausa, ocupado, guardarFoto]);
+
   const tomarFoto = async () => {
     if (ocupado || fotos.length >= TOTAL_FOTOS) return;
     setOcupado(true);
     try {
-      const foto = await camaraRef.current?.capturar();
-
-      if (!foto?.blob) {
-        // Aquí SÍ se exige ver una cara, al revés que en el checador: si se registra una
-        // foto sin cara como referencia, TODOS los cotejos futuros de esta persona
-        // fallarán y nadie entenderá por qué. Un registro se puede repetir con calma; una
-        // checada de las ocho de la mañana, no.
-        toast.error(MENSAJE[foto?.resultado] || "No se pudo tomar la foto. Inténtalo otra vez.");
-        return;
-      }
-      if (foto.resultado === RESULTADO.NO_DISPONIBLE) {
-        toast.error("No se pudo comprobar la foto. Recarga la página e inténtalo de nuevo.");
-        return;
-      }
-
-      setFotos((prev) => [...prev, foto.blob]);
+      guardarFoto(await camaraRef.current?.capturar());
     } finally {
       setOcupado(false);
     }
@@ -159,13 +179,18 @@ export default function MiRostro({ user }) {
 
           {fotos.length < TOTAL_FOTOS ? (
             <>
-              <CapturaSelfie ref={camaraRef} activa />
+              {/* La pausa la comprueba el propio callback, no se le pasa null: si se le
+                  quitara la prop, la guía de encuadre desaparecería y volvería a aparecer en
+                  cada foto, y ese parpadeo hace que la cámara parezca rota. */}
+              <CapturaSelfie ref={camaraRef} activa onAutoCaptura={onAutoCaptura} />
 
               <p className="checador-pill checador-pill--aviso">
                 <Icon name="camera" size={15} />
                 Foto {fotos.length + 1} de {TOTAL_FOTOS}. {INDICACIONES[fotos.length]}
               </p>
 
+              {/* La cámara dispara sola. El botón se queda por si alguien prefiere pulsarlo,
+                  o si el detector no carga y la guía nunca se activa. */}
               <button
                 type="button"
                 className="checador-boton checador-boton--entrada"
@@ -173,7 +198,7 @@ export default function MiRostro({ user }) {
                 disabled={ocupado}
               >
                 <Icon name="camera" size={20} />
-                {ocupado ? "Tomando…" : "Tomar foto"}
+                {ocupado ? "Tomando…" : "Tomar la foto ahora"}
               </button>
             </>
           ) : (
