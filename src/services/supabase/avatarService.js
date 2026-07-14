@@ -1,47 +1,19 @@
 import { supabase } from "../../config/supabase";
+import { comprimirImagen } from "../../utils/imagen";
 
 const BUCKET = "avatars";
 const MAX_DIMENSION = 400;
-const JPEG_QUALITY = 0.82;
-
-// Redimensiona/comprime en el navegador antes de subir — evita que alguien
-// suba una foto de varios MB sin querer (el bucket igual tiene un tope
-// server-side de 2MB como red de seguridad, ver migración 00000000000021).
-const comprimirImagen = (archivo) =>
-  new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(archivo);
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      const scale = Math.min(1, MAX_DIMENSION / Math.max(img.width, img.height));
-      const width = Math.round(img.width * scale);
-      const height = Math.round(img.height * scale);
-
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, width, height);
-
-      canvas.toBlob(
-        (blob) => (blob ? resolve(blob) : reject(new Error("No se pudo procesar la imagen."))),
-        "image/jpeg",
-        JPEG_QUALITY
-      );
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("El archivo seleccionado no es una imagen válida."));
-    };
-    img.src = url;
-  });
 
 export const subirAvatarUsuario = async (usuarioId, archivo) => {
   if (!archivo.type.startsWith("image/")) {
     throw new Error("Selecciona un archivo de imagen (JPG, PNG, etc.).");
   }
 
-  const blobComprimido = await comprimirImagen(archivo);
+  // Comprime en el navegador antes de subir — evita que alguien suba una foto de
+  // varios MB sin querer (el bucket igual tiene un tope server-side de 2MB como red
+  // de seguridad, ver migración 00000000000021). La función vive en utils/imagen.js
+  // porque el checador la reusa para las selfies.
+  const blobComprimido = await comprimirImagen(archivo, MAX_DIMENSION);
   const ruta = `${usuarioId}.jpg`;
 
   const { error: uploadError } = await supabase.storage
