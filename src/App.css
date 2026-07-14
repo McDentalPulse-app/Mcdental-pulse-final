@@ -8550,3 +8550,22 @@
   justify-content: center;
   margin-top: 14px;
 }
+
+/* Las fotos de revisión van GRANDES: aprobar es comprobar una identidad, y con miniaturas
+   no se comprueba nada. Tiene que ser más fácil hacerlo bien que hacerlo mal. */
+.rostro-fotos {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+
+.rostro-foto {
+  width: 140px;
+  height: 180px;
+  object-fit: cover;
+  border-radius: var(--mc-radio);
+  border: 1px solid var(--mc-card-borde);
+}
+
+.rostro-foto--cargando { background: var(--mc-gris-fondo); }

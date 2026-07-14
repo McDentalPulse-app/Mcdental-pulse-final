@@ -18,60 +18,110 @@ const conSesion = async () => {
   return token;
 };
 
-/** Quién está enrolado. Solo lo pueden leer RH y admin (RLS de la migración 041). */
+const post = async (endpoint, cuerpo) => {
+  const token = await conSesion();
+  const respuesta = await fetch(`/api/${endpoint}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(cuerpo),
+  });
+
+  const datos = await respuesta.json().catch(() => ({}));
+  if (!respuesta.ok) {
+    // El servidor manda mensajes ya escritos para el usuario ("En una de las fotos no se ve
+    // tu cara..."). Se respetan: dicen exactamente qué hacer a continuación.
+    throw new Error(datos.error || "No se pudo completar la operación.");
+  }
+  return datos;
+};
+
+const mapRostro = (r) => ({
+  empleadoId: r.empleado_id,
+  estado: r.estado,
+  motivoRechazo: r.motivo_rechazo,
+  revisadoEn: r.revisado_en,
+  registradoEn: r.created_at,
+  fotos: (r.rostro_fotos || []).map((f) => f.selfie_path),
+});
+
+/** Todos los registros de rostro. Solo RH y admin (RLS de la migración 041). */
 export const getRostros = async () => {
   try {
     // La huella NO se pide: son 128 números que identifican a una persona y la pantalla no
-    // los necesita para nada. Traerlos "porque están ahí" es exponerlos sin motivo.
+    // los necesita. Traerlos "porque están ahí" es exponerlos sin motivo.
     const { data, error } = await supabase
       .from("rostros")
-      .select("empleado_id, consentimiento_en, created_at");
+      .select("empleado_id, estado, motivo_rechazo, revisado_en, created_at, rostro_fotos(selfie_path)");
     if (error) throw error;
-
-    return (data || []).map((r) => ({
-      empleadoId: r.empleado_id,
-      consentimientoEn: r.consentimiento_en,
-      enroladoEn: r.created_at,
-    }));
+    return (data || []).map(mapRostro);
   } catch (error) {
-    console.error("Error al obtener los rostros enrolados:", error);
-    throw new Error("No se pudo cargar el estado de enrolado.", { cause: error });
+    console.error("Error al obtener los rostros:", error);
+    throw new Error("No se pudo cargar el estado de los rostros.", { cause: error });
   }
 };
 
+/** El registro del propio empleado (para saber si ya se registró y en qué estado está). */
+export const getMiRostro = async (empleadoId) => {
+  const { data, error } = await supabase
+    .from("rostros")
+    .select("empleado_id, estado, motivo_rechazo, revisado_en, created_at")
+    .eq("empleado_id", empleadoId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error al obtener mi rostro:", error);
+    return null;
+  }
+  return data ? mapRostro(data) : null;
+};
+
 /**
- * Enrola la cara de referencia de un empleado. Solo RH/admin, y presencialmente.
+ * Sube las fotos y registra el rostro.
  *
- * La foto se sube al bucket privado y el servidor calcula la huella a partir de ella. El
- * consentimiento viaja como una afirmación explícita: sin él, el servidor rechaza (y la
- * columna consentimiento_en es NOT NULL, así que tampoco habría cómo guardarlo).
+ * Si lo hace el propio empleado, queda PENDIENTE: no sirve para cotejar hasta que RH lo
+ * mire y confirme que esa cara es la suya. Si lo hace RH (con la persona delante), queda
+ * aprobado directamente.
  */
-export const enrolarRostro = async ({ empleadoId, foto, consentimiento }) => {
-  const token = await conSesion();
+export const registrarRostro = async ({ empleadoId, fotos, consentimiento }) => {
+  const rutas = [];
 
-  const ruta = `${empleadoId}.jpg`;
-  const { error: errorUpload } = await supabase.storage
-    .from(BUCKET)
-    .upload(ruta, foto, { contentType: "image/jpeg", upsert: true });
+  for (let i = 0; i < fotos.length; i += 1) {
+    // La carpeta DEBE ser el uuid del empleado: es lo que la policy de storage comprueba
+    // para que nadie suba fotos a la carpeta de otro (migración 042).
+    const ruta = `${empleadoId}/${Date.now()}-${i}.jpg`;
+    const { error } = await supabase.storage
+      .from(BUCKET)
+      .upload(ruta, fotos[i], { contentType: "image/jpeg", upsert: true });
 
-  if (errorUpload) {
-    console.error("Error subiendo la foto de enrolado:", errorUpload);
-    throw new Error("No se pudo subir la foto.");
+    if (error) {
+      console.error("Error subiendo la foto de registro:", error);
+      throw new Error("No se pudo subir una de las fotos.");
+    }
+    rutas.push(ruta);
   }
 
-  const respuesta = await fetch("/api/enrolar-rostro", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ empleadoId, selfiePath: ruta, consentimiento }),
-  });
+  return post("enrolar-rostro", { empleadoId, fotos: rutas, consentimiento });
+};
 
-  const cuerpo = await respuesta.json().catch(() => ({}));
-  if (!respuesta.ok) {
-    // El servidor manda mensajes ya escritos para el usuario ("No se detecta una cara en la
-    // foto..."). Se respetan: dicen exactamente qué hacer a continuación.
-    throw new Error(cuerpo.error || "No se pudo enrolar el rostro.");
+/**
+ * RH aprueba o rechaza un rostro pendiente.
+ *
+ * Aprobar NO es un trámite: es afirmar que esa cara es la de esa persona. Si se aprueba sin
+ * mirar, el compañero que registró su propia cara en una cuenta ajena queda verificado por
+ * el sistema, y el cotejo pasa de detectar el fraude a certificarlo.
+ */
+export const revisarRostro = ({ empleadoId, aprobar, motivo }) =>
+  post("aprobar-rostro", { empleadoId, aprobar, motivo });
+
+/** URL firmada para ver una foto de referencia (bucket privado). */
+export const getSignedUrlRostro = async (ruta, expiresInSeconds = 300) => {
+  if (!ruta) return null;
+  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(ruta, expiresInSeconds);
+  if (error) {
+    console.error("Error firmando la URL del rostro:", error);
+    return null;
   }
-  return cuerpo;
+  return data.signedUrl;
 };
 
 /**
@@ -84,12 +134,7 @@ export const enrolarRostro = async ({ empleadoId, foto, consentimiento }) => {
  */
 export const verificarChecada = async (checadaId) => {
   try {
-    const token = await conSesion();
-    await fetch("/api/verificar-rostro", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ checadaId }),
-    });
+    await post("verificar-rostro", { checadaId });
   } catch (error) {
     // Nunca se le enseña al empleado: su checada ya está registrada y el cotejo es asunto
     // del sistema, no suyo. Molestarle con un error que no puede arreglar solo erosiona la

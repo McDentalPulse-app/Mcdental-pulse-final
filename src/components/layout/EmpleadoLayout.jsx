@@ -7,6 +7,7 @@ import EncuestaEmpleado from '../empleados/EncuestaEmpleado';
 import HistorialEmpleado from '../empleados/HistorialEmpleado';
 import PermisosEmpleado from '../empleados/PermisosEmpleado';
 import ChecadorEmpleado from '../asistencia/ChecadorEmpleado';
+import MiRostro from '../asistencia/MiRostro';
 import ReconocimientosEmpleado from '../empleados/ReconocimientosEmpleado';
 import ReporteConfidencialEmpleado from '../empleados/ReporteConfidencialEmpleado';
 import SoporteTI from '../common/SoporteTI';
@@ -33,6 +34,7 @@ export default function EmpleadoLayout({ user, globals, actions }) {
           <Routes>
             <Route path="inicio" element={<InicioEmpleado user={user} encuestas={encuestas} mensajes={userMensajes} setActive={(view) => navigate(`/empleado/${view}`)} />} />
             <Route path="checador" element={<ChecadorEmpleado user={user} checadasHoy={checadasHoy} horarios={horarios} onChecar={registrarChecada} />} />
+            <Route path="rostro" element={<MiRostro user={user} />} />
             <Route path="encuesta" element={<EncuestaEmpleado user={user} encuestas={encuestas} onSubmit={addEncuesta}/>} />
             <Route path="historial" element={<HistorialEmpleado user={user} encuestas={encuestas} />} />
             <Route path="permisosempleado" element={<PermisosEmpleado user={user} vacaciones={vacaciones} permisos={permisos} onEnviarSolicitudEmpleado={addSolicitudEmpleadoRH}/>} />

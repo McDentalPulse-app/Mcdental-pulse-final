@@ -85,6 +85,7 @@ const Sidebar = () => {
       { key: "checador", icon: "clock", label: "Checador" },
       { key: "encuesta", icon: "clipboardCheck", label: "Mi Encuesta" },
       { key: "historial", icon: "history", label: "Historial" },
+      { key: "rostro", icon: "camera", label: "Mi rostro" },
       { key: "permisosempleado", icon: "vacation", label: "Vacaciones" },
       { key: "reconocimientos", icon: "award", label: "Reconocimientos" },
       { key: "reporteconfidencial", icon: "lock", label: "Reporte Confidencial" },

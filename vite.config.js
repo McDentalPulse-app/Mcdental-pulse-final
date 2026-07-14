@@ -3,24 +3,48 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// Plugin dev-only: sirve /api/gemini en `npm run dev` reusando api/gemini.js
-// (en producción lo sirve Vercel). Carga GEMINI_API_KEY de .env.local.
+// Plugin dev-only: sirve las funciones de api/ en `npm run dev` (en producción las sirve
+// Vercel). Sin esto, cualquier fetch a /api/* devuelve 404 y la pantalla que lo llama
+// falla con un error que no dice nada — el checador se pasó una tarde así.
+//
+// Cada endpoint nuevo en api/ hay que añadirlo a esta lista.
+const ENDPOINTS = ['gemini', 'soporte-ticket', 'enrolar-rostro', 'verificar-rostro', 'aprobar-rostro']
+
 function devApiProxy(mode) {
   return {
-    name: 'dev-api-gemini',
+    name: 'dev-api',
     apply: 'serve',
     configureServer(server) {
+      // Las funciones leen su configuración de process.env (no de import.meta.env, que no
+      // existe en Node). En Vercel las pone la plataforma; aquí hay que trasvasarlas.
       const env = loadEnv(mode, process.cwd(), '')
-      process.env.GEMINI_API_KEY = env.GEMINI_API_KEY
-      server.middlewares.use('/api/gemini', async (req, res) => {
-        let body = ''
-        for await (const chunk of req) body += chunk
-        req.body = body ? JSON.parse(body) : {}
-        res.status = (c) => { res.statusCode = c; return res }
-        res.json = (o) => { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(o)) }
-        const { default: handler } = await import('./api/gemini.js')
-        await handler(req, res)
-      })
+      for (const clave of [
+        'GEMINI_API_KEY',
+        'MCTIC_API_URL',
+        'MCTIC_INTEGRATION_KEY',
+        'VITE_SUPABASE_URL',
+        'VITE_SUPABASE_ANON_KEY',
+        'SUPABASE_SERVICE_ROLE_KEY',
+      ]) {
+        if (env[clave]) process.env[clave] = env[clave]
+      }
+
+      for (const nombre of ENDPOINTS) {
+        server.middlewares.use(`/api/${nombre}`, async (req, res) => {
+          let body = ''
+          for await (const chunk of req) body += chunk
+          req.body = body ? JSON.parse(body) : {}
+          res.status = (c) => { res.statusCode = c; return res }
+          res.json = (o) => { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(o)) }
+          try {
+            const { default: handler } = await import(`./api/${nombre}.js`)
+            await handler(req, res)
+          } catch (error) {
+            console.error(`[dev-api] ${nombre}:`, error)
+            res.status(500).json({ error: 'Error en la función de desarrollo.' })
+          }
+        })
+      }
     },
   }
 }

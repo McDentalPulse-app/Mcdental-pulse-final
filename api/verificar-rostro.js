@@ -59,16 +59,26 @@ export default async function handler(req, res) {
     return res.status(200).json({ verificado: null, motivo: "sin_foto" });
   }
 
+  // SOLO los rostros APROBADOS. Uno 'pendiente' es una cara que nadie ha mirado todavía:
+  // usarla para cotejar sería dar por buena precisamente la que podría ser del impostor.
   const { data: rostro } = await supabase
     .from("rostros")
-    .select("huella")
+    .select("id, estado, huella, rostro_fotos(huella)")
     .eq("empleado_id", checada.empleado_id)
+    .eq("estado", "aprobado")
     .single();
 
   if (!rostro) {
-    // El empleado no está enrolado. No es culpa suya: es una tarea pendiente de RH.
+    // No enrolado, o enrolado pero aún sin aprobar. En ninguno de los dos casos hay contra
+    // qué comparar, y en ninguno es culpa del empleado.
     return res.status(200).json({ verificado: null, motivo: "no_enrolado" });
   }
+
+  // Se compara contra TODAS sus fotos de referencia y se toma el MEJOR parecido, no el
+  // promedio: promediar tres fotos buenas con una mala estropea las tres. Basta con que se
+  // parezca a una para que sea él.
+  const referencias = (rostro.rostro_fotos || []).map((f) => f.huella);
+  if (!referencias.length && rostro.huella) referencias.push(rostro.huella); // enrolados viejos
 
   const { data: archivo, error: errorDescarga } = await supabase.storage
     .from("asistencias")
@@ -93,8 +103,16 @@ export default async function handler(req, res) {
     return res.status(200).json({ verificado: null, motivo: "sin_cara" });
   }
 
-  const score = similitud(huella, rostro.huella);
-  const verificado = score !== null && score >= UMBRAL_MISMA_PERSONA;
+  const scores = referencias
+    .map((ref) => similitud(huella, ref))
+    .filter((s) => s !== null);
+
+  if (!scores.length) {
+    return res.status(200).json({ verificado: null, motivo: "no_enrolado" });
+  }
+
+  const score = Math.max(...scores);
+  const verificado = score >= UMBRAL_MISMA_PERSONA;
 
   const { error: errorUpdate } = await supabase
     .from("asistencias")
