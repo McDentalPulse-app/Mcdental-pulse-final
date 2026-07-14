@@ -46,6 +46,7 @@ export const RESULTADO = {
   OK: "ok",
   SIN_CARA: "sin_cara",
   VARIAS_CARAS: "varias_caras",
+  POSE_INCORRECTA: "pose_incorrecta",
   NO_DISPONIBLE: "no_disponible",
 };
 
@@ -76,6 +77,10 @@ export const detectarRostro = async (canvas) => {
     return {
       resultado: RESULTADO.OK,
       box: { x: bb.originX, y: bb.originY, ancho: bb.width, alto: bb.height },
+      // 6 puntos, en este orden: ojo derecho, ojo izquierdo, nariz, centro de la boca,
+      // oreja derecha, oreja izquierda. "Derecho" es el de LA PERSONA, así que en la imagen
+      // aparece a la izquierda. Con los tres primeros basta para saber hacia dónde mira.
+      puntos: detections[0].keypoints || null,
     };
   } catch (error) {
     console.warn("Falló la detección de rostro:", error);
@@ -109,6 +114,94 @@ export const encuadreBueno = (box, anchoVideo, altoVideo) => {
   return { ok: true, pista: "¡Así! No te muevas…" };
 };
 
+export const POSE = {
+  FRONTAL: "frontal",
+  DERECHA: "derecha",   // la persona gira la cabeza hacia SU derecha
+  IZQUIERDA: "izquierda",
+};
+
+/**
+ * Hacia dónde mira la cabeza, a partir de la posición de la nariz entre los dos ojos.
+ *
+ * Devuelve `t`: dónde cae la nariz sobre la línea que une los ojos. 0 = pegada al ojo
+ * derecho, 1 = pegada al izquierdo, 0.5 = justo en medio (cara de frente). Al girar la
+ * cabeza, la nariz se desplaza hacia el ojo del lado hacia el que se gira.
+ *
+ * Se proyecta sobre la línea de los ojos en vez de mirar solo la coordenada X: así, si la
+ * persona INCLINA la cabeza (que es lo que todo el mundo hace al mirarse en el móvil), el
+ * cálculo no se estropea. Con la X a secas, una cabeza ladeada parecería estar de perfil.
+ */
+export const estimarPose = (puntos) => {
+  if (!puntos || puntos.length < 3) return null;
+
+  const [ojoDerecho, ojoIzquierdo, nariz] = puntos;
+
+  const ex = ojoIzquierdo.x - ojoDerecho.x;
+  const ey = ojoIzquierdo.y - ojoDerecho.y;
+  const largo2 = ex * ex + ey * ey;
+  if (!largo2) return null;
+
+  const t = ((nariz.x - ojoDerecho.x) * ex + (nariz.y - ojoDerecho.y) * ey) / largo2;
+
+  // La imagen que se analiza NO está espejada (el espejo es solo del CSS, para que la
+  // persona se vea como en un espejo). Así que el ojo derecho de la persona cae a la
+  // izquierda de la imagen, y girar la cabeza hacia SU derecha mueve la nariz hacia allí:
+  // t baja.
+  let pose = null;
+  if (Math.abs(t - 0.5) <= 0.10) pose = POSE.FRONTAL;
+  else if (t <= 0.34) pose = POSE.DERECHA;
+  else if (t >= 0.66) pose = POSE.IZQUIERDA;
+
+  return { pose, t };
+};
+
+/**
+ * ¿La cabeza está en la pose que se le pide? Devuelve también qué decirle si no.
+ *
+ * Sin esto, las tres fotos del registro salen idénticas: la persona se queda quieta, la
+ * cámara dispara tres veces seguidas y guarda la misma cara tres veces. Tener tres fotos
+ * solo sirve si son ángulos distintos — es lo que hace que el cotejo siga funcionando
+ * cuando alguien checa con la cabeza un poco girada.
+ */
+export const poseCoincide = (puntos, requerida) => {
+  if (!requerida) return { ok: true, pista: null };
+
+  const estimada = estimarPose(puntos);
+  if (!estimada) return { ok: true, pista: null }; // sin puntos no se puede exigir nada
+
+  const { pose, t } = estimada;
+  if (pose === requerida) return { ok: true, pista: null };
+
+  if (requerida === POSE.FRONTAL) {
+    return { ok: false, pista: "Mira de frente a la cámara." };
+  }
+
+  // Se distingue "aún no has girado" de "te has pasado y giraste al otro lado": decirle
+  // "gira a la derecha" a alguien que YA está girado a la izquierda es sacarlo de quicio.
+  const haciaLaRequerida = requerida === POSE.DERECHA ? t > 0.34 : t < 0.66;
+  const alReves = requerida === POSE.DERECHA ? t > 0.66 : t < 0.34;
+
+  if (alReves) {
+    return {
+      ok: false,
+      pista: requerida === POSE.DERECHA
+        ? "Ese es el otro lado. Gira hacia tu derecha."
+        : "Ese es el otro lado. Gira hacia tu izquierda.",
+    };
+  }
+
+  if (haciaLaRequerida) {
+    return {
+      ok: false,
+      pista: requerida === POSE.DERECHA
+        ? "Gira un poco más la cabeza hacia tu derecha."
+        : "Gira un poco más la cabeza hacia tu izquierda.",
+    };
+  }
+
+  return { ok: false, pista: "Gira un poco la cabeza." };
+};
+
 /**
  * Recorta el canvas a la cara, con margen.
  *
@@ -137,4 +230,5 @@ export const recortarACara = (canvas, box, margen = 0.4) => {
 export const MENSAJE = {
   [RESULTADO.SIN_CARA]: "No se ve tu cara. Colócate frente a la cámara e inténtalo de nuevo.",
   [RESULTADO.VARIAS_CARAS]: "Hay más de una persona en la foto. Debes salir tú solo.",
+  [RESULTADO.POSE_INCORRECTA]: "Gira la cabeza como se te indica antes de tomar la foto.",
 };

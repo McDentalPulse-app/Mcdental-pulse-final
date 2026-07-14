@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, useImperativeHandle, forwardRef } from "react";
 import Icon from "../ui/Icon";
 import { canvasABlob } from "../../utils/imagen";
-import { detectarRostro, encuadreBueno, recortarACara, RESULTADO } from "../../utils/rostro";
+import { detectarRostro, encuadreBueno, poseCoincide, recortarACara, RESULTADO } from "../../utils/rostro";
 
 const ANCHO_SELFIE = 480;
 const INTERVALO_MS = 350;   // cada cuánto se mira el vídeo buscando la cara
@@ -25,7 +25,7 @@ const FRAMES_ESTABLES = 3;  // cuántas veces seguidas debe estar bien encuadrad
  * Se exige que el encuadre esté bien VARIOS fotogramas seguidos, no uno: si no, dispararía
  * en mitad de un movimiento y saldría movida.
  */
-const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true, onAutoCaptura = null }, ref) {
+const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true, onAutoCaptura = null, poseRequerida = null }, ref) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const establesRef = useRef(0);
@@ -108,10 +108,17 @@ const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true, onAutoC
     // real, o el cotejo compararía una cara contra su reflejo.
     canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    const { resultado, box } = await detectarRostro(canvas);
+    const { resultado, box, puntos } = await detectarRostro(canvas);
 
     if (resultado === RESULTADO.SIN_CARA || resultado === RESULTADO.VARIAS_CARAS) {
       return { blob: null, resultado };
+    }
+
+    // La pose se exige TAMBIÉN en el disparo manual. Si no, el botón sería una puerta
+    // trasera: bastaría con pulsarlo tres veces de frente para acabar con tres fotos
+    // idénticas, que es justo lo que se está intentando evitar.
+    if (poseRequerida && !poseCoincide(puntos, poseRequerida).ok) {
+      return { blob: null, resultado: RESULTADO.POSE_INCORRECTA };
     }
 
     try {
@@ -121,7 +128,7 @@ const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true, onAutoC
       console.warn("No se pudo capturar la selfie:", error);
       return { blob: null, resultado: RESULTADO.NO_DISPONIBLE };
     }
-  }, [estado]);
+  }, [estado, poseRequerida]);
 
   // Bucle de guía: mira el vídeo, dice qué corregir y dispara cuando el encuadre aguanta
   // bien varios fotogramas seguidos. Solo si el padre pide auto-captura.
@@ -142,7 +149,7 @@ const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true, onAutoC
       lienzo.height = Math.round((video.videoHeight / video.videoWidth) * 240);
       lienzo.getContext("2d").drawImage(video, 0, 0, lienzo.width, lienzo.height);
 
-      const { resultado, box } = await detectarRostro(lienzo);
+      const { resultado, box, puntos } = await detectarRostro(lienzo);
       if (!vivo) return;
 
       if (resultado === RESULTADO.VARIAS_CARAS) {
@@ -156,13 +163,24 @@ const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true, onAutoC
         return;
       }
 
+      // Primero el encuadre (¿está bien colocada?), y solo después la pose (¿mira hacia
+      // donde toca?). Al revés, alguien lejísimos y girado leería "gira un poco más" sin
+      // entender por qué no dispara.
       const encuadre = encuadreBueno(box, lienzo.width, lienzo.height);
-      setGuia(encuadre);
-
       if (!encuadre.ok) {
         establesRef.current = 0;
+        setGuia(encuadre);
         return;
       }
+
+      const pose = poseCoincide(puntos, poseRequerida);
+      if (!pose.ok) {
+        establesRef.current = 0;
+        setGuia({ ok: false, pista: pose.pista });
+        return;
+      }
+
+      setGuia({ ok: true, pista: "¡Así! No te muevas…" });
 
       establesRef.current += 1;
       if (establesRef.current < FRAMES_ESTABLES) return;
@@ -179,7 +197,7 @@ const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true, onAutoC
     }, INTERVALO_MS);
 
     return () => { vivo = false; clearInterval(id); };
-  }, [estado, onAutoCaptura, capturar]);
+  }, [estado, onAutoCaptura, capturar, poseRequerida]);
 
   useImperativeHandle(ref, () => ({ capturar, estado }), [capturar, estado]);
 

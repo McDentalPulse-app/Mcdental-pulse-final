@@ -5,14 +5,22 @@ import Icon from "../ui/Icon";
 import CapturaSelfie from "./CapturaSelfie";
 import { useNotification } from "../../contexts/NotificationContext";
 import { getMiRostro, registrarRostro } from "../../services/supabase/rostrosService";
-import { RESULTADO, MENSAJE } from "../../utils/rostro";
+import { RESULTADO, MENSAJE, POSE } from "../../utils/rostro";
 
 const TOTAL_FOTOS = 3;
 
-const INDICACIONES = [
-  "Mira de frente a la cámara.",
-  "Gira un poco la cabeza a la derecha.",
-  "Gira un poco la cabeza a la izquierda.",
+/**
+ * Una pose distinta por foto, y se EXIGE.
+ *
+ * Sin esto, la persona se queda quieta, la cámara dispara tres veces seguidas y guarda la
+ * misma cara tres veces: tener tres fotos no serviría de nada. El sentido de las tres es
+ * que sean ángulos distintos — es lo que hace que el cotejo siga reconociéndola cuando
+ * cheque con la cabeza un poco girada o con otra luz.
+ */
+const PASOS = [
+  { pose: POSE.FRONTAL, indicacion: "Mira de frente a la cámara." },
+  { pose: POSE.DERECHA, indicacion: "Gira la cabeza hacia tu derecha." },
+  { pose: POSE.IZQUIERDA, indicacion: "Gira la cabeza hacia tu izquierda." },
 ];
 
 /**
@@ -182,11 +190,16 @@ export default function MiRostro({ user }) {
               {/* La pausa la comprueba el propio callback, no se le pasa null: si se le
                   quitara la prop, la guía de encuadre desaparecería y volvería a aparecer en
                   cada foto, y ese parpadeo hace que la cámara parezca rota. */}
-              <CapturaSelfie ref={camaraRef} activa onAutoCaptura={onAutoCaptura} />
+              <CapturaSelfie
+                ref={camaraRef}
+                activa
+                onAutoCaptura={onAutoCaptura}
+                poseRequerida={PASOS[fotos.length].pose}
+              />
 
               <p className="checador-pill checador-pill--aviso">
                 <Icon name="camera" size={15} />
-                Foto {fotos.length + 1} de {TOTAL_FOTOS}. {INDICACIONES[fotos.length]}
+                Foto {fotos.length + 1} de {TOTAL_FOTOS}. {PASOS[fotos.length].indicacion}
               </p>
 
               {/* La cámara dispara sola. El botón se queda por si alguien prefiere pulsarlo,
