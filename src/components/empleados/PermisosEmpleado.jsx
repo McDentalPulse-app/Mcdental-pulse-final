@@ -4,6 +4,7 @@ import SectionTitle from "../common/SectionTitle";
 import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { useNotification } from "../../contexts/NotificationContext";
+import { CAUSAS_PERMISO } from "../../utils/permisos";
 
 export default function PermisosEmpleado({
   user,
@@ -110,6 +111,7 @@ export default function PermisosEmpleado({
       hasta: fechaFin,
       hora: "",
       dias: tipo === "Vacaciones" ? dias : "",
+      causa: tipo === "Permisos" ? form.causa?.value || null : null,
       motivo: form.motivo.value,
       comentario: form.comentario.value,
       estado: "pendiente",
@@ -133,8 +135,8 @@ export default function PermisosEmpleado({
     <div className="admin-page empleado-page empleado-form-narrow">
       <PageHeader
         icon="vacation"
-        title="Vacaciones"
-        subtitle="Solicita días de descanso. RH revisará tu petición y te notificará el estatus."
+        title="Vacaciones y permisos"
+        subtitle="Solicita días de descanso o un permiso. RH revisará tu petición y te notificará el estatus."
       />
 
       <Card className="empleado-form-card">
@@ -144,7 +146,34 @@ export default function PermisosEmpleado({
           className="mc-form-grid"
           onSubmit={handleSubmit}
         >
-          <input type="hidden" name="tipo" value="Vacaciones" />
+          {/* Esto era un <input type="hidden" value="Vacaciones">, así que la rama de
+              permisos de addSolicitudEmpleadoRH era código inalcanzable y NADIE podía
+              solicitar un permiso desde la app. Ahora el empleado elige de verdad. */}
+          <div className="mc-form-group">
+            <label className="mc-form-label" htmlFor="pe-tipo">Tipo de solicitud</label>
+            <select
+              id="pe-tipo"
+              className="mc-form-input"
+              name="tipo"
+              value={tipoSeleccionado}
+              onChange={(e) => setTipoSeleccionado(e.target.value)}
+            >
+              <option value="Vacaciones">Vacaciones</option>
+              <option value="Permisos">Permiso</option>
+            </select>
+          </div>
+
+          {tipoSeleccionado === "Permisos" && (
+            <div className="mc-form-group">
+              <label className="mc-form-label" htmlFor="pe-causa">Causa</label>
+              <select id="pe-causa" className="mc-form-input" name="causa" required>
+                <option value="">Selecciona una causa</option>
+                {CAUSAS_PERMISO.map((c) => (
+                  <option key={c.valor} value={c.valor}>{c.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="mc-form-row-2">
             <div className="mc-form-group">
@@ -163,22 +192,26 @@ export default function PermisosEmpleado({
               />
             </div>
 
-            {tipoSeleccionado === "Vacaciones" && (
-              <div className="mc-form-group">
-                <label className="mc-form-label" htmlFor="pe-fecha-fin">Fecha de fin</label>
-                <input
-                  id="pe-fecha-fin"
-                  className="mc-form-input"
-                  name="fechaFin"
-                  type="date"
-                  value={fechaFinPreview}
-                  onChange={(e) => {
-                    setFechaFinPreview(e.target.value);
-                    handleFechaChange(fechaInicioPreview, e.target.value);
-                  }}
-                />
-              </div>
-            )}
+            {/* La fecha de fin ya no es solo de vacaciones: un permiso también puede durar
+                varios días (una incapacidad de tres días es UN permiso, no tres). Para un
+                permiso de un solo día se deja vacía y la base guarda fecha_fin = null. */}
+            <div className="mc-form-group">
+              <label className="mc-form-label" htmlFor="pe-fecha-fin">
+                {tipoSeleccionado === "Vacaciones" ? "Fecha de fin" : "Fecha de fin (si dura varios días)"}
+              </label>
+              <input
+                id="pe-fecha-fin"
+                className="mc-form-input"
+                name="fechaFin"
+                type="date"
+                min={fechaInicioPreview || undefined}
+                value={fechaFinPreview}
+                onChange={(e) => {
+                  setFechaFinPreview(e.target.value);
+                  handleFechaChange(fechaInicioPreview, e.target.value);
+                }}
+              />
+            </div>
           </div>
 
           <div className="mc-form-group">

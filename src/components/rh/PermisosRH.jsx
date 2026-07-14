@@ -6,6 +6,7 @@ import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { normalizeSucursal } from "../../utils/constants";
 import { useNotification } from "../../contexts/NotificationContext";
+import { ETIQUETA_CAUSA } from "../../utils/permisos";
 
 const PermisosRH = ({ permisos, onUpdateEstado }) => {
   const { prompt } = useNotification();
@@ -48,19 +49,21 @@ const PermisosRH = ({ permisos, onUpdateEstado }) => {
               <div className="rh-data-row-main">
                 <div className="rh-data-row-title">{p.empleado}</div>
                 <div className="rh-data-row-sub">{normalizeSucursal(p.sucursal)} · {p.puesto}</div>
-                <div className="rh-data-row-detail">{p.tipo}</div>
-                <div className="rh-data-row-note">Motivo: {p.motivo}</div>
+                {/* Antes esto leía p.tipo y p.observaciones, campos que no existen ni en
+                    la tabla ni en el mapper: la pantalla pintaba "undefined". */}
+                <div className="rh-data-row-detail">{ETIQUETA_CAUSA[p.causa] || "Sin causa"}</div>
+                {p.motivo && <div className="rh-data-row-note">Motivo: {p.motivo}</div>}
+                {p.comentario && <div className="rh-data-row-note">{p.comentario}</div>}
                 {p.comentarioRH && (
                   <div className="rh-data-row-note">Comentario RH: {p.comentarioRH}</div>
                 )}
               </div>
 
               <div className="rh-data-row-meta">
-                <div className="rh-data-row-meta-primary">{p.fecha}</div>
-                <div className="rh-data-row-meta-secondary">Hora: {p.hora}</div>
-                {p.observaciones && (
-                  <div className="rh-data-row-note">{p.observaciones}</div>
-                )}
+                <div className="rh-data-row-meta-primary">
+                  {p.fechaFin && p.fechaFin !== p.fecha ? `${p.fecha} → ${p.fechaFin}` : p.fecha}
+                </div>
+                {p.hora && <div className="rh-data-row-meta-secondary">Hora: {p.hora}</div>}
               </div>
 
               <div className="rh-data-row-status">

@@ -10,7 +10,9 @@ const mapPermiso = (row) => ({
   sucursal: row.usuarios?.sucursal,
   puesto: row.usuarios?.puesto,
   fecha: row.fecha,
+  fechaFin: row.fecha_fin, // null = permiso de un solo día (migración 038)
   hora: row.hora,
+  causa: row.causa,
   motivo: row.motivo,
   comentario: row.comentario,
   comentarioRH: row.comentario_rh,
@@ -29,13 +31,17 @@ export const getPermisos = async () => {
   }
 };
 
-export const addPermiso = async ({ empleadoId, fecha, hora, motivo, comentario, origen }) => {
+export const addPermiso = async ({ empleadoId, fecha, fechaFin, hora, causa, motivo, comentario, origen }) => {
   const { data, error } = await supabase
     .from("permisos")
     .insert({
       empleado_id: empleadoId,
       fecha,
+      // null explícito, no undefined: un permiso de un día no tiene fecha de fin, y
+      // mandar undefined haría que PostgREST omitiera la columna en vez de anularla.
+      fecha_fin: fechaFin || null,
       hora,
+      causa: causa || null,
       motivo,
       comentario,
       origen: origen || "empleado",
