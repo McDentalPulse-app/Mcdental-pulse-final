@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PageHeader from "../common/PageHeader";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
@@ -6,7 +6,10 @@ import Icon from "../ui/Icon";
 import CapturaSelfie from "./CapturaSelfie";
 import { useNotification } from "../../contexts/NotificationContext";
 import { obtenerUbicacion, textoUbicacion } from "../../utils/geo";
+import { useNavigate } from "react-router-dom";
 import { getDeviceId } from "../../utils/dispositivo";
+import { getMiRostro } from "../../services/supabase/rostrosService";
+import { getAjustes } from "../../services/supabase/ajustesService";
 import { RESULTADO, MENSAJE } from "../../utils/rostro";
 import { emparejarChecadas, diaISO, puedeRegistrarSalida, TZ_CLINICA } from "../../utils/asistencia";
 
@@ -28,6 +31,32 @@ const PILL_UBICACION = {
 export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = [], onChecar }) {
   const camaraRef = useRef(null);
   const { toast } = useNotification();
+  const navigate = useNavigate();
+
+  // ¿Puede checar? Si se exige rostro y no lo tiene aprobado, se le dice AQUÍ — no se le
+  // deja plantarse delante de la cámara, encuadrarse y pulsar para que entonces el servidor
+  // le diga que no. Enterarse de un requisito después de cumplir el trámite entero es la
+  // forma más rápida de que alguien odie una herramienta.
+  const [puerta, setPuerta] = useState(null); // null = cargando
+
+  useEffect(() => {
+    let activo = true;
+    Promise.all([getAjustes(), getMiRostro(user?.id)])
+      .then(([ajustes, rostro]) => {
+        if (!activo) return;
+        if (!ajustes.exigirRostro || rostro?.estado === "aprobado") {
+          setPuerta({ abierta: true });
+        } else {
+          setPuerta({
+            abierta: false,
+            enRevision: rostro?.estado === "pendiente",
+            rechazado: rostro?.estado === "rechazado",
+          });
+        }
+      })
+      .catch(() => { if (activo) setPuerta({ abierta: true }); }); // ante la duda, no bloquear
+    return () => { activo = false; };
+  }, [user?.id]);
   const [enviando, setEnviando] = useState(false);
   const [ultima, setUltima] = useState(null);
 
@@ -111,6 +140,39 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
   };
 
   const pill = ultima ? PILL_UBICACION[ultima.ubicacionEstado] : null;
+
+  if (puerta && !puerta.abierta) {
+    return (
+      <div className="admin-page empleado-page empleado-form-narrow">
+        <PageHeader icon="clock" title="Checador" subtitle="Antes de checar, registra tu rostro" />
+        <Card>
+          <p className={`checador-pill ${puerta.enRevision ? "checador-pill--aviso" : "checador-pill--alerta"}`}>
+            <Icon name={puerta.enRevision ? "clock" : "camera"} size={16} />
+            {puerta.enRevision
+              ? "Tus fotos están en revisión. Recursos Humanos debe aprobarlas antes de que puedas checar."
+              : puerta.rechazado
+                ? "Recursos Humanos no dio por buenas tus fotos. Vuelve a tomarlas."
+                : "Para poder checar, primero tienes que registrar tu rostro."}
+          </p>
+
+          {!puerta.enRevision && (
+            <button
+              type="button"
+              className="checador-boton checador-boton--entrada"
+              onClick={() => navigate("/empleado/rostro")}
+            >
+              <Icon name="camera" size={20} /> Registrar mi rostro
+            </button>
+          )}
+
+          <p className="mc-hint">
+            <Icon name="alert" size={15} />
+            Si hoy no puedes esperar, pídele a Recursos Humanos que registre tu entrada a mano.
+          </p>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-page">

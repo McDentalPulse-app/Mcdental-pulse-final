@@ -63,6 +63,43 @@ export default async function handler(req, res) {
     .eq("estado", "aprobado") // uno pendiente es una cara que nadie ha mirado todavía
     .maybeSingle();
 
+  // ¿Se exige tener el rostro registrado para poder checar? (migración 044)
+  //
+  // Mientras esto está apagado, quien no tenga rostro aprobado checa sin cotejo. Es
+  // obligatorio durante el despliegue —si se exigiera desde el minuto uno, el primer día no
+  // ficharía nadie—, pero en cuanto la plantilla está registrada se convierte en la puerta
+  // de salida evidente: basta con NO registrarse para que el cotejo no te aplique.
+  if (!rostro) {
+    const { data: ajustes } = await supabase
+      .from("ajustes")
+      .select("exigir_rostro")
+      .maybeSingle();
+
+    if (ajustes?.exigir_rostro) {
+      // Se distingue "no te has registrado" de "estás esperando a RH": son problemas de
+      // personas distintas, y decirle "regístrate" a quien ya se registró es hacerle dar
+      // vueltas por una tarea que no es suya.
+      const { data: pendiente } = await supabase
+        .from("rostros")
+        .select("estado")
+        .eq("empleado_id", quien.id)
+        .maybeSingle();
+
+      const enRevision = pendiente?.estado === "pendiente";
+
+      return res.status(403).json({
+        error: enRevision
+          ? "Tus fotos están en revisión. Recursos Humanos debe aprobarlas antes de que puedas checar."
+          : "Antes de checar tienes que registrar tu rostro.",
+        // La pantalla lo usa para llevarle directamente a 'Mi rostro' en vez de dejarle
+        // buscando en el menú.
+        requiereRostro: !enRevision,
+        enRevision,
+        bloqueado: true,
+      });
+    }
+  }
+
   if (rostro && selfiePath) {
     const referencias = (rostro.rostro_fotos || []).map((f) => f.huella);
     if (!referencias.length && rostro.huella) referencias.push(rostro.huella);
