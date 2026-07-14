@@ -35,14 +35,29 @@ const LADO_DET = 640;  // tamaño de entrada FIJO de este YuNet: no acepta otro
 /**
  * Umbral de coseno por encima del cual se considera la misma persona.
  *
- * 0.363 es el valor que publica OpenCV para SFace. NO está ajustado con la plantilla real,
- * y ajustarlo es parte de poner esto en producción: con las primeras semanas de datos se
- * verá dónde caen de verdad los aciertos y los fallos.
+ * 0.50, MEDIDO CON DATOS REALES. No es el valor de fábrica.
  *
- * Recuerda que esto NO bloquea a nadie: un umbral mal puesto genera ruido en el panel de
- * RH, no empleados que no pueden fichar.
+ * OpenCV publica 0.363 para SFace, y con ese número el sistema DEJÓ ENTRAR A UN IMPOSTOR.
+ * Esto es lo que se midió con fotos de verdad tomadas desde el checador:
+ *
+ *   la persona registrada, en otra sesión ........... 0.905
+ *   otra persona de aspecto MUY parecido ............ 0.320 - 0.371   <- se coló con 0.363
+ *   otras personas claramente distintas ............. 0.042 - 0.171
+ *
+ * O sea: el modelo separa de maravilla (0.90 frente a 0.37), pero 0.363 estaba pegado al
+ * TECHO del impostor en vez de en el hueco enorme que hay entre los dos. Un umbral no se
+ * hereda de la documentación: se mide con la gente que va a usarlo.
+ *
+ * 0.50 deja margen por los dos lados: 0.40 sobre el impostor observado y 0.40 por debajo de
+ * la persona real.
+ *
+ * DÓNDE ESTÁ EL RIESGO AHORA, y por qué conviene seguir mirando:
+ * El caso duro no es el desconocido — es el PARECIDO (un hermano, un primo). Ese es el que
+ * roza el umbral. Si aparece una pareja de empleados que se parecen mucho, este número se
+ * queda corto y hay que subirlo. Los datos para decidirlo ya se están guardando:
+ * `asistencias.match_score` (los que pasan) y `cotejo_intentos.score` (los que no).
  */
-export const UMBRAL_MISMA_PERSONA = 0.363;
+export const UMBRAL_MISMA_PERSONA = 0.50;
 
 /**
  * Dónde deben acabar los 5 puntos de la cara en la imagen de 112x112. Es la plantilla
