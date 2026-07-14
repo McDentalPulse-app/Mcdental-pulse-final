@@ -6,6 +6,7 @@ import InicioEmpleado from '../empleados/InicioEmpleado';
 import EncuestaEmpleado from '../empleados/EncuestaEmpleado';
 import HistorialEmpleado from '../empleados/HistorialEmpleado';
 import PermisosEmpleado from '../empleados/PermisosEmpleado';
+import ChecadorEmpleado from '../asistencia/ChecadorEmpleado';
 import ReconocimientosEmpleado from '../empleados/ReconocimientosEmpleado';
 import ReporteConfidencialEmpleado from '../empleados/ReporteConfidencialEmpleado';
 import SoporteTI from '../common/SoporteTI';
@@ -17,8 +18,8 @@ import { getPsicologaPrincipal } from '../../utils/psicologa';
 export default function EmpleadoLayout({ user, globals, actions }) {
   const { usuarios: USERS } = useGlobal();
 
-  const { encuestas, mensajes, vacaciones, permisos, reconocimientos } = globals;
-  const { addEncuesta, sendMensaje, addSolicitudEmpleadoRH, addReporteConfidencial, marcarMensajesLeidos } = actions;
+  const { encuestas, mensajes, vacaciones, permisos, reconocimientos, checadasHoy, horarios } = globals;
+  const { addEncuesta, sendMensaje, addSolicitudEmpleadoRH, addReporteConfidencial, marcarMensajesLeidos, registrarChecada } = actions;
   const navigate = useNavigate();
 
   const userMensajes = mensajes.filter((m) => m.de === user?.id || m.para === user?.id);
@@ -31,6 +32,7 @@ export default function EmpleadoLayout({ user, globals, actions }) {
         <div className="app-main-inner">
           <Routes>
             <Route path="inicio" element={<InicioEmpleado user={user} encuestas={encuestas} mensajes={userMensajes} setActive={(view) => navigate(`/empleado/${view}`)} />} />
+            <Route path="checador" element={<ChecadorEmpleado user={user} checadasHoy={checadasHoy} horarios={horarios} onChecar={registrarChecada} />} />
             <Route path="encuesta" element={<EncuestaEmpleado user={user} encuestas={encuestas} onSubmit={addEncuesta}/>} />
             <Route path="historial" element={<HistorialEmpleado user={user} encuestas={encuestas} />} />
             <Route path="permisosempleado" element={<PermisosEmpleado user={user} vacaciones={vacaciones} permisos={permisos} onEnviarSolicitudEmpleado={addSolicitudEmpleadoRH}/>} />

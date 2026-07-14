@@ -58,6 +58,8 @@ import {
   Sun,
   Moon,
   Briefcase,
+  Camera,
+  MapPin,
 } from "lucide-react";
 
 const ICON_MAP = {
@@ -123,6 +125,8 @@ const ICON_MAP = {
   sun: Sun,
   moon: Moon,
   briefcase: Briefcase,
+  camera: Camera,
+  mapPin: MapPin,
 };
 
 const Icon = ({ name, size = 18, className = "", strokeWidth = 1.75, color }) => {
