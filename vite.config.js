@@ -1,3 +1,5 @@
+import { pathToFileURL } from 'node:url'
+import { resolve } from 'node:path'
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -37,7 +39,11 @@ function devApiProxy(mode) {
           res.status = (c) => { res.statusCode = c; return res }
           res.json = (o) => { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(o)) }
           try {
-            const { default: handler } = await import(`./api/${nombre}.js`)
+            // Ruta ABSOLUTA, no './api/...': Vite transpila este config a
+            // node_modules/.vite-temp/, y un import relativo se resolvería desde ahí —
+            // buscaría node_modules/.vite-temp/api/... y no lo encontraría.
+            const ruta = pathToFileURL(resolve(process.cwd(), 'api', `${nombre}.js`)).href
+            const { default: handler } = await import(ruta)
             await handler(req, res)
           } catch (error) {
             console.error(`[dev-api] ${nombre}:`, error)
