@@ -6,7 +6,7 @@ import Icon from "../ui/Icon";
 import CapturaSelfie from "./CapturaSelfie";
 import { useNotification } from "../../contexts/NotificationContext";
 import { obtenerUbicacion, textoUbicacion } from "../../utils/geo";
-import { emparejarChecadas, diaISO, TZ_CLINICA } from "../../utils/asistencia";
+import { emparejarChecadas, diaISO, puedeRegistrarSalida, TZ_CLINICA } from "../../utils/asistencia";
 
 const horaCorta = (timestamp) =>
   new Intl.DateTimeFormat("es-MX", {
@@ -49,6 +49,17 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
   // porque una tercera checada solo confundiría el registro.
   const siguiente = !entrada ? "entrada" : !salida ? "salida" : null;
 
+  // La salida se habilita 10 min antes de la hora de su turno (migración 039). Quien
+  // manda es el servidor; esto solo existe para no ofrecerle un botón que va a fallar.
+  //
+  // Sin esto, el botón de salida aparecería en el MISMO sitio donde acaba de pulsar el de
+  // entrada: en un móvil, un doble toque le cerraba el día con una jornada de 0 minutos.
+  const ventanaSalida = siguiente === "salida"
+    ? puedeRegistrarSalida(horarioHoy)
+    : { permitido: true, disponibleDesde: null };
+
+  const bloqueado = siguiente === "salida" && !ventanaSalida.permitido;
+
   const handleChecar = async () => {
     if (!siguiente || enviando) return;
     setEnviando(true);
@@ -90,22 +101,34 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
       />
 
       <Card>
-        <CapturaSelfie ref={camaraRef} activa={!!siguiente} />
+        <CapturaSelfie ref={camaraRef} activa={!!siguiente && !bloqueado} />
 
         {siguiente ? (
-          <button
-            type="button"
-            className={`checador-boton checador-boton--${siguiente}`}
-            onClick={handleChecar}
-            disabled={enviando}
-          >
-            <Icon name={siguiente === "entrada" ? "check" : "logout"} size={22} />
-            {enviando
-              ? "Registrando…"
-              : siguiente === "entrada"
-                ? "Registrar entrada"
-                : "Registrar salida"}
-          </button>
+          <>
+            <button
+              type="button"
+              className={`checador-boton checador-boton--${siguiente}`}
+              onClick={handleChecar}
+              disabled={enviando || bloqueado}
+            >
+              <Icon name={siguiente === "entrada" ? "check" : "logout"} size={22} />
+              {enviando
+                ? "Registrando…"
+                : siguiente === "entrada"
+                  ? "Registrar entrada"
+                  : "Registrar salida"}
+            </button>
+
+            {bloqueado && (
+              // Se le dice a qué hora podrá y qué hacer si tiene que irse antes. Un "no
+              // puedes" a secas acaba en una llamada a RH que nadie necesitaba.
+              <p className="checador-pill checador-pill--aviso">
+                <Icon name="clock" size={15} />
+                Podrás registrar tu salida a partir de las {ventanaSalida.disponibleDesde}.
+                Si necesitas irte antes, avisa a Recursos Humanos.
+              </p>
+            )}
+          </>
         ) : (
           <div className="checador-cerrado">
             <Icon name="check" size={22} />

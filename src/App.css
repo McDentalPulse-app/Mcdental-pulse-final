@@ -8316,6 +8316,11 @@
   transform: scaleX(-1);
 }
 
+/* El <video> existe siempre en el DOM (si no, el ref no está listo cuando llega el
+   stream y la cámara se queda en negro). Mientras no hay imagen se oculta y en su
+   sitio se ve el aviso. */
+.checador-camara-video--oculto { display: none; }
+
 .checador-camara-aviso {
   display: flex;
   flex-direction: column;

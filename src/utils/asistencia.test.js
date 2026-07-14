@@ -13,6 +13,7 @@ import {
   resumen,
   agruparPor,
   requiereRevision,
+  puedeRegistrarSalida,
   ESTADOS_DIA,
 } from "./asistencia";
 
@@ -377,6 +378,37 @@ describe("agruparPor", () => {
   it("devuelve los grupos en orden cronológico", () => {
     const desordenados = [dias[2], dias[0], dias[1]];
     expect(agruparPor(desordenados, "mes").map((g) => g.clave)).toEqual(["2026-07", "2026-08"]);
+  });
+});
+
+describe("puedeRegistrarSalida", () => {
+  // El botón de salida aparece en el MISMO sitio donde el empleado acaba de pulsar el de
+  // entrada. Sin esta regla, un doble toque en un móvil le cerraba el día con una jornada
+  // de 0 minutos. Se ata al horario (y no a un mínimo fijo de N minutos) porque es lo que
+  // significa de verdad "ya terminé mi turno": un mínimo arbitrario seguiría permitiendo
+  // fichar la jornada entera de golpe a las nueve de la mañana.
+  const turno = { horaSalida: "18:00:00" };
+
+  it.each([
+    ["2026-07-14T15:00:00Z", false], // 09:00 — acaba de entrar
+    ["2026-07-14T23:00:00Z", false], // 17:00 — todavía no
+    ["2026-07-14T23:49:00Z", false], // 17:49 — un minuto antes de la ventana
+    ["2026-07-14T23:50:00Z", true],  // 17:50 — se abre justo aquí (10 min antes)
+    ["2026-07-15T00:00:00Z", true],  // 18:00 — su hora
+    ["2026-07-15T02:00:00Z", true],  // 20:00 — se quedó hasta tarde: siempre permitido
+  ])("a las %s => permitido: %s", (ts, esperado) => {
+    expect(puedeRegistrarSalida(turno, new Date(ts)).permitido).toBe(esperado);
+  });
+
+  it("dice desde qué hora podrá, no solo que no puede", () => {
+    // Un "no puedes" a secas no le dice qué hacer y acaba en una llamada a RH.
+    expect(puedeRegistrarSalida(turno, new Date("2026-07-14T15:00:00Z")).disponibleDesde).toBe("17:50");
+  });
+
+  it("sin horario ese día, puede salir a cualquier hora", () => {
+    // Alguien cubriendo un turno que no es suyo: no hay hora contra la que comparar, y
+    // bloquearlo sería dejarlo sin poder cerrar su jornada.
+    expect(puedeRegistrarSalida(null, new Date("2026-07-14T15:00:00Z")).permitido).toBe(true);
   });
 });
 

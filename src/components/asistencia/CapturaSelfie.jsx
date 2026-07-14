@@ -49,7 +49,6 @@ const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true }, ref) 
         }
 
         streamRef.current = stream;
-        if (videoRef.current) videoRef.current.srcObject = stream;
         setEstado("lista");
       } catch (error) {
         console.warn("No se pudo abrir la cámara:", error?.name || error);
@@ -68,6 +67,22 @@ const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true }, ref) 
       streamRef.current = null;
     };
   }, [activa]);
+
+  // Conectar el stream al <video> va en su PROPIO efecto, después de que React haya
+  // pintado el elemento.
+  //
+  // El bug que esto arregla: al hacerlo dentro del getUserMedia, el <video> todavía no
+  // existía en el DOM (se renderizaba solo cuando estado === "lista", y el estado se
+  // ponía justo después). videoRef.current era null, la asignación se perdía EN SILENCIO
+  // —asignar a una propiedad de null solo falla si es null, y aquí el guard lo tapaba— y
+  // acababa apareciendo un <video> sin fuente: un rectángulo negro con el permiso de
+  // cámara concedido y el stream abierto.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video && streamRef.current && video.srcObject !== streamRef.current) {
+      video.srcObject = streamRef.current;
+    }
+  }, [estado]);
 
   useImperativeHandle(ref, () => ({
     /** Devuelve un Blob JPEG del fotograma actual, o null si la cámara no está lista. */
@@ -93,15 +108,17 @@ const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true }, ref) 
 
   return (
     <div className="checador-camara">
-      {estado === "lista" && (
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          playsInline /* sin esto, iOS abre el vídeo a pantalla completa en vez de en línea */
-          className="checador-camara-video"
-        />
-      )}
+      {/* El <video> se renderiza SIEMPRE, aunque todavía no haya stream: si se montara
+          solo al estar "lista", el ref no existiría cuando getUserMedia resuelve y el
+          stream no tendría dónde engancharse. Se oculta con CSS mientras no hay imagen,
+          y los avisos van superpuestos encima. */}
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        playsInline /* sin esto, iOS abre el vídeo a pantalla completa en vez de en línea */
+        className={`checador-camara-video ${estado === "lista" ? "" : "checador-camara-video--oculto"}`}
+      />
 
       {estado === "iniciando" && (
         <div className="checador-camara-aviso">

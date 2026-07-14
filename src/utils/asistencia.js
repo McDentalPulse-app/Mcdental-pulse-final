@@ -363,6 +363,39 @@ export const agruparPor = (dias = [], granularidad = "dia") => {
     .sort((a, b) => (a.clave < b.clave ? -1 : a.clave > b.clave ? 1 : 0));
 };
 
+/**
+ * Minutos antes de la hora de salida en que se habilita la checada de salida.
+ * DEBE coincidir con c_margen_salida de la RPC registrar_checada (migración 039). Si se
+ * separan, la pantalla ofrecería un botón que el servidor va a rechazar.
+ */
+export const MARGEN_SALIDA_MIN = 10;
+
+/**
+ * ¿Puede ya registrar su salida?
+ *
+ * La regla la impone el servidor; esto solo existe para no ofrecerle un botón que va a
+ * fallar. Sin horario ese día no hay hora contra la que comparar (alguien cubriendo un
+ * turno que no es suyo): se permite.
+ *
+ * Devuelve también `disponibleDesde` para poder decirle a qué hora podrá, en vez de un
+ * "no puedes" a secas que no le dice qué hacer.
+ */
+export const puedeRegistrarSalida = (horario, ahora = new Date()) => {
+  if (!horario?.horaSalida) return { permitido: true, disponibleDesde: null };
+
+  const salida = horaAMinutos(horario.horaSalida);
+  if (salida == null) return { permitido: true, disponibleDesde: null };
+
+  const desde = salida - MARGEN_SALIDA_MIN;
+  const ahoraMin = minutosLocales(ahora instanceof Date ? ahora.toISOString() : ahora);
+  if (ahoraMin == null) return { permitido: true, disponibleDesde: null };
+
+  return {
+    permitido: ahoraMin >= desde,
+    disponibleDesde: minutosAHora(desde),
+  };
+};
+
 /** ¿Esta checada merece que RH la mire? (fuera de la geocerca o sin poder comprobarla) */
 export const requiereRevision = (checada) =>
   !!checada &&
