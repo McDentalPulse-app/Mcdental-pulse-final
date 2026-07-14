@@ -135,6 +135,10 @@ const detectarCara = async (rgb, ancho, alto) => {
         const h = Math.exp(bbox[i * 4 + 3]) * paso;
         const area = w * h;
 
+        // El centro que predice YuNet es relativo a su celda de la rejilla.
+        const cx = (c + bbox[i * 4]) * paso;
+        const cy = (f + bbox[i * 4 + 1]) * paso;
+
         // La cara más grande es la del que está checando. Si hay otra al fondo, es un
         // transeúnte — y si hay dos caras grandes, el cliente ya lo rechazó antes de subirla.
         if (mejor && area <= mejor.area) continue;
@@ -147,7 +151,10 @@ const detectarCara = async (rgb, ancho, alto) => {
           ]);
         }
 
-        mejor = { score, area, puntos };
+        // La caja hace falta para el anti-spoofing: ese modelo no mira la cara alineada, sino un
+        // recorte MÁS ANCHO que la cara (1.5x). Necesita ver el borde —el marco del móvil, el
+        // canto del papel, el brillo de la pantalla— porque ahí es donde se delata una foto.
+        mejor = { score, area, puntos, caja: [cx - w / 2, cy - h / 2, w, h] };
       }
     }
   }
@@ -256,7 +263,80 @@ const alinear = (rgb, ancho, alto, puntos) => {
  * Devuelve null —no un error— si no se ve ninguna cara. "No se pudo mirar" y "no coincide" son
  * cosas distintas, y quien llama decide qué hacer con cada una.
  */
-export const analizarFoto = async (bufferImagen) => {
+/**
+ * ¿Es una cara de verdad o la FOTO de una cara?
+ *
+ * MiniFAS (Apache-2.0, 626 KB, ~7 ms). No mira la geometría: mira la TEXTURA. Una pantalla tiene
+ * píxeles, moiré y un brillo plano; un papel tiene grano, y los dos tienen un borde y unos
+ * reflejos que una cara no tiene. Por eso el recorte que se le da es MÁS ANCHO que la cara (1.5x
+ * la caja): si se le pasa solo la cara, se queda sin ver justo aquello que la delata — el marco
+ * del móvil, el canto del papel, la mano que lo sostiene.
+ *
+ * NACE EN MODO SOMBRA: mide y no bloquea a NADIE (ver migración 047). Su "98.2% de acierto" es
+ * sobre SU dataset, no sobre esta clínica, con estos teléfonos y esta luz. Y como el cotejo sí
+ * bloquea, un falso positivo suyo no sería un dato curioso: sería una persona real plantada en la
+ * puerta sin poder fichar. Es exactamente la lección del 0.363 — un umbral que no se ha medido
+ * aquí no es un umbral, es una corazonada. Se enciende cuando la pantalla de calibración enseñe
+ * las dos nubes con datos de VERDAD.
+ *
+ * Devuelve la probabilidad de que sea real (0 a 1), o null si algo falla: quedarse sin dato no
+ * puede impedirle a nadie fichar.
+ */
+const LADO_VIVEZA = 128;   // lo que espera el modelo
+const MARGEN_CAJA = 1.5;   // cuánto se ensancha la caja de la cara antes de recortar
+
+const calcularViveza = async (bufferImagen, caja) => {
+  try {
+    const [x, y, w, h] = caja;
+    const lado = Math.round(Math.max(w, h) * MARGEN_CAJA);
+    if (lado < 16) return null;
+
+    const izq = Math.round(x + w / 2 - lado / 2);
+    const arr = Math.round(y + h / 2 - lado / 2);
+
+    // La cara suele estar pegada al borde (o salirse), así que el recorte ensanchado se sale de
+    // la imagen constantemente. Se rellena por REFLEJO, no con negro: una banda negra al lado de
+    // la cara es un artefacto que el modelo nunca vio al entrenarse, y le haría gritar "spoof"
+    // a media plantilla. Se acolcha la imagen entera y luego se recorta dentro: así el recorte
+    // siempre cae en zona válida y no hay que llevar la cuenta de los bordes a mano.
+    const pad = lado;
+    const recorte = await sharp(bufferImagen)
+      .extend({ top: pad, bottom: pad, left: pad, right: pad, extendWith: "mirror" })
+      .extract({ left: izq + pad, top: arr + pad, width: lado, height: lado })
+      .resize(LADO_VIVEZA, LADO_VIVEZA)
+      .removeAlpha()
+      .raw()
+      .toBuffer();
+
+    const datos = new Float32Array(3 * LADO_VIVEZA * LADO_VIVEZA);
+    const pixeles = LADO_VIVEZA * LADO_VIVEZA;
+    for (let i = 0; i < pixeles; i += 1) {
+      datos[i] = recorte[i * 3] / 255;                    // R
+      datos[pixeles + i] = recorte[i * 3 + 1] / 255;      // G
+      datos[pixeles * 2 + i] = recorte[i * 3 + 2] / 255;  // B
+    }
+
+    const sesion = await getSesion("antispoof");
+    const salida = await sesion.run({
+      [sesion.inputNames[0]]: new ort.Tensor("float32", datos, [1, 3, LADO_VIVEZA, LADO_VIVEZA]),
+    });
+
+    const [real, falsa] = salida[sesion.outputNames[0]].data;
+
+    // El modelo da dos logits crudos. Se convierten a una probabilidad (0 a 1) porque un logit
+    // suelto no significa nada para quien mire la pantalla de calibración dentro de tres semanas.
+    // Es monótona, así que no pierde información: el umbral por defecto del modelo (diferencia de
+    // logits >= 0.5) equivale aquí a 0.62.
+    return 1 / (1 + Math.exp(-(real - falsa)));
+  } catch (error) {
+    // Que falle esto NO puede impedir una checada: hoy no bloquea, y el día que bloquee tendrá
+    // que ser por lo que MIDE, nunca por haberse caído.
+    console.error("Error midiendo la viveza:", error);
+    return null;
+  }
+};
+
+export const analizarFoto = async (bufferImagen, { viveza = false } = {}) => {
   const original = await sharp(bufferImagen).removeAlpha().raw().toBuffer({ resolveWithObject: true });
   const { width: ancho, height: alto } = original.info;
 
@@ -282,6 +362,9 @@ export const analizarFoto = async (bufferImagen) => {
 
   return {
     huella: Array.from(salida[sesion.outputNames[0]].data),
+    // Solo cuando se pide: cargar un tercer modelo en el enrolado (que no lo usa) sería pagar un
+    // arranque en frío por nada.
+    viveza: viveza ? await calcularViveza(bufferImagen, cara.caja.map((v) => v / escala)) : null,
     // La pose se mide sobre los puntos EN LA IMAGEN ORIGINAL, no sobre la cara ya alineada: el
     // alineado existe precisamente para enderezar la cara, así que después de él toda cara mira
     // al frente y la pose sería siempre 0.5. Medirla ahí daría un reto que nadie puede pasar.

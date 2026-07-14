@@ -81,6 +81,15 @@ export default function Calibracion({ usuarios = [] }) {
     () => histograma(intentos.map((i) => i.score), { cubos: 20 }),
     [intentos]
   );
+
+  // El anti-spoofing corre en sombra: mide y no bloquea. Aquí se ve su nube, que es lo que dirá
+  // dónde poner su umbral cuando haya semanas de datos — para no repetir el error del 0.363.
+  const viveza = useMemo(
+    () => checadas.map((c) => c.liveness_score).filter((v) => v != null),
+    [checadas]
+  );
+  const nubeViveza = useMemo(() => histograma(viveza, { cubos: 20 }), [viveza]);
+  const alturaViveza = useMemo(() => Math.max(1, ...nubeViveza.map((b) => b.n)), [nubeViveza]);
   const altura = useMemo(
     () => Math.max(1, ...nubeAciertos.map((b) => b.n), ...nubeRechazos.map((b) => b.n)),
     [nubeAciertos, nubeRechazos]
@@ -271,6 +280,45 @@ export default function Calibracion({ usuarios = [] }) {
                 apuesta.
               </span>
             </p>
+          </Card>
+
+          {/* ---------- 4b. Anti-spoofing en sombra ---------- */}
+          <Card>
+            <SectionTitle
+              title="Detección de foto-de-una-foto (en sombra)"
+              subtitle="Mide, pero NO bloquea a nadie todavía — se activará cuando esta nube tenga datos de verdad"
+            />
+
+            {viveza.length === 0 ? (
+              <p className="calib-vacio">
+                Aún no hay lecturas. El anti-spoofing empezará a medir en cuanto la gente fiche con
+                la app actualizada. Hasta que esta nube no muestre dónde caen las caras reales y
+                dónde las fotos, el umbral no se puede fijar sin adivinar — y adivinar un umbral es
+                justo lo que se intenta no volver a hacer.
+              </p>
+            ) : (
+              <>
+                <div className="calib-nube">
+                  {nubeViveza.map((b) => (
+                    <span key={b.desde} className="calib-nube-col" title={`${b.desde.toFixed(2)}–${b.hasta.toFixed(2)}`}>
+                      <span
+                        className="calib-nube-barra calib-nube-barra--acierto"
+                        style={{ height: `${(b.n / alturaViveza) * 100}%` }}
+                      />
+                    </span>
+                  ))}
+                </div>
+                <p className="calib-aviso">
+                  <Icon name="info" size={16} />
+                  <span>
+                    1 = cara real · 0 = foto de una foto. Cuando se vean <strong>dos montañas</strong>
+                    {" "}—las caras reales arriba, las fotos abajo— el umbral se pone en el valle entre
+                    ellas. Mientras sea una sola nube difusa, no hay valle que separar, y encenderlo
+                    dejaría fuera a personas de verdad. {viveza.length} lecturas por ahora.
+                  </span>
+                </p>
+              </>
+            )}
           </Card>
 
           {/* ---------- 5. Caras que se parecen demasiado ---------- */}

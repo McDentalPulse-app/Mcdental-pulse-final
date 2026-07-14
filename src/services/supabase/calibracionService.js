@@ -15,7 +15,7 @@ export const getScoresChecadas = async ({ desde } = {}) => {
     const rows = await fetchAll(() => {
       let q = supabase
         .from("asistencias")
-        .select("empleado_id, match_score, marcada_en")
+        .select("empleado_id, match_score, liveness_score, reto_superado, marcada_en")
         .not("match_score", "is", null);
       if (desde) q = q.gte("fecha", desde);
       return q.order("marcada_en", { ascending: false });

@@ -139,6 +139,15 @@ export default async function handler(req, res) {
   let retoSuperado = null; // null = no se le pidió ninguno
   let motivoReto = null;
 
+  // Anti-spoofing, EN MODO SOMBRA: se mide y NO BLOQUEA A NADIE.
+  //
+  // Su 98.2% de acierto es sobre SU dataset, no sobre esta clínica con estos teléfonos y esta
+  // luz. Y como el cotejo sí bloquea, un falso positivo suyo no sería un dato curioso: sería una
+  // persona real que no puede fichar. Se enciende cuando la pantalla de calibración enseñe las
+  // dos nubes con datos de verdad — 2 o 3 semanas. Encenderlo hoy sería repetir exactamente el
+  // error del 0.363.
+  let viveza = null;
+
   if (rostro && selfiePath) {
     const referencias = (rostro.rostro_fotos || []).map((f) => f.huella);
     if (!referencias.length && rostro.huella) referencias.push(rostro.huella);
@@ -155,10 +164,12 @@ export default async function handler(req, res) {
     if (archivo && referencias.length) {
       let cara = null;
       try {
-        cara = await analizarFoto(Buffer.from(await archivo.arrayBuffer()));
+        cara = await analizarFoto(Buffer.from(await archivo.arrayBuffer()), { viveza: true });
       } catch (error) {
         console.error("Error analizando la foto de la checada:", error);
       }
+
+      viveza = cara?.viveza ?? null;
 
       if (cara?.huella) {
         score = pareceEl(cara.huella);
@@ -280,7 +291,12 @@ export default async function handler(req, res) {
   if (hayQueCotejar) {
     await supabase
       .from("asistencias")
-      .update({ match_score: score, rostro_verificado: verificado, reto_superado: retoSuperado })
+      .update({
+        match_score: score,
+        rostro_verificado: verificado,
+        reto_superado: retoSuperado,
+        liveness_score: viveza,
+      })
       .eq("id", checada.id);
 
     // Superado: se descuelga. El siguiente reto volverá a salir por sorteo, como a todo el mundo.
