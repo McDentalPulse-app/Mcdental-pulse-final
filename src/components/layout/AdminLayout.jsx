@@ -18,6 +18,7 @@ import GestionEncuestas from '../admin/GestionEncuestas';
 import GestionSucursales from '../admin/GestionSucursales';
 import GestionHorarios from '../admin/GestionHorarios';
 import ImportarHorarios from '../admin/ImportarHorarios';
+import Calibracion from '../admin/Calibracion';
 import AsistenciaPanel from '../asistencia/AsistenciaPanel';
 import EnrolarRostros from '../asistencia/EnrolarRostros';
 import Perfil from '../common/Perfil';
@@ -46,6 +47,7 @@ export default function AdminLayout({ user, globals, actions }) {
             <Route path="sucursales" element={<GestionSucursales />} />
             <Route path="horarios" element={<GestionHorarios usuarios={USERS} horarios={horarios} setHorarios={setHorarios} />} />
             <Route path="importar-horarios" element={<ImportarHorarios usuarios={USERS} />} />
+            <Route path="calibracion" element={<Calibracion usuarios={USERS} />} />
             <Route path="rostros" element={<EnrolarRostros usuarios={USERS} />} />
             <Route path="expedientes" element={<ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} archivosExpediente={archivosExpediente} onSubirArchivoExpediente={subirArchivoExpediente} />} />
             <Route path="reconocimientos" element={<ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />} />

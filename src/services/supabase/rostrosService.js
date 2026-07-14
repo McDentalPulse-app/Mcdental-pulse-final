@@ -42,6 +42,10 @@ const mapRostro = (r) => ({
   revisadoEn: r.revisado_en,
   registradoEn: r.created_at,
   venceEn: r.vence_en,
+  // A quién se parece demasiado (lo anota el servidor al aprobar). El caso difícil del cotejo
+  // nunca fue el desconocido, sino el parecido: un hermano, un primo.
+  parecidoMaximo: r.parecido_maximo,
+  parecidoCon: r.parecido_con,
   // Derivado: la cara caduca a los 6 meses (la gente cambia y una referencia vieja acaba
   // rechazando a su propio dueño). Se calcula aquí una vez, no en cada pantalla.
   caducado: !!r.vence_en && new Date(r.vence_en) < new Date(),
@@ -58,7 +62,7 @@ export const getRostros = async () => {
     // los necesita. Traerlos "porque están ahí" es exponerlos sin motivo.
     const { data, error } = await supabase
       .from("rostros")
-      .select("empleado_id, estado, motivo_rechazo, revisado_en, created_at, vence_en, rostro_fotos(selfie_path)");
+      .select("empleado_id, estado, motivo_rechazo, revisado_en, created_at, vence_en, parecido_maximo, parecido_con, rostro_fotos(selfie_path)");
     if (error) throw error;
     return (data || []).map(mapRostro);
   } catch (error) {

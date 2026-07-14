@@ -46,6 +46,11 @@ export default function EnrolarRostros({ usuarios = [] }) {
     [rostros]
   );
 
+  const nombrePorId = useMemo(
+    () => new Map(usuarios.map((u) => [u.id, u.name])),
+    [usuarios]
+  );
+
   const pendientes = useMemo(
     () => usuarios
       .filter((u) => porEmpleado.get(u.id)?.estado === "pendiente")
@@ -88,8 +93,19 @@ export default function EnrolarRostros({ usuarios = [] }) {
 
     setOcupado(empleado.id);
     try {
-      await revisarRostro({ empleadoId: empleado.id, aprobar, motivo });
-      toast.success(aprobar ? `${empleado.name} quedó verificado.` : "Rostro rechazado.");
+      const { aviso } = await revisarRostro({ empleadoId: empleado.id, aprobar, motivo });
+
+      if (aviso) {
+        // El servidor comparó esta cara contra todas las demás y se parece demasiado a otra. No
+        // se deshace la aprobación —puede ser un hermano, y los hermanos también trabajan— pero
+        // RH tiene que enterarse AHORA, que es cuando puede hacer algo: rehacer las fotos con
+        // mejor luz, o al menos saber que esas dos personas son un punto ciego del cotejo.
+        toast.warning(
+          `${empleado.name} quedó verificado, pero su cara se parece mucho a la de ${aviso.nombre} (${aviso.score.toFixed(2)}). El cotejo podría llegar a confundirlos.`
+        );
+      } else {
+        toast.success(aprobar ? `${empleado.name} quedó verificado.` : "Rostro rechazado.");
+      }
       cargar();
     } catch (e) {
       toast.error(e?.message || "No se pudo guardar la revisión.");
@@ -185,13 +201,27 @@ export default function EnrolarRostros({ usuarios = [] }) {
         <Card>
           <ul className="asistencia-revision">
             {empleados.map((u) => {
-              const [clase, texto] = pillDe(porEmpleado.get(u.id));
+              const r = porEmpleado.get(u.id);
+              const [clase, texto] = pillDe(r);
+              // El parecido no caduca con el toast del día que se aprobó: si dos caras pueden
+              // confundirse, eso sigue siendo verdad dentro de tres meses, y el RH que abra esta
+              // lista entonces tiene que verlo sin haber estado aquí aquel día.
+              const parecido = r?.parecidoMaximo != null && r.parecidoMaximo >= 0.4
+                ? nombrePorId.get(r.parecidoCon)
+                : null;
               return (
                 <li key={u.id}>
                   <Avatar name={u.name} photoUrl={u.avatarUrl} size={32} />
                   <div className="asistencia-revision-main">
                     <strong>{u.name}</strong>
-                    <span>{u.sucursal}</span>
+                    <span>
+                      {u.sucursal}
+                      {parecido && (
+                        <em className="rostro-parecido">
+                          {" "}· se parece a {parecido} ({r.parecidoMaximo.toFixed(2)})
+                        </em>
+                      )}
+                    </span>
                   </div>
                   <div className="asistencia-revision-acciones">
                     <span className={`mc-status-pill ${clase}`}>{texto}</span>
