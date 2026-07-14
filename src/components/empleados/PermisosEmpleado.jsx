@@ -14,6 +14,7 @@ export default function PermisosEmpleado({
 }) {
   const { toast, confirm } = useNotification();
   const [tipoSeleccionado, setTipoSeleccionado] = useState("Vacaciones");
+  const [causaSeleccionada, setCausaSeleccionada] = useState("");
   const [fechaInicioPreview, setFechaInicioPreview] = useState("");
   const [fechaFinPreview, setFechaFinPreview] = useState("");
   const [diasPreview, setDiasPreview] = useState(0);
@@ -33,13 +34,19 @@ export default function PermisosEmpleado({
     }
   };
 
+  // Los PERMISOS también, no solo las vacaciones.
+  //
+  // La prop `permisos` llegaba aquí y no se usaba: el empleado solicitaba un permiso y
+  // desaparecía de su vista — no podía saber si se lo habían aprobado. Daba igual mientras
+  // el formulario no dejaba pedir permisos (el tipo estaba fijo en "Vacaciones"), pero
+  // ahora sí, y sin esto un permiso de salida anticipada se enviaría a un agujero negro.
   const solicitudesEmpleado = [
     ...vacaciones
       .filter((v) => v.empleadoId === user?.id)
-      .map((v) => ({
-        ...v,
-        tipo: "Vacaciones"
-      }))
+      .map((v) => ({ ...v, tipo: "Vacaciones" })),
+    ...permisos
+      .filter((p) => p.empleadoId === user?.id)
+      .map((p) => ({ ...p, tipo: "Permiso", fechaInicio: p.fecha, fechaFin: p.fechaFin || p.fecha })),
   ].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
 
   const estadoClass = (estado) => {
@@ -109,7 +116,7 @@ export default function PermisosEmpleado({
       fin: fechaFin,
       desde: fechaInicio,
       hasta: fechaFin,
-      hora: "",
+      hora: form.hora?.value || "",
       dias: tipo === "Vacaciones" ? dias : "",
       causa: tipo === "Permisos" ? form.causa?.value || null : null,
       motivo: form.motivo.value,
@@ -126,6 +133,7 @@ export default function PermisosEmpleado({
 
     form.reset();
     setTipoSeleccionado("Vacaciones");
+    setCausaSeleccionada("");
     setFechaInicioPreview("");
     setFechaFinPreview("");
     setDiasPreview(0);
@@ -164,15 +172,38 @@ export default function PermisosEmpleado({
           </div>
 
           {tipoSeleccionado === "Permisos" && (
-            <div className="mc-form-group">
-              <label className="mc-form-label" htmlFor="pe-causa">Causa</label>
-              <select id="pe-causa" className="mc-form-input" name="causa" required>
-                <option value="">Selecciona una causa</option>
-                {CAUSAS_PERMISO.map((c) => (
-                  <option key={c.valor} value={c.valor}>{c.label}</option>
-                ))}
-              </select>
-            </div>
+            <>
+              <div className="mc-form-group">
+                <label className="mc-form-label" htmlFor="pe-causa">Causa</label>
+                <select
+                  id="pe-causa"
+                  className="mc-form-input"
+                  name="causa"
+                  required
+                  value={causaSeleccionada}
+                  onChange={(e) => setCausaSeleccionada(e.target.value)}
+                >
+                  <option value="">Selecciona una causa</option>
+                  {CAUSAS_PERMISO.map((c) => (
+                    <option key={c.valor} value={c.valor}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* La hora solo se pide cuando significa algo. Para una salida anticipada NO es
+                  un dato informativo: es la hora a partir de la cual el checador le dejará
+                  registrar su salida (migración 045). */}
+              {CAUSAS_PERMISO.find((c) => c.valor === causaSeleccionada)?.pideHora && (
+                <div className="mc-form-group">
+                  <label className="mc-form-label" htmlFor="pe-hora">¿A qué hora necesitas salir?</label>
+                  <input id="pe-hora" className="mc-form-input" name="hora" type="time" required />
+                  <p className="mc-hint">
+                    <Icon name="alert" size={14} />
+                    Si RH lo aprueba, podrás registrar tu salida 10 minutos antes de esa hora.
+                  </p>
+                </div>
+              )}
+            </>
           )}
 
           <div className="mc-form-row-2">

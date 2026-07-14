@@ -7,7 +7,10 @@
  * médica", "cita al doctor" y "medico" son la misma cosa escrita de tres formas, y
  * ningún reporte puede contarlas juntas.
  */
+export const CAUSA_SALIDA_ANTICIPADA = "salida_anticipada";
+
 export const CAUSAS_PERMISO = [
+  { valor: CAUSA_SALIDA_ANTICIPADA, label: "Salida anticipada (irme antes hoy)", pideHora: true },
   { valor: "enfermedad", label: "Enfermedad" },
   { valor: "cita_medica", label: "Cita médica" },
   { valor: "asunto_personal", label: "Asunto personal" },

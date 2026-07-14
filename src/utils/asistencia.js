@@ -377,14 +377,21 @@ export const MARGEN_SALIDA_MIN = 10;
  * fallar. Sin horario ese día no hay hora contra la que comparar (alguien cubriendo un
  * turno que no es suyo): se permite.
  *
+ * `horaAutorizada` viene de un permiso APROBADO de salida anticipada (migración 045). Solo
+ * puede ADELANTAR la salida, nunca retrasarla: un permiso mal capturado con hora 20:00 no
+ * puede dejar a alguien sin poder fichar a su hora normal.
+ *
  * Devuelve también `disponibleDesde` para poder decirle a qué hora podrá, en vez de un
  * "no puedes" a secas que no le dice qué hacer.
  */
-export const puedeRegistrarSalida = (horario, ahora = new Date()) => {
-  if (!horario?.horaSalida) return { permitido: true, disponibleDesde: null };
+export const puedeRegistrarSalida = (horario, ahora = new Date(), horaAutorizada = null) => {
+  if (!horario?.horaSalida) return { permitido: true, disponibleDesde: null, autorizada: false };
 
-  const salida = horaAMinutos(horario.horaSalida);
-  if (salida == null) return { permitido: true, disponibleDesde: null };
+  const turno = horaAMinutos(horario.horaSalida);
+  if (turno == null) return { permitido: true, disponibleDesde: null, autorizada: false };
+
+  const autorizada = horaAMinutos(horaAutorizada);
+  const salida = autorizada != null ? Math.min(autorizada, turno) : turno;
 
   const desde = salida - MARGEN_SALIDA_MIN;
   const ahoraMin = minutosLocales(ahora instanceof Date ? ahora.toISOString() : ahora);
@@ -393,7 +400,33 @@ export const puedeRegistrarSalida = (horario, ahora = new Date()) => {
   return {
     permitido: ahoraMin >= desde,
     disponibleDesde: minutosAHora(desde),
+    // Para poder decirle "tu salida está autorizada para las 15:00" en vez de repetirle la
+    // hora de su turno, que ya no es la que manda hoy.
+    autorizada: autorizada != null && autorizada < turno,
+    horaAutorizada: autorizada != null && autorizada < turno ? minutosAHora(autorizada) : null,
   };
+};
+
+/**
+ * La hora a la que un permiso APROBADO le autoriza salir hoy, o null.
+ *
+ * Solo cuenta el aprobado: un permiso pendiente todavía no autoriza nada, y tratarlo como
+ * si lo hiciera convertiría "pedir permiso" en "tomárselo".
+ */
+export const horaSalidaAutorizada = (permisos = [], fecha) => {
+  const horas = permisos
+    .filter((p) =>
+      p?.estado === "aprobado" &&
+      p?.causa === "salida_anticipada" &&
+      p?.hora &&
+      cubreFecha(fecha, p.fecha, p.fechaFin)
+    )
+    .map((p) => horaAMinutos(p.hora))
+    .filter((m) => m != null);
+
+  // La más temprana: es la que más le beneficia, y no hay motivo para aplicarle la más
+  // restrictiva de dos autorizaciones que él pidió y RH aprobó.
+  return horas.length ? minutosAHora(Math.min(...horas)) : null;
 };
 
 /**

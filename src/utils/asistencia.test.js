@@ -15,6 +15,7 @@ import {
   requiereRevision,
   detectarDispositivosCompartidos,
   puedeRegistrarSalida,
+  horaSalidaAutorizada,
   ESTADOS_DIA,
 } from "./asistencia";
 
@@ -499,5 +500,68 @@ describe("detectarDispositivosCompartidos", () => {
       ch("2", "beto", null),
     ]);
     expect(sospechosas.size).toBe(0);
+  });
+});
+
+describe("salida anticipada", () => {
+  // Irse antes de la hora, con permiso APROBADO de RH (migración 045). No se inventó un
+  // mecanismo nuevo: se reusa el módulo de permisos, que ya tenía solicitud, aprobación,
+  // estado, causa y una columna `hora` sin usar esperando exactamente esto.
+  const turno = { horaSalida: "18:00:00" };
+  const permiso = (extra) => ({
+    empleadoId: "ana", estado: "aprobado", causa: "salida_anticipada",
+    hora: "15:00", fecha: "2026-07-14", fechaFin: null, ...extra,
+  });
+
+  it("un permiso aprobado ADELANTA la ventana de salida", () => {
+    // Autorizado a las 15:00 -> puede checar desde las 14:50, no desde las 17:50.
+    const r = puedeRegistrarSalida(turno, new Date("2026-07-14T20:50:00Z"), "15:00"); // 14:50 local
+    expect(r.permitido).toBe(true);
+    expect(r.autorizada).toBe(true);
+    expect(r.horaAutorizada).toBe("15:00");
+  });
+
+  it("antes de la hora autorizada sigue bloqueado", () => {
+    const r = puedeRegistrarSalida(turno, new Date("2026-07-14T20:00:00Z"), "15:00"); // 14:00 local
+    expect(r.permitido).toBe(false);
+    expect(r.disponibleDesde).toBe("14:50");
+  });
+
+  it("un permiso con hora POSTERIOR a su turno se ignora", () => {
+    // Un permiso mal capturado con hora 20:00 no puede dejar a alguien sin poder fichar a su
+    // hora normal: solo puede ADELANTAR la salida, nunca retrasarla.
+    const r = puedeRegistrarSalida(turno, new Date("2026-07-14T23:55:00Z"), "20:00"); // 17:55 local
+    expect(r.permitido).toBe(true);   // manda su turno (17:50), no el permiso
+    expect(r.autorizada).toBe(false);
+  });
+});
+
+describe("horaSalidaAutorizada", () => {
+  const base = { empleadoId: "ana", causa: "salida_anticipada", hora: "15:00", fecha: "2026-07-14", fechaFin: null };
+
+  it("solo cuenta el permiso APROBADO", () => {
+    // Si el pendiente contara, pedir permiso sería lo mismo que tomárselo.
+    expect(horaSalidaAutorizada([{ ...base, estado: "pendiente" }], "2026-07-14")).toBeNull();
+    expect(horaSalidaAutorizada([{ ...base, estado: "rechazado" }], "2026-07-14")).toBeNull();
+    expect(horaSalidaAutorizada([{ ...base, estado: "aprobado" }], "2026-07-14")).toBe("15:00");
+  });
+
+  it("ignora los permisos de OTRAS causas", () => {
+    // Una cita médica aprobada no autoriza a irse antes: son cosas distintas.
+    expect(horaSalidaAutorizada([{ ...base, estado: "aprobado", causa: "cita_medica" }], "2026-07-14")).toBeNull();
+  });
+
+  it("ignora los permisos de otro día", () => {
+    expect(horaSalidaAutorizada([{ ...base, estado: "aprobado" }], "2026-07-15")).toBeNull();
+  });
+
+  it("con varios, se queda con la hora MÁS TEMPRANA", () => {
+    // Es la que más le beneficia. No hay motivo para aplicarle la más restrictiva de dos
+    // autorizaciones que él pidió y RH aprobó.
+    const r = horaSalidaAutorizada([
+      { ...base, estado: "aprobado", hora: "16:00" },
+      { ...base, estado: "aprobado", hora: "14:30" },
+    ], "2026-07-14");
+    expect(r).toBe("14:30");
   });
 });

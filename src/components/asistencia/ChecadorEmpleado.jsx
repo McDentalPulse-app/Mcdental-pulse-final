@@ -11,7 +11,7 @@ import { getDeviceId } from "../../utils/dispositivo";
 import { getMiRostro } from "../../services/supabase/rostrosService";
 import { getAjustes } from "../../services/supabase/ajustesService";
 import { RESULTADO, MENSAJE } from "../../utils/rostro";
-import { emparejarChecadas, diaISO, puedeRegistrarSalida, TZ_CLINICA } from "../../utils/asistencia";
+import { emparejarChecadas, diaISO, puedeRegistrarSalida, horaSalidaAutorizada, TZ_CLINICA } from "../../utils/asistencia";
 
 const horaCorta = (timestamp) =>
   new Intl.DateTimeFormat("es-MX", {
@@ -28,7 +28,7 @@ const PILL_UBICACION = {
   sin_geocerca: { icono: "mapPin", clase: "checador-pill--aviso" },
 };
 
-export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = [], onChecar }) {
+export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = [], permisos = [], onChecar }) {
   const camaraRef = useRef(null);
   const { toast } = useNotification();
   const navigate = useNavigate();
@@ -92,8 +92,16 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
   //
   // Sin esto, el botón de salida aparecería en el MISMO sitio donde acaba de pulsar el de
   // entrada: en un móvil, un doble toque le cerraba el día con una jornada de 0 minutos.
+  // ¿Le autorizaron irse antes hoy? Un permiso APROBADO de salida anticipada adelanta la
+  // ventana: autorizado a las 15:00, puede checar desde las 14:50. El pendiente no cuenta —
+  // tratarlo como autorización convertiría "pedir permiso" en "tomárselo".
+  const autorizada = useMemo(() => {
+    const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: TZ_CLINICA }).format(new Date());
+    return horaSalidaAutorizada(permisos.filter((p) => p.empleadoId === user?.id), hoy);
+  }, [permisos, user?.id]);
+
   const ventanaSalida = siguiente === "salida"
-    ? puedeRegistrarSalida(horarioHoy)
+    ? puedeRegistrarSalida(horarioHoy, new Date(), autorizada)
     : { permitido: true, disponibleDesde: null };
 
   const bloqueado = siguiente === "salida" && !ventanaSalida.permitido;
@@ -214,8 +222,18 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
               // puedes" a secas acaba en una llamada a RH que nadie necesitaba.
               <p className="checador-pill checador-pill--aviso">
                 <Icon name="clock" size={15} />
-                Podrás registrar tu salida a partir de las {ventanaSalida.disponibleDesde}.
-                Si necesitas irte antes, avisa a Recursos Humanos.
+                {ventanaSalida.autorizada
+                  ? `Tu salida está autorizada para las ${ventanaSalida.horaAutorizada}. Podrás checar a partir de las ${ventanaSalida.disponibleDesde}.`
+                  : `Podrás registrar tu salida a partir de las ${ventanaSalida.disponibleDesde}. Si necesitas irte antes, pide un permiso de salida anticipada a Recursos Humanos.`}
+              </p>
+            )}
+
+            {/* Autorizado y ya dentro de la ventana: se le confirma, para que no dude de si
+                el permiso llegó a aprobarse. */}
+            {!bloqueado && siguiente === "salida" && ventanaSalida.autorizada && (
+              <p className="checador-pill checador-pill--ok">
+                <Icon name="check" size={15} />
+                Recursos Humanos autorizó tu salida a las {ventanaSalida.horaAutorizada}.
               </p>
             )}
           </>
