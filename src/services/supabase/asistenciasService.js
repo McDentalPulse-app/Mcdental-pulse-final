@@ -20,6 +20,7 @@ const mapAsistencia = (row) => ({
   distanciaM: row.distancia_m,
   ubicacionEstado: row.ubicacion_estado,
   selfiePath: row.selfie_path,
+  fotoPurgada: row.foto_purgada,
   deviceId: row.device_id,
   dispositivoNuevo: row.dispositivo_nuevo,
   matchScore: row.match_score,

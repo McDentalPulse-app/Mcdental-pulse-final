@@ -60,11 +60,17 @@ export default async function handler(req, res) {
   // referencia por otra en cualquier momento y el control se evaporaría. Solo RH lo reabre.
   const { data: existente } = await supabase
     .from("rostros")
-    .select("id, estado")
+    .select("id, estado, vence_en, rostro_fotos(selfie_path)")
     .eq("empleado_id", destino)
-    .single();
+    .maybeSingle();
 
-  if (existente?.estado === "aprobado" && !esGestor) {
+  // Un rostro aprobado y VIGENTE no lo puede rehacer el empleado: si pudiera, cambiaría su
+  // cara de referencia justo cuando le conviniera. Pero uno CADUCADO sí — es él quien tiene
+  // que renovarlo, y obligarle a pasar por RH para algo que el sistema le está pidiendo sería
+  // fricción gratuita.
+  const caducado = existente?.vence_en && new Date(existente.vence_en) < new Date();
+
+  if (existente?.estado === "aprobado" && !caducado && !esGestor) {
     return res.status(409).json({
       error: "Tu rostro ya está registrado. Si necesitas cambiarlo, pídeselo a Recursos Humanos.",
     });
@@ -127,8 +133,18 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "No se pudo guardar el rostro." });
   }
 
-  // Se reemplazan las fotos anteriores: un re-registro sustituye, no acumula. Si no, una
-  // cara vieja seguiría dando por buena a quien ya no debería pasar.
+  // Se reemplazan las fotos anteriores: un re-registro sustituye, no acumula. Si no, una cara
+  // vieja seguiría dando por buena a quien ya no debería pasar.
+  //
+  // Y se borran TAMBIÉN DE STORAGE, no solo de la tabla: borrar la fila y dejar el archivo es
+  // guardar la cara de alguien para siempre en un bucket que nadie mira. Es justo lo que la
+  // política de retención viene a evitar.
+  const antiguas = (existente?.rostro_fotos || []).map((f) => f.selfie_path).filter(Boolean);
+  if (antiguas.length) {
+    const { error } = await supabase.storage.from("rostros").remove(antiguas);
+    if (error) console.error("No se pudieron borrar las fotos de rostro anteriores:", error);
+  }
+
   await supabase.from("rostro_fotos").delete().eq("rostro_id", rostro.id);
 
   const { error: errorFotos } = await supabase.from("rostro_fotos").insert(

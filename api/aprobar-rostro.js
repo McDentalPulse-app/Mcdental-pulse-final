@@ -44,6 +44,12 @@ export default async function handler(req, res) {
       estado: aprobar ? "aprobado" : "rechazado",
       revisado_por: quien.id,
       revisado_en: new Date().toISOString(),
+      // La cara caduca a los 6 meses: la gente cambia (barba, gafas, peso) y una referencia
+      // vieja acaba rechazando a su propio dueño — que es el peor fallo posible, porque le
+      // pasa a la persona honrada y le impide trabajar.
+      vence_en: aprobar
+        ? new Date(Date.now() + 182 * 24 * 60 * 60 * 1000).toISOString()
+        : null,
       motivo_rechazo: aprobar ? null : (motivo || "Las fotos no sirven o no corresponden."),
     })
     .eq("empleado_id", empleadoId)

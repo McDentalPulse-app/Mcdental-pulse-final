@@ -536,6 +536,10 @@ export const requiereRevision = (checada) =>
     checada.ubicacionEstado === "fuera" ||
     checada.ubicacionEstado === "sin_gps" ||
     checada.dispositivoNuevo === true ||
-    // Sin foto pudiendo haberla: el detector de rostro no bloquea si falla, así que una
-    // checada sin selfie es un hueco que alguien debería mirar.
-    !checada.selfiePath);
+    // Sin foto PUDIENDO haberla: una checada sin selfie es un hueco — alguien fichó sin dejar
+    // evidencia y eso hay que mirarlo.
+    //
+    // Pero `fotoPurgada` NO cuenta: esa foto existió y se borró porque tocaba (retención de 7
+    // días). Sin esta distinción, TODAS las checadas de más de una semana saldrían marcadas y
+    // el panel de RH se llenaría de ruido viejo — y las alertas de verdad se perderían dentro.
+    (!checada.selfiePath && !checada.fotoPurgada));

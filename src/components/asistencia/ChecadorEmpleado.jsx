@@ -44,13 +44,16 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
     Promise.all([getAjustes(), getMiRostro(user?.id)])
       .then(([ajustes, rostro]) => {
         if (!activo) return;
-        if (!ajustes.exigirRostro || rostro?.estado === "aprobado") {
+        const vigente = rostro?.estado === "aprobado" && !rostro?.caducado;
+
+        if (!ajustes.exigirRostro || vigente) {
           setPuerta({ abierta: true });
         } else {
           setPuerta({
             abierta: false,
             enRevision: rostro?.estado === "pendiente",
             rechazado: rostro?.estado === "rechazado",
+            caducado: !!rostro?.caducado,
           });
         }
       })
@@ -158,9 +161,11 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
             <Icon name={puerta.enRevision ? "clock" : "camera"} size={16} />
             {puerta.enRevision
               ? "Tus fotos están en revisión. Recursos Humanos debe aprobarlas antes de que puedas checar."
-              : puerta.rechazado
-                ? "Recursos Humanos no dio por buenas tus fotos. Vuelve a tomarlas."
-                : "Para poder checar, primero tienes que registrar tu rostro."}
+              : puerta.caducado
+                ? "Tus fotos caducaron (se renuevan cada 6 meses). Vuelve a tomarlas para poder checar."
+                : puerta.rechazado
+                  ? "Recursos Humanos no dio por buenas tus fotos. Vuelve a tomarlas."
+                  : "Para poder checar, primero tienes que registrar tu rostro."}
           </p>
 
           {!puerta.enRevision && (
@@ -169,7 +174,8 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
               className="checador-boton checador-boton--entrada"
               onClick={() => navigate("/empleado/rostro")}
             >
-              <Icon name="camera" size={20} /> Registrar mi rostro
+              <Icon name="camera" size={20} />
+              {puerta.caducado ? "Renovar mis fotos" : "Registrar mi rostro"}
             </button>
           )}
 

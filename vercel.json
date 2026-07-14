@@ -17,6 +17,15 @@
       "excludeFiles": "node_modules/onnxruntime-node/bin/napi-v6/{darwin,win32}/**",
       "maxDuration": 30,
       "memory": 2048
+    },
+    "api/limpiar-fotos.js": {
+      "maxDuration": 60
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/limpiar-fotos",
+      "schedule": "17 4 * * *"
+    }
+  ]
 }

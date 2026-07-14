@@ -165,12 +165,19 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
     if (compartidos.has(c.id)) return "Este mismo teléfono checó hoy a más de un empleado.";
     if (c.ubicacionEstado === "fuera") return `A ${c.distanciaM} m de ${c.sucursal}: fuera del área permitida.`;
     if (c.dispositivoNuevo) return "Checó desde un teléfono que nunca había usado.";
-    if (!c.selfiePath) return "Se registró sin foto.";
+    if (!c.selfiePath && !c.fotoPurgada) return "Se registró sin foto.";
     if (c.ubicacionEstado === "sin_gps") return "Sin ubicación: no dio permiso de GPS o falló.";
     return "";
   };
 
   const verSelfie = async (checada) => {
+    if (checada.fotoPurgada) {
+      // Se distingue de "se registró sin foto": una es el funcionamiento normal, la otra es un
+      // hueco. Decirle lo mismo a RH en los dos casos le haría desconfiar de checadas
+      // perfectamente correctas.
+      toast.info("La foto se borró: solo se conservan una semana.");
+      return;
+    }
     if (!checada.selfiePath) {
       toast.info("Esa checada se registró sin foto.");
       return;

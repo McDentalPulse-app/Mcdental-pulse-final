@@ -41,6 +41,13 @@ const mapRostro = (r) => ({
   motivoRechazo: r.motivo_rechazo,
   revisadoEn: r.revisado_en,
   registradoEn: r.created_at,
+  venceEn: r.vence_en,
+  // Derivado: la cara caduca a los 6 meses (la gente cambia y una referencia vieja acaba
+  // rechazando a su propio dueño). Se calcula aquí una vez, no en cada pantalla.
+  caducado: !!r.vence_en && new Date(r.vence_en) < new Date(),
+  diasParaVencer: r.vence_en
+    ? Math.ceil((new Date(r.vence_en) - new Date()) / 86400000)
+    : null,
   fotos: (r.rostro_fotos || []).map((f) => f.selfie_path),
 });
 
@@ -51,7 +58,7 @@ export const getRostros = async () => {
     // los necesita. Traerlos "porque están ahí" es exponerlos sin motivo.
     const { data, error } = await supabase
       .from("rostros")
-      .select("empleado_id, estado, motivo_rechazo, revisado_en, created_at, rostro_fotos(selfie_path)");
+      .select("empleado_id, estado, motivo_rechazo, revisado_en, created_at, vence_en, rostro_fotos(selfie_path)");
     if (error) throw error;
     return (data || []).map(mapRostro);
   } catch (error) {
@@ -64,7 +71,7 @@ export const getRostros = async () => {
 export const getMiRostro = async (empleadoId) => {
   const { data, error } = await supabase
     .from("rostros")
-    .select("empleado_id, estado, motivo_rechazo, revisado_en, created_at")
+    .select("empleado_id, estado, motivo_rechazo, revisado_en, created_at, vence_en")
     .eq("empleado_id", empleadoId)
     .maybeSingle();
 

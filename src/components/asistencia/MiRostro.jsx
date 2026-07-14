@@ -131,10 +131,14 @@ export default function MiRostro({ user }) {
   };
 
   const estado = rostro?.estado;
-  // Solo se puede (re)registrar si no hay nada, o si RH lo rechazó. Un registro ya aprobado
-  // no se toca: si el empleado pudiera cambiar su cara de referencia cuando quisiera, el
-  // control se evaporaría en el momento en que le conviniera.
-  const puedeRegistrar = !estado || estado === "rechazado";
+
+  // Se puede (re)registrar si no hay nada, si RH lo rechazó, o si CADUCÓ.
+  //
+  // Un registro aprobado y vigente no se toca: si el empleado pudiera cambiar su cara de
+  // referencia cuando quisiera, el control se evaporaría en el momento en que le conviniera.
+  // Pero uno caducado sí — es él quien tiene que renovarlo, y obligarle a pasar por RH para
+  // algo que el sistema le está pidiendo sería fricción gratuita.
+  const puedeRegistrar = !estado || estado === "rechazado" || rostro?.caducado;
 
   if (cargando) {
     return (
@@ -153,16 +157,33 @@ export default function MiRostro({ user }) {
         subtitle="Sirve para comprobar que eres tú quien checa"
       />
 
-      {estado === "aprobado" && (
+      {estado === "aprobado" && !rostro?.caducado && (
         <Card>
           <p className="checador-pill checador-pill--ok">
             <Icon name="check" size={16} />
             Tu rostro está registrado. No hace falta que hagas nada más.
           </p>
+          {/* Se le avisa con dos semanas: enterarse de que caducó el día que no puede fichar es
+              enterarse tarde. */}
+          {rostro?.diasParaVencer != null && rostro.diasParaVencer <= 15 && (
+            <p className="checador-pill checador-pill--aviso">
+              <Icon name="clock" size={15} />
+              Caduca en {rostro.diasParaVencer} día(s). Vuelve a tomar tus fotos antes de que pase.
+            </p>
+          )}
           <p className="mc-hint">
             <Icon name="alert" size={15} />
-            Si cambió mucho tu aspecto y tus checadas empiezan a marcarse, pídele a Recursos
-            Humanos que te lo vuelva a tomar.
+            Se renueva cada 6 meses: la gente cambia (barba, lentes, peso) y una foto vieja
+            acabaría no reconociéndote.
+          </p>
+        </Card>
+      )}
+
+      {estado === "aprobado" && rostro?.caducado && (
+        <Card>
+          <p className="checador-pill checador-pill--alerta">
+            <Icon name="alert" size={16} />
+            Tus fotos caducaron. Vuelve a tomarlas para poder seguir checando.
           </p>
         </Card>
       )}

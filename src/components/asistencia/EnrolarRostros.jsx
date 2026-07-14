@@ -98,12 +98,18 @@ export default function EnrolarRostros({ usuarios = [] }) {
     }
   };
 
-  const aprobados = empleados.filter((u) => porEmpleado.get(u.id)?.estado === "aprobado").length;
+  // Un rostro caducado NO cuenta como verificado: ya no sirve para cotejar.
+  const aprobados = empleados.filter((u) => {
+    const r = porEmpleado.get(u.id);
+    return r?.estado === "aprobado" && !r.caducado;
+  }).length;
 
-  const PILL = {
-    aprobado: ["mc-status-pill--aprobado", "Verificado"],
-    pendiente: ["mc-status-pill--pendiente", "En revisión"],
-    rechazado: ["mc-status-pill--rechazado", "Rechazado"],
+  const pillDe = (r) => {
+    if (!r) return ["mc-status-pill--pendiente", "Sin registrar"];
+    if (r.estado === "aprobado" && r.caducado) return ["mc-status-pill--rechazado", "Caducado"];
+    if (r.estado === "aprobado") return ["mc-status-pill--aprobado", "Verificado"];
+    if (r.estado === "pendiente") return ["mc-status-pill--pendiente", "En revisión"];
+    return ["mc-status-pill--rechazado", "Rechazado"];
   };
 
   return (
@@ -179,8 +185,7 @@ export default function EnrolarRostros({ usuarios = [] }) {
         <Card>
           <ul className="asistencia-revision">
             {empleados.map((u) => {
-              const estado = porEmpleado.get(u.id)?.estado;
-              const [clase, texto] = PILL[estado] || ["mc-status-pill--pendiente", "Sin registrar"];
+              const [clase, texto] = pillDe(porEmpleado.get(u.id));
               return (
                 <li key={u.id}>
                   <Avatar name={u.name} photoUrl={u.avatarUrl} size={32} />
