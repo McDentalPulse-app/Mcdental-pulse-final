@@ -117,11 +117,12 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,webp}'],
-        // El runtime de MediaPipe (detector de rostro del checador) NO va al precache:
-        // son ~740 KB que pagaría todo el mundo al instalar la app, incluida la psicóloga
-        // que no va a abrir el checador en su vida. Se descarga bajo demanda la primera
-        // vez que alguien entra a checar, y de ahí lo cachea el navegador.
-        globIgnores: ['**/mediapipe/**'],
+        // Fuera del precache lo que solo usa una minoría, y solo a veces:
+        //   - MediaPipe (~740 KB): el detector de rostro del checador.
+        //   - exceljs (~930 KB): solo lo toca un admin, y solo el día que importa horarios.
+        // Meterlos aquí sería cobrarle a la psicóloga —que no va a checar ni a importar nada—
+        // 1,7 MB al instalar la app. Se descargan bajo demanda y el navegador los cachea.
+        globIgnores: ['**/mediapipe/**', '**/exceljs*'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [
           /^\/api\//,

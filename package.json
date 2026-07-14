@@ -16,6 +16,7 @@
     "@google/generative-ai": "^0.24.1",
     "@mediapipe/tasks-vision": "^0.10.35",
     "@supabase/supabase-js": "^2.110.0",
+    "exceljs": "^4.4.0",
     "lucide-react": "^1.21.0",
     "motion": "^12.42.2",
     "onnxruntime-node": "^1.27.0",

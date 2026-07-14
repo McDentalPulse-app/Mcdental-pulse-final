@@ -8644,3 +8644,42 @@
 }
 
 .aviso-descuento svg { flex-shrink: 0; margin-top: 2px; }
+
+/* --- Importar horarios desde Excel --- */
+
+.importar-mapeo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.importar-mapeo em {
+  font-style: normal;
+  color: var(--mc-texto-apagado);
+  font-size: 0.78rem;
+}
+
+.importar-lista {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  font-size: 0.85rem;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.importar-lista li {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--mc-borde-suave);
+  color: var(--mc-texto-secundario);
+}
+
+.importar-lista li:last-child { border-bottom: none; }
+.importar-lista--error li { color: var(--mc-badge-rojo-texto); }
+
+/* El nombre que emparejé "por las palabras" y que un humano tiene que confirmar. */
+.importar-dudoso {
+  color: var(--mc-badge-amarillo-texto);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
