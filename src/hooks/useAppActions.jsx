@@ -12,6 +12,7 @@ import { addDescuento as addDescuentoDb, updateDescuentoEstado as updateDescuent
 import { addReporteConfidencial as addReporteConfidencialDb } from "../services/supabase/reportesService";
 import { addReconocimiento as addReconocimientoDb } from "../services/supabase/reconocimientosService";
 import { subirArchivoExpediente as subirArchivoExpedienteDb } from "../services/supabase/archivosExpedienteService";
+import { registrarChecada as registrarChecadaDb } from "../services/supabase/asistenciasService";
 
 export const useAppActions = () => {
   const { usuarios: USERS } = useGlobal();
@@ -31,6 +32,7 @@ export const useAppActions = () => {
     setReportesConfidenciales,
     setReconocimientos,
     setArchivosExpediente,
+    setChecadasHoy,
   } = useGlobal();
 
   const addEncuesta = async (enc) => {
@@ -148,6 +150,10 @@ export const useAppActions = () => {
         const nuevoPermiso = await addPermiso({
           empleadoId: solicitud.empleadoId,
           fecha: solicitud.fechaInicio || solicitud.fecha,
+          // Sin fechaFin, un permiso de varios días solo justificaría el primero y los
+          // demás saldrían como faltas en el reporte de asistencia (migración 038).
+          fechaFin: solicitud.fechaFin || null,
+          causa: solicitud.causa || null,
           hora: solicitud.hora,
           motivo: solicitud.motivo,
           comentario: solicitud.comentario || "",
@@ -233,6 +239,37 @@ export const useAppActions = () => {
     }
   };
 
+  /**
+   * Registra una entrada o una salida.
+   *
+   * Nunca optimista, al revés que los updates de esta misma pantalla: el id, la hora y
+   * el estado de la ubicación los decide el SERVIDOR (registrar_checada, migración
+   * 036). Pintar una checada antes de que la base responda sería inventarse una hora de
+   * entrada en la interfaz — justo lo que este módulo existe para impedir.
+   *
+   * Devuelve la fila registrada para que la pantalla pueda decirle al empleado qué pasó
+   * con su ubicación, o null si falló.
+   */
+  const registrarChecada = async ({ tipo, coords, selfieBlob }) => {
+    try {
+      const checada = await registrarChecadaDb({
+        tipo,
+        coords,
+        selfieBlob,
+        empleadoId: user?.id,
+      });
+      setChecadasHoy(prev => [...prev, checada]);
+      return checada;
+    } catch (error) {
+      console.error("Error registrando la checada:", error);
+      // El mensaje viene de la RPC y ya está escrito para el usuario ("Ya registraste
+      // tu entrada hace unos segundos"). Taparlo con un genérico le quitaría lo único
+      // que le dice qué hacer a continuación.
+      notify.toast.error(error?.message || "No se pudo registrar tu checada.");
+      return null;
+    }
+  };
+
   return {
     addEncuesta,
     sendMensaje,
@@ -245,6 +282,7 @@ export const useAppActions = () => {
     addDescuento,
     addReporteConfidencial,
     addReconocimiento,
-    subirArchivoExpediente
+    subirArchivoExpediente,
+    registrarChecada
   };
 };

@@ -20,7 +20,10 @@ import { getDescuentos } from "../services/supabase/descuentosService";
 import { getArchivosExpediente } from "../services/supabase/archivosExpedienteService";
 import { getNotasPsicologicas } from "../services/supabase/notasService";
 import { getUsuarios, getUsuariosDirectorio, getEncuestaPreguntas } from "../services/supabase/usuariosService";
+import { getAsistencias } from "../services/supabase/asistenciasService";
+import { getHorarios } from "../services/supabase/horariosService";
 import { normalizePreguntasList } from "../utils/encuestaPreguntas";
+import { TZ_CLINICA } from "../utils/asistencia";
 
 const GlobalContext = createContext();
 
@@ -41,6 +44,16 @@ export const GlobalProvider = ({ children }) => {
   const [vacaciones, setVacaciones] = useState([]);
   const [permisos, setPermisos] = useState([]);
   const [descuentos, setDescuentos] = useState([]);
+
+  // Asistencia.
+  //
+  // Aquí vive SOLO lo que la app necesita en todo momento: el horario del usuario y sus
+  // checadas de HOY (para que el botón sepa si toca "Entrada" o "Salida"). El histórico
+  // NO está en el contexto global a propósito: son ~30.000 filas al año y este contexto
+  // se carga entero en cada login. Las pantallas de historial y reportes lo piden ellas
+  // mismas, acotado por rango (patrón de BolsaTrabajo.jsx).
+  const [horarios, setHorarios] = useState([]);
+  const [checadasHoy, setChecadasHoy] = useState([]);
 
   // Notas AI / Calendario
   const [notas, setNotas] = useState(NOTAS_INIT);
@@ -76,6 +89,8 @@ export const GlobalProvider = ({ children }) => {
         let dbPermisos = null;
         let dbDescuentos = null;
         let dbNotas = null;
+        let dbHorarios = null;
+        let dbChecadasHoy = null;
 
         // Base data for everyone.
         // La PII de la plantilla (teléfono, email, fechas) solo la necesitan los roles
@@ -121,6 +136,22 @@ export const GlobalProvider = ({ children }) => {
           promises.push(getNotasPsicologicas().then(res => dbNotas = res).catch(() => { huboError = true; }));
         }
 
+        // Asistencia: horarios (todos los roles los necesitan — el empleado para ver el
+        // suyo, RH y admin para la rejilla y los reportes) y las checadas de HOY.
+        //
+        // La fecha se pide en la zona de las clínicas, no en la del navegador: un
+        // empleado con el móvil mal configurado, o de viaje, pediría "hoy" de otro día y
+        // el botón le ofrecería una entrada que ya hizo. El servidor decide el día
+        // natural con la misma zona (RPC registrar_checada), así que aquí se usa la
+        // misma o las dos dejan de casar.
+        const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: TZ_CLINICA }).format(new Date());
+        promises.push(getHorarios().then(res => dbHorarios = res).catch(() => { huboError = true; }));
+        promises.push(
+          getAsistencias({ desde: hoy, hasta: hoy, empleadoId: role === "empleado" ? user.id : undefined })
+            .then(res => dbChecadasHoy = res)
+            .catch(() => { huboError = true; })
+        );
+
         await Promise.all(promises);
 
         // Solo se actualiza el estado cuando el fetch respondió (array, aunque
@@ -142,6 +173,8 @@ export const GlobalProvider = ({ children }) => {
         if (dbPermisos) setPermisos(dbPermisos);
         if (dbDescuentos) setDescuentos(dbDescuentos);
         if (dbNotas) setNotas(dbNotas);
+        if (dbHorarios) setHorarios(dbHorarios);
+        if (dbChecadasHoy) setChecadasHoy(dbChecadasHoy);
 
         if (huboError) {
           notify.toast.error("No se pudieron cargar algunos datos. Revisa tu conexión.");
@@ -211,6 +244,8 @@ export const GlobalProvider = ({ children }) => {
         permisos, setPermisos,
         descuentos, setDescuentos,
         notas, setNotas,
+        horarios, setHorarios,
+        checadasHoy, setChecadasHoy,
         calendario, setCalendario,
         calendarioExtra,
         loadingData
