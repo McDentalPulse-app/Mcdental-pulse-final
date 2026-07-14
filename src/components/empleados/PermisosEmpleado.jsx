@@ -260,11 +260,17 @@ export default function PermisosEmpleado({
                   ) : minutosDescuento > 0 ? (
                     // El descuento se le enseña EN VIVO, mientras elige la hora, no al final.
                     // Así puede ver que salir a las 5 en vez de a las 3 le cuesta la mitad.
-                    <p className="checador-pill checador-pill--alerta">
-                      <Icon name="alert" size={15} />
-                      Tu turno termina a las {turnoHoy.horaSalida.slice(0, 5)}. Se te descontarán las{" "}
-                      <strong>{formatoDuracion(minutosDescuento)}</strong> que dejes de trabajar.
-                    </p>
+                    // El texto va dentro de UN solo <span>. Con el <strong> suelto, el
+                    // flexbox de la caja lo trataba como un elemento aparte y partía la frase
+                    // por la mitad: "Se te descontarán las [4 h] que dejes de trabajar."
+                    <div className="aviso-descuento">
+                      <Icon name="alert" size={16} />
+                      <span>
+                        Tu turno termina a las <strong>{turnoHoy.horaSalida.slice(0, 5)}</strong>.
+                        {" "}Se te descontarán <strong>{formatoDuracion(minutosDescuento)}</strong>{" "}
+                        que dejes de trabajar.
+                      </span>
+                    </div>
                   ) : (
                     <p className="mc-hint">
                       <Icon name="alert" size={14} />

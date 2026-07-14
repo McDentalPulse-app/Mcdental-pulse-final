@@ -8623,3 +8623,24 @@
 
 /* El descuento, en rojo: RH tiene que verlo antes de aprobar, no después de capturarlo. */
 .rh-descuento { color: var(--mc-badge-rojo-texto); }
+
+/* Aviso del descuento por salir antes.
+   NO se reusa .checador-pill: esa caja es un flex centrado pensado para UNA línea de texto,
+   y un <strong> dentro se convertía en un elemento suelto del flex que partía la frase por la
+   mitad ("Se te descontarán las [4 h] que dejes de trabajar"). Aquí el icono es el único
+   hermano flex; el texto va entero en un <span> y fluye como prosa normal. */
+.aviso-descuento {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 8px;
+  padding: 11px 13px;
+  border-radius: var(--mc-radio);
+  background: var(--mc-badge-rojo-bg);
+  color: var(--mc-badge-rojo-texto);
+  font-size: 0.86rem;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.aviso-descuento svg { flex-shrink: 0; margin-top: 2px; }
