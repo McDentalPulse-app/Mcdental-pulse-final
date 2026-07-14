@@ -2,7 +2,7 @@ import { configOk, admin, quienLlama } from "./_auth.js";
 import { calcularHuella } from "./_rostro.js";
 
 const MIN_FOTOS = 1;
-const MAX_FOTOS = 3;
+const MAX_FOTOS = 5; // 3 base + 2 sin lentes
 
 /**
  * Registra la cara de referencia de un empleado, a partir de las fotos que ya subió.
@@ -35,7 +35,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: "Sesión inválida." });
   }
 
-  const { empleadoId, fotos, consentimiento } = req.body || {};
+  const { empleadoId, fotos, consentimiento, usaLentes } = req.body || {};
 
   if (!Array.isArray(fotos) || fotos.length < MIN_FOTOS || fotos.length > MAX_FOTOS) {
     return res.status(400).json({ error: `Hacen falta entre ${MIN_FOTOS} y ${MAX_FOTOS} fotos.` });
@@ -109,6 +109,7 @@ export default async function handler(req, res) {
         empleado_id: destino,
         huella: huellas[0].huella, // compatibilidad con la columna vieja
         selfie_path: huellas[0].ruta,
+        usa_lentes: usaLentes === true,
         consentimiento_en: new Date().toISOString(),
         enrolado_por: quien.id,
         estado,

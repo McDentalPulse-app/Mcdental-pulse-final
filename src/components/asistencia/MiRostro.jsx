@@ -7,8 +7,6 @@ import { useNotification } from "../../contexts/NotificationContext";
 import { getMiRostro, registrarRostro } from "../../services/supabase/rostrosService";
 import { RESULTADO, MENSAJE, POSE } from "../../utils/rostro";
 
-const TOTAL_FOTOS = 3;
-
 /**
  * Una pose distinta por foto, y se EXIGE.
  *
@@ -17,10 +15,23 @@ const TOTAL_FOTOS = 3;
  * que sean ángulos distintos — es lo que hace que el cotejo siga reconociéndola cuando
  * cheque con la cabeza un poco girada o con otra luz.
  */
-const PASOS = [
+const PASOS_BASE = [
   { pose: POSE.FRONTAL, indicacion: "Mira de frente a la cámara." },
   { pose: POSE.DERECHA, indicacion: "Gira la cabeza hacia tu derecha." },
   { pose: POSE.IZQUIERDA, indicacion: "Gira la cabeza hacia tu izquierda." },
+];
+
+/**
+ * Si usa lentes, dos fotos más SIN ellos.
+ *
+ * Los lentes son la causa número uno de que el cotejo rechace a una persona honrada. Con el
+ * cotejo bloqueando, ese rechazo ya no es una molestia: es alguien que no puede fichar. Se
+ * guardan las dos caras —con y sin— y el cotejo se queda con el MEJOR parecido, así que lo
+ * reconoce lleve o no lleve las gafas puestas ese día.
+ */
+const PASOS_SIN_LENTES = [
+  { pose: POSE.FRONTAL, indicacion: "Ahora QUÍTATE los lentes y mira de frente." },
+  { pose: POSE.DERECHA, indicacion: "Sin lentes, gira la cabeza hacia tu derecha." },
 ];
 
 /**
@@ -43,6 +54,13 @@ export default function MiRostro({ user }) {
   const [fotos, setFotos] = useState([]);
   const [consentido, setConsentido] = useState(false);
   const [ocupado, setOcupado] = useState(false);
+
+  // null = todavía no ha contestado. Se pregunta ANTES de empezar: si se preguntara al
+  // final, quien use lentes tendría que repetir las tres fotos.
+  const [usaLentes, setUsaLentes] = useState(null);
+
+  const pasos = usaLentes ? [...PASOS_BASE, ...PASOS_SIN_LENTES] : PASOS_BASE;
+  const totalFotos = pasos.length;
 
   useEffect(() => {
     let activo = true;
@@ -69,8 +87,8 @@ export default function MiRostro({ user }) {
       toast.error("No se pudo comprobar la foto. Recarga la página e inténtalo de nuevo.");
       return;
     }
-    setFotos((prev) => (prev.length >= TOTAL_FOTOS ? prev : [...prev, foto.blob]));
-  }, [toast]);
+    setFotos((prev) => (prev.length >= totalFotos ? prev : [...prev, foto.blob]));
+  }, [toast, totalFotos]);
 
   // La cámara dispara sola cuando la cara está bien encuadrada y quieta. Pedirle a alguien
   // que se encuadre Y pulse un botón, con una mano, es pedirle dos cosas a la vez — y salen
@@ -88,7 +106,7 @@ export default function MiRostro({ user }) {
   }, [enPausa, ocupado, guardarFoto]);
 
   const tomarFoto = async () => {
-    if (ocupado || fotos.length >= TOTAL_FOTOS) return;
+    if (ocupado || fotos.length >= totalFotos) return;
     setOcupado(true);
     try {
       guardarFoto(await camaraRef.current?.capturar());
@@ -98,10 +116,10 @@ export default function MiRostro({ user }) {
   };
 
   const enviar = async () => {
-    if (fotos.length < TOTAL_FOTOS || !consentido || ocupado) return;
+    if (fotos.length < totalFotos || !consentido || ocupado) return;
     setOcupado(true);
     try {
-      await registrarRostro({ empleadoId: user.id, fotos, consentimiento: true });
+      await registrarRostro({ empleadoId: user.id, fotos, consentimiento: true, usaLentes });
       setRostro({ estado: "pendiente" });
       setFotos([]);
       toast.success("Listo. Recursos Humanos revisará tus fotos.");
@@ -181,11 +199,30 @@ export default function MiRostro({ user }) {
         <Card>
           <p className="mc-hint">
             <Icon name="camera" size={15} />
-            Toma <strong>{TOTAL_FOTOS} fotos</strong> de tu cara. Se usarán <strong>solo</strong> para
+            Toma <strong>{totalFotos} fotos</strong> de tu cara. Se usarán <strong>solo</strong> para
             comprobar tus checadas de entrada y salida — nada más.
           </p>
 
-          {fotos.length < TOTAL_FOTOS ? (
+          {usaLentes === null ? (
+            // Se pregunta ANTES de la primera foto. Al final, quien use lentes tendría que
+            // repetirlas todas.
+            <div className="enrolar-lentes">
+              <p><strong>¿Usas lentes?</strong></p>
+              <p className="mc-hint">
+                <Icon name="alert" size={15} />
+                Si los usas, te pediremos también dos fotos sin ellos. Así te reconocerá los
+                lleves puestos o no — y no te quedarás sin poder checar el día que te los quites.
+              </p>
+              <div className="enrolar-acciones">
+                <button type="button" className="mc-btn-primary" onClick={() => setUsaLentes(true)}>
+                  Sí, uso lentes
+                </button>
+                <button type="button" className="mc-btn-outline" onClick={() => setUsaLentes(false)}>
+                  No uso lentes
+                </button>
+              </div>
+            </div>
+          ) : fotos.length < totalFotos ? (
             <>
               {/* La pausa la comprueba el propio callback, no se le pasa null: si se le
                   quitara la prop, la guía de encuadre desaparecería y volvería a aparecer en
@@ -194,12 +231,12 @@ export default function MiRostro({ user }) {
                 ref={camaraRef}
                 activa
                 onAutoCaptura={onAutoCaptura}
-                poseRequerida={PASOS[fotos.length].pose}
+                poseRequerida={pasos[fotos.length].pose}
               />
 
               <p className="checador-pill checador-pill--aviso">
                 <Icon name="camera" size={15} />
-                Foto {fotos.length + 1} de {TOTAL_FOTOS}. {PASOS[fotos.length].indicacion}
+                Foto {fotos.length + 1} de {totalFotos}. {pasos[fotos.length].indicacion}
               </p>
 
               {/* La cámara dispara sola. El botón se queda por si alguien prefiere pulsarlo,
@@ -218,7 +255,7 @@ export default function MiRostro({ user }) {
             <>
               <p className="checador-pill checador-pill--ok">
                 <Icon name="check" size={15} />
-                Ya tienes las {TOTAL_FOTOS} fotos.
+                Ya tienes las {totalFotos} fotos.
               </p>
 
               <label className="enrolar-consentimiento">
@@ -245,7 +282,7 @@ export default function MiRostro({ user }) {
                 <button
                   type="button"
                   className="mc-btn-outline"
-                  onClick={() => setFotos([])}
+                  onClick={() => { setFotos([]); setUsaLentes(null); }}
                   disabled={ocupado}
                 >
                   Repetir las fotos

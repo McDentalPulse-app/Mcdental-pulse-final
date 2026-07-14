@@ -263,10 +263,11 @@ export const useAppActions = () => {
       return checada;
     } catch (error) {
       console.error("Error registrando la checada:", error);
-      // El mensaje viene de la RPC y ya está escrito para el usuario ("Ya registraste
-      // tu entrada hace unos segundos"). Taparlo con un genérico le quitaría lo único
-      // que le dice qué hacer a continuación.
+      // El mensaje viene del servidor y ya está escrito para el usuario ("No pudimos
+      // confirmar que eres tú", "Ya registraste tu entrada hace unos segundos"). Taparlo con
+      // un genérico le quitaría lo único que le dice qué hacer a continuación.
       notify.toast.error(error?.message || "No se pudo registrar tu checada.");
+      if (error?.aviso) notify.toast.warning(error.aviso);
       return null;
     }
   };

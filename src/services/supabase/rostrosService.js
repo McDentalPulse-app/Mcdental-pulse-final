@@ -82,7 +82,7 @@ export const getMiRostro = async (empleadoId) => {
  * mire y confirme que esa cara es la suya. Si lo hace RH (con la persona delante), queda
  * aprobado directamente.
  */
-export const registrarRostro = async ({ empleadoId, fotos, consentimiento }) => {
+export const registrarRostro = async ({ empleadoId, fotos, consentimiento, usaLentes = false }) => {
   const rutas = [];
 
   for (let i = 0; i < fotos.length; i += 1) {
@@ -106,7 +106,7 @@ export const registrarRostro = async ({ empleadoId, fotos, consentimiento }) => 
     rutas.push(ruta);
   }
 
-  return post("enrolar-rostro", { empleadoId, fotos: rutas, consentimiento });
+  return post("enrolar-rostro", { empleadoId, fotos: rutas, consentimiento, usaLentes });
 };
 
 /**
@@ -128,23 +128,4 @@ export const getSignedUrlRostro = async (ruta, expiresInSeconds = 300) => {
     return null;
   }
   return data.signedUrl;
-};
-
-/**
- * Pide el cotejo de una checada recién registrada.
- *
- * Se llama sin esperar el resultado (el empleado ya fichó; no se le hace aguardar a que un
- * modelo termine). Si esta llamada nunca ocurre —red caída, o alguien que la evita a
- * propósito— la checada se queda SIN VERIFICAR, y eso también aparece marcado en el panel
- * de RH. Saltárselo no ayuda a nadie.
- */
-export const verificarChecada = async (checadaId) => {
-  try {
-    await post("verificar-rostro", { checadaId });
-  } catch (error) {
-    // Nunca se le enseña al empleado: su checada ya está registrada y el cotejo es asunto
-    // del sistema, no suyo. Molestarle con un error que no puede arreglar solo erosiona la
-    // confianza en una pantalla que tiene que usar dos veces al día.
-    console.warn("No se pudo cotejar el rostro de la checada:", error);
-  }
 };

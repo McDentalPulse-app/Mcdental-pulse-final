@@ -56,25 +56,25 @@ export const getAsistencias = async ({ desde, hasta, empleadoId } = {}) => {
 /**
  * Registra una checada.
  *
- * La selfie se sube ANTES de llamar a la RPC, y su fallo NO aborta la checada: no
- * vamos a impedirle a alguien fichar su entrada porque la cámara falló o porque se le
- * fue la red a mitad del upload. Se registra sin foto y RH lo ve.
+ * Va por /api/checar y NO por la RPC, y ese cambio es lo que hace que el cotejo facial
+ * bloquee de verdad: el servidor compara la cara ANTES de crear la checada. Mientras la RPC
+ * fuera llamable desde el navegador, cualquiera se saltaba el cotejo con dos líneas en la
+ * consola — así que se le retiró el permiso al cliente (migración 043).
  *
- * Al revés sí importa: si la RPC falla, la selfie queda huérfana en el bucket. Es
- * inofensivo (un objeto de 40 KB que nadie referencia) y es el mismo trade-off que ya
- * acepta subirArchivoExpediente().
+ * Fíjate en lo que este servicio NO manda: ni la hora, ni la distancia, ni si la ubicación
+ * es válida, ni si la cara coincide. Todo eso lo decide el servidor. Si el cliente pudiera
+ * mandarlo, bastaría con atrasar el reloj del teléfono para llegar siempre puntual, o con
+ * mandar un "cara verificada: sí".
  *
- * Fíjate en lo que este servicio NO manda: ni la hora, ni la distancia, ni si la
- * ubicación es válida. Todo eso lo decide el servidor en registrar_checada() — si el
- * cliente pudiera mandarlo, bastaría con atrasar el reloj del teléfono para llegar
- * siempre puntual.
+ * Lanza Error si la checada NO se registró (cara que no coincide, doble clic, salida fuera
+ * de la ventana). El mensaje ya viene escrito para el usuario.
  */
 export const registrarChecada = async ({ tipo, coords = null, selfieBlob = null, empleadoId, deviceId = null }) => {
   let selfiePath = null;
 
   if (selfieBlob && empleadoId) {
-    // El path DEBE empezar por el uuid del empleado: es lo que la policy de storage
-    // usa para comprobar que nadie escribe en la carpeta de otro (migración 037).
+    // El path DEBE empezar por el uuid del empleado: es lo que la policy de storage usa
+    // para comprobar que nadie escribe en la carpeta de otro (migración 037).
     const ruta = `${empleadoId}/${Date.now()}.jpg`;
     const { error: uploadError } = await supabase.storage
       .from(BUCKET)
@@ -82,33 +82,41 @@ export const registrarChecada = async ({ tipo, coords = null, selfieBlob = null,
 
     if (uploadError) {
       console.error("Error subiendo la selfie de la checada:", uploadError);
-      // Se sigue sin foto, a propósito. Ver el comentario de arriba.
+      // Se sigue sin foto: si el empleado no está enrolado, la checada no se coteja y no
+      // tiene sentido impedirle fichar porque se le cayó la red a mitad del upload. Si SÍ
+      // está enrolado, el servidor no podrá cotejar y lo tratará como un intento fallido.
     } else {
       selfiePath = ruta;
     }
   }
 
-  const { data, error } = await supabase.rpc("registrar_checada", {
-    p_tipo: tipo,
-    p_lat: coords?.lat ?? null,
-    p_lng: coords?.lng ?? null,
-    p_precision: coords?.precision ?? null,
-    p_selfie_path: selfiePath,
-    p_device_id: deviceId,
+  const { data: sesion } = await supabase.auth.getSession();
+  const token = sesion?.session?.access_token;
+  if (!token) throw new Error("Tu sesión expiró. Vuelve a entrar.");
+
+  const respuesta = await fetch("/api/checar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({
+      tipo,
+      selfiePath,
+      lat: coords?.lat ?? null,
+      lng: coords?.lng ?? null,
+      precision: coords?.precision ?? null,
+      deviceId,
+    }),
   });
 
-  if (error) {
-    console.error("Error registrando la checada:", error);
-    // La RPC lanza mensajes ya escritos para el usuario ("Ya registraste tu entrada
-    // hace unos segundos", "hoy no tienes una entrada registrada"). Se respetan tal
-    // cual en vez de taparlos con un genérico: dicen exactamente qué pasó.
-    throw new Error(error.message || "No se pudo registrar tu checada.");
+  const cuerpo = await respuesta.json().catch(() => ({}));
+
+  if (!respuesta.ok) {
+    const error = new Error(cuerpo.error || "No se pudo registrar tu checada.");
+    error.bloqueado = !!cuerpo.bloqueado; // la cara no coincidió: no hay checada
+    error.aviso = cuerpo.aviso || null;
+    throw error;
   }
 
-  // La RPC devuelve la fila (returns public.asistencias). PostgREST la entrega como
-  // objeto, pero si algún día se cambiara a "returns setof" llegaría como array.
-  const row = Array.isArray(data) ? data[0] : data;
-  return mapAsistencia(row);
+  return mapAsistencia(cuerpo.checada);
 };
 
 /** Alta manual de RH: "se le murió el teléfono y no pudo checar". */

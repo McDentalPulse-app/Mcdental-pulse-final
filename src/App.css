@@ -8615,3 +8615,6 @@
   background: var(--mc-badge-verde-bg);
   color: var(--mc-badge-verde-texto);
 }
+
+.enrolar-lentes { text-align: center; padding: 8px 0; }
+.enrolar-lentes p { margin: 0 0 10px; }

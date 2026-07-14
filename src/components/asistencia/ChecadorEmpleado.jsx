@@ -8,7 +8,6 @@ import { useNotification } from "../../contexts/NotificationContext";
 import { obtenerUbicacion, textoUbicacion } from "../../utils/geo";
 import { getDeviceId } from "../../utils/dispositivo";
 import { RESULTADO, MENSAJE } from "../../utils/rostro";
-import { verificarChecada } from "../../services/supabase/rostrosService";
 import { emparejarChecadas, diaISO, puedeRegistrarSalida, TZ_CLINICA } from "../../utils/asistencia";
 
 const horaCorta = (timestamp) =>
@@ -93,11 +92,6 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
       if (!checada) return; // el toast de error ya lo emitió la acción
 
       setUltima(checada);
-
-      // El cotejo facial se dispara y NO se espera: el empleado ya fichó, y no se le va a
-      // tener de pie delante del móvil mientras un modelo del servidor piensa. Si falla o
-      // no llega a ejecutarse, la checada queda "sin verificar" y RH la ve marcada.
-      verificarChecada(checada.id);
 
       toast.success(
         checada.tipo === "entrada"
