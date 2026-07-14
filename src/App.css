@@ -8261,3 +8261,264 @@
   opacity: 0.55;
   flex-shrink: 0;
 }
+
+/* ============================================================================
+   CHECADOR Y ASISTENCIA (migraciones 034-038)
+
+   Cero hex: todo sale de los tokens de index.css. Es la regla número uno de
+   DESIGN.md, y el motivo por el que el modo oscuro funciona solo — un color
+   escrito aquí a mano tendría que volver a parchearse en el tema oscuro.
+   ============================================================================ */
+
+/* Utilidades que faltaban en el sistema (las usan también otras pantallas). */
+.mc-empty {
+  color: var(--mc-texto-apagado);
+  text-align: center;
+  padding: 24px 12px;
+  font-size: 0.92rem;
+}
+
+.mc-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--mc-texto-secundario);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.mc-hint svg { flex-shrink: 0; margin-top: 2px; }
+
+/* --- Checador del empleado --- */
+
+.checador-camara {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto 16px;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--mc-radio-lg);
+  overflow: hidden;
+  background: var(--mc-gris-fondo);
+  border: 1px solid var(--mc-card-borde);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checador-camara-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Espejo: la gente espera verse como en un espejo, no invertida. La foto que se
+     sube NO va espejada (el canvas dibuja el fotograma original), que es lo que
+     importa para identificar a alguien. */
+  transform: scaleX(-1);
+}
+
+.checador-camara-aviso {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+  color: var(--mc-texto-secundario);
+}
+
+.checador-camara-aviso p { font-weight: 600; margin: 0; }
+.checador-camara-aviso span { font-size: 0.85rem; color: var(--mc-texto-apagado); }
+.checador-camara-aviso--alerta { color: var(--mc-aviso-texto); }
+
+.checador-boton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto;
+  padding: 18px;
+  border: none;
+  border-radius: var(--mc-radio-lg);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--mc-texto-sobre-alerta);
+  cursor: pointer;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+
+.checador-boton:active { transform: scale(0.98); }
+.checador-boton:disabled { opacity: 0.6; cursor: not-allowed; }
+.checador-boton--entrada { background: var(--mc-semaforo-verde); }
+.checador-boton--salida { background: var(--mc-semaforo-amarillo); }
+
+.checador-cerrado {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 18px;
+  color: var(--mc-semaforo-verde);
+  font-weight: 600;
+}
+
+.checador-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 14px auto 0;
+  max-width: 380px;
+  padding: 10px 12px;
+  border-radius: var(--mc-radio);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.checador-pill--ok { background: var(--mc-badge-verde-bg); color: var(--mc-badge-verde-texto); }
+.checador-pill--alerta { background: var(--mc-badge-rojo-bg); color: var(--mc-badge-rojo-texto); }
+.checador-pill--aviso { background: var(--mc-badge-amarillo-bg); color: var(--mc-badge-amarillo-texto); }
+
+.checador-lista { list-style: none; margin: 0; padding: 0; }
+
+.checador-lista li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--mc-borde-suave);
+}
+
+.checador-lista li:last-child { border-bottom: none; }
+.checador-lista li span { margin-left: auto; color: var(--mc-texto-secundario); }
+.checador-lista li em { color: var(--mc-badge-rojo-texto); font-size: 0.8rem; }
+.checador-lista-item--anulada { opacity: 0.5; text-decoration: line-through; }
+
+/* --- Panel de RH / Admin --- */
+
+.asistencia-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.asistencia-filtros label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: var(--mc-texto-secundario);
+  font-weight: 600;
+}
+
+.asistencia-revision { list-style: none; margin: 0; padding: 0; }
+
+.asistencia-revision li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--mc-borde-suave);
+}
+
+.asistencia-revision li:last-child { border-bottom: none; }
+.asistencia-revision-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.asistencia-revision-main span { font-size: 0.85rem; color: var(--mc-texto-secundario); }
+.asistencia-revision-main em { font-size: 0.8rem; color: var(--mc-aviso-texto); font-style: normal; }
+.asistencia-revision-acciones { margin-left: auto; display: flex; gap: 8px; flex-shrink: 0; }
+
+.asistencia-empleado-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--mc-borde-suave);
+  margin-bottom: 12px;
+}
+
+.asistencia-empleado-head strong { display: block; color: var(--mc-texto-titulo); }
+.asistencia-empleado-head span { font-size: 0.82rem; color: var(--mc-texto-apagado); }
+
+.asistencia-empleado-kpis {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: var(--mc-texto-secundario);
+}
+
+.asistencia-chip--falta { color: var(--mc-badge-rojo-texto); font-weight: 600; }
+.asistencia-chip--retardo { color: var(--mc-badge-amarillo-texto); font-weight: 600; }
+
+/* Las tablas anchas hacen scroll dentro de su caja, no del cuerpo de la página. */
+.asistencia-tabla-wrap { overflow-x: auto; }
+
+.asistencia-detalle summary {
+  cursor: pointer;
+  color: var(--mc-texto-secundario);
+  font-size: 0.85rem;
+  padding: 10px 0;
+}
+
+.asistencia-dias { list-style: none; margin: 0; padding: 0; }
+
+.asistencia-dias li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 4px;
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--mc-borde-suave);
+}
+
+.asistencia-dia-fecha { min-width: 100px; color: var(--mc-texto-secundario); }
+.asistencia-dia-estado { min-width: 96px; font-weight: 600; }
+.asistencia-dias li em { margin-left: auto; font-style: normal; color: var(--mc-badge-amarillo-texto); }
+
+.asistencia-dia--falta .asistencia-dia-estado { color: var(--mc-badge-rojo-texto); }
+.asistencia-dia--retardo .asistencia-dia-estado { color: var(--mc-badge-amarillo-texto); }
+.asistencia-dia--presente .asistencia-dia-estado { color: var(--mc-badge-verde-texto); }
+.asistencia-dia--justificado .asistencia-dia-estado { color: var(--mc-badge-azul-texto); }
+.asistencia-dia--descanso { opacity: 0.55; }
+.asistencia-dia--incompleto .asistencia-dia-estado { color: var(--mc-badge-amarillo-texto); }
+
+/* --- Rejilla de horarios --- */
+
+.horarios-rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.horarios-celda {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--mc-card-borde);
+  border-radius: var(--mc-radio);
+  background: var(--mc-gris-fondo);
+}
+
+/* Un día sin turno no es un error: es descanso. Se atenúa, no se marca en rojo. */
+.horarios-celda--descanso { opacity: 0.6; }
+
+.horarios-celda-dia {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--mc-texto-titulo);
+  text-transform: uppercase;
+}
+
+.horarios-tolerancia {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--mc-texto-apagado);
+}
+
+.horarios-tolerancia input { width: 52px; }
+.horarios-quitar { font-size: 0.75rem; }
