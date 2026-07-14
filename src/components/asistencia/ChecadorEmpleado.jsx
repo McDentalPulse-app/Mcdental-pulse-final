@@ -101,7 +101,7 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
   }, [permisos, user?.id]);
 
   const ventanaSalida = siguiente === "salida"
-    ? puedeRegistrarSalida(horarioHoy, new Date(), autorizada)
+    ? puedeRegistrarSalida(horarioHoy, new Date(), autorizada, entrada?.marcadaEn)
     : { permitido: true, disponibleDesde: null };
 
   const bloqueado = siguiente === "salida" && !ventanaSalida.permitido;
@@ -222,9 +222,11 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
               // puedes" a secas acaba en una llamada a RH que nadie necesitaba.
               <p className="checador-pill checador-pill--aviso">
                 <Icon name="clock" size={15} />
-                {ventanaSalida.autorizada
-                  ? `Tu salida está autorizada para las ${ventanaSalida.horaAutorizada}. Podrás checar a partir de las ${ventanaSalida.disponibleDesde}.`
-                  : `Podrás registrar tu salida a partir de las ${ventanaSalida.disponibleDesde}. Si necesitas irte antes, pide un permiso de salida anticipada a Recursos Humanos.`}
+                {ventanaSalida.reciente
+                  ? `Acabas de registrar tu entrada. Podrás fichar la salida a partir de las ${ventanaSalida.disponibleDesde}.`
+                  : ventanaSalida.autorizada
+                    ? `Tu salida está autorizada para las ${ventanaSalida.horaAutorizada}. Podrás checar a partir de las ${ventanaSalida.disponibleDesde}.`
+                    : `Podrás registrar tu salida a partir de las ${ventanaSalida.disponibleDesde}. Si necesitas irte antes, pide un permiso de salida anticipada a Recursos Humanos.`}
               </p>
             )}
 

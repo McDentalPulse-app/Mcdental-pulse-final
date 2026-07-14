@@ -371,6 +371,16 @@ export const agruparPor = (dias = [], granularidad = "dia") => {
 export const MARGEN_SALIDA_MIN = 15;
 
 /**
+ * Mínimo que tiene que pasar entre fichar la entrada y fichar la salida, tenga el permiso
+ * que tenga. DEBE coincidir con c_jornada_minima de la RPC (migración 045).
+ *
+ * El permiso de salida anticipada adelanta la ventana sin mirar a qué hora entró la persona:
+ * sin este mínimo, quien tuviera permiso para las 14:00 podía llegar a las 13:59, fichar
+ * entrada, fichar salida un minuto después y marcharse.
+ */
+export const JORNADA_MINIMA_MIN = 30;
+
+/**
  * ¿Puede ya registrar su salida?
  *
  * La regla la impone el servidor; esto solo existe para no ofrecerle un botón que va a
@@ -384,7 +394,20 @@ export const MARGEN_SALIDA_MIN = 15;
  * Devuelve también `disponibleDesde` para poder decirle a qué hora podrá, en vez de un
  * "no puedes" a secas que no le dice qué hacer.
  */
-export const puedeRegistrarSalida = (horario, ahora = new Date(), horaAutorizada = null) => {
+export const puedeRegistrarSalida = (horario, ahora = new Date(), horaAutorizada = null, entradaEn = null) => {
+  // La jornada mínima manda sobre todo lo demás, incluido el permiso.
+  if (entradaEn) {
+    const minimoEn = new Date(new Date(entradaEn).getTime() + JORNADA_MINIMA_MIN * 60000);
+    if (ahora < minimoEn) {
+      return {
+        permitido: false,
+        disponibleDesde: minutosAHora(minutosLocales(minimoEn.toISOString())),
+        autorizada: false,
+        reciente: true, // "acabas de entrar", no "todavía no es tu hora"
+      };
+    }
+  }
+
   if (!horario?.horaSalida) return { permitido: true, disponibleDesde: null, autorizada: false };
 
   const turno = horaAMinutos(horario.horaSalida);

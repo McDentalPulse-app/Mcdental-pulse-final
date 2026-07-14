@@ -598,3 +598,46 @@ describe("formatoDuracion", () => {
     expect(formatoDuracion(min)).toBe(esperado);
   });
 });
+
+describe("jornada mínima entre entrada y salida", () => {
+  // El permiso de salida anticipada adelanta la ventana SIN mirar a qué hora entró la
+  // persona. Sin este mínimo, quien tuviera permiso para las 14:00 podía llegar a las 13:59,
+  // fichar entrada, fichar salida un minuto después y marcharse — el permiso anulaba el
+  // guardián que impedía cerrar el día en dos segundos.
+  const turno = { horaSalida: "19:00:00" };
+  const entrada = "2026-07-14T19:59:00Z"; // 13:59 hora de la clínica
+
+  it("no deja fichar la salida justo después de la entrada, ni con permiso", () => {
+    const r = puedeRegistrarSalida(
+      turno,
+      new Date("2026-07-14T20:00:00Z"), // 14:00 — un minuto después de entrar
+      "14:00",                          // autorizado a irse a las 14:00
+      entrada
+    );
+    expect(r.permitido).toBe(false);
+    expect(r.reciente).toBe(true);          // "acabas de entrar", no "todavía no es tu hora"
+    expect(r.disponibleDesde).toBe("14:29"); // 13:59 + 30 min
+  });
+
+  it("pasados los 30 minutos, el permiso vuelve a mandar", () => {
+    const r = puedeRegistrarSalida(
+      turno,
+      new Date("2026-07-14T20:30:00Z"), // 14:30
+      "14:00",
+      entrada
+    );
+    expect(r.permitido).toBe(true);
+  });
+
+  it("quien entró a su hora ni se entera del mínimo", () => {
+    // Entra a las 10:00, sale a las 15:00 con permiso: los 30 minutos hace horas que pasaron.
+    const r = puedeRegistrarSalida(
+      turno,
+      new Date("2026-07-14T21:00:00Z"),  // 15:00
+      "15:00",
+      "2026-07-14T16:00:00Z"             // entró a las 10:00
+    );
+    expect(r.permitido).toBe(true);
+    expect(r.reciente).toBeUndefined();
+  });
+});

@@ -24,6 +24,18 @@
 -- Su día queda "sin salida", RH lo ve marcado y le registra la salida a mano con la hora
 -- real (el alta manual ya existe). Una persona enferma no debería estar peleándose con una
 -- app, y una incidencia visible que alguien mira es mejor que un trámite que nadie cumple.
+--
+-- JORNADA MÍNIMA: 30 MINUTOS ENTRE ENTRADA Y SALIDA, tenga el permiso que tenga.
+--
+-- El permiso de salida anticipada adelanta la ventana SIN mirar a qué hora entró la persona.
+-- Sin este mínimo, quien tuviera permiso para irse a las 14:00 podía llegar a las 13:59,
+-- fichar entrada, fichar salida un minuto después y marcharse: el permiso anulaba el guardián
+-- que impedía cerrar el día en dos segundos. Quedaba registrado (un retardo enorme y un
+-- minuto trabajado), pero el sistema lo daba por bueno.
+--
+-- 30 minutos: quien entra a las 10 y sale a las 15 no lo nota siquiera, y el caso de "fichar
+-- entrada y salida seguidas" deja de funcionar. Quien de verdad se va a los 20 minutos porque
+-- se sintió mal se va igual — y RH le cierra el día a mano, como en cualquier otra urgencia.
 -- ============================================================================
 
 -- Nueva causa en el catálogo (migración 038).
@@ -62,6 +74,8 @@ declare
   c_tz            constant text := 'America/Monterrey';
   -- 15 minutos: pueden fichar la salida un cuarto de hora antes del fin de su turno.
   c_margen_salida constant interval := interval '15 minutes';
+  -- 30 minutos: lo mínimo que tiene que pasar entre fichar la entrada y fichar la salida.
+  c_jornada_minima constant interval := interval '30 minutes';
 
   v_sucursal        public.sucursales%rowtype;
   v_nombre_suc      text;
@@ -73,7 +87,7 @@ declare
   v_distancia       integer;
   v_estado          public.estado_ubicacion;
   v_ultima          public.asistencias%rowtype;
-  v_tiene_entrada   boolean;
+  v_entrada_en      timestamptz;
   v_conocido        boolean;
   v_tenia_alguno    boolean;
   v_disp_nuevo      boolean := false;
@@ -99,14 +113,22 @@ begin
   end if;
 
   if p_tipo = 'salida' then
-    select exists (
-      select 1 from public.asistencias
-      where empleado_id = p_empleado_id and fecha = v_fecha
-        and tipo = 'entrada' and anulada = false
-    ) into v_tiene_entrada;
+    -- La PRIMERA entrada del día: es la que abre la jornada.
+    select min(marcada_en) into v_entrada_en
+    from public.asistencias
+    where empleado_id = p_empleado_id and fecha = v_fecha
+      and tipo = 'entrada' and anulada = false;
 
-    if not v_tiene_entrada then
+    if v_entrada_en is null then
       raise exception 'No puedes registrar tu salida: hoy no tienes una entrada registrada.';
+    end if;
+
+    -- Jornada mínima. Va ANTES de mirar el permiso: el permiso adelanta la ventana, pero no
+    -- autoriza a fichar la entrada y la salida seguidas. Ver la cabecera.
+    if now() < v_entrada_en + c_jornada_minima then
+      raise exception
+        'Acabas de registrar tu entrada. Podrás fichar la salida a partir de las %.',
+        to_char((v_entrada_en + c_jornada_minima) at time zone c_tz, 'HH24:MI');
     end if;
 
     select h.hora_salida into v_hora_turno
