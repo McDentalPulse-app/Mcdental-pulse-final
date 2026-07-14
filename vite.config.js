@@ -72,6 +72,11 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,webp}'],
+        // El runtime de MediaPipe (detector de rostro del checador) NO va al precache:
+        // son ~740 KB que pagaría todo el mundo al instalar la app, incluida la psicóloga
+        // que no va a abrir el checador en su vida. Se descarga bajo demanda la primera
+        // vez que alguien entra a checar, y de ahí lo cachea el navegador.
+        globIgnores: ['**/mediapipe/**'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [
           /^\/api\//,

@@ -65,6 +65,43 @@ reescribir filas viejas.
   `supabase_admin`, y las migraciones corren como `postgres`. Sin el grant, la tabla da
   "permission denied" y RLS ni se evalúa. *(Las tablas 04-26 no lo hacen — ver "Deuda conocida".)*
 
+### Comprobación de identidad (migraciones 39-40)
+
+**Lo que el sistema NO hace: verificar que la cara de la foto es la de esa persona.** La
+selfie es *evidencia*, no *verificación*. Conviene decirlo en voz alta, porque es fácil
+creer lo contrario.
+
+Lo que sí hay, en tres capas, ninguna de las cuales pretende ser infalible:
+
+| Capa | Qué ataca | Dónde vive | ¿Bloquea? |
+|---|---|---|---|
+| **Hay una cara en la foto** | Checar con una foto del techo, del bolsillo o del cielo | Navegador (MediaPipe, `src/utils/rostro.js`) | **Sí** — es la única que bloquea, porque tiene un arreglo trivial: ponte frente a la cámara |
+| **Ventana de salida** (mig. 39) | Fichar entrada y salida seguidas y simular una jornada | RPC | Sí |
+| **Dispositivo** (mig. 40) | La contraseña compartida: un compañero checa por ti | RPC + derivado | No, marca |
+
+De la capa de dispositivo salen **dos señales de calidad muy distinta**:
+
+- `asistencias.dispositivo_nuevo` — este empleado nunca había usado este teléfono.
+  **Ruidosa**: la gente cambia de móvil y borra datos del navegador. Solo marca.
+- **Un mismo teléfono checando a dos empleados el mismo día.** Esta es la buena: es la
+  firma exacta de la suplantación y no tiene explicación inocente frecuente. **No se
+  guarda**: se deriva al leer (`detectarDispositivosCompartidos`), porque cuando llega la
+  segunda checada la primera ya está escrita y marcarla obligaría a reescribirla.
+
+La tabla `dispositivos` **no tiene policy de INSERT**: solo la escribe la RPC. Si el
+cliente pudiera insertar, se daría de alta su propio teléfono antes de checar y la señal
+valdría cero. Verificado: el intento devuelve *"new row violates row-level security policy"*.
+
+> **Límite honesto**: el id del dispositivo lo genera el navegador, así que se puede
+> borrar o falsear — pero hacerlo sale marcado como dispositivo desconocido, que es justo
+> la señal buscada. Esto no es una barrera, es un detector.
+
+> **Lo que falta**: cotejo facial (comparar la cara contra una de referencia). Exige
+> enrolar a la plantilla, un modelo corriendo en el **servidor** (si la comparación la
+> hace el navegador, el navegador puede mentir) y —esto es lo importante— **consentimiento
+> expreso por escrito**: una cara cotejada es dato personal *sensible*, no un simple
+> archivo. Y ni con eso se cubre la *foto de una foto*.
+
 ### `permisos` (ampliado en la migración 38)
 
 `causa` (catálogo cerrado: enfermedad · cita_medica · asunto_personal · luto · tramite_oficial ·

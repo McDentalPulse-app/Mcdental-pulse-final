@@ -20,6 +20,8 @@ const mapAsistencia = (row) => ({
   distanciaM: row.distancia_m,
   ubicacionEstado: row.ubicacion_estado,
   selfiePath: row.selfie_path,
+  deviceId: row.device_id,
+  dispositivoNuevo: row.dispositivo_nuevo,
   origen: row.origen,
   anulada: row.anulada,
   notaRh: row.nota_rh,
@@ -65,7 +67,7 @@ export const getAsistencias = async ({ desde, hasta, empleadoId } = {}) => {
  * cliente pudiera mandarlo, bastaría con atrasar el reloj del teléfono para llegar
  * siempre puntual.
  */
-export const registrarChecada = async ({ tipo, coords = null, selfieBlob = null, empleadoId }) => {
+export const registrarChecada = async ({ tipo, coords = null, selfieBlob = null, empleadoId, deviceId = null }) => {
   let selfiePath = null;
 
   if (selfieBlob && empleadoId) {
@@ -90,6 +92,7 @@ export const registrarChecada = async ({ tipo, coords = null, selfieBlob = null,
     p_lng: coords?.lng ?? null,
     p_precision: coords?.precision ?? null,
     p_selfie_path: selfiePath,
+    p_device_id: deviceId,
   });
 
   if (error) {

@@ -13,6 +13,7 @@ import {
   resumen,
   agruparPor,
   requiereRevision,
+  detectarDispositivosCompartidos,
   puedeRegistrarSalida,
   ESTADOS_DIA,
 } from "./asistencia";
@@ -422,10 +423,81 @@ describe("requiereRevision", () => {
     // sin_geocerca NO se señala: es culpa nuestra (falta capturar las coordenadas de la
     // clínica), no del empleado. Señalarlo llenaría el panel de RH de ruido que no puede
     // accionar, y el ruido acaba haciendo que nadie mire las señales que sí importan.
-    expect(requiereRevision({ ubicacionEstado: estado, anulada: false })).toBe(esperado);
+    expect(requiereRevision({ ubicacionEstado: estado, anulada: false, selfiePath: "a/1.jpg" })).toBe(esperado);
   });
 
   it("una checada anulada ya no requiere revisión", () => {
-    expect(requiereRevision({ ubicacionEstado: "fuera", anulada: true })).toBe(false);
+    expect(requiereRevision({ ubicacionEstado: "fuera", anulada: true, selfiePath: "a/1.jpg" })).toBe(false);
+  });
+
+  it("una checada SIN FOTO se marca, aunque la ubicación esté bien", () => {
+    // El detector de rostro no bloquea si falla (una comprobación caída no puede impedirle
+    // a nadie fichar), así que una checada sin selfie es un hueco: se registró sin ninguna
+    // evidencia de quién la hizo. Se marca a propósito, y sí, se marcará todos los días de
+    // quien deniegue la cámara — que es exactamente lo que hace falta para que RH lo
+    // persiga una vez y deje de pasar.
+    expect(requiereRevision({ ubicacionEstado: "dentro", anulada: false, selfiePath: null })).toBe(true);
+  });
+
+  it("un dispositivo nunca visto se marca", () => {
+    expect(
+      requiereRevision({ ubicacionEstado: "dentro", anulada: false, selfiePath: "a/1.jpg", dispositivoNuevo: true })
+    ).toBe(true);
+  });
+});
+
+describe("detectarDispositivosCompartidos", () => {
+  // La señal más fuerte de suplantación que tenemos. Si un compañero checa por ti, lo hace
+  // desde SU teléfono: un mismo dispositivo fichando a dos personas distintas el mismo día
+  // no tiene una explicación inocente frecuente — al contrario que "dispositivo nuevo", que
+  // salta cada vez que alguien cambia de móvil.
+  const ch = (id, empleadoId, deviceId, fecha = "2026-07-14", extra = {}) =>
+    ({ id, empleadoId, deviceId, fecha, anulada: false, ...extra });
+
+  it("marca las DOS checadas cuando un teléfono ficha a dos empleados el mismo día", () => {
+    // Las dos, no solo la segunda: el fraude necesita el par para entenderse, y RH tiene que
+    // ver a quién se suplantó además de quién lo hizo.
+    const sospechosas = detectarDispositivosCompartidos([
+      ch("1", "ana", "tel-A"),
+      ch("2", "beto", "tel-A"),
+    ]);
+    expect(sospechosas.has("1")).toBe(true);
+    expect(sospechosas.has("2")).toBe(true);
+  });
+
+  it("el mismo empleado checando varias veces desde su teléfono NO se marca", () => {
+    // Es el caso normal: entrada y salida desde el mismo móvil, todos los días.
+    const sospechosas = detectarDispositivosCompartidos([
+      ch("1", "ana", "tel-A"),
+      ch("2", "ana", "tel-A"),
+    ]);
+    expect(sospechosas.size).toBe(0);
+  });
+
+  it("el mismo teléfono en DÍAS distintos no es sospechoso", () => {
+    // Un móvil reutilizado (alguien se fue, otro heredó el equipo) no es un fraude. La
+    // señal solo tiene sentido dentro del mismo día.
+    const sospechosas = detectarDispositivosCompartidos([
+      ch("1", "ana", "tel-A", "2026-07-13"),
+      ch("2", "beto", "tel-A", "2026-07-14"),
+    ]);
+    expect(sospechosas.size).toBe(0);
+  });
+
+  it("las checadas anuladas no cuentan", () => {
+    const sospechosas = detectarDispositivosCompartidos([
+      ch("1", "ana", "tel-A"),
+      ch("2", "beto", "tel-A", "2026-07-14", { anulada: true }),
+    ]);
+    expect(sospechosas.size).toBe(0);
+  });
+
+  it("sin deviceId no se puede decir nada", () => {
+    // Incógnito, storage bloqueado: no hay dato. Ausencia de señal no es señal.
+    const sospechosas = detectarDispositivosCompartidos([
+      ch("1", "ana", null),
+      ch("2", "beto", null),
+    ]);
+    expect(sospechosas.size).toBe(0);
   });
 });

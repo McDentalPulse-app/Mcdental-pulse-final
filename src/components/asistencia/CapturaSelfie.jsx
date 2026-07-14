@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useImperativeHandle, forwardRef } from "react";
 import Icon from "../ui/Icon";
 import { canvasABlob } from "../../utils/imagen";
+import { detectarRostro, recortarACara, RESULTADO } from "../../utils/rostro";
 
 const ANCHO_SELFIE = 480;
 
@@ -85,22 +86,46 @@ const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true }, ref) 
   }, [estado]);
 
   useImperativeHandle(ref, () => ({
-    /** Devuelve un Blob JPEG del fotograma actual, o null si la cámara no está lista. */
+    /**
+     * Captura el fotograma actual y comprueba que hay UNA cara.
+     *
+     * Devuelve { blob, resultado }:
+     *   - resultado OK             -> blob recortado a la cara.
+     *   - SIN_CARA / VARIAS_CARAS  -> blob null. El checador NO deja checar y lo explica.
+     *   - NO_DISPONIBLE            -> blob sin recortar. El detector no cargó (red, navegador
+     *                                 viejo): se checa igual. Una comprobación que se cae no
+     *                                 puede impedirle a nadie fichar su entrada — misma regla
+     *                                 que con el GPS.
+     *
+     * Si la cámara no está lista, blob null y NO_DISPONIBLE: se checa sin foto.
+     */
     capturar: async () => {
       const video = videoRef.current;
-      if (estado !== "lista" || !video?.videoWidth) return null;
+      if (estado !== "lista" || !video?.videoWidth) {
+        return { blob: null, resultado: RESULTADO.NO_DISPONIBLE };
+      }
 
       const escala = Math.min(1, ANCHO_SELFIE / video.videoWidth);
       const canvas = document.createElement("canvas");
       canvas.width = Math.round(video.videoWidth * escala);
       canvas.height = Math.round(video.videoHeight * escala);
+      // Se dibuja el fotograma ORIGINAL, sin el espejo del CSS: el vídeo se ve espejado
+      // porque la gente espera verse como en un espejo, pero la foto que se guarda tiene
+      // que ser la real, o el cotejo facial compararía una cara contra su reflejo.
       canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
 
+      const { resultado, box } = await detectarRostro(canvas);
+
+      if (resultado === RESULTADO.SIN_CARA || resultado === RESULTADO.VARIAS_CARAS) {
+        return { blob: null, resultado };
+      }
+
       try {
-        return await canvasABlob(canvas);
+        const salida = box ? recortarACara(canvas, box) : canvas;
+        return { blob: await canvasABlob(salida), resultado };
       } catch (error) {
         console.warn("No se pudo capturar la selfie:", error);
-        return null;
+        return { blob: null, resultado: RESULTADO.NO_DISPONIBLE };
       }
     },
     estado,

@@ -17,6 +17,7 @@ import {
   agruparPor,
   resumen,
   requiereRevision,
+  detectarDispositivosCompartidos,
   ESTADOS_DIA,
   TZ_CLINICA,
 } from "../../utils/asistencia";
@@ -147,7 +148,25 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
     [porEmpleado]
   );
 
-  const paraRevisar = useMemo(() => checadas.filter(requiereRevision), [checadas]);
+  // Un mismo teléfono checando a dos personas distintas el mismo día. Es la señal más
+  // fuerte de suplantación y necesita ver el conjunto del día, no una checada suelta.
+  const compartidos = useMemo(() => detectarDispositivosCompartidos(checadas), [checadas]);
+
+  const paraRevisar = useMemo(
+    () => checadas.filter((c) => requiereRevision(c) || compartidos.has(c.id)),
+    [checadas, compartidos]
+  );
+
+  // Por qué está marcada esta checada. Se enseña el motivo, no un icono de alerta a secas:
+  // sin saber QUÉ mirar, RH no puede accionar nada y acaba ignorando la lista entera.
+  const motivoRevision = (c) => {
+    if (compartidos.has(c.id)) return "Este mismo teléfono checó hoy a más de un empleado.";
+    if (c.ubicacionEstado === "fuera") return `A ${c.distanciaM} m de ${c.sucursal}: fuera del área permitida.`;
+    if (c.dispositivoNuevo) return "Checó desde un teléfono que nunca había usado.";
+    if (!c.selfiePath) return "Se registró sin foto.";
+    if (c.ubicacionEstado === "sin_gps") return "Sin ubicación: no dio permiso de GPS o falló.";
+    return "";
+  };
 
   const verSelfie = async (checada) => {
     if (!checada.selfiePath) {
@@ -283,11 +302,7 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
                     <span>
                       {c.tipo === "entrada" ? "Entrada" : "Salida"} · {c.fecha} a las {horaCorta(c.marcadaEn)}
                     </span>
-                    <em>
-                      {c.ubicacionEstado === "fuera"
-                        ? `A ${c.distanciaM} m de ${c.sucursal} (permitido: dentro del radio)`
-                        : "Sin ubicación: no dio permiso de GPS o falló"}
-                    </em>
+                    <em>{motivoRevision(c)}</em>
                   </div>
                   <div className="asistencia-revision-acciones">
                     {c.selfiePath && (

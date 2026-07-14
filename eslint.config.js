@@ -5,7 +5,11 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // public/mediapipe es el runtime de MediaPipe copiado tal cual desde node_modules
+  // (el detector de rostro del checador lo carga desde nuestro origen, no desde un CDN).
+  // Es código minificado de terceros: analizarlo solo produce 353 errores que nadie va a
+  // arreglar y que enterrarían los nuestros.
+  globalIgnores(['dist', 'public/mediapipe']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [

@@ -6,6 +6,8 @@ import Icon from "../ui/Icon";
 import CapturaSelfie from "./CapturaSelfie";
 import { useNotification } from "../../contexts/NotificationContext";
 import { obtenerUbicacion, textoUbicacion } from "../../utils/geo";
+import { getDeviceId } from "../../utils/dispositivo";
+import { RESULTADO, MENSAJE } from "../../utils/rostro";
 import { emparejarChecadas, diaISO, puedeRegistrarSalida, TZ_CLINICA } from "../../utils/asistencia";
 
 const horaCorta = (timestamp) =>
@@ -67,14 +69,26 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
     try {
       // La foto y la ubicación se piden EN PARALELO: son dos permisos lentos del
       // navegador y encadenarlos duplicaría la espera del empleado delante del móvil.
-      // Ninguna de las dos puede abortar la checada — si fallan, se registra igual y el
-      // servidor la marca (sin_gps / sin foto). Ver utils/geo.js.
-      const [selfieBlob, coords] = await Promise.all([
-        camaraRef.current?.capturar() ?? null,
+      const [foto, coords] = await Promise.all([
+        camaraRef.current?.capturar() ?? { blob: null, resultado: RESULTADO.NO_DISPONIBLE },
         obtenerUbicacion(),
       ]);
 
-      const checada = await onChecar({ tipo: siguiente, coords, selfieBlob });
+      // Sin cara (o con dos) NO se checa. Es la única comprobación que sí bloquea, y lo
+      // hace porque tiene un arreglo trivial e inmediato: ponte frente a la cámara. La
+      // ubicación y el propio detector, en cambio, pueden fallar por causas ajenas al
+      // empleado, así que esas nunca bloquean.
+      if (foto.resultado === RESULTADO.SIN_CARA || foto.resultado === RESULTADO.VARIAS_CARAS) {
+        toast.error(MENSAJE[foto.resultado]);
+        return;
+      }
+
+      const checada = await onChecar({
+        tipo: siguiente,
+        coords,
+        selfieBlob: foto.blob,
+        deviceId: getDeviceId(),
+      });
       if (!checada) return; // el toast de error ya lo emitió la acción
 
       setUltima(checada);

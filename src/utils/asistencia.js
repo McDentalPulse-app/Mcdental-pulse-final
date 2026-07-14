@@ -396,8 +396,58 @@ export const puedeRegistrarSalida = (horario, ahora = new Date()) => {
   };
 };
 
-/** ¿Esta checada merece que RH la mire? (fuera de la geocerca o sin poder comprobarla) */
+/**
+ * Teléfonos que han checado a MÁS DE UN empleado el mismo día.
+ *
+ * Es la señal más fuerte de suplantación que tenemos, y la más difícil de evadir: si un
+ * compañero checa por ti, lo hace desde su propio teléfono. Un mismo dispositivo fichando
+ * a dos personas distintas en el mismo día no tiene una explicación inocente frecuente
+ * — al contrario que "dispositivo nuevo", que se dispara cada vez que alguien cambia de
+ * móvil.
+ *
+ * Se DERIVA al leer y no se guarda en una columna: cuando llega la segunda checada, la
+ * primera ya está escrita, y marcarla obligaría a volver atrás a reescribirla. El día
+ * que ese reproceso fallara, la señal se perdería en silencio.
+ *
+ * Devuelve un Set con los ids de las checadas implicadas (todas, no solo la segunda: el
+ * fraude necesita las dos para entenderse).
+ */
+export const detectarDispositivosCompartidos = (checadas = []) => {
+  // clave "fecha|device" -> Set de empleados que lo usaron ese día
+  const empleadosPorDispositivo = new Map();
+
+  for (const c of checadas) {
+    if (!c?.deviceId || c.anulada) continue;
+    const clave = `${c.fecha}|${c.deviceId}`;
+    if (!empleadosPorDispositivo.has(clave)) empleadosPorDispositivo.set(clave, new Set());
+    empleadosPorDispositivo.get(clave).add(c.empleadoId);
+  }
+
+  const sospechosas = new Set();
+  for (const c of checadas) {
+    if (!c?.deviceId || c.anulada) continue;
+    const clave = `${c.fecha}|${c.deviceId}`;
+    if (empleadosPorDispositivo.get(clave)?.size > 1) sospechosas.add(c.id);
+  }
+  return sospechosas;
+};
+
+/**
+ * ¿Esta checada merece que RH la mire?
+ *
+ * Lo que NO entra aquí: 'sin_geocerca' (es culpa nuestra, falta capturar las coordenadas
+ * de esa clínica) y las anuladas. Meter ruido que RH no puede accionar acaba haciendo que
+ * nadie mire las señales que sí importan — que es exactamente cómo mueren estos controles.
+ *
+ * Los dispositivos compartidos NO se comprueban aquí porque necesitan ver el conjunto del
+ * día, no una checada aislada: se cruzan con detectarDispositivosCompartidos().
+ */
 export const requiereRevision = (checada) =>
   !!checada &&
   !checada.anulada &&
-  (checada.ubicacionEstado === "fuera" || checada.ubicacionEstado === "sin_gps");
+  (checada.ubicacionEstado === "fuera" ||
+    checada.ubicacionEstado === "sin_gps" ||
+    checada.dispositivoNuevo === true ||
+    // Sin foto pudiendo haberla: el detector de rostro no bloquea si falla, así que una
+    // checada sin selfie es un hueco que alguien debería mirar.
+    !checada.selfiePath);
