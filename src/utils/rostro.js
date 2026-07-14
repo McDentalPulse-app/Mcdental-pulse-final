@@ -106,7 +106,7 @@ export const encuadreBueno = (box, anchoVideo, altoVideo) => {
   const proporcion = box.alto / altoVideo;
 
   if (proporcion < 0.30) return { ok: false, pista: "Acércate un poco." };
-  if (proporcion > 0.75) return { ok: false, pista: "Aléjate un poco." };
+  if (proporcion > 0.68) return { ok: false, pista: "Aléjate un poco." };
   if (Math.abs(centroX - 0.5) > 0.18 || Math.abs(centroY - 0.5) > 0.18) {
     return { ok: false, pista: "Centra tu cara en el recuadro." };
   }

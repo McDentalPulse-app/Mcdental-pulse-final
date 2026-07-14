@@ -162,12 +162,13 @@ export default async function handler(req, res) {
       .update({ match_score: score, rostro_verificado: verificado })
       .eq("id", checada.id);
 
-    // Coteja bien: se limpian sus fallos. Si no, alguien que falló dos veces por la luz de
-    // la mañana arrastraría esos fallos el resto del día y se le agotarían los intentos a la
-    // primera de cambio.
-    if (verificado === true) {
-      await supabase.from("cotejo_intentos").delete().eq("empleado_id", quien.id);
-    }
+    // Los intentos fallidos NO se borran al acertar.
+    //
+    // Antes sí, "para que no arrastrara fallos viejos" — pero eso destruía exactamente la
+    // evidencia que RH necesita: alguien intenta tres veces con una cara que no coincide, y
+    // luego entra el titular; borrar los fallos hace desaparecer el rastro del intento de
+    // suplantación. Y era innecesario: el contador solo mira los últimos 15 minutos, así que
+    // los fallos viejos ya caducan solos.
   }
 
   // El score NO se le devuelve al empleado: saber exactamente cuánto se parece le daría a

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import PageHeader from "../common/PageHeader";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
@@ -30,6 +30,13 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
   const { toast } = useNotification();
   const [enviando, setEnviando] = useState(false);
   const [ultima, setUltima] = useState(null);
+
+  // El encuadre lo vigila la cámara. Sin esto, la gente se pega al móvil, la cara llena el
+  // cuadro y sale deformada por la lente — y entonces el cotejo del servidor no reconoce a
+  // su propio dueño y le bloquea la entrada. Medido: la misma persona daba 0.37 de parecido
+  // consigo misma, a un pelo del umbral.
+  const [encuadre, setEncuadre] = useState({ ok: true, pista: null });
+  const onEncuadre = useCallback((g) => setEncuadre(g), []);
 
   const misChecadas = useMemo(
     () => checadasHoy.filter((c) => c.empleadoId === user?.id),
@@ -116,7 +123,11 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
       />
 
       <Card>
-        <CapturaSelfie ref={camaraRef} activa={!!siguiente && !bloqueado} />
+        <CapturaSelfie
+          ref={camaraRef}
+          activa={!!siguiente && !bloqueado}
+          onEncuadre={onEncuadre}
+        />
 
         {siguiente ? (
           <>
@@ -124,14 +135,16 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
               type="button"
               className={`checador-boton checador-boton--${siguiente}`}
               onClick={handleChecar}
-              disabled={enviando || bloqueado}
+              disabled={enviando || bloqueado || !encuadre.ok}
             >
               <Icon name={siguiente === "entrada" ? "check" : "logout"} size={22} />
               {enviando
                 ? "Registrando…"
-                : siguiente === "entrada"
-                  ? "Registrar entrada"
-                  : "Registrar salida"}
+                : !encuadre.ok
+                  ? "Colócate en el recuadro"
+                  : siguiente === "entrada"
+                    ? "Registrar entrada"
+                    : "Registrar salida"}
             </button>
 
             {bloqueado && (

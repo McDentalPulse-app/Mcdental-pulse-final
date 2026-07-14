@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState, useImperativeHandle, forwardRef } from "react";
 import Icon from "../ui/Icon";
 import { canvasABlob } from "../../utils/imagen";
-import { detectarRostro, encuadreBueno, poseCoincide, recortarACara, RESULTADO } from "../../utils/rostro";
+import { detectarRostro, encuadreBueno, poseCoincide, RESULTADO } from "../../utils/rostro";
 
-const ANCHO_SELFIE = 480;
+const ANCHO_SELFIE = 640;  // más píxeles = mejor huella. El fotograma entero, sin recortar.
 const INTERVALO_MS = 350;   // cada cuánto se mira el vídeo buscando la cara
 const FRAMES_ESTABLES = 3;  // cuántas veces seguidas debe estar bien encuadrada
 
@@ -25,7 +25,7 @@ const FRAMES_ESTABLES = 3;  // cuántas veces seguidas debe estar bien encuadrad
  * Se exige que el encuadre esté bien VARIOS fotogramas seguidos, no uno: si no, dispararía
  * en mitad de un movimiento y saldría movida.
  */
-const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true, onAutoCaptura = null, poseRequerida = null }, ref) {
+const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true, onAutoCaptura = null, poseRequerida = null, onEncuadre = null }, ref) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const establesRef = useRef(0);
@@ -108,7 +108,7 @@ const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true, onAutoC
     // real, o el cotejo compararía una cara contra su reflejo.
     canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    const { resultado, box, puntos } = await detectarRostro(canvas);
+    const { resultado, puntos } = await detectarRostro(canvas);
 
     if (resultado === RESULTADO.SIN_CARA || resultado === RESULTADO.VARIAS_CARAS) {
       return { blob: null, resultado };
@@ -122,18 +122,31 @@ const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true, onAutoC
     }
 
     try {
-      const salida = box ? recortarACara(canvas, box) : canvas;
-      return { blob: await canvasABlob(salida), resultado };
+      // Se manda el FOTOGRAMA ENTERO, sin recortar.
+      //
+      // Antes se recortaba a la cara con un margen del 40%, y ese recorte se topaba con el
+      // borde del fotograma cuando la persona estaba cerca: le cortaba la barbilla o la
+      // frente. El servidor recibía media cara, la alineaba igual, y devolvía una huella
+      // basura — la misma persona daba 0.37 de parecido consigo misma, rozando el umbral.
+      //
+      // Recortar aquí no aportaba nada: el servidor DETECTA Y ALINEA la cara por su cuenta
+      // (api/_rostro.js). Lo único que hacía el recorte era arriesgarse a mutilarla.
+      return { blob: await canvasABlob(canvas), resultado };
     } catch (error) {
       console.warn("No se pudo capturar la selfie:", error);
       return { blob: null, resultado: RESULTADO.NO_DISPONIBLE };
     }
   }, [estado, poseRequerida]);
 
-  // Bucle de guía: mira el vídeo, dice qué corregir y dispara cuando el encuadre aguanta
-  // bien varios fotogramas seguidos. Solo si el padre pide auto-captura.
+  // Bucle de guía: mira el vídeo, dice qué corregir y (si el padre lo pide) dispara cuando
+  // el encuadre aguanta bien varios fotogramas seguidos.
+  //
+  // El CHECADOR también lo usa, aunque no dispare solo. Sin guía, la gente se pega al móvil,
+  // la cara llena el cuadro y sale deformada por la lente — y el cotejo del servidor deja de
+  // reconocer a su propio dueño. Guiar el encuadre al checar es lo que hace que la selfie se
+  // parezca a las fotos con las que se va a comparar.
   useEffect(() => {
-    if (estado !== "lista" || !onAutoCaptura) return undefined;
+    if (estado !== "lista" || (!onAutoCaptura && !onEncuadre)) return undefined;
 
     let vivo = true;
 
@@ -152,14 +165,19 @@ const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true, onAutoC
       const { resultado, box, puntos } = await detectarRostro(lienzo);
       if (!vivo) return;
 
+      const avisar = (g) => { setGuia(g); onEncuadre?.(g); };
+
       if (resultado === RESULTADO.VARIAS_CARAS) {
         establesRef.current = 0;
-        setGuia({ ok: false, pista: "Hay más de una persona. Debes salir tú solo." });
+        avisar({ ok: false, pista: "Hay más de una persona. Debes salir tú solo." });
         return;
       }
       if (resultado !== RESULTADO.OK) {
         establesRef.current = 0;
-        setGuia({ ok: false, pista: "No se ve tu cara. Colócate frente a la cámara." });
+        // El detector no disponible NO puede bloquear a nadie: se le da el encuadre por
+        // bueno y que el servidor decida. Misma regla que con el GPS.
+        if (resultado === RESULTADO.NO_DISPONIBLE) { avisar({ ok: true, pista: null }); return; }
+        avisar({ ok: false, pista: "No se ve tu cara. Colócate frente a la cámara." });
         return;
       }
 
@@ -169,21 +187,21 @@ const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true, onAutoC
       const encuadre = encuadreBueno(box, lienzo.width, lienzo.height);
       if (!encuadre.ok) {
         establesRef.current = 0;
-        setGuia(encuadre);
+        avisar(encuadre);
         return;
       }
 
       const pose = poseCoincide(puntos, poseRequerida);
       if (!pose.ok) {
         establesRef.current = 0;
-        setGuia({ ok: false, pista: pose.pista });
+        avisar({ ok: false, pista: pose.pista });
         return;
       }
 
-      setGuia({ ok: true, pista: "¡Así! No te muevas…" });
+      avisar({ ok: true, pista: "¡Así! No te muevas…" });
 
       establesRef.current += 1;
-      if (establesRef.current < FRAMES_ESTABLES) return;
+      if (establesRef.current < FRAMES_ESTABLES || !onAutoCaptura) return;
 
       // Encuadre bueno y estable: se dispara.
       ocupadoRef.current = true;
@@ -197,7 +215,7 @@ const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true, onAutoC
     }, INTERVALO_MS);
 
     return () => { vivo = false; clearInterval(id); };
-  }, [estado, onAutoCaptura, capturar, poseRequerida]);
+  }, [estado, onAutoCaptura, onEncuadre, capturar, poseRequerida]);
 
   useImperativeHandle(ref, () => ({ capturar, estado }), [capturar, estado]);
 
@@ -214,7 +232,7 @@ const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true, onAutoC
         className={`checador-camara-video ${estado === "lista" ? "" : "checador-camara-video--oculto"}`}
       />
 
-      {estado === "lista" && onAutoCaptura && (
+      {estado === "lista" && (onAutoCaptura || onEncuadre) && (
         <>
           <div className={`checador-guia ${guia.ok ? "checador-guia--ok" : ""}`} aria-hidden="true" />
           <p className={`checador-guia-pista ${guia.ok ? "checador-guia-pista--ok" : ""}`} aria-live="polite">
