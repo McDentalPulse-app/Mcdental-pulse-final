@@ -31,6 +31,21 @@ function devApiProxy(mode) {
         if (env[clave]) process.env[clave] = env[clave]
       }
 
+      // Node cachea los módulos ESM en el proceso, así que un cambio en api/ NO se recarga
+      // en caliente: el servidor sigue ejecutando la versión que cargó al arrancar. Eso ya
+      // costó una tarde — se cambió el umbral del cotejo facial, el archivo decía 0.50 y el
+      // servidor seguía aplicando 0.363, con lo que un impostor pasaba y no había forma de
+      // entender por qué. Aquí se avisa a gritos.
+      server.watcher.add(resolve(process.cwd(), 'api'))
+      server.watcher.on('change', (archivo) => {
+        if (archivo.includes('/api/')) {
+          server.config.logger.warn(
+            `\n  ⚠️  ${archivo.split('/api/')[1]} cambió — REINICIA el servidor (Ctrl+C y npm run dev).\n` +
+            `     Las funciones de api/ no se recargan en caliente.\n`
+          )
+        }
+      })
+
       for (const nombre of ENDPOINTS) {
         server.middlewares.use(`/api/${nombre}`, async (req, res) => {
           let body = ''
