@@ -1,5 +1,6 @@
 import { configOk, admin, quienLlama } from "./_auth.js";
-import { calcularHuella, similitud, UMBRAL_MISMA_PERSONA } from "./_rostro.js";
+import { analizarFoto, similitud, UMBRAL_MISMA_PERSONA } from "./_rostro.js";
+import { giroCorrecto } from "./_pose.js";
 
 /**
  * Registrar una checada. Es el ÚNICO camino: la RPC ya no la puede llamar el navegador.
@@ -57,7 +58,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: "Sesión inválida." });
   }
 
-  const { tipo, selfiePath, lat, lng, precision, deviceId } = req.body || {};
+  const { tipo, selfiePath, lat, lng, precision, deviceId, retoFoto } = req.body || {};
   if (tipo !== "entrada" && tipo !== "salida") {
     return res.status(400).json({ error: "Tipo de checada inválido." });
   }
@@ -93,7 +94,7 @@ export default async function handler(req, res) {
 
   const { data: rostro } = await supabase
     .from("rostros")
-    .select("id, huella, rostro_fotos(huella)")
+    .select("id, huella, reto_pendiente, rostro_fotos(huella)")
     .eq("empleado_id", quien.id)
     .eq("estado", "aprobado") // uno pendiente es una cara que nadie ha mirado todavía
     .maybeSingle();
@@ -135,36 +136,77 @@ export default async function handler(req, res) {
     }
   }
 
+  let retoSuperado = null; // null = no se le pidió ninguno
+  let motivoReto = null;
+
   if (rostro && selfiePath) {
     const referencias = (rostro.rostro_fotos || []).map((f) => f.huella);
     if (!referencias.length && rostro.huella) referencias.push(rostro.huella);
 
+    // El MEJOR parecido contra todas sus fotos de referencia, no el promedio. Es lo que hace
+    // que funcione con y sin lentes: basta con parecerse a una.
+    const pareceEl = (huella) => {
+      const scores = referencias.map((ref) => similitud(huella, ref)).filter((s) => s !== null);
+      return scores.length ? Math.max(...scores) : null;
+    };
+
     const { data: archivo } = await supabase.storage.from("asistencias").download(selfiePath);
 
     if (archivo && referencias.length) {
-      let huella = null;
+      let cara = null;
       try {
-        huella = await calcularHuella(Buffer.from(await archivo.arrayBuffer()));
+        cara = await analizarFoto(Buffer.from(await archivo.arrayBuffer()));
       } catch (error) {
-        console.error("Error calculando la huella de la checada:", error);
+        console.error("Error analizando la foto de la checada:", error);
       }
 
-      if (huella) {
-        // Se compara contra TODAS sus fotos de referencia y se toma el MEJOR parecido, no el
-        // promedio. Es lo que hace que funcione con y sin lentes: basta con parecerse a una.
-        const scores = referencias
-          .map((ref) => similitud(huella, ref))
-          .filter((s) => s !== null);
+      if (cara?.huella) {
+        score = pareceEl(cara.huella);
+        if (score !== null) verificado = score >= UMBRAL_MISMA_PERSONA;
+      }
+      // Si no se detectó cara, `verificado` sigue en null y se trata igual que un fallo: cuenta
+      // como intento. No se declara "no coincide" —no es lo mismo que no coincida a que no se
+      // pudiera mirar— pero tampoco se deja pasar, o bastaría con mandar una foto ilegible
+      // para saltarse el cotejo.
 
-        if (scores.length) {
-          score = Math.max(...scores);
-          verificado = score >= UMBRAL_MISMA_PERSONA;
+      // -------------------------------------------------------------------------
+      // El reto de movimiento (migración 048).
+      // -------------------------------------------------------------------------
+      if (rostro.reto_pendiente) {
+        retoSuperado = false;
+
+        if (!retoFoto) {
+          motivoReto = "Falta la foto girada.";
+        } else {
+          let girada = null;
+          try {
+            girada = await analizarFoto(Buffer.from(retoFoto, "base64"));
+          } catch (error) {
+            console.error("Error analizando la foto del reto:", error);
+          }
+
+          if (!girada?.huella) {
+            motivoReto = "No se distingue tu cara en la foto girada.";
+          } else if (!giroCorrecto(girada.t, rostro.reto_pendiente)) {
+            // Aquí muere la foto de una foto: por mucho que la giren, la nariz no se mueve
+            // respecto a los ojos. No hay relieve, no hay paralaje, no hay giro.
+            motivoReto = "No giraste la cabeza hacia donde se te pidió.";
+          } else if ((pareceEl(girada.huella) ?? 0) < UMBRAL_MISMA_PERSONA) {
+            // EL ATAQUE QUE ESTA LÍNEA CIERRA, y sin ella el reto entero es teatro: enseñar la
+            // foto de Ana para el primer fotograma (que pasa el cotejo, porque ES la cara de
+            // Ana) y luego apartarla y girar TU PROPIA cabeza para el segundo. La cabeza gira de
+            // verdad, el paralaje es real... pero es la cabeza de otro. La foto girada tiene que
+            // ser ELLA, no solo una persona viva.
+            //
+            // Se le exige el mismo umbral que a la selfie, y eso es defendible: sus fotos de
+            // referencia YA incluyen tomas de perfil (el registro obliga a tres poses distintas),
+            // así que una cara girada tiene contra qué parecerse.
+            motivoReto = "La cara de la foto girada no es la misma.";
+          } else {
+            retoSuperado = true;
+          }
         }
       }
-      // Si no se detectó cara en la foto, `verificado` sigue en null y se trata igual que un
-      // fallo: cuenta como intento. No se declara "no coincide" —no es lo mismo que no
-      // coincida a que no se pudiera mirar— pero tampoco se deja pasar sin más, o bastaría
-      // con mandar una foto ilegible para saltarse el cotejo.
     }
   }
 
@@ -172,19 +214,33 @@ export default async function handler(req, res) {
   // 2. ¿Se bloquea?
   // ---------------------------------------------------------------------------
   const hayQueCotejar = !!rostro; // sin rostro aprobado no hay contra qué comparar
-  const fallo = hayQueCotejar && verificado !== true;
+  const fallo = hayQueCotejar && (verificado !== true || retoSuperado === false);
 
   if (fallo) {
+    // El reto NO se limpia al fallar: se queda pegado. Si al fallarlo se volviera a tirar el
+    // dado, bastaría con reintentar hasta que saliera "sin reto" — y el reto sería un peaje que
+    // solo hay que esperar a que no esté.
+    if (retoSuperado === true) {
+      await supabase
+        .from("rostros")
+        .update({ reto_pendiente: null, reto_pedido_en: null })
+        .eq("id", rostro.id);
+    }
     await supabase.from("cotejo_intentos").insert({ empleado_id: quien.id, score });
     const intentos = (await contarIntentos()) || 1;
 
     // No hay checada. Ni ahora ni al décimo intento: rendirse tras N fallos sería una puerta
     // que al impostor solo le costaría empujar tres veces.
+    // Al que falla el reto se le dice QUÉ falló y que le va a volver a tocar. Ocultarle que el
+    // reto sigue ahí lo dejaría reintentando a ciegas contra una puerta que no se va a abrir.
+    const mensaje = motivoReto
+      ? `${motivoReto} Vuelve a intentarlo: te pediremos otra vez que gires la cabeza.`
+      : score === null
+        ? "No se distingue tu cara en la foto. Ponte de frente, con buena luz, e inténtalo otra vez."
+        : "No pudimos confirmar que eres tú. Mira de frente, con buena luz, e inténtalo otra vez.";
+
     return res.status(403).json({
-      error:
-        score === null
-          ? "No se distingue tu cara en la foto. Ponte de frente, con buena luz, e inténtalo otra vez."
-          : "No pudimos confirmar que eres tú. Mira de frente, con buena luz, e inténtalo otra vez.",
+      error: mensaje,
       // A partir de unos cuantos fallos se le deja de pedir que reintente y se le dice qué
       // hacer. Insistir a ciegas contra un sistema que no cede es lo que acaba en una
       // persona plantada en la puerta sin saber a quién acudir.
@@ -224,8 +280,16 @@ export default async function handler(req, res) {
   if (hayQueCotejar) {
     await supabase
       .from("asistencias")
-      .update({ match_score: score, rostro_verificado: verificado })
+      .update({ match_score: score, rostro_verificado: verificado, reto_superado: retoSuperado })
       .eq("id", checada.id);
+
+    // Superado: se descuelga. El siguiente reto volverá a salir por sorteo, como a todo el mundo.
+    if (retoSuperado === true) {
+      await supabase
+        .from("rostros")
+        .update({ reto_pendiente: null, reto_pedido_en: null })
+        .eq("id", rostro.id);
+    }
 
     // Los intentos fallidos NO se borran al acertar.
     //

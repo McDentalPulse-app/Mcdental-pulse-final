@@ -70,7 +70,42 @@ export const getAsistencias = async ({ desde, hasta, empleadoId } = {}) => {
  * Lanza Error si la checada NO se registró (cara que no coincide, doble clic, salida fuera
  * de la ventana). El mensaje ya viene escrito para el usuario.
  */
-export const registrarChecada = async ({ tipo, coords = null, selfieBlob = null, empleadoId, deviceId = null }) => {
+/**
+ * ¿A esta persona le toca girar la cabeza antes de checar? Lo decide el SERVIDOR.
+ *
+ * El navegador lo pregunta para saber si tiene que capturar una foto o dos, pero no elige: si el
+ * cliente escogiera su propio reto, escogería el que ya tiene resuelto.
+ */
+export const pedirReto = async () => {
+  const { data: sesion } = await supabase.auth.getSession();
+  const token = sesion?.session?.access_token;
+  if (!token) return null;
+
+  try {
+    const r = await fetch("/api/reto", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    });
+    const cuerpo = await r.json().catch(() => ({}));
+    return cuerpo.reto ?? null;
+  } catch (error) {
+    // Si no se puede preguntar, se checa sin reto. Dejar a alguien sin fichar porque una consulta
+    // de red falló sería un precio absurdo por una comprobación que solo sale 1 de cada 5 veces.
+    console.error("No se pudo consultar el reto:", error);
+    return null;
+  }
+};
+
+/** El Blob de la foto girada viaja en el cuerpo, en base64 (ver registrarChecada). */
+const aBase64 = (blob) =>
+  new Promise((resolver, rechazar) => {
+    const lector = new FileReader();
+    lector.onerror = () => rechazar(new Error("No se pudo leer la foto."));
+    lector.onload = () => resolver(String(lector.result).split(",")[1] ?? "");
+    lector.readAsDataURL(blob);
+  });
+
+export const registrarChecada = async ({ tipo, coords = null, selfieBlob = null, retoBlob = null, empleadoId, deviceId = null }) => {
   let selfiePath = null;
 
   if (selfieBlob && empleadoId) {
@@ -91,6 +126,15 @@ export const registrarChecada = async ({ tipo, coords = null, selfieBlob = null,
     }
   }
 
+  // LA FOTO GIRADA NO SE GUARDA EN NINGUNA PARTE: viaja en el cuerpo, el servidor la mira y la
+  // tira. Es lo contrario de la selfie, que sí es evidencia de la checada y se conserva 7 días.
+  //
+  // Subirla al bucket "para tenerla" sería duplicar el rastro biométrico de cada persona a cambio
+  // de nada — y además crearía un archivo huérfano que la limpieza (que purga por selfie_path)
+  // nunca borraría: una cara guardada para siempre en un bucket que nadie mira. Justo lo que la
+  // política de retención existe para evitar.
+  const retoFoto = retoBlob ? await aBase64(retoBlob) : null;
+
   const { data: sesion } = await supabase.auth.getSession();
   const token = sesion?.session?.access_token;
   if (!token) throw new Error("Tu sesión expiró. Vuelve a entrar.");
@@ -105,6 +149,7 @@ export const registrarChecada = async ({ tipo, coords = null, selfieBlob = null,
       lng: coords?.lng ?? null,
       precision: coords?.precision ?? null,
       deviceId,
+      retoFoto,
     }),
   });
 

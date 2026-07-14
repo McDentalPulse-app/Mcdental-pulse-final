@@ -1,6 +1,7 @@
 import path from "node:path";
 import ort from "onnxruntime-node";
 import sharp from "sharp";
+import { proyectarNariz } from "./_pose.js";
 
 /**
  * Reconocimiento facial. Corre EN EL SERVIDOR, y eso no es un detalle de implementación:
@@ -246,12 +247,16 @@ const alinear = (rgb, ancho, alto, puntos) => {
 };
 
 /**
- * Huella facial de una imagen: 128 números, o null si no se ve ninguna cara.
+ * Lo que se puede saber de una foto: la huella (128 números) Y hacia dónde mira la cabeza.
  *
- * null NO es un error: es "no se pudo comprobar". El checador no bloquea por eso — se
- * registra la checada y RH la ve marcada como no verificada.
+ * Las dos cosas salen del MISMO paso de detección, así que se calculan juntas: pedir la huella
+ * por un lado y la pose por otro pasaría la foto por YuNet dos veces, y YuNet es la mitad del
+ * coste de cada checada.
+ *
+ * Devuelve null —no un error— si no se ve ninguna cara. "No se pudo mirar" y "no coincide" son
+ * cosas distintas, y quien llama decide qué hacer con cada una.
  */
-export const calcularHuella = async (bufferImagen) => {
+export const analizarFoto = async (bufferImagen) => {
   const original = await sharp(bufferImagen).removeAlpha().raw().toBuffer({ resolveWithObject: true });
   const { width: ancho, height: alto } = original.info;
 
@@ -275,7 +280,22 @@ export const calcularHuella = async (bufferImagen) => {
   const sesion = await getSesion("sface");
   const salida = await sesion.run({ [sesion.inputNames[0]]: aTensorBGR(alineada, LADO, LADO) });
 
-  return Array.from(salida[sesion.outputNames[0]].data);
+  return {
+    huella: Array.from(salida[sesion.outputNames[0]].data),
+    // La pose se mide sobre los puntos EN LA IMAGEN ORIGINAL, no sobre la cara ya alineada: el
+    // alineado existe precisamente para enderezar la cara, así que después de él toda cara mira
+    // al frente y la pose sería siempre 0.5. Medirla ahí daría un reto que nadie puede pasar.
+    t: proyectarNariz(puntos),
+  };
+};
+
+/**
+ * Solo la huella. Se mantiene porque es lo único que necesitan el enrolado y la aprobación, y
+ * pedirles que desempaqueten un objeto para tirar la mitad sería ruido.
+ */
+export const calcularHuella = async (bufferImagen) => {
+  const r = await analizarFoto(bufferImagen);
+  return r?.huella ?? null;
 };
 
 /**

@@ -9,6 +9,7 @@ import { obtenerUbicacion, textoUbicacion } from "../../utils/geo";
 import { useNavigate } from "react-router-dom";
 import { getDeviceId } from "../../utils/dispositivo";
 import { getMiRostro } from "../../services/supabase/rostrosService";
+import { pedirReto } from "../../services/supabase/asistenciasService";
 import { getAjustes } from "../../services/supabase/ajustesService";
 import { RESULTADO, MENSAJE } from "../../utils/rostro";
 import { emparejarChecadas, diaISO, puedeRegistrarSalida, horaSalidaAutorizada, TZ_CLINICA } from "../../utils/asistencia";
@@ -70,6 +71,39 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
   const [encuadre, setEncuadre] = useState({ ok: true, pista: null });
   const onEncuadre = useCallback((g) => setEncuadre(g), []);
 
+  // -------------------------------------------------------------------------
+  // El reto de movimiento: girar la cabeza para demostrar que hay una cabeza y no una foto.
+  // -------------------------------------------------------------------------
+  //
+  // Se le pregunta al SERVIDOR nada más entrar, no al pulsar: hay que saber ANTES si se van a
+  // tomar una foto o dos. El servidor lo sortea (1 de cada 5) y SE LO GUARDA — así que recargar
+  // la página no lo quita. Si lo quitara, esquivarlo sería tan fácil como pulsar F5.
+  const [reto, setReto] = useState(null);        // "derecha" | "izquierda" | null
+  const [girando, setGirando] = useState(false); // ya tiene la frontal; espera la girada
+  const esperandoGiroRef = useRef(null);         // el resolve() de la promesa que espera el giro
+
+  useEffect(() => {
+    let vivo = true;
+    pedirReto().then((r) => { if (vivo) setReto(r); });
+    return () => { vivo = false; };
+  }, []);
+
+  /** La cámara dispara sola en cuanto ve la pose que se pidió: nadie pulsa un botón de perfil. */
+  const onGiroCapturado = useCallback((foto) => {
+    const resolver = esperandoGiroRef.current;
+    esperandoGiroRef.current = null;
+    setGirando(false);
+    resolver?.(foto);
+  }, []);
+
+  /** Salida de emergencia: sin esto, quien no consiga girar se queda con el botón muerto. */
+  const cancelarGiro = useCallback(() => {
+    const resolver = esperandoGiroRef.current;
+    esperandoGiroRef.current = null;
+    setGirando(false);
+    resolver?.(null);
+  }, []);
+
   const misChecadas = useMemo(
     () => checadasHoy.filter((c) => c.empleadoId === user?.id),
     [checadasHoy, user?.id]
@@ -130,10 +164,28 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
         return;
       }
 
+      // Le toca reto: se guarda la frontal y se espera al giro. La cámara dispara sola al ver la
+      // pose, así que la persona no tiene que pulsar nada con la cabeza torcida — que es
+      // imposible de hacer bien mirando de reojo.
+      let retoBlob = null;
+      if (reto) {
+        const girada = await new Promise((resolver) => {
+          esperandoGiroRef.current = resolver;
+          setGirando(true);
+        });
+
+        if (!girada?.blob) {
+          toast.error("No se tomó la foto girada. Inténtalo otra vez.");
+          return;
+        }
+        retoBlob = girada.blob;
+      }
+
       const checada = await onChecar({
         tipo: siguiente,
         coords,
         selfieBlob: foto.blob,
+        retoBlob,
         deviceId: getDeviceId(),
       });
       if (!checada) return; // el toast de error ya lo emitió la acción
@@ -147,6 +199,11 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
       );
     } finally {
       setEnviando(false);
+      cancelarGiro();
+      // Se vuelve a preguntar: si el reto se falló, el servidor LO MANTIENE y hay que volver a
+      // pedírselo. Dejar la pantalla creyendo que ya no hay reto haría que el siguiente intento
+      // mandara una sola foto y volviera a fallar, esta vez sin que la persona entienda por qué.
+      pedirReto().then(setReto);
     }
   };
 
@@ -202,10 +259,25 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
         <CapturaSelfie
           ref={camaraRef}
           activa={!!siguiente && !bloqueado}
-          onEncuadre={onEncuadre}
+          onEncuadre={girando ? undefined : onEncuadre}
+          poseRequerida={girando ? reto : null}
+          onAutoCaptura={girando ? onGiroCapturado : null}
         />
 
-        {siguiente ? (
+        {girando && (
+          <>
+            <p className="checador-pill checador-pill--aviso">
+              <Icon name="camera" size={15} />
+              Ahora gira despacio la cabeza hacia tu {reto === "izquierda" ? "izquierda" : "derecha"}.
+              La foto se toma sola.
+            </p>
+            <button type="button" className="mc-btn-outline" onClick={cancelarGiro}>
+              Cancelar
+            </button>
+          </>
+        )}
+
+        {siguiente && !girando ? (
           <>
             <button
               type="button"
