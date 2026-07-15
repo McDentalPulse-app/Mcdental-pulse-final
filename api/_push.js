@@ -37,24 +37,31 @@ const asegurarConfig = () => {
 export const pushDisponible = () => asegurarConfig();
 
 /**
- * Avisa a TODOS los de Recursos Humanos (y admin) a la vez.
+ * Avisa a todo el equipo de gestión (RH, admin y psicóloga) a la vez.
  *
  * Los avisos "para RH" —alguien registró su rostro, una checada sospechosa— no van a una persona
  * concreta sino al equipo: quien lo vea primero, lo atiende. Se resuelve aquí quiénes son ahora
- * mismo, no con una lista fija: si mañana entra otra persona a RH, empieza a recibir sin tocar
- * nada.
+ * mismo, no con una lista fija: si mañana entra otra persona a gestión, empieza a recibir sin
+ * tocar nada. Incluye psicologa desde la paridad de roles del 2026-07-15 (migraciones 050/052):
+ * ella también aprueba rostros y ve asistencia, así que también debe enterarse.
+ *
+ * `url` puede ser un string (misma URL para todos) o un objeto `{admin, rh, psicologa}`: cada
+ * rol tiene su propio prefijo de ruta (/admin, /rh, /psicologa), así que un solo string no le
+ * sirve a los tres a la vez.
  */
-export const enviarARH = async (aviso) => {
+export const enviarARH = async ({ titulo, cuerpo, url }) => {
   if (!asegurarConfig()) return;
 
   const { data: rh } = await admin()
     .from("usuarios")
-    .select("id")
-    .in("role", ["rh", "admin"])
+    .select("id, role")
+    .in("role", ["rh", "admin", "psicologa"])
     .eq("inactivo", false);
 
   if (!rh?.length) return;
-  await Promise.all(rh.map((u) => enviar(u.id, aviso)));
+
+  const urlPara = (role) => (typeof url === "object" ? url[role] || "/" : url);
+  await Promise.all(rh.map((u) => enviar(u.id, { titulo, cuerpo, url: urlPara(u.role) })));
 };
 
 /**

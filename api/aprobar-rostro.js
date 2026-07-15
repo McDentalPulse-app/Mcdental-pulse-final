@@ -98,7 +98,7 @@ export default async function handler(req, res) {
   if (!quien) {
     return res.status(401).json({ error: "Sesión inválida." });
   }
-  if (!["admin", "rh"].includes(quien.role)) {
+  if (!["admin", "rh", "psicologa"].includes(quien.role)) {
     return res.status(403).json({ error: "Solo Recursos Humanos puede aprobar un rostro." });
   }
 

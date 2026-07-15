@@ -26,12 +26,26 @@
     },
     "api/limpiar-fotos.js": {
       "maxDuration": 60
+    },
+    "api/recordatorio-encuestas.js": {
+      "maxDuration": 30
+    },
+    "api/revisar-tickets.js": {
+      "maxDuration": 30
     }
   },
   "crons": [
     {
       "path": "/api/limpiar-fotos",
       "schedule": "17 4 * * *"
+    },
+    {
+      "path": "/api/recordatorio-encuestas",
+      "schedule": "0 15 * * 2,4,5"
+    },
+    {
+      "path": "/api/revisar-tickets",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

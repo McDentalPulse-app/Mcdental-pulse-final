@@ -52,17 +52,25 @@ export const addVacacion = async ({ empleadoId, fechaInicio, fechaFin, dias, mot
   return mapVacacion(data);
 };
 
+/**
+ * Pasa por el SERVIDOR (api/aprobar-vacacion.js), no por un update directo: es lo que permite
+ * avisar por push al empleado, con la clave privada de VAPID que solo vive ahí.
+ */
 export const updateEstadoVacacion = async (id, estado, comentarioRH = "") => {
-  const { data, error } = await supabase
-    .from("vacaciones")
-    .update({ estado, comentario_rh: comentarioRH })
-    .eq("id", id)
-    .select(SELECT_CON_EMPLEADO)
-    .single();
+  const { data: sesion } = await supabase.auth.getSession();
+  const token = sesion?.session?.access_token;
+  if (!token) throw new Error("Tu sesión expiró. Vuelve a entrar.");
 
-  if (error) {
-    console.error("Error actualizando vacación:", error);
-    throw new Error("No se pudo actualizar el estado de las vacaciones.");
+  const r = await fetch("/api/aprobar-vacacion", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ vacacionId: id, estado, comentarioRH }),
+  });
+
+  const cuerpo = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    console.error("Error actualizando vacación:", cuerpo.error);
+    throw new Error(cuerpo.error || "No se pudo actualizar el estado de las vacaciones.");
   }
-  return mapVacacion(data);
+  return mapVacacion(cuerpo.vacacion);
 };

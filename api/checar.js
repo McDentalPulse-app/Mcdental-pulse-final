@@ -249,7 +249,7 @@ export default async function handler(req, res) {
       enviarARH({
         titulo: "Posible suplantación",
         cuerpo: `Varios intentos fallidos de checar como ${quien.name}. La cara no coincide.`,
-        url: "/rh/asistencia",
+        url: { admin: "/admin/asistencia", rh: "/rh/asistencia", psicologa: "/psicologa/asistencia" },
       }).catch(() => {});
     }
 

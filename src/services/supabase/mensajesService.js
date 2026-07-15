@@ -20,16 +20,27 @@ export const getMensajes = async () => {
   }
 };
 
-export const sendMensaje = async ({ de, para, texto, fecha }) => {
-  const payload = { de_id: de, para_id: para, texto };
-  if (fecha) payload.fecha = fecha;
+/**
+ * Pasa por el SERVIDOR (api/enviar-mensaje.js), no por un insert directo: es lo que permite
+ * avisar por push a quien recibe el mensaje, con la clave privada de VAPID que solo vive ahí.
+ */
+export const sendMensaje = async ({ para, texto, fecha }) => {
+  const { data: sesion } = await supabase.auth.getSession();
+  const token = sesion?.session?.access_token;
+  if (!token) throw new Error("Tu sesión expiró. Vuelve a entrar.");
 
-  const { data, error } = await supabase.from("mensajes").insert(payload).select().single();
-  if (error) {
-    console.error("Error guardando mensaje:", error);
-    throw new Error("No se pudo enviar el mensaje.");
+  const r = await fetch("/api/enviar-mensaje", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ paraId: para, texto, fecha }),
+  });
+
+  const cuerpo = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    console.error("Error guardando mensaje:", cuerpo.error);
+    throw new Error(cuerpo.error || "No se pudo enviar el mensaje.");
   }
-  return mapMensaje(data);
+  return mapMensaje(cuerpo.mensaje);
 };
 
 export const marcarMensajeLeido = async (id) => {

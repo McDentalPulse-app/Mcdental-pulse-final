@@ -47,7 +47,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Falta el consentimiento." });
   }
 
-  const esGestor = ["admin", "rh"].includes(quien.role);
+  const esGestor = ["admin", "rh", "psicologa"].includes(quien.role);
   const destino = empleadoId || quien.id;
 
   // La línea que sostiene todo: nadie registra la cara de otro salvo RH/admin.
@@ -169,7 +169,7 @@ export default async function handler(req, res) {
     enviarARH({
       titulo: "Rostro por revisar",
       cuerpo: `${emp?.name || "Un empleado"} registró su rostro y espera tu aprobación.`,
-      url: "/rh/rostros",
+      url: { admin: "/admin/rostros", rh: "/rh/rostros", psicologa: "/psicologa/rostros" },
     }).catch(() => {});
   }
 
