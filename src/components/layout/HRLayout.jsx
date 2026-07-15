@@ -16,16 +16,23 @@ import EventosPersonal from '../empleados/EventosPersonal';
 import ReconocimientosGestion from '../rh/ReconocimientosGestion';
 import ReportesRH from '../rh/ReportesRH';
 import GestionUsuarios from '../admin/GestionUsuarios';
+import GestionSucursales from '../admin/GestionSucursales';
+import GestionEncuestas from '../admin/GestionEncuestas';
 import EmpleadosList from '../empleados/EmpleadosList';
+import ExpedienteIntegral from '../empleados/ExpedienteIntegral';
+import Reportes from '../rh/Reportes';
+import ReportesConfidencialesPanel from '../psicologia/ReportesConfidencialesPanel';
+import AIEngine from '../ia/AIEngine';
+import Config from '../settings/Config';
 import BolsaTrabajo from '../rh/BolsaTrabajo';
 import Perfil from '../common/Perfil';
 import SoporteTI from '../common/SoporteTI';
 
 export default function HRLayout({ user, globals, actions }) {
-  const { usuarios: USERS } = useGlobal();
+  const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
-  const { vacaciones, permisos, descuentos, calendarioExtra, reconocimientos, encuestas, notas, reportesConfidenciales, horarios, setHorarios } = globals;
-  const { updateVacacionEstado, updatePermisoEstado, updateDescuentoEstado, addDescuento, addReconocimiento } = actions;
+  const { vacaciones, permisos, descuentos, calendarioExtra, reconocimientos, encuestas, mensajes, notas, reportesConfidenciales, archivosExpediente, horarios, setHorarios } = globals;
+  const { updateVacacionEstado, updatePermisoEstado, updateDescuentoEstado, addDescuento, addReconocimiento, subirArchivoExpediente } = actions;
 
   return (
     <div className="app-shell">
@@ -34,6 +41,7 @@ export default function HRLayout({ user, globals, actions }) {
         <div className="app-main-inner">
           <Routes>
             <Route path="dashboard" element={<HRDashboard users={USERS} />} />
+            <Route path="ai" element={<AIEngine encuestas={encuestas} mensajes={mensajes} notas={notas} userRole="rh" permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>} />
             <Route path="empleados" element={<EmpleadosList encuestas={encuestas} notas={notas} role="rh" currentUser={user} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} />} />
             <Route path="usuarios" element={<GestionUsuarios />} />
             <Route path="asistencia" element={<AsistenciaPanel usuarios={USERS} horarios={horarios} permisos={permisos} vacaciones={vacaciones} puedeAnular />} />
@@ -49,6 +57,12 @@ export default function HRLayout({ user, globals, actions }) {
             <Route path="reconocimientos" element={<ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />} />
             <Route path="reportesrh" element={<ReportesRH vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} />} />
             <Route path="bolsa" element={<BolsaTrabajo />} />
+            <Route path="sucursales" element={<GestionSucursales />} />
+            <Route path="expedientes" element={<ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} archivosExpediente={archivosExpediente} onSubirArchivoExpediente={subirArchivoExpediente} />} />
+            <Route path="encuestas" element={<GestionEncuestas encuestas={encuestas} />} />
+            <Route path="reportes" element={<Reportes users={USERS} encuestas={encuestas} preguntas={encuestaPreguntas} />} />
+            <Route path="confidenciales" element={<ReportesConfidencialesPanel reportes={reportesConfidenciales} />} />
+            <Route path="config" element={<Config />} />
             <Route path="soporte" element={<SoporteTI user={user} />} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="dashboard" replace />} />

@@ -103,15 +103,16 @@ export const GlobalProvider = ({ children }) => {
         promises.push(cargarUsuarios().then(res => dbUsuarios = res).catch(() => { huboError = true; }));
         promises.push(getEncuestaPreguntas().then(res => dbPreguntas = res).catch(() => { huboError = true; }));
 
-        // Encuestas y mensajes y reconocimientos: admin, psicologa, empleado
-        if (role === "admin" || role === "psicologa" || role === "empleado") {
+        // Encuestas y mensajes y reconocimientos: admin, rh, psicologa, empleado
+        // (rh ahora tiene paridad admin: AI Engine, Encuestas, Reconocimientos)
+        if (role === "admin" || role === "rh" || role === "psicologa" || role === "empleado") {
           promises.push(getEncuestas().then(res => dbEncuestas = res).catch(() => { huboError = true; }));
           promises.push(getMensajes().then(res => dbMensajes = res).catch(() => { huboError = true; }));
           promises.push(getReconocimientos().then(res => dbReconocimientos = res).catch(() => { huboError = true; }));
         }
 
-        // Reportes confidenciales: admin, psicologa
-        if (role === "admin" || role === "psicologa") {
+        // Reportes confidenciales: admin, rh, psicologa (rh con paridad admin)
+        if (role === "admin" || role === "rh" || role === "psicologa") {
           promises.push(getReportesConfidenciales().then(res => dbReportes = res).catch(() => { huboError = true; }));
         }
 
@@ -131,8 +132,8 @@ export const GlobalProvider = ({ children }) => {
           promises.push(getArchivosExpediente().then(res => dbArchivos = res).catch(() => { huboError = true; }));
         }
 
-        // Notas psicológicas: psicologa, admin (gateado también por RLS)
-        if (role === "admin" || role === "psicologa") {
+        // Notas psicológicas: admin, rh, psicologa (rh con paridad admin; gateado también por RLS)
+        if (role === "admin" || role === "rh" || role === "psicologa") {
           promises.push(getNotasPsicologicas().then(res => dbNotas = res).catch(() => { huboError = true; }));
         }
 
