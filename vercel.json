@@ -27,10 +27,7 @@
     "api/limpiar-fotos.js": {
       "maxDuration": 60
     },
-    "api/recordatorio-encuestas.js": {
-      "maxDuration": 30
-    },
-    "api/revisar-tickets.js": {
+    "api/tareas-programadas.js": {
       "maxDuration": 30
     }
   },
@@ -40,11 +37,7 @@
       "schedule": "17 4 * * *"
     },
     {
-      "path": "/api/recordatorio-encuestas",
-      "schedule": "0 15 * * 2,4,5"
-    },
-    {
-      "path": "/api/revisar-tickets",
+      "path": "/api/tareas-programadas",
       "schedule": "0 13 * * *"
     }
   ]
