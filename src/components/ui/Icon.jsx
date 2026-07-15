@@ -60,6 +60,7 @@ import {
   Briefcase,
   Camera,
   MapPin,
+  ChevronDown,
 } from "lucide-react";
 
 const ICON_MAP = {
@@ -127,6 +128,7 @@ const ICON_MAP = {
   briefcase: Briefcase,
   camera: Camera,
   mapPin: MapPin,
+  chevronDown: ChevronDown,
 };
 
 const Icon = ({ name, size = 18, className = "", strokeWidth = 1.75, color }) => {

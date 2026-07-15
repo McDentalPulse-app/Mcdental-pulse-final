@@ -8417,66 +8417,78 @@
   font-weight: 600;
 }
 
-.asistencia-revision { list-style: none; margin: 0; padding: 0; }
-
-.asistencia-revision li {
+/* La lista de revisión y el detalle por empleado reusan .rh-data-list/.rh-data-row
+   (PermisosRH/VacacionesRH): mismo grid de 4 zonas que ya colapsa a 1 columna en móvil
+   (@media max-width: 900px, ver más abajo) — cero breakpoint nuevo que mantener. */
+.rh-data-row-status {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 4px;
-  border-bottom: 1px solid var(--mc-borde-suave);
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
 }
 
-.asistencia-revision li:last-child { border-bottom: none; }
-.asistencia-revision-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.asistencia-revision-main span { font-size: 0.85rem; color: var(--mc-texto-secundario); }
-.asistencia-revision-main em { font-size: 0.8rem; color: var(--mc-aviso-texto); font-style: normal; }
-.asistencia-revision-acciones { margin-left: auto; display: flex; gap: 8px; flex-shrink: 0; }
-
-.asistencia-empleado-head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--mc-borde-suave);
-  margin-bottom: 12px;
-}
-
-.asistencia-empleado-head strong { display: block; color: var(--mc-texto-titulo); }
-.asistencia-empleado-head span { font-size: 0.82rem; color: var(--mc-texto-apagado); }
-
-.asistencia-empleado-kpis {
-  margin-left: auto;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  font-size: 0.8rem;
-  color: var(--mc-texto-secundario);
-}
-
-.asistencia-chip--falta { color: var(--mc-badge-rojo-texto); font-weight: 600; }
-.asistencia-chip--retardo { color: var(--mc-badge-amarillo-texto); font-weight: 600; }
-
-/* Las tablas anchas hacen scroll dentro de su caja, no del cuerpo de la página. */
-.asistencia-tabla-wrap { overflow-x: auto; }
-
-.asistencia-detalle summary {
+/* El <details>/<summary> de cada empleado: el summary ES el rh-data-row (clicable, sin el
+   marcador nativo del navegador), y el chevron gira 180° cuando está abierto. */
+.asistencia-empleado-row summary.rh-data-row {
   cursor: pointer;
-  color: var(--mc-texto-secundario);
-  font-size: 0.85rem;
-  padding: 10px 0;
+  list-style: none;
+}
+.asistencia-empleado-row summary.rh-data-row::-webkit-details-marker { display: none; }
+.asistencia-empleado-row summary.rh-data-row::marker { content: ""; }
+
+/* :last-child en .rh-data-row no aplica aquí: el summary nunca es el último hijo de su
+   <details> (el div de detalle siempre va después en el DOM). Se apunta directo al último
+   <details> de la lista. */
+.asistencia-empleado-row:last-child summary.rh-data-row { border-bottom: none; }
+
+.asistencia-empleado-chevron {
+  color: var(--mc-texto-apagado);
+  transition: transform 0.15s ease;
+  justify-self: end;
+}
+.asistencia-empleado-row[open] .asistencia-empleado-chevron { transform: rotate(180deg); }
+
+.asistencia-empleado-detalle {
+  padding: 4px 18px 16px;
+  border-top: 1px solid var(--mc-borde-suave);
 }
 
-.asistencia-dias { list-style: none; margin: 0; padding: 0; }
-
-.asistencia-dias li {
+/* Los periodos (semana/mes/año): una línea por grupo, sin tabla. Con muchos grupos (ej. 52
+   semanas) se acota el alto en vez de alargar la página entera — mismo criterio que
+   .rh-report-scroll-list. */
+.asistencia-periodos {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 2px;
+  max-height: min(320px, 50vh);
+  overflow-y: auto;
+}
+
+.asistencia-periodo-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
   padding: 8px 4px;
   font-size: 0.85rem;
   border-bottom: 1px solid var(--mc-borde-suave);
 }
+.asistencia-periodo-row:last-child { border-bottom: none; }
+.asistencia-periodo-clave { font-weight: 600; color: var(--mc-texto-titulo); }
+.asistencia-periodo-stats { color: var(--mc-texto-secundario); }
+
+.asistencia-dias { list-style: none; margin: 0; padding: 0; max-height: min(320px, 50vh); overflow-y: auto; }
+
+.asistencia-dias li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 8px 4px;
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--mc-borde-suave);
+}
+.asistencia-dias li:last-child { border-bottom: none; }
 
 .asistencia-dia-fecha { min-width: 100px; color: var(--mc-texto-secundario); }
 .asistencia-dia-estado { min-width: 96px; font-weight: 600; }

@@ -4,7 +4,6 @@ import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
-import Avatar from "../ui/Avatar";
 import { useNotification } from "../../contexts/NotificationContext";
 import {
   getAsistencias,
@@ -299,36 +298,35 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
       {paraRevisar.length > 0 && (
         <>
           <SectionTitle icon="alert">Checadas que requieren revisión ({paraRevisar.length})</SectionTitle>
-          <Card>
-            {/* Esta lista es lo que hace que la comprobación sirva de algo: alguien la mira.
-                Una selfie y una coordenada que nadie revisa son teatro. */}
-            <ul className="asistencia-revision">
-              {paraRevisar.map((c) => (
-                <li key={c.id}>
-                  <Avatar name={c.empleado} size={32} />
-                  <div className="asistencia-revision-main">
-                    <strong>{c.empleado}</strong>
-                    <span>
-                      {c.tipo === "entrada" ? "Entrada" : "Salida"} · {c.fecha} a las {horaCorta(c.marcadaEn)}
-                    </span>
-                    <em>{motivoRevision(c)}</em>
-                  </div>
-                  <div className="asistencia-revision-acciones">
-                    {c.selfiePath && (
-                      <button type="button" className="mc-btn-outline" onClick={() => verSelfie(c)}>
-                        <Icon name="camera" size={15} /> Ver foto
-                      </button>
-                    )}
-                    {puedeAnular && (
-                      <button type="button" className="mc-btn-outline mc-btn-outline--danger" onClick={() => handleAnular(c)}>
-                        Anular
-                      </button>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </Card>
+          {/* Esta lista es lo que hace que la comprobación sirva de algo: alguien la mira.
+              Una selfie y una coordenada que nadie revisa son teatro. Mismo patrón
+              rh-data-list/rh-data-row que PermisosRH/VacacionesRH: colapsa solo en móvil. */}
+          <div className="rh-data-list">
+            {paraRevisar.map((c) => (
+              <div key={c.id} className="rh-data-row">
+                <div className="rh-data-row-main">
+                  <div className="rh-data-row-title">{c.empleado}</div>
+                  <div className="rh-data-row-detail">{motivoRevision(c)}</div>
+                </div>
+                <div className="rh-data-row-meta">
+                  <div className="rh-data-row-meta-primary">{c.tipo === "entrada" ? "Entrada" : "Salida"}</div>
+                  <div className="rh-data-row-meta-secondary">{c.fecha} · {horaCorta(c.marcadaEn)}</div>
+                </div>
+                <div className="rh-data-row-actions">
+                  {c.selfiePath && (
+                    <button type="button" className="mc-btn-outline" onClick={() => verSelfie(c)}>
+                      <Icon name="camera" size={15} /> Ver foto
+                    </button>
+                  )}
+                  {puedeAnular && (
+                    <button type="button" className="mc-btn-outline mc-btn-outline--danger" onClick={() => handleAnular(c)}>
+                      Anular
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </>
       )}
 
@@ -339,70 +337,63 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
       ) : porEmpleado.length === 0 ? (
         <Card><p className="mc-empty">No hay empleados que mostrar.</p></Card>
       ) : (
-        porEmpleado.map(({ empleado, resumen: r, grupos }) => (
-          <Card key={empleado.id} className="asistencia-empleado">
-            <header className="asistencia-empleado-head">
-              <Avatar name={empleado.name} photoUrl={empleado.avatarUrl} size={36} />
-              <div>
-                <strong>{empleado.name}</strong>
-                <span>{empleado.sucursal}</span>
-              </div>
-              <div className="asistencia-empleado-kpis">
-                <span title="Puntualidad">{r.puntualidad}% puntual</span>
-                <span title="Horas trabajadas">{minutosAHoras(r.minutosTrabajados)}</span>
-                {r.faltas > 0 && <span className="asistencia-chip--falta">{r.faltas} faltas</span>}
-                {r.retardos > 0 && <span className="asistencia-chip--retardo">{r.retardos} retardos</span>}
-              </div>
-            </header>
+        <div className="rh-data-list">
+          {porEmpleado.map(({ empleado, resumen: r, grupos }) => (
+            <details key={empleado.id} className="asistencia-empleado-row" open={empleadoId === empleado.id}>
+              <summary className="rh-data-row">
+                <div className="rh-data-row-main">
+                  <div className="rh-data-row-title">{empleado.name}</div>
+                  <div className="rh-data-row-sub">{empleado.sucursal}</div>
+                </div>
+                <div className="rh-data-row-meta">
+                  <div className="rh-data-row-meta-primary">{r.puntualidad}% puntual</div>
+                  <div className="rh-data-row-meta-secondary">{minutosAHoras(r.minutosTrabajados)}</div>
+                </div>
+                <div className="rh-data-row-status">
+                  {r.faltas > 0 && <span className="mc-status-pill mc-status-pill--rechazado">{r.faltas} faltas</span>}
+                  {r.retardos > 0 && <span className="mc-status-pill mc-status-pill--pendiente">{r.retardos} retardos</span>}
+                  {r.faltas === 0 && r.retardos === 0 && (
+                    <span className="mc-status-pill mc-status-pill--aprobado">Al corriente</span>
+                  )}
+                </div>
+                <Icon name="chevronDown" size={18} className="asistencia-empleado-chevron" />
+              </summary>
 
-            <div className="asistencia-tabla-wrap">
-              <table className="mc-table asistencia-tabla">
-                <thead>
-                  <tr>
-                    <th>{GRANULARIDADES.find((g) => g.valor === granularidad)?.label}</th>
-                    <th>Presentes</th>
-                    <th>Retardos</th>
-                    <th>Faltas</th>
-                    <th>Justificados</th>
-                    <th>Horas</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {grupos.map((g) => (
-                    <tr key={g.clave}>
-                      <td>{g.clave}</td>
-                      <td>{g.resumen.presentes}</td>
-                      <td>{g.resumen.retardos || "—"}</td>
-                      <td>{g.resumen.faltas || "—"}</td>
-                      <td>{g.resumen.justificados || "—"}</td>
-                      <td>{minutosAHoras(g.resumen.minutosTrabajados)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {granularidad === "dia" && (
-              <details className="asistencia-detalle">
-                <summary>Ver el detalle de cada día</summary>
-                <ul className="asistencia-dias">
-                  {grupos.map(({ clave, dias }) => dias.map((d) => (
-                    <li key={clave} className={`asistencia-dia--${d.estado}`}>
-                      <span className="asistencia-dia-fecha">{d.fecha}</span>
-                      <span className="asistencia-dia-estado">{ETIQUETA_ESTADO[d.estado]}</span>
-                      <span>
-                        {d.entrada ? horaCorta(d.entrada.marcadaEn) : "—"}
-                        {" → "}
-                        {d.salida ? horaCorta(d.salida.marcadaEn) : "—"}
-                      </span>
-                      {d.minutosRetardo > 0 && <em>+{d.minutosRetardo} min tarde</em>}
-                    </li>
-                  )))}
-                </ul>
-              </details>
-            )}
-          </Card>
-        ))
+              <div className="asistencia-empleado-detalle">
+                {granularidad === "dia" ? (
+                  // A nivel día, la tabla de periodos sería un renglón por día con solo 0/1 —
+                  // menos útil que ver directo la hora real de entrada y salida.
+                  <ul className="asistencia-dias">
+                    {grupos.flatMap(({ dias }) => dias).map((d) => (
+                      <li key={d.fecha} className={`asistencia-dia--${d.estado}`}>
+                        <span className="asistencia-dia-fecha">{d.fecha}</span>
+                        <span className="asistencia-dia-estado">{ETIQUETA_ESTADO[d.estado]}</span>
+                        <span>
+                          {d.entrada ? horaCorta(d.entrada.marcadaEn) : "—"}
+                          {" → "}
+                          {d.salida ? horaCorta(d.salida.marcadaEn) : "—"}
+                        </span>
+                        {d.minutosRetardo > 0 && <em>+{d.minutosRetardo} min tarde</em>}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="asistencia-periodos">
+                    {grupos.map((g) => (
+                      <div key={g.clave} className="asistencia-periodo-row">
+                        <span className="asistencia-periodo-clave">{g.clave}</span>
+                        <span className="asistencia-periodo-stats">
+                          {g.resumen.presentes} pres. · {g.resumen.retardos || 0} ret. · {g.resumen.faltas || 0} falt. ·{" "}
+                          {g.resumen.justificados || 0} just. · {minutosAHoras(g.resumen.minutosTrabajados)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </details>
+          ))}
+        </div>
       )}
     </div>
   );
