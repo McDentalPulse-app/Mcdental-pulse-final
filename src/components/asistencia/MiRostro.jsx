@@ -220,8 +220,14 @@ export default function MiRostro({ user }) {
         <Card>
           <p className="mc-hint">
             <Icon name="camera" size={15} />
-            Toma <strong>{totalFotos} fotos</strong> de tu cara. Se usarán <strong>solo</strong> para
-            comprobar tus checadas de entrada y salida — nada más.
+            {/* El texto va en UN solo <span>: .mc-hint es flex, y sin esto cada <strong> se
+                vuelve un ítem de flex suelto que se reordena y parte la frase ("Toma 3 de tu
+                cara. Se solo... fotos usarán"). Envuelto, la frase es un único ítem y los
+                <strong> fluyen como texto normal. */}
+            <span>
+              Toma <strong>{totalFotos} fotos</strong> de tu cara. Se usarán <strong>solo</strong> para
+              comprobar tus checadas de entrada y salida — nada más.
+            </span>
           </p>
 
           {usaLentes === null ? (
