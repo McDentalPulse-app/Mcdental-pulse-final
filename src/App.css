@@ -8417,6 +8417,19 @@
   font-weight: 600;
 }
 
+/* Navegación mes a mes (granularidad "día"): sustituye a los inputs Desde/Hasta. */
+.asistencia-mes-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.asistencia-mes-nav-label {
+  min-width: 160px;
+  text-align: center;
+  color: var(--mc-texto-titulo);
+  text-transform: capitalize;
+}
+
 /* La lista de revisión y el detalle por empleado reusan .rh-data-list/.rh-data-row
    (PermisosRH/VacacionesRH): mismo grid de 4 zonas que ya colapsa a 1 columna en móvil
    (@media max-width: 900px, ver más abajo) — cero breakpoint nuevo que mantener. */
@@ -8477,29 +8490,48 @@
 .asistencia-periodo-clave { font-weight: 600; color: var(--mc-texto-titulo); }
 .asistencia-periodo-stats { color: var(--mc-texto-secundario); }
 
-.asistencia-dias { list-style: none; margin: 0; padding: 0; max-height: min(320px, 50vh); overflow-y: auto; }
-
-.asistencia-dias li {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 12px;
-  padding: 8px 4px;
-  font-size: 0.85rem;
-  border-bottom: 1px solid var(--mc-borde-suave);
+/* Calendario del mes (granularidad "día"): 7 columnas Lun-Dom. Las celdas fuera del
+   mes (relleno inicial) y los días sin clasificación (antes de la fecha de ingreso, o
+   después de "hoy" si es el mes en curso) van sin color, solo con el número. */
+.asistencia-calendario {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
 }
-.asistencia-dias li:last-child { border-bottom: none; }
 
-.asistencia-dia-fecha { min-width: 100px; color: var(--mc-texto-secundario); }
-.asistencia-dia-estado { min-width: 96px; font-weight: 600; }
-.asistencia-dias li em { margin-left: auto; font-style: normal; color: var(--mc-badge-amarillo-texto); }
+.asistencia-calendario-encabezado {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--mc-texto-apagado);
+  padding-bottom: 4px;
+}
 
-.asistencia-dia--falta .asistencia-dia-estado { color: var(--mc-badge-rojo-texto); }
-.asistencia-dia--retardo .asistencia-dia-estado { color: var(--mc-badge-amarillo-texto); }
-.asistencia-dia--presente .asistencia-dia-estado { color: var(--mc-badge-verde-texto); }
-.asistencia-dia--justificado .asistencia-dia-estado { color: var(--mc-badge-azul-texto); }
-.asistencia-dia--descanso { opacity: 0.55; }
-.asistencia-dia--incompleto .asistencia-dia-estado { color: var(--mc-badge-amarillo-texto); }
+.asistencia-calendario-celda {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--mc-superficie-sutil);
+  color: var(--mc-texto-secundario);
+}
+
+.asistencia-calendario-celda--vacia { background: transparent; color: var(--mc-texto-apagado); font-weight: 400; }
+
+.asistencia-calendario-celda--presente { background: var(--mc-badge-verde-bg); color: var(--mc-badge-verde-texto); }
+.asistencia-calendario-celda--retardo,
+.asistencia-calendario-celda--incompleto { background: var(--mc-badge-amarillo-bg); color: var(--mc-badge-amarillo-texto); }
+.asistencia-calendario-celda--falta { background: var(--mc-badge-rojo-bg); color: var(--mc-badge-rojo-texto); }
+.asistencia-calendario-celda--justificado { background: var(--mc-info-bg); color: var(--mc-info-texto); }
+.asistencia-calendario-celda--descanso { background: transparent; color: var(--mc-texto-apagado); opacity: 0.6; }
+
+@media (max-width: 480px) {
+  .asistencia-calendario-celda { font-size: 0.72rem; border-radius: 6px; }
+  .asistencia-calendario-encabezado { font-size: 0.65rem; }
+}
 
 /* --- Rejilla de horarios --- */
 

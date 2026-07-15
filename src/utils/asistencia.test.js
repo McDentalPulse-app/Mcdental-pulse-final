@@ -290,6 +290,24 @@ describe("construirDias", () => {
     expect(dias[0].estado).toBe(ESTADOS_DIA.FALTA); // sábado: sí tenía turno y no vino
     expect(dias[1].estado).toBe(ESTADOS_DIA.DESCANSO); // domingo: no tenía turno
   });
+
+  it("no genera días anteriores a la fecha de ingreso: no puede faltar a un trabajo que no tenía", () => {
+    const horarios = [
+      { diaSemana: 1, horaEntrada: "09:00:00", horaSalida: "18:00:00", toleranciaMin: 10 },
+      { diaSemana: 2, horaEntrada: "09:00:00", horaSalida: "18:00:00", toleranciaMin: 10 },
+    ];
+    // Lunes 13 y martes 14; ingresó el martes 14.
+    const dias = construirDias({
+      desde: "2026-07-13",
+      hasta: "2026-07-14",
+      checadas: [],
+      horarios,
+      fechaIngreso: "2026-07-14",
+    });
+
+    expect(dias).toHaveLength(1);
+    expect(dias[0].fecha).toBe("2026-07-14");
+  });
 });
 
 describe("claveDe", () => {

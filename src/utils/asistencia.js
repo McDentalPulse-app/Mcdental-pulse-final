@@ -243,6 +243,11 @@ export const rangoDeFechas = (desde, hasta) => {
  * Recorre el CALENDARIO, no las checadas: una falta es precisamente un día sin
  * checadas, así que si se iterara sobre lo que hay en la tabla, las faltas serían
  * invisibles — que es el error clásico de un reporte de asistencia.
+ *
+ * `fechaIngreso` recorta el rango por abajo: sin esto, alguien contratado hace tres
+ * días aparecía con 27 días de "descanso" o "falta" antes de existir en la empresa —
+ * confuso y falso (no puede faltar a un trabajo que todavía no tenía). Los días
+ * anteriores a su ingreso simplemente NO se generan, en vez de generarse y descartarse.
  */
 export const construirDias = ({
   desde,
@@ -251,6 +256,7 @@ export const construirDias = ({
   horarios = [],
   permisos = [],
   vacaciones = [],
+  fechaIngreso = null,
 } = {}) => {
   const porFecha = new Map();
   for (const c of checadas) {
@@ -261,16 +267,19 @@ export const construirDias = ({
   }
 
   const porDia = new Map(horarios.filter((h) => h).map((h) => [h.diaSemana, h]));
+  const ingreso = fechaIngreso ? String(fechaIngreso).slice(0, 10) : null;
 
-  return rangoDeFechas(desde, hasta).map((fecha) =>
-    clasificarDia({
-      fecha,
-      checadas: porFecha.get(fecha) || [],
-      horario: porDia.get(diaISO(fecha)) || null,
-      permisos,
-      vacaciones,
-    })
-  );
+  return rangoDeFechas(desde, hasta)
+    .filter((fecha) => !ingreso || fecha >= ingreso)
+    .map((fecha) =>
+      clasificarDia({
+        fecha,
+        checadas: porFecha.get(fecha) || [],
+        horario: porDia.get(diaISO(fecha)) || null,
+        permisos,
+        vacaciones,
+      })
+    );
 };
 
 /**

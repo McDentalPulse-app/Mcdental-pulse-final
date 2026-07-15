@@ -17,6 +17,7 @@ import {
   resumen,
   requiereRevision,
   detectarDispositivosCompartidos,
+  diaISO,
   ESTADOS_DIA,
   TZ_CLINICA,
 } from "../../utils/asistencia";
@@ -40,12 +41,6 @@ const ETIQUETA_ESTADO = {
 const hoyClinica = () =>
   new Intl.DateTimeFormat("en-CA", { timeZone: TZ_CLINICA }).format(new Date());
 
-const hace = (dias) => {
-  const d = new Date();
-  d.setDate(d.getDate() - dias);
-  return new Intl.DateTimeFormat("en-CA", { timeZone: TZ_CLINICA }).format(d);
-};
-
 const horaCorta = (ts) =>
   new Intl.DateTimeFormat("es-MX", {
     timeZone: TZ_CLINICA,
@@ -56,10 +51,94 @@ const horaCorta = (ts) =>
 
 const minutosAHoras = (min) => (min ? `${Math.floor(min / 60)} h ${min % 60} min` : "—");
 
+// ---------------------------------------------------------------------------
+// Navegación mes a mes (solo para granularidad "día"): en vez de un rango de fechas
+// libre, un calendario navega por meses completos. Todo en UTC para no correr el mes
+// por el huso horario del navegador, mismo criterio que rangoDeFechas en utils/asistencia.js.
+// ---------------------------------------------------------------------------
+const primerDiaDeMes = (fecha) => `${String(fecha).slice(0, 7)}-01`;
+
+const ultimoDiaDeMes = (fecha) => {
+  const [y, m] = fecha.split("-").map(Number);
+  return new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10); // día 0 del mes siguiente
+};
+
+const sumarMeses = (fecha, delta) => {
+  const [y, m] = fecha.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1 + delta, 1)).toISOString().slice(0, 10);
+};
+
+const nombreMes = (fecha) => {
+  const [y, m] = fecha.split("-").map(Number);
+  const etiqueta = new Intl.DateTimeFormat("es-MX", { month: "long", year: "numeric", timeZone: "UTC" })
+    .format(new Date(Date.UTC(y, m - 1, 1)));
+  return etiqueta.charAt(0).toUpperCase() + etiqueta.slice(1);
+};
+
+const NOMBRES_DIA_SEMANA = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+
+const tituloCeldaCalendario = (d) => {
+  const estado = ETIQUETA_ESTADO[d.estado] || d.estado;
+  if (d.estado === ESTADOS_DIA.DESCANSO) return `${d.fecha} · Descanso`;
+  const horas = d.entrada || d.salida
+    ? ` · ${d.entrada ? horaCorta(d.entrada.marcadaEn) : "—"} → ${d.salida ? horaCorta(d.salida.marcadaEn) : "—"}`
+    : "";
+  const retardo = d.minutosRetardo > 0 ? ` (+${d.minutosRetardo} min tarde)` : "";
+  return `${d.fecha} · ${estado}${horas}${retardo}`;
+};
+
+/** Un mes completo en cuadrícula (7 columnas, Lun-Dom). `dias` trae solo los días que
+ * existen de verdad (dentro del rango cargado y desde la fecha de ingreso); los que
+ * faltan (antes de ingresar, o después de "hoy" si es el mes en curso) se pintan como
+ * celda vacía, sin color ni tooltip. */
+const CalendarioMes = ({ dias, mesInicio }) => {
+  const [anio, mes] = mesInicio.split("-").map(Number);
+  const diasEnMes = new Date(Date.UTC(anio, mes, 0)).getUTCDate();
+  const columnaInicial = diaISO(mesInicio); // 1=lunes … 7=domingo
+  const porFecha = new Map(dias.map((d) => [d.fecha, d]));
+  const prefijo = mesInicio.slice(0, 8); // "YYYY-MM-"
+
+  const celdas = [];
+  for (let i = 0; i < columnaInicial - 1; i += 1) celdas.push({ tipo: "relleno" });
+  for (let dia = 1; dia <= diasEnMes; dia += 1) {
+    const d = porFecha.get(`${prefijo}${String(dia).padStart(2, "0")}`);
+    celdas.push(d ? { tipo: "dia", ...d } : { tipo: "vacia", dia });
+  }
+
+  return (
+    <div className="asistencia-calendario">
+      {NOMBRES_DIA_SEMANA.map((n) => (
+        <div key={n} className="asistencia-calendario-encabezado">{n}</div>
+      ))}
+      {celdas.map((c, i) => {
+        if (c.tipo === "relleno") {
+          return <div key={`relleno-${i}`} className="asistencia-calendario-celda asistencia-calendario-celda--vacia" />;
+        }
+        if (c.tipo === "vacia") {
+          return (
+            <div key={`vacia-${c.dia}`} className="asistencia-calendario-celda asistencia-calendario-celda--vacia">
+              <span className="asistencia-calendario-numero">{c.dia}</span>
+            </div>
+          );
+        }
+        return (
+          <div
+            key={c.fecha}
+            className={`asistencia-calendario-celda asistencia-calendario-celda--${c.estado}`}
+            title={tituloCeldaCalendario(c)}
+          >
+            <span className="asistencia-calendario-numero">{Number(c.fecha.slice(-2))}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos = [], vacaciones = [], puedeAnular = false }) {
   const { toast, prompt } = useNotification();
 
-  const [desde, setDesde] = useState(hace(30));
+  const [desde, setDesde] = useState(() => primerDiaDeMes(hoyClinica()));
   const [hasta, setHasta] = useState(hoyClinica());
   const [granularidad, setGranularidad] = useState("dia");
   const [empleadoId, setEmpleadoId] = useState("");
@@ -67,6 +146,34 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
   const [checadas, setChecadas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
+
+  // En "día" se navega mes a mes (calendario), no con un rango libre. Al entrar a ese
+  // modo desde otro se acota el rango al mes que contenga la fecha "hasta" actual —
+  // así un cambio de granularidad no deja un rango a medias que el calendario no
+  // sabría dibujar. Se hace en el propio onChange (evento de usuario), no en un efecto:
+  // un setState síncrono en un efecto encadena un render extra de más (lo marca
+  // react-hooks/set-state-in-effect), y aquí no hace falta — el mount ya arranca con
+  // desde/hasta acotados al mes actual desde el estado inicial.
+  const cambiarGranularidad = (valor) => {
+    if (valor === "dia") {
+      const inicio = primerDiaDeMes(hasta);
+      const hoy = hoyClinica();
+      const fin = ultimoDiaDeMes(inicio);
+      setDesde(inicio);
+      setHasta(fin > hoy ? hoy : fin);
+    }
+    setGranularidad(valor);
+  };
+
+  const irMes = (delta) => {
+    const nuevoInicio = sumarMeses(primerDiaDeMes(desde), delta);
+    const hoy = hoyClinica();
+    const fin = ultimoDiaDeMes(nuevoInicio);
+    setDesde(nuevoInicio);
+    setHasta(fin > hoy ? hoy : fin);
+  };
+
+  const puedeAvanzarMes = primerDiaDeMes(desde) < primerDiaDeMes(hoyClinica());
 
   // Fetch local acotado por rango, NO desde GlobalContext: esta tabla crece sin techo y
   // el contexto se carga entero en cada login. Mismo patrón que BolsaTrabajo.jsx.
@@ -137,6 +244,7 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
         horarios: horarios.filter((h) => h.empleadoId === u.id),
         permisos: permisos.filter((p) => p.empleadoId === u.id),
         vacaciones: vacaciones.filter((v) => v.empleadoId === u.id),
+        fechaIngreso: u.fechaIngreso,
       });
       return { empleado: u, dias, resumen: resumen(dias), grupos: agruparPor(dias, granularidad) };
     });
@@ -245,7 +353,7 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
       <PageHeader
         icon="clock"
         title="Asistencia"
-        subtitle={`Del ${desde} al ${hasta}`}
+        subtitle={granularidad === "dia" ? nombreMes(desde) : `Del ${desde} al ${hasta}`}
       >
         <button type="button" className="mc-btn-outline" onClick={exportarCSV} disabled={cargando}>
           <Icon name="file" size={16} /> Exportar CSV
@@ -253,17 +361,39 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
       </PageHeader>
 
       <Card className="asistencia-filtros">
-        <label>
-          Desde
-          <input type="date" value={desde} max={hasta} onChange={(e) => setDesde(e.target.value)} />
-        </label>
-        <label>
-          Hasta
-          <input type="date" value={hasta} min={desde} max={hoyClinica()} onChange={(e) => setHasta(e.target.value)} />
-        </label>
+        {granularidad === "dia" ? (
+          // En "día" el detalle es un calendario: se navega mes a mes en vez de un
+          // rango libre, que no tendría cómo dibujarse en una cuadrícula.
+          <div className="asistencia-mes-nav">
+            <button type="button" className="mc-btn-outline" onClick={() => irMes(-1)} aria-label="Mes anterior">
+              ‹
+            </button>
+            <strong className="asistencia-mes-nav-label">{nombreMes(desde)}</strong>
+            <button
+              type="button"
+              className="mc-btn-outline"
+              onClick={() => irMes(1)}
+              disabled={!puedeAvanzarMes}
+              aria-label="Mes siguiente"
+            >
+              ›
+            </button>
+          </div>
+        ) : (
+          <>
+            <label>
+              Desde
+              <input type="date" value={desde} max={hasta} onChange={(e) => setDesde(e.target.value)} />
+            </label>
+            <label>
+              Hasta
+              <input type="date" value={hasta} min={desde} max={hoyClinica()} onChange={(e) => setHasta(e.target.value)} />
+            </label>
+          </>
+        )}
         <label>
           Agrupar por
-          <select value={granularidad} onChange={(e) => setGranularidad(e.target.value)}>
+          <select value={granularidad} onChange={(e) => cambiarGranularidad(e.target.value)}>
             {GRANULARIDADES.map((g) => (
               <option key={g.valor} value={g.valor}>{g.label}</option>
             ))}
@@ -338,7 +468,7 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
         <Card><p className="mc-empty">No hay empleados que mostrar.</p></Card>
       ) : (
         <div className="rh-data-list">
-          {porEmpleado.map(({ empleado, resumen: r, grupos }) => (
+          {porEmpleado.map(({ empleado, resumen: r, grupos, dias }) => (
             <details key={empleado.id} className="asistencia-empleado-row" open={empleadoId === empleado.id}>
               <summary className="rh-data-row">
                 <div className="rh-data-row-main">
@@ -361,22 +491,9 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
 
               <div className="asistencia-empleado-detalle">
                 {granularidad === "dia" ? (
-                  // A nivel día, la tabla de periodos sería un renglón por día con solo 0/1 —
-                  // menos útil que ver directo la hora real de entrada y salida.
-                  <ul className="asistencia-dias">
-                    {grupos.flatMap(({ dias }) => dias).map((d) => (
-                      <li key={d.fecha} className={`asistencia-dia--${d.estado}`}>
-                        <span className="asistencia-dia-fecha">{d.fecha}</span>
-                        <span className="asistencia-dia-estado">{ETIQUETA_ESTADO[d.estado]}</span>
-                        <span>
-                          {d.entrada ? horaCorta(d.entrada.marcadaEn) : "—"}
-                          {" → "}
-                          {d.salida ? horaCorta(d.salida.marcadaEn) : "—"}
-                        </span>
-                        {d.minutosRetardo > 0 && <em>+{d.minutosRetardo} min tarde</em>}
-                      </li>
-                    ))}
-                  </ul>
+                  // A nivel día, el detalle es un calendario del mes en curso (la
+                  // navegación de arriba ya garantiza que desde-hasta es un mes completo).
+                  <CalendarioMes dias={dias} mesInicio={primerDiaDeMes(desde)} />
                 ) : (
                   <div className="asistencia-periodos">
                     {grupos.map((g) => (
