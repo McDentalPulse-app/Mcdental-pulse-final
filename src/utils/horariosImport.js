@@ -204,7 +204,7 @@ export const analizarFilas = (filas = [], empleados = []) => {
     }
 
     const tolerancia = fila.tolerancia == null || fila.tolerancia === ""
-      ? 15
+      ? 10
       : Number(fila.tolerancia);
 
     if (!Number.isFinite(tolerancia) || tolerancia < 0 || tolerancia > 120) {

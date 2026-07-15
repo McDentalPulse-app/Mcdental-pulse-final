@@ -115,7 +115,7 @@ describe("analizarFilas", () => {
     const { validas, errores } = analizarFilas([fila()], SIN_DUPLICADOS);
     expect(errores).toHaveLength(0);
     expect(validas[0]).toMatchObject({
-      diaSemana: 1, horaEntrada: "10:00", horaSalida: "19:00", toleranciaMin: 15, confianza: "exacto",
+      diaSemana: 1, horaEntrada: "10:00", horaSalida: "19:00", toleranciaMin: 10, confianza: "exacto",
     });
     expect(validas[0].empleado.id).toBe("1");
   });
