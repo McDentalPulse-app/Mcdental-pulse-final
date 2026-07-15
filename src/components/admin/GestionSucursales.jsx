@@ -101,58 +101,52 @@ export default function GestionSucursales() {
       {cargando ? (
         <Card><p className="mc-empty">Cargando sucursales…</p></Card>
       ) : (
-        <Card>
-          <div className="asistencia-tabla-wrap">
-            <table className="mc-table">
-              <thead>
-                <tr>
-                  <th>Clínica</th>
-                  <th>Ubicación</th>
-                  <th>Radio</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {sucursales.map((s) => (
-                  <tr key={s.id}>
-                    <td>{s.nombre}</td>
-                    <td>
-                      {s.tieneGeocerca ? (
-                        <span className="mc-status-pill mc-status-pill--aprobado">
-                          {s.lat.toFixed(5)}, {s.lng.toFixed(5)}
-                        </span>
-                      ) : (
-                        <span className="mc-status-pill mc-status-pill--pendiente">Sin configurar</span>
-                      )}
-                    </td>
-                    <td>
-                      <select
-                        value={s.radioM}
-                        onChange={(e) => cambiarRadio(s, Number(e.target.value))}
-                        disabled={!s.tieneGeocerca}
-                      >
-                        {[50, 100, 150, 250, 500].map((r) => (
-                          <option key={r} value={r}>{r} m</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td>
-                      <button
-                        type="button"
-                        className="mc-btn-outline"
-                        onClick={() => usarMiUbicacion(s)}
-                        disabled={guardando === s.id}
-                      >
-                        <Icon name="mapPin" size={15} />
-                        {guardando === s.id ? "Obteniendo…" : "Usar mi ubicación actual"}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+        // Mismo patrón que Asistencia/Permisos/Vacaciones: rh-data-list/rh-data-row en vez
+        // de <table>, que en 25 sucursales solo haría scroll horizontal en el celular.
+        <div className="rh-data-list">
+          {sucursales.map((s) => (
+            <div key={s.id} className="rh-data-row">
+              <div className="rh-data-row-main">
+                <div className="rh-data-row-title">{s.nombre}</div>
+                {s.tieneGeocerca && (
+                  <div className="rh-data-row-sub">{s.lat.toFixed(5)}, {s.lng.toFixed(5)}</div>
+                )}
+              </div>
+              <div className="rh-data-row-meta">
+                <label className="rh-data-row-meta-secondary" htmlFor={`radio-${s.id}`}>Radio</label>
+                <select
+                  id={`radio-${s.id}`}
+                  className="mc-form-select"
+                  value={s.radioM}
+                  onChange={(e) => cambiarRadio(s, Number(e.target.value))}
+                  disabled={!s.tieneGeocerca}
+                >
+                  {[50, 100, 150, 250, 500].map((r) => (
+                    <option key={r} value={r}>{r} m</option>
+                  ))}
+                </select>
+              </div>
+              <div className="rh-data-row-status">
+                {s.tieneGeocerca ? (
+                  <span className="mc-status-pill mc-status-pill--aprobado">Configurada</span>
+                ) : (
+                  <span className="mc-status-pill mc-status-pill--pendiente">Sin configurar</span>
+                )}
+              </div>
+              <div className="rh-data-row-actions">
+                <button
+                  type="button"
+                  className="mc-btn-outline"
+                  onClick={() => usarMiUbicacion(s)}
+                  disabled={guardando === s.id}
+                >
+                  <Icon name="mapPin" size={15} />
+                  {guardando === s.id ? "Obteniendo…" : "Usar mi ubicación actual"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
