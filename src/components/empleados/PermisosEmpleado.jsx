@@ -4,18 +4,38 @@ import SectionTitle from "../common/SectionTitle";
 import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { useNotification } from "../../contexts/NotificationContext";
+import { CAUSAS_PERMISO, CAUSA_SALIDA_ANTICIPADA } from "../../utils/permisos";
+import { minutosNoTrabajados, formatoDuracion, diaISO, TZ_CLINICA } from "../../utils/asistencia";
+
+const hoyClinica = () =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: TZ_CLINICA }).format(new Date());
 
 export default function PermisosEmpleado({
   user,
   vacaciones = [],
   permisos = [],
+  horarios = [],
   onEnviarSolicitudEmpleado
 }) {
   const { toast, confirm } = useNotification();
   const [tipoSeleccionado, setTipoSeleccionado] = useState("Vacaciones");
+  const [causaSeleccionada, setCausaSeleccionada] = useState("");
+  const [horaPreview, setHoraPreview] = useState("");
   const [fechaInicioPreview, setFechaInicioPreview] = useState("");
   const [fechaFinPreview, setFechaFinPreview] = useState("");
   const [diasPreview, setDiasPreview] = useState(0);
+
+  // Una salida anticipada es SIEMPRE hoy y SIEMPRE un solo día: pedirle "fecha de inicio" y
+  // "fecha de fin (si dura varios días)" para decir "me voy a las 3" era hacerle rellenar
+  // campos que no significan nada.
+  const esSalidaAnticipada = tipoSeleccionado === "Permisos" && causaSeleccionada === CAUSA_SALIDA_ANTICIPADA;
+
+  // El turno de HOY, para poder decirle cuánto se le va a descontar.
+  const turnoHoy = horarios.find(
+    (h) => h.empleadoId === user?.id && h.diaSemana === diaISO(hoyClinica())
+  ) || null;
+
+  const minutosDescuento = esSalidaAnticipada ? minutosNoTrabajados(horaPreview, turnoHoy) : 0;
 
   const calcularDias = (inicio, fin) => {
     const fechaInicio = new Date(inicio);
@@ -32,13 +52,19 @@ export default function PermisosEmpleado({
     }
   };
 
+  // Los PERMISOS también, no solo las vacaciones.
+  //
+  // La prop `permisos` llegaba aquí y no se usaba: el empleado solicitaba un permiso y
+  // desaparecía de su vista — no podía saber si se lo habían aprobado. Daba igual mientras
+  // el formulario no dejaba pedir permisos (el tipo estaba fijo en "Vacaciones"), pero
+  // ahora sí, y sin esto un permiso de salida anticipada se enviaría a un agujero negro.
   const solicitudesEmpleado = [
     ...vacaciones
       .filter((v) => v.empleadoId === user?.id)
-      .map((v) => ({
-        ...v,
-        tipo: "Vacaciones"
-      }))
+      .map((v) => ({ ...v, tipo: "Vacaciones" })),
+    ...permisos
+      .filter((p) => p.empleadoId === user?.id)
+      .map((p) => ({ ...p, tipo: "Permiso", fechaInicio: p.fecha, fechaFin: p.fechaFin || p.fecha })),
   ].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
 
   const estadoClass = (estado) => {
@@ -53,9 +79,15 @@ export default function PermisosEmpleado({
 
     const form = e.target;
     const tipo = form.tipo.value;
-    const fechaInicio = form.fechaInicio.value;
+    const causa = tipo === "Permisos" ? form.causa?.value || null : null;
+    const salidaAnticipada = causa === CAUSA_SALIDA_ANTICIPADA;
+
+    // Una salida anticipada es hoy. No se le pregunta la fecha: se la ponemos nosotros.
+    const fechaInicio = salidaAnticipada ? hoyClinica() : form.fechaInicio.value;
     const fechaFin =
-      tipo === "Vacaciones" ? form.fechaFin.value : form.fechaInicio.value;
+      salidaAnticipada ? fechaInicio
+      : tipo === "Vacaciones" ? form.fechaFin.value
+      : form.fechaInicio.value;
 
     if (!tipo) {
       toast.warning("Selecciona un tipo de permiso");
@@ -64,6 +96,11 @@ export default function PermisosEmpleado({
 
     if (!fechaInicio) {
       toast.warning("Selecciona la fecha de inicio");
+      return;
+    }
+
+    if (salidaAnticipada && !turnoHoy) {
+      toast.warning("Hoy no tienes turno asignado, así que no hay salida que adelantar.");
       return;
     }
 
@@ -83,16 +120,32 @@ export default function PermisosEmpleado({
       }
     }
 
-    const confirmar = await confirm({
-      title: "Enviar solicitud",
-      description: `¿Deseas enviar esta solicitud de "${tipo}"?`,
-      confirmText: "Enviar solicitud",
-    });
+    // El aviso del descuento va AQUÍ, antes de enviar, y con el número exacto. Enterarse en
+    // la nómina de que salir dos horas antes costó dinero es la peor forma posible de
+    // descubrir una regla — y la que hace que la gente deje de confiar en la herramienta.
+    const confirmar = await confirm(
+      salidaAnticipada
+        ? {
+            title: "Salida anticipada",
+            description:
+              `Tu turno de hoy termina a las ${turnoHoy.horaSalida.slice(0, 5)} y pides salir a las ` +
+              `${form.hora.value}. Si Recursos Humanos lo aprueba, se te descontarán las ` +
+              `${formatoDuracion(minutosDescuento)} que dejes de trabajar. ¿Quieres enviar la solicitud?`,
+            variant: "warning",
+            confirmText: "Sí, enviar la solicitud",
+          }
+        : {
+            title: "Enviar solicitud",
+            description: `¿Deseas enviar esta solicitud de "${tipo}"?`,
+            confirmText: "Enviar solicitud",
+          }
+    );
 
     if (!confirmar) return;
 
     const nuevoPermiso = {
-      id: Date.now(),
+      // Sin `id`: lo genera la base (uuid). El que se ponía aquí con Date.now() no lo usaba
+      // nadie — el servicio manda el insert y devuelve la fila real, con su id de verdad.
       tipo,
       empleadoId: user?.id,
       empleado: user?.name || "Empleado",
@@ -108,10 +161,11 @@ export default function PermisosEmpleado({
       fin: fechaFin,
       desde: fechaInicio,
       hasta: fechaFin,
-      hora: "",
+      hora: form.hora?.value || "",
       dias: tipo === "Vacaciones" ? dias : "",
+      causa,
       motivo: form.motivo.value,
-      comentario: form.comentario.value,
+      comentario: "",
       estado: "pendiente",
       origen: "empleado"
     };
@@ -124,6 +178,8 @@ export default function PermisosEmpleado({
 
     form.reset();
     setTipoSeleccionado("Vacaciones");
+    setCausaSeleccionada("");
+    setHoraPreview("");
     setFechaInicioPreview("");
     setFechaFinPreview("");
     setDiasPreview(0);
@@ -133,8 +189,8 @@ export default function PermisosEmpleado({
     <div className="admin-page empleado-page empleado-form-narrow">
       <PageHeader
         icon="vacation"
-        title="Vacaciones"
-        subtitle="Solicita días de descanso. RH revisará tu petición y te notificará el estatus."
+        title="Vacaciones y permisos"
+        subtitle="Solicita días de descanso o un permiso. RH revisará tu petición y te notificará el estatus."
       />
 
       <Card className="empleado-form-card">
@@ -144,8 +200,89 @@ export default function PermisosEmpleado({
           className="mc-form-grid"
           onSubmit={handleSubmit}
         >
-          <input type="hidden" name="tipo" value="Vacaciones" />
+          {/* Esto era un <input type="hidden" value="Vacaciones">, así que la rama de
+              permisos de addSolicitudEmpleadoRH era código inalcanzable y NADIE podía
+              solicitar un permiso desde la app. Ahora el empleado elige de verdad. */}
+          <div className="mc-form-group">
+            <label className="mc-form-label" htmlFor="pe-tipo">Tipo de solicitud</label>
+            <select
+              id="pe-tipo"
+              className="mc-form-input"
+              name="tipo"
+              value={tipoSeleccionado}
+              onChange={(e) => setTipoSeleccionado(e.target.value)}
+            >
+              <option value="Vacaciones">Vacaciones</option>
+              <option value="Permisos">Permiso</option>
+            </select>
+          </div>
 
+          {tipoSeleccionado === "Permisos" && (
+            <>
+              <div className="mc-form-group">
+                <label className="mc-form-label" htmlFor="pe-causa">Causa</label>
+                <select
+                  id="pe-causa"
+                  className="mc-form-input"
+                  name="causa"
+                  required
+                  value={causaSeleccionada}
+                  onChange={(e) => setCausaSeleccionada(e.target.value)}
+                >
+                  <option value="">Selecciona una causa</option>
+                  {CAUSAS_PERMISO.map((c) => (
+                    <option key={c.valor} value={c.valor}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* La hora solo se pide cuando significa algo. Para una salida anticipada NO es
+                  un dato informativo: es la hora a partir de la cual el checador le dejará
+                  registrar su salida (migración 045). */}
+              {CAUSAS_PERMISO.find((c) => c.valor === causaSeleccionada)?.pideHora && (
+                <div className="mc-form-group">
+                  <label className="mc-form-label" htmlFor="pe-hora">¿A qué hora necesitas salir hoy?</label>
+                  <input
+                    id="pe-hora"
+                    className="mc-form-input"
+                    name="hora"
+                    type="time"
+                    required
+                    value={horaPreview}
+                    onChange={(e) => setHoraPreview(e.target.value)}
+                  />
+
+                  {!turnoHoy ? (
+                    <p className="mc-hint">
+                      <Icon name="alert" size={14} />
+                      Hoy no tienes turno asignado, así que no hay salida que adelantar.
+                    </p>
+                  ) : minutosDescuento > 0 ? (
+                    // El descuento se le enseña EN VIVO, mientras elige la hora, no al final.
+                    // Así puede ver que salir a las 5 en vez de a las 3 le cuesta la mitad.
+                    // El texto va dentro de UN solo <span>. Con el <strong> suelto, el
+                    // flexbox de la caja lo trataba como un elemento aparte y partía la frase
+                    // por la mitad: "Se te descontarán las [4 h] que dejes de trabajar."
+                    <div className="aviso-descuento">
+                      <Icon name="alert" size={16} />
+                      <span>
+                        Tu turno termina a las <strong>{turnoHoy.horaSalida.slice(0, 5)}</strong>.
+                        {" "}Se te descontarán <strong>{formatoDuracion(minutosDescuento)}</strong>{" "}
+                        que dejes de trabajar.
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="mc-hint">
+                      <Icon name="alert" size={14} />
+                      Si RH lo aprueba, podrás registrar tu salida 10 minutos antes de esa hora.
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
+          {!esSalidaAnticipada && (
           <div className="mc-form-row-2">
             <div className="mc-form-group">
               <label className="mc-form-label" htmlFor="pe-fecha-inicio">Fecha de inicio</label>
@@ -163,32 +300,44 @@ export default function PermisosEmpleado({
               />
             </div>
 
-            {tipoSeleccionado === "Vacaciones" && (
-              <div className="mc-form-group">
-                <label className="mc-form-label" htmlFor="pe-fecha-fin">Fecha de fin</label>
-                <input
-                  id="pe-fecha-fin"
-                  className="mc-form-input"
-                  name="fechaFin"
-                  type="date"
-                  value={fechaFinPreview}
-                  onChange={(e) => {
-                    setFechaFinPreview(e.target.value);
-                    handleFechaChange(fechaInicioPreview, e.target.value);
-                  }}
-                />
-              </div>
-            )}
+            {/* La fecha de fin ya no es solo de vacaciones: un permiso también puede durar
+                varios días (una incapacidad de tres días es UN permiso, no tres). Para un
+                permiso de un solo día se deja vacía y la base guarda fecha_fin = null. */}
+            <div className="mc-form-group">
+              <label className="mc-form-label" htmlFor="pe-fecha-fin">
+                {tipoSeleccionado === "Vacaciones" ? "Fecha de fin" : "Fecha de fin (si dura varios días)"}
+              </label>
+              <input
+                id="pe-fecha-fin"
+                className="mc-form-input"
+                name="fechaFin"
+                type="date"
+                min={fechaInicioPreview || undefined}
+                value={fechaFinPreview}
+                onChange={(e) => {
+                  setFechaFinPreview(e.target.value);
+                  handleFechaChange(fechaInicioPreview, e.target.value);
+                }}
+              />
+            </div>
           </div>
+          )}
 
+          {/* En un permiso, la CAUSA ya dice por qué. Un "Motivo" de texto libre obligatorio
+              encima era pedirle que lo escribiera dos veces — y un tercer campo de
+              "Comentario opcional" que hacía exactamente lo mismo. Se queda uno solo, y es
+              obligatorio únicamente en vacaciones, donde no hay causa que lo explique. */}
           <div className="mc-form-group">
-            <label className="mc-form-label" htmlFor="pe-motivo">Motivo</label>
-            <input id="pe-motivo" className="mc-form-input" name="motivo" placeholder="Motivo de la solicitud" required />
-          </div>
-
-          <div className="mc-form-group">
-            <label className="mc-form-label" htmlFor="pe-comentario">Comentario opcional</label>
-            <input id="pe-comentario" className="mc-form-input" name="comentario" placeholder="Información adicional para RH" />
+            <label className="mc-form-label" htmlFor="pe-motivo">
+              {tipoSeleccionado === "Vacaciones" ? "Motivo" : "Detalle para RH (opcional)"}
+            </label>
+            <input
+              id="pe-motivo"
+              className="mc-form-input"
+              name="motivo"
+              placeholder={tipoSeleccionado === "Vacaciones" ? "Motivo de la solicitud" : "Algo que RH deba saber"}
+              required={tipoSeleccionado === "Vacaciones"}
+            />
           </div>
 
           {tipoSeleccionado === "Vacaciones" && diasPreview > 0 && (
@@ -208,7 +357,7 @@ export default function PermisosEmpleado({
         <SectionTitle icon="clipboard">Mis solicitudes</SectionTitle>
 
         {solicitudesEmpleado.length === 0 ? (
-          <p className="admin-empty">Aún no has enviado solicitudes de vacaciones.</p>
+          <p className="admin-empty">Aún no has enviado ninguna solicitud.</p>
         ) : (
           <div className="empleado-solicitud-list">
             {solicitudesEmpleado.map((p) => (

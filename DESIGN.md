@@ -86,6 +86,21 @@ color lo decide el CSS, que sí conoce el tema.
 | ❌ **Nunca** | Color, fondo, borde, sombra → **rompen el modo oscuro** |
 | ✅ **Vale** | Layout dinámico calculado (`width: ${pct}%` en una barra de progreso) |
 
+## Checador y asistencia (2026-07)
+
+Clases en `App.css`, bloque final. **Cero hex**: todos los colores salen de tokens, así que el
+modo oscuro funciona solo, sin un archivo de overrides.
+
+| Clase | Qué es |
+|---|---|
+| `.checador-camara` · `.checador-camara-video` | Marco 3:4 de la cámara en vivo. El vídeo va **espejado** (`scaleX(-1)`) porque la gente espera verse como en un espejo — pero la **foto que se sube no lo va**, que es lo que importa para reconocer a alguien |
+| `.checador-boton--entrada` / `--salida` | El botón grande. Verde para entrar, ámbar para salir (`--mc-semaforo-*`) |
+| `.checador-pill--ok/--alerta/--aviso` | El resultado de la ubicación, con los tokens de badge |
+| `.asistencia-filtros` · `.asistencia-tabla-wrap` | Filtros del panel; la tabla ancha hace scroll **dentro de su caja**, no del cuerpo de la página |
+| `.asistencia-dia--falta/--retardo/--presente/…` | Color del estado del día. `--descanso` solo baja la opacidad: un día sin turno no es un error |
+| `.horarios-rejilla` · `.horarios-celda--descanso` | Rejilla empleado × día. La celda vacía se atenúa, **no se marca en rojo** |
+| `.mc-empty` · `.mc-hint` | Dos utilidades que faltaban en el sistema (texto de "no hay nada" y de ayuda) |
+
 ## Estado de la migración a Tailwind
 
 Tailwind **v4**, configuración CSS-first (`@theme` en `src/index.css`), sin `tailwind.config.js`.

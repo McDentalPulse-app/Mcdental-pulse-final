@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNotification } from '../../contexts/NotificationContext';
 import Card from '../common/Card';
 import SectionTitle from '../common/SectionTitle';
@@ -6,9 +6,63 @@ import StatCard from '../common/StatCard';
 import PageHeader from '../common/PageHeader';
 import Icon from '../ui/Icon';
 import { SUCURSALES } from '../../utils/constants';
+import { useAuth } from '../../contexts/AuthContext';
+import { getAjustes, setExigirRostro } from '../../services/supabase/ajustesService';
+import { getRostros } from '../../services/supabase/rostrosService';
+import { useGlobal } from '../../contexts/GlobalContext';
 
 const Config = () => {
-  const { toast } = useNotification();
+  const { toast, confirm } = useNotification();
+  const { user } = useAuth();
+  const { usuarios } = useGlobal();
+
+  // El único ajuste de esta pantalla que se persiste de verdad (migración 044). El resto
+  // sigue siendo la maqueta que ya estaba.
+  const [exigirRostro, setExigir] = useState(false);
+  const [rostrosAprobados, setRostrosAprobados] = useState(null);
+  const [guardando, setGuardando] = useState(false);
+
+  useEffect(() => {
+    let activo = true;
+    Promise.all([getAjustes(), getRostros().catch(() => [])])
+      .then(([a, rs]) => {
+        if (!activo) return;
+        setExigir(a.exigirRostro);
+        setRostrosAprobados(rs.filter((r) => r.estado === "aprobado").length);
+      });
+    return () => { activo = false; };
+  }, []);
+
+  const empleados = usuarios.filter((u) => !u.inactivo && u.role === "empleado").length;
+  const sinRegistrar = rostrosAprobados === null ? null : Math.max(0, empleados - rostrosAprobados);
+
+  const cambiarExigencia = async (nuevo) => {
+    if (nuevo) {
+      // Encender esto deja sin fichar a quien no esté registrado. No es un ajuste de
+      // decoración, y se le dice a la cara ANTES de encenderlo, con el número exacto.
+      const ok = await confirm({
+        title: "Exigir rostro para checar",
+        description: sinRegistrar
+          ? `${sinRegistrar} empleado(s) todavía NO tienen el rostro aprobado. A partir de ahora NO podrán checar hasta que se registren y Recursos Humanos los apruebe. ¿Continuar?`
+          : "Todos los empleados tienen su rostro aprobado. A partir de ahora será obligatorio para poder checar.",
+        variant: sinRegistrar ? "danger" : "default",
+        confirmText: "Activar",
+      });
+      if (!ok) return;
+    }
+
+    setGuardando(true);
+    try {
+      const a = await setExigirRostro(nuevo, user?.id);
+      setExigir(a.exigirRostro);
+      toast.success(nuevo ? "El rostro ya es obligatorio para checar." : "Ya se puede checar sin rostro registrado.");
+    } catch (e) {
+      toast.error(e?.message || "No se pudo guardar el ajuste.");
+    } finally {
+      setGuardando(false);
+    }
+  };
+
   const [verde, setVerde] = useState(70);
   const [amarillo, setAmarillo] = useState(45);
   const [rojo, setRojo] = useState(45);
@@ -39,6 +93,41 @@ const Config = () => {
         title="Configuración"
         subtitle="Parámetros generales de McDental Pulse, roles, privacidad y umbrales de bienestar."
       />
+
+      <Card>
+        <SectionTitle icon="camera">Rostro obligatorio para checar</SectionTitle>
+
+        <p className="mc-hint">
+          <Icon name="alert" size={15} />
+          Mientras esté <strong>apagado</strong>, quien no tenga el rostro registrado puede checar
+          igual (sin comprobación). Es lo que hay que hacer al principio: si se exigiera desde el
+          primer día, <strong>no podría fichar nadie</strong>. Enciéndelo cuando la plantilla ya esté
+          registrada — a partir de ahí, no registrarse deja de ser la forma fácil de esquivar la
+          comprobación.
+        </p>
+
+        <div className="ajuste-fila">
+          <label className="enrolar-consentimiento">
+            <input
+              type="checkbox"
+              checked={exigirRostro}
+              disabled={guardando}
+              onChange={(e) => cambiarExigencia(e.target.checked)}
+            />
+            <span>
+              <strong>Exigir rostro registrado para poder checar</strong>
+              {sinRegistrar !== null && (
+                <>
+                  <br />
+                  {sinRegistrar === 0
+                    ? `Los ${empleados} empleados tienen su rostro aprobado.`
+                    : `${sinRegistrar} de ${empleados} empleados todavía NO lo tienen aprobado y no podrían checar.`}
+                </>
+              )}
+            </span>
+          </label>
+        </div>
+      </Card>
 
       <div className="admin-grid-auto">
         <Card className="admin-stat-card">

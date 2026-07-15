@@ -1,0 +1,338 @@
+import { configOk, admin, quienLlama } from "./_auth.js";
+import { analizarFoto, similitud, UMBRAL_MISMA_PERSONA } from "./_rostro.js";
+import { giroCorrecto } from "./_pose.js";
+import { enviarARH } from "./_push.js";
+
+/**
+ * Registrar una checada. Es el ÚNICO camino: la RPC ya no la puede llamar el navegador.
+ *
+ * El orden importa y es lo que hace que esto bloquee de verdad: primero se coteja la cara,
+ * y SOLO si coincide se crea la checada. Antes el cotejo corría después, sobre una checada
+ * ya escrita — servía para marcar, no para impedir. Y mientras la RPC fuera llamable desde
+ * el navegador, cualquiera se la saltaba con dos líneas en la consola.
+ *
+ * BLOQUEO ESTRICTO: si la cara no coincide, NO hay checada. Nunca. No hay número de
+ * reintentos tras el cual el sistema se rinda y deje pasar — eso sería una puerta que el
+ * impostor terco solo tendría que empujar tres veces.
+ *
+ * ¿Y la persona honrada a la que el modelo no reconoce (gafas nuevas, contraluz, barba)?
+ * Tiene DOS salidas, y las dos existen ya:
+ *
+ *   1. Los lentes están cubiertos en el registro: quien los usa aporta fotos con y sin, y
+ *      el cotejo se queda con el mejor parecido. Es la causa nº 1 de rechazo injusto y está
+ *      atacada de raíz.
+ *   2. Si aun así no la reconoce, RH le registra la checada A MANO (ya existe) y le vuelve a
+ *      tomar el rostro. Es fricción real, sí — pero es fricción con una persona detrás que
+ *      resuelve, no un empleado atrapado en un bucle.
+ *
+ * Los intentos fallidos se cuentan igualmente: no para rendirse, sino para decirle a partir
+ * de cuándo deje de insistir y hable con RH, y para que RH vea quién está peleándose con el
+ * sistema.
+ */
+
+const INTENTOS_ANTES_DE_AVISAR = 3;
+
+/**
+ * Tope duro de intentos fallidos por ventana. NO es la regla de negocio: es el freno de
+ * COSTE.
+ *
+ * Cada llamada a este endpoint cuesta dos inferencias de red neuronal. Sin tope, alguien
+ * con un script puede llamarlo en bucle con fotos que no coinciden y disparar la factura de
+ * CPU de Vercel — no es fraude, es una cuenta que llega a fin de mes. Y como la comprobación
+ * va ANTES de tocar los modelos, un abuso cuesta una consulta a la base, no dos inferencias.
+ *
+ * 12 en 15 minutos es de sobra para una persona que se está peleando con la luz de la mañana
+ * (tras 3 fallos ya se le dice que hable con RH) y ridículamente poco para un bucle.
+ */
+const TOPE_INTENTOS = 12;
+
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Método no permitido." });
+  }
+  if (!configOk()) {
+    return res.status(500).json({ error: "Supabase no está configurado en el servidor." });
+  }
+
+  const quien = await quienLlama(req);
+  if (!quien) {
+    return res.status(401).json({ error: "Sesión inválida." });
+  }
+
+  const { tipo, selfiePath, lat, lng, precision, deviceId, retoFoto } = req.body || {};
+  if (tipo !== "entrada" && tipo !== "salida") {
+    return res.status(400).json({ error: "Tipo de checada inválido." });
+  }
+
+  const supabase = admin();
+
+  const desdeVentana = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+
+  const contarIntentos = async () => {
+    const { count } = await supabase
+      .from("cotejo_intentos")
+      .select("id", { count: "exact", head: true })
+      .eq("empleado_id", quien.id)
+      .gte("creado_en", desdeVentana);
+    return count || 0;
+  };
+
+  // ---------------------------------------------------------------------------
+  // 0. Freno de coste. ANTES de tocar los modelos, que es lo caro.
+  // ---------------------------------------------------------------------------
+  if ((await contarIntentos()) >= TOPE_INTENTOS) {
+    return res.status(429).json({
+      error: "Demasiados intentos fallidos. Espera unos minutos o avisa a Recursos Humanos para que registre tu checada.",
+      bloqueado: true,
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // 1. Cotejo. Se hace ANTES de crear nada.
+  // ---------------------------------------------------------------------------
+  let verificado = null; // null = no se pudo comprobar. No es lo mismo que "no coincide".
+  let score = null;
+
+  const { data: rostro } = await supabase
+    .from("rostros")
+    .select("id, huella, reto_pendiente, rostro_fotos(huella)")
+    .eq("empleado_id", quien.id)
+    .eq("estado", "aprobado") // uno pendiente es una cara que nadie ha mirado todavía
+    .maybeSingle();
+
+  // ¿Se exige tener el rostro registrado para poder checar? (migración 044)
+  //
+  // Mientras esto está apagado, quien no tenga rostro aprobado checa sin cotejo. Es
+  // obligatorio durante el despliegue —si se exigiera desde el minuto uno, el primer día no
+  // ficharía nadie—, pero en cuanto la plantilla está registrada se convierte en la puerta
+  // de salida evidente: basta con NO registrarse para que el cotejo no te aplique.
+  if (!rostro) {
+    const { data: ajustes } = await supabase
+      .from("ajustes")
+      .select("exigir_rostro")
+      .maybeSingle();
+
+    if (ajustes?.exigir_rostro) {
+      // Se distingue "no te has registrado" de "estás esperando a RH": son problemas de
+      // personas distintas, y decirle "regístrate" a quien ya se registró es hacerle dar
+      // vueltas por una tarea que no es suya.
+      const { data: pendiente } = await supabase
+        .from("rostros")
+        .select("estado")
+        .eq("empleado_id", quien.id)
+        .maybeSingle();
+
+      const enRevision = pendiente?.estado === "pendiente";
+
+      return res.status(403).json({
+        error: enRevision
+          ? "Tus fotos están en revisión. Recursos Humanos debe aprobarlas antes de que puedas checar."
+          : "Antes de checar tienes que registrar tu rostro.",
+        // La pantalla lo usa para llevarle directamente a 'Mi rostro' en vez de dejarle
+        // buscando en el menú.
+        requiereRostro: !enRevision,
+        enRevision,
+        bloqueado: true,
+      });
+    }
+  }
+
+  let retoSuperado = null; // null = no se le pidió ninguno
+  let motivoReto = null;
+
+  // Anti-spoofing, EN MODO SOMBRA: se mide y NO BLOQUEA A NADIE.
+  //
+  // Su 98.2% de acierto es sobre SU dataset, no sobre esta clínica con estos teléfonos y esta
+  // luz. Y como el cotejo sí bloquea, un falso positivo suyo no sería un dato curioso: sería una
+  // persona real que no puede fichar. Se enciende cuando la pantalla de calibración enseñe las
+  // dos nubes con datos de verdad — 2 o 3 semanas. Encenderlo hoy sería repetir exactamente el
+  // error del 0.363.
+  let viveza = null;
+
+  if (rostro && selfiePath) {
+    const referencias = (rostro.rostro_fotos || []).map((f) => f.huella);
+    if (!referencias.length && rostro.huella) referencias.push(rostro.huella);
+
+    // El MEJOR parecido contra todas sus fotos de referencia, no el promedio. Es lo que hace
+    // que funcione con y sin lentes: basta con parecerse a una.
+    const pareceEl = (huella) => {
+      const scores = referencias.map((ref) => similitud(huella, ref)).filter((s) => s !== null);
+      return scores.length ? Math.max(...scores) : null;
+    };
+
+    const { data: archivo } = await supabase.storage.from("asistencias").download(selfiePath);
+
+    if (archivo && referencias.length) {
+      let cara = null;
+      try {
+        cara = await analizarFoto(Buffer.from(await archivo.arrayBuffer()), { viveza: true });
+      } catch (error) {
+        console.error("Error analizando la foto de la checada:", error);
+      }
+
+      viveza = cara?.viveza ?? null;
+
+      if (cara?.huella) {
+        score = pareceEl(cara.huella);
+        if (score !== null) verificado = score >= UMBRAL_MISMA_PERSONA;
+      }
+      // Si no se detectó cara, `verificado` sigue en null y se trata igual que un fallo: cuenta
+      // como intento. No se declara "no coincide" —no es lo mismo que no coincida a que no se
+      // pudiera mirar— pero tampoco se deja pasar, o bastaría con mandar una foto ilegible
+      // para saltarse el cotejo.
+
+      // -------------------------------------------------------------------------
+      // El reto de movimiento (migración 048).
+      // -------------------------------------------------------------------------
+      if (rostro.reto_pendiente) {
+        retoSuperado = false;
+
+        if (!retoFoto) {
+          motivoReto = "Falta la foto girada.";
+        } else {
+          let girada = null;
+          try {
+            girada = await analizarFoto(Buffer.from(retoFoto, "base64"));
+          } catch (error) {
+            console.error("Error analizando la foto del reto:", error);
+          }
+
+          if (!girada?.huella) {
+            motivoReto = "No se distingue tu cara en la foto girada.";
+          } else if (!giroCorrecto(girada.t, rostro.reto_pendiente)) {
+            // Aquí muere la foto de una foto: por mucho que la giren, la nariz no se mueve
+            // respecto a los ojos. No hay relieve, no hay paralaje, no hay giro.
+            motivoReto = "No giraste la cabeza hacia donde se te pidió.";
+          } else if ((pareceEl(girada.huella) ?? 0) < UMBRAL_MISMA_PERSONA) {
+            // EL ATAQUE QUE ESTA LÍNEA CIERRA, y sin ella el reto entero es teatro: enseñar la
+            // foto de Ana para el primer fotograma (que pasa el cotejo, porque ES la cara de
+            // Ana) y luego apartarla y girar TU PROPIA cabeza para el segundo. La cabeza gira de
+            // verdad, el paralaje es real... pero es la cabeza de otro. La foto girada tiene que
+            // ser ELLA, no solo una persona viva.
+            //
+            // Se le exige el mismo umbral que a la selfie, y eso es defendible: sus fotos de
+            // referencia YA incluyen tomas de perfil (el registro obliga a tres poses distintas),
+            // así que una cara girada tiene contra qué parecerse.
+            motivoReto = "La cara de la foto girada no es la misma.";
+          } else {
+            retoSuperado = true;
+          }
+        }
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 2. ¿Se bloquea?
+  // ---------------------------------------------------------------------------
+  const hayQueCotejar = !!rostro; // sin rostro aprobado no hay contra qué comparar
+  const fallo = hayQueCotejar && (verificado !== true || retoSuperado === false);
+
+  if (fallo) {
+    // El reto NO se limpia al fallar: se queda pegado. Si al fallarlo se volviera a tirar el
+    // dado, bastaría con reintentar hasta que saliera "sin reto" — y el reto sería un peaje que
+    // solo hay que esperar a que no esté.
+    if (retoSuperado === true) {
+      await supabase
+        .from("rostros")
+        .update({ reto_pendiente: null, reto_pedido_en: null })
+        .eq("id", rostro.id);
+    }
+    await supabase.from("cotejo_intentos").insert({ empleado_id: quien.id, score });
+    const intentos = (await contarIntentos()) || 1;
+
+    // Cruzar el umbral de fallos seguidos es la señal más clara de suplantación en el momento:
+    // alguien insiste con una cara que no es la del dueño de la cuenta. Se avisa a RH EXACTAMENTE
+    // al cruzarlo (===), no en cada fallo posterior: si se enviara del 3.º al 12.º intento, RH
+    // recibiría diez avisos del mismo incidente y acabaría silenciándolos todos.
+    if (intentos === INTENTOS_ANTES_DE_AVISAR) {
+      enviarARH({
+        titulo: "Posible suplantación",
+        cuerpo: `Varios intentos fallidos de checar como ${quien.name}. La cara no coincide.`,
+        url: "/rh/asistencia",
+      }).catch(() => {});
+    }
+
+    // No hay checada. Ni ahora ni al décimo intento: rendirse tras N fallos sería una puerta
+    // que al impostor solo le costaría empujar tres veces.
+    // Al que falla el reto se le dice QUÉ falló y que le va a volver a tocar. Ocultarle que el
+    // reto sigue ahí lo dejaría reintentando a ciegas contra una puerta que no se va a abrir.
+    const mensaje = motivoReto
+      ? `${motivoReto} Vuelve a intentarlo: te pediremos otra vez que gires la cabeza.`
+      : score === null
+        ? "No se distingue tu cara en la foto. Ponte de frente, con buena luz, e inténtalo otra vez."
+        : "No pudimos confirmar que eres tú. Mira de frente, con buena luz, e inténtalo otra vez.";
+
+    return res.status(403).json({
+      error: mensaje,
+      // A partir de unos cuantos fallos se le deja de pedir que reintente y se le dice qué
+      // hacer. Insistir a ciegas contra un sistema que no cede es lo que acaba en una
+      // persona plantada en la puerta sin saber a quién acudir.
+      aviso:
+        intentos >= INTENTOS_ANTES_DE_AVISAR
+          ? "No insistas más: avisa a Recursos Humanos para que registre tu entrada y te vuelva a tomar el rostro."
+          : null,
+      bloqueado: true,
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // 3. Registrar. La hora, la geocerca y el resto de guardias los sigue poniendo la RPC.
+  //    El empleado se lo pasa el SERVIDOR desde el JWT que acaba de verificar: el cliente
+  //    no puede decir "soy otro".
+  // ---------------------------------------------------------------------------
+  const { data: fila, error: errorRpc } = await supabase.rpc("registrar_checada", {
+    p_empleado_id: quien.id,
+    p_tipo: tipo,
+    p_lat: lat ?? null,
+    p_lng: lng ?? null,
+    p_precision: precision ?? null,
+    p_selfie_path: selfiePath ?? null,
+    p_device_id: deviceId ?? null,
+  });
+
+  if (errorRpc) {
+    console.error("Error registrando la checada:", errorRpc);
+    // La RPC lanza mensajes ya escritos para el usuario ("Ya registraste tu entrada hace
+    // unos segundos", "Tu turno termina a las 18:00..."). Se respetan tal cual: dicen
+    // exactamente qué pasó y qué hacer.
+    return res.status(400).json({ error: errorRpc.message || "No se pudo registrar tu checada." });
+  }
+
+  const checada = Array.isArray(fila) ? fila[0] : fila;
+
+  if (hayQueCotejar) {
+    await supabase
+      .from("asistencias")
+      .update({
+        match_score: score,
+        rostro_verificado: verificado,
+        reto_superado: retoSuperado,
+        liveness_score: viveza,
+      })
+      .eq("id", checada.id);
+
+    // Superado: se descuelga. El siguiente reto volverá a salir por sorteo, como a todo el mundo.
+    if (retoSuperado === true) {
+      await supabase
+        .from("rostros")
+        .update({ reto_pendiente: null, reto_pedido_en: null })
+        .eq("id", rostro.id);
+    }
+
+    // Los intentos fallidos NO se borran al acertar.
+    //
+    // Antes sí, "para que no arrastrara fallos viejos" — pero eso destruía exactamente la
+    // evidencia que RH necesita: alguien intenta tres veces con una cara que no coincide, y
+    // luego entra el titular; borrar los fallos hace desaparecer el rastro del intento de
+    // suplantación. Y era innecesario: el contador solo mira los últimos 15 minutos, así que
+    // los fallos viejos ya caducan solos.
+  }
+
+  // El score NO se le devuelve al empleado: saber exactamente cuánto se parece le daría a
+  // quien quiera burlar el sistema una forma de ir probando hasta pasar el umbral.
+  return res.status(200).json({
+    checada: { ...checada, match_score: score, rostro_verificado: verificado },
+    verificado,
+  });
+}

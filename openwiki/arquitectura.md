@@ -38,6 +38,20 @@ El componente raíz decide qué renderizar según el estado de sesión:
 Un `setInterval` de 60s llama a `refreshSemana()` para recalcular la **semana activa** al
 cruzar el lunes 00:00 sin recargar la página.
 
+La `key` de cada item del `Sidebar` **debe ser idéntica** al `path` de su ruta hija: es el único
+acoplamiento entre el menú y el router (no hay tabla de rutas compartida). Los **4 primeros items
+de cada rol son la tabbar del móvil**; el resto cae en el menú "Más".
+
+### Rutas del checador (2026-07)
+
+| Rol | Ruta | Pantalla |
+|---|---|---|
+| `empleado` | `/empleado/checador` | Cámara en vivo + botón Entrada/Salida (posición 2 del menú: es lo único que se usa a diario) |
+| `rh` | `/rh/asistencia` | Panel: hoy en vivo, revisión, historial día/semana/mes/año, CSV |
+| `rh` | `/rh/horarios` · `/rh/permisos` | Rejilla de turnos · aprobación de permisos |
+| `admin` | `/admin/asistencia` | El mismo panel, **sin `puedeAnular`** (el `UPDATE` de `asistencias` es exclusivo de RH en el RLS) |
+| `admin` | `/admin/sucursales` | Captura de la geocerca de cada clínica |
+
 ## Autenticación y roles
 
 - **Supabase Auth** con *emails sintéticos*: el login es por `username`, que se convierte a

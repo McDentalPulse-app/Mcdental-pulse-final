@@ -11,15 +11,15 @@ const VacacionesRH = ({ vacaciones, onUpdateEstado }) => {
   const { prompt } = useNotification();
 
   const pendientes = vacaciones.filter(v => v.estado === "pendiente").length;
-  const aprobadas = vacaciones.filter(v => v.estado === "aprobada").length;
-  const rechazadas = vacaciones.filter(v => v.estado === "rechazada").length;
+  const aprobadas = vacaciones.filter(v => v.estado === "aprobado").length;
+  const rechazadas = vacaciones.filter(v => v.estado === "rechazado").length;
 
   const handleEstado = async (id, estado) => {
     const comentarioRH = await prompt({
-      title: estado === "aprobada" ? "Aprobar vacaciones" : "Rechazar vacaciones",
+      title: estado === "aprobado" ? "Aprobar vacaciones" : "Rechazar vacaciones",
       description: "Comentario opcional de RH:",
       placeholder: "Escribe un comentario (opcional)",
-      confirmText: estado === "aprobada" ? "Aprobar" : "Rechazar",
+      confirmText: estado === "aprobado" ? "Aprobar" : "Rechazar",
     });
     if (comentarioRH === null) return;
     onUpdateEstado(id, estado, comentarioRH || "");
@@ -66,14 +66,14 @@ const VacacionesRH = ({ vacaciones, onUpdateEstado }) => {
                     <button
                       type="button"
                       className="mc-btn-primary mc-btn-sm-action"
-                      onClick={() => handleEstado(v.id, "aprobada")}
+                      onClick={() => handleEstado(v.id, "aprobado")}
                     >
                       <Icon name="check" size={14} /> Aprobar
                     </button>
                     <button
                       type="button"
                       className="mc-btn-danger mc-btn-sm-action"
-                      onClick={() => handleEstado(v.id, "rechazada")}
+                      onClick={() => handleEstado(v.id, "rechazado")}
                     >
                       <Icon name="xCircle" size={14} /> Rechazar
                     </button>

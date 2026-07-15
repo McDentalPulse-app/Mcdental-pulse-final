@@ -148,3 +148,54 @@ Pedido por dirección: (1) sección **Perfil** en los 4 roles con info propia + 
 *   `ana salas` (psicologa) y resto de empleados: `emp123` + flag=true.
 *   `luz gomez`: contraseña propia previa a esta sesión, flag=false (legítimo).
 *   **Nota (auditoría móvil 2026-07-02 noche 2 y features Perfil 2026-07-03)**: en ambas sesiones se usaron 4 cuentas (1 activa por rol, elegidas por la BD) con contraseña temporal de auditoría; al cierre se **restauraron a `emp123`+flag** vía service role. La cuenta empleado elegida (`kevin hopolito`) se usó para probar subir/quitar foto — quedó con `avatar_url=null` (sin foto) y `emp123`+flag. Si la cuenta admin elegida fue `mario`, ahora está en `emp123`+flag (entrar con `emp123` fuerza cambio).
+
+---
+
+## 🕒 Sistema de asistencia / checador — rama `feat/asistencia-checador` (hasta 2026-07-14)
+
+> **ACTUALIZACIÓN 2026-07-15 — AUTORIZADO Y APLICADO A PRODUCCIÓN:** el usuario confirmó autorización ("ya autorizaron"). **Las migraciones 034–049 SE APLICARON A PRODUCCIÓN** (`tpacyimxktipnkcgmhql`) el 2026-07-15 vía **Management API + PAT** (mismo método que la 025; `supabase db push` sigue sin servir por password de pooler inválida). Ledger de prod ahora en **049 (49/49)**. Aplicación atómica por migración, verificada: 9 tablas nuevas (sucursales, horarios, asistencias, dispositivos, rostros, rostro_fotos, cotejo_intentos, ajustes, push_suscripciones), 2 funciones (distancia_metros, registrar_checada), 2 columnas en `permisos` (causa, fecha_fin). Script de rollback exacto generado por diff antes/después.
+>
+> **Lo que TODAVÍA falta para que el checador funcione en prod** (la BD ya está, el resto NO): (1) **desplegar el frontend** — la rama `feat/asistencia-checador` sigue local, 77 commits sobre `main`, sin push + fix de `MiRostro.jsx` sin commitear; (2) ~~claves VAPID en Vercel (Production)~~ **HECHO 2026-07-15** (las 3 en Production, encriptadas); (3) **geocercas** (25 sucursales lat/lng/radio) y **horarios reales** (Excel); (4) **CRON_SECRET** en Vercel; (5) **aviso de privacidad biométrica** (legal). ⚠️ Ojo: `main` local (`fccf2a9`) ≠ `prod/main` (`47a685e`) — reconciliar antes de cualquier push.
+>
+> *(Histórico previo a 2026-07-15, ya superado): la restricción vigente era "no subimos nada a producción, hay que esperar autorización"; las migraciones estaban solo en el Supabase LOCAL.)*
+
+### Qué es
+Un checador de entradas/salidas con horarios, permisos, reportes, **verificación por foto + ubicación**, y **cotejo facial que bloquea** (no solo marca). Diseño **servidor-autoritativo**: la hora, la distancia y el match facial los decide Postgres/serverless, nunca el navegador. `registrar_checada()` es `security definer`, revocada de `authenticated`, solo la llama `service_role` vía `api/checar.js`.
+
+### Migraciones (034–049, todas LOCAL-only)
+- **034** sucursales (lat/lng/radio, geocercas) · **035** horarios (1 fila por empleado/día ISO; ausencia de fila = descanso) · **036** asistencias + `distancia_metros()` haversine + realtime · **037** storage `asistencias` (privado, 1MB) · **038** permisos: `causa` (catálogo cerrado) + `fecha_fin` · **039** salida según horario · **040** dispositivos (fingerprint) · **041** cotejo facial (`rostros`, huella `real[]`) · **042** autoenrolado (`estado` pendiente/aprobado/rechazado, `rostro_fotos`) · **043** cotejo bloqueante (`registrar_checada` revocada de authenticated; `cotejo_intentos`; `usa_lentes`) · **044** `ajustes.exigir_rostro` · **045** salida anticipada (margen 15min, jornada mínima 30min) · **046** retención (`foto_purgada`, `vence_en`).
+- **Hoy (2026-07-14):** **047** calibración (`rostros.parecido_maximo/parecido_con`, `asistencias.liveness_score/reto_superado`, + GRANT que faltaba en `cotejo_intentos`) · **048** reto de movimiento (`rostros.reto_pendiente/reto_pedido_en`) · **049** `push_suscripciones`.
+
+### Modelos de IA (server-only, en `api/models/`, Apache-2.0)
+- **YuNet** (detección + 5 landmarks) + **SFace** (embedding 128-d). Alineado por transformación de similitud a la plantilla ArcFace es **obligatorio** (sin él, resultados INVERTIDOS). Umbral `UMBRAL_MISMA_PERSONA = 0.50` (calibrado con persona real + impostor; el de fábrica 0.363 dejó pasar un impostor por 0.003).
+- **MiniFAS anti-spoofing** (`antispoof.onnx`, 626KB) — añadido hoy, **modo sombra**.
+- ⚠️ **`sharp` NO estaba en `package.json`** — bug real encontrado hoy: el cotejo entero dependía de un paquete extraneous en `node_modules`; al instalar exceljs, npm lo podó y el checador quedó roto en un commit que no lo tocaba (en prod habría sido 500 en cada fichaje). Corregido (`fix(deps)`, commit `43f88bf`).
+
+### Sesión 2026-07-14 — 6 commits (plan `optimized-napping-breeze.md`, orden D→C→B→A)
+1. **`831aa36` D · Importar horarios desde Excel** — `src/utils/horariosImport.js` (puro, 41 tests) + `ImportarHorarios.jsx`. Mapea columnas, previsualiza, aplica solo lo válido; nunca mete un horario en la persona equivocada por un acento/apellido invertido (empareja con nivel de confianza; dos homónimos → rechaza, no elige). exceljs (MIT, no el `xlsx` de npm con prototype pollution), diferido y **fuera del precache PWA**. Verificado con un .xlsx real lleno de trampas.
+2. **`43f88bf` fix sharp** (ver arriba).
+3. **`29416c9` C · Calibración + detector de parecidos** — `src/utils/calibracion.js` (+14 tests) + `Calibracion.jsx` (RH/admin). **Se NIEGA a dar un "umbral óptimo"**: las dos nubes de scores están censuradas por el propio umbral (los que pasan van a `asistencias`, los que no a `cotejo_intentos`), así que el "hueco" es circular. Mide lo real: quién ficha raspando (mínimo, no promedio), cuánto costaría subir el umbral, y dice que bajarlo NO se puede medir. **Detector de parecidos** en `api/aprobar-rostro.js`: al aprobar, compara contra todas las caras y avisa si se parece demasiado a otra (marca EN LAS DOS fichas, el parecido es simétrico). Verificado por el endpoint real (hermana 0.451 marca a las dos, desconocido 0.048 no).
+4. **`b9b957f` B1 · Reto de girar la cabeza** — `api/_pose.js` (+11 tests), `api/reto.js`. Una foto plana no tiene paralaje: al girarla, la nariz no se mueve respecto a los ojos. Se pide **al azar (1 de 5)**. Dos agujeros cerrados: (a) el reto **se queda pegado** hasta pasarlo (si re-sorteara, se esquiva reintentando); (b) la foto girada **también debe coincidir** con el titular (si no, enseñas la foto de otro y giras tu cabeza). El servidor juzga recalculando la pose; el navegador solo guía. La foto girada **no se guarda** (viaja en el body, se mira y se tira). Verificado contra Postgres: dado sale una vez, empleado no puede borrar su reto (RLS), checar sin foto girada → 403 y el reto sigue pegado.
+5. **`0288de8` B2 · Anti-spoofing en modo sombra** — MiniFAS mide `liveness_score` y **NO BLOQUEA A NADIE**. Su 98.2% es sobre su dataset, no sobre esta clínica; como el cotejo sí bloquea, un falso positivo dejaría fuera a una persona real. Se activará cuando la pantalla de calibración muestre dos montañas con datos reales (2-3 semanas), con el interruptor de `ajustes`. Recorte 1.5× la caja (necesita ver el borde: marco del móvil, canto del papel). ~7ms el modelo, 28-32ms el análisis completo.
+6. **`e7c6015` A · Notificaciones push** — Web Push + VAPID. `src/sw.js` (service worker propio; PWA pasó de `generateSW` a `injectManifest`), migración 049 `push_suscripciones` (**nadie la lee desde el navegador, ni su dueño**; solo service_role), `api/_push.js` (`enviar`/`enviarARH`, nunca lanza, limpia suscripciones muertas 404/410), `api/suscribir-push.js`, `api/aprobar-permiso.js` (**cambio de arquitectura**: la aprobación de permisos pasa al servidor para poder mandar el push), `src/services/pushService.js`, `AvisoPush.jsx` (onboarding iOS). El permiso se pide **tras la primera checada**, no al abrir. Notifica: rostro aprobado/rechazado→empleado, permiso→empleado, rostro registrado→RH, suplantación insistente→RH. Verificado contra Postgres (aprobación sobrevive sin push, tabla ilegible hasta para su dueño, no suscribe a otro, upsert no duplica).
+
+### Sin commitear al cierre
+- **`src/components/asistencia/MiRostro.jsx`** — fix de UI: la frase "Toma **3 fotos**... Se usarán **solo**..." se partía porque `.mc-hint` es flex y cada `<strong>` era un ítem suelto. Envuelto en un `<span>`. Pendiente de commit (esperando que el usuario cierre la revisión visual del checador).
+
+### ⚠️ Claves VAPID (para cuando se autorice el deploy) — poner en Vercel (Production)
+`.env.local` (gitignored) ya las tiene para dev. En Vercel: `VITE_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (JAMÁS al repo/cliente), `VAPID_SUBJECT` (cambiar a un correo real de la clínica). Generadas con `web-push`; están en el historial del chat de esta sesión.
+
+### 🔑 Dev apunta a Supabase LOCAL (gotcha que ya causó un "no me deja entrar")
+`npm run dev` habla con `http://127.0.0.1:54321` porque **`.env.development.local` pisa a `.env.local`** en Vite (y `.env.local` sí apunta a prod). Es lo correcto para el checador (prod no tiene las migraciones). Pero en local **no existe la cuenta real** del dueño → login con credenciales de prod da "contraseña incorrecta". **Usuarios de prueba LOCALES** (username, todos con `checador123`, sin cambio forzado): `admin`, `rh`, `psico`, `ana`, `beto`, `caro`. Los scripts E2E cambian passwords de auth vía `auth.admin.updateUserById` — re-resetear si el login local falla. Para volver a prod en dev: comentar `VITE_SUPABASE_URL` de `.env.development.local` + reiniciar servidor (pero entonces el checador no funciona).
+
+### ⏳ Pendientes al cierre
+- **Aplicar migraciones 034–049 a producción** (esperando autorización del usuario).
+- **Probar B1 con cámara real**: foto impresa girada debe FALLAR, persona real girando debe pasar (ese es EL test del anti-suplantación) — yo no puedo, necesita cámara.
+- **Entrega real del push**: iPhone instalado en pantalla de inicio + VAPID en Vercel.
+- **Commit del fix de MiRostro.jsx**.
+- **openwiki/** desactualizado desde la migración 041 (modelo-de-datos.md se actualizó parcialmente 2026-07-14).
+- **GRANTs faltantes en tablas 04–26** (deuda conocida): reconstruir la BD desde el repo da una app muerta.
+- Capturar las 25 geocercas, cargar horarios reales (llegan en Excel), `CRON_SECRET` en Vercel, aviso de privacidad biométrica.
+
+### Verificación de la sesión
+294 tests (de 131 al empezar el checador), lint estable en la línea base (90 errores preexistentes), build verde en cada commit. Migraciones 047/048/049 aplicadas y verificadas contra Postgres local (RLS + GRANTs probados con roles reales). Scripts E2E `.mjs` temporales en la raíz, borrados tras cada uso (no commiteados) — mismo patrón que las sesiones anteriores.
