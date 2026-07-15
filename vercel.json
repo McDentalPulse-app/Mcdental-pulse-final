@@ -45,7 +45,7 @@
     },
     {
       "path": "/api/revisar-tickets",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 13 * * *"
     }
   ]
 }

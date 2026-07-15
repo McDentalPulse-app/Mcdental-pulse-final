@@ -5,10 +5,16 @@ import { enviar, pushDisponible } from "./_push.js";
  * Detecta cambios de estado en los tickets de soporte (MCTIC) y avisa por push.
  *
  * MCTIC es un sistema externo y no manda webhook: lo único que se puede hacer es preguntarle
- * de vez en cuando (lo llama un cron de Vercel cada 15 minutos) y comparar contra la última
- * foto guardada en `soporte_tickets_estado`. La primera vez que se ve un ticket no se avisa,
- * solo se siembra la fila — si no, el primer barrido tras desplegar esto mandaría un push por
- * cada ticket que ya existiera de antes.
+ * de vez en cuando (lo llama un cron de Vercel, una vez al día — Vercel Hobby no permite crons
+ * más frecuentes, cualquier expresión que corriera más de una vez al día tumba el deploy
+ * entero) y comparar contra la última foto guardada en `soporte_tickets_estado`. La primera vez
+ * que se ve un ticket no se avisa, solo se siembra la fila — si no, el primer barrido tras
+ * desplegar esto mandaría un push por cada ticket que ya existiera de antes.
+ *
+ * Si en algún momento se necesita más frecuencia que una vez al día, hay dos salidas sin tocar
+ * este archivo: subir a Vercel Pro (permite cron por minuto), o pegarle a este mismo endpoint
+ * con el CRON_SECRET desde un cron externo (cron-job.org, GitHub Actions, etc.) tan seguido como
+ * haga falta — el endpoint no sabe ni le importa quién lo llama, solo que traiga el secreto.
  *
  * Solo se consulta a quien PODRÍA recibir el aviso: las personas con al menos una suscripción
  * de push activa. Consultar a todo el mundo sería pegarle a MCTIC por gente que de todos modos
