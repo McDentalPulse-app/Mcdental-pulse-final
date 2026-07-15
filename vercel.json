@@ -6,6 +6,12 @@
     }
   ],
   "functions": {
+    "api/aprobar-rostro.js": {
+      "includeFiles": "api/models/**",
+      "excludeFiles": "node_modules/onnxruntime-node/bin/napi-v6/{darwin,win32}/**",
+      "maxDuration": 30,
+      "memory": 2048
+    },
     "api/enrolar-rostro.js": {
       "includeFiles": "api/models/**",
       "excludeFiles": "node_modules/onnxruntime-node/bin/napi-v6/{darwin,win32}/**",
