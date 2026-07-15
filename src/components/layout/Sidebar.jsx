@@ -30,27 +30,29 @@ const Sidebar = () => {
     try { localStorage.setItem(RAIL_KEY, collapsed ? "1" : "0"); } catch { /* ignore */ }
   }, [collapsed]);
 
+  // `group` solo se usa en móvil (la hoja "Más"): agrupa los ítems que no caben en la
+  // tabbar de 4 para que no sea una lista plana de 15-20 botones. El desktop lo ignora.
   const navItems = {
     admin: [
       { key: "dashboard", icon: "dashboard", label: "Dashboard" },
-      { key: "ai", icon: "ai", label: "AI Engine" },
+      { key: "ai", icon: "ai", label: "AI Engine", group: "Herramientas" },
       { key: "empleados", icon: "users", label: "Empleados" },
       { key: "usuarios", icon: "userCog", label: "Gestión de Personal" },
-      { key: "asistencia", icon: "clock", label: "Asistencia" },
-      { key: "sucursales", icon: "mapPin", label: "Sucursales" },
-      { key: "horarios", icon: "calendarDays", label: "Horarios" },
-      { key: "importar-horarios", icon: "file", label: "Importar horarios" },
-      { key: "calibracion", icon: "shield", label: "Calibración del cotejo" },
-      { key: "rostros", icon: "camera", label: "Rostros" },
-      { key: "expedientes", icon: "folder", label: "Expedientes" },
-      { key: "reconocimientos", icon: "award", label: "Reconocimientos" },
-      { key: "eventospersonal", icon: "cake", label: "Cumpleaños y Aniversarios" },
-      { key: "encuestas", icon: "clipboard", label: "Encuestas" },
-      { key: "reportes", icon: "trending", label: "Reportes" },
-      { key: "confidenciales", icon: "lock", label: "Reportes Confidenciales" },
-      { key: "config", icon: "settings", label: "Config" },
-      { key: "soporte", icon: "wrench", label: "Soporte TI" },
-      { key: "perfil", icon: "user", label: "Mi perfil" },
+      { key: "asistencia", icon: "clock", label: "Asistencia", group: "Asistencia y rostros" },
+      { key: "sucursales", icon: "mapPin", label: "Sucursales", group: "Asistencia y rostros" },
+      { key: "horarios", icon: "calendarDays", label: "Horarios", group: "Asistencia y rostros" },
+      { key: "importar-horarios", icon: "file", label: "Importar horarios", group: "Asistencia y rostros" },
+      { key: "calibracion", icon: "shield", label: "Calibración del cotejo", group: "Asistencia y rostros" },
+      { key: "rostros", icon: "camera", label: "Rostros", group: "Asistencia y rostros" },
+      { key: "expedientes", icon: "folder", label: "Expedientes", group: "Equipo" },
+      { key: "reconocimientos", icon: "award", label: "Reconocimientos", group: "Equipo" },
+      { key: "eventospersonal", icon: "cake", label: "Cumpleaños y Aniversarios", group: "Equipo" },
+      { key: "encuestas", icon: "clipboard", label: "Encuestas", group: "Encuestas y reportes" },
+      { key: "reportes", icon: "trending", label: "Reportes", group: "Encuestas y reportes" },
+      { key: "confidenciales", icon: "lock", label: "Reportes Confidenciales", group: "Encuestas y reportes" },
+      { key: "config", icon: "settings", label: "Config", group: "Herramientas" },
+      { key: "soporte", icon: "wrench", label: "Soporte TI", group: "Herramientas" },
+      { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
     ],
     // psicologa tiene paridad admin: conserva Seguimiento y Mensajes (lo suyo) y suma
     // el resto de opciones del admin.
@@ -59,23 +61,23 @@ const Sidebar = () => {
       { key: "ai", icon: "ai", label: "AI Engine" },
       { key: "seguimiento", icon: "target", label: "Seguimiento" },
       { key: "confidenciales", icon: "lock", label: "Reportes Confidenciales" },
-      { key: "empleados", icon: "users", label: "Empleados" },
-      { key: "usuarios", icon: "userCog", label: "Gestión de Personal" },
-      { key: "asistencia", icon: "clock", label: "Asistencia" },
-      { key: "sucursales", icon: "mapPin", label: "Sucursales" },
-      { key: "horarios", icon: "calendarDays", label: "Horarios" },
-      { key: "importar-horarios", icon: "file", label: "Importar horarios" },
-      { key: "calibracion", icon: "shield", label: "Calibración del cotejo" },
-      { key: "rostros", icon: "camera", label: "Rostros" },
-      { key: "expedientes", icon: "folder", label: "Expedientes" },
-      { key: "reconocimientos", icon: "award", label: "Reconocimientos" },
-      { key: "eventospersonal", icon: "cake", label: "Cumpleaños y Aniversarios" },
-      { key: "encuestas", icon: "clipboard", label: "Encuestas" },
-      { key: "reportes", icon: "trending", label: "Reportes" },
-      { key: "config", icon: "settings", label: "Config" },
-      { key: "mensajes", icon: "message", label: "Mensajes" },
-      { key: "soporte", icon: "wrench", label: "Soporte TI" },
-      { key: "perfil", icon: "user", label: "Mi perfil" },
+      { key: "empleados", icon: "users", label: "Empleados", group: "Equipo" },
+      { key: "usuarios", icon: "userCog", label: "Gestión de Personal", group: "Equipo" },
+      { key: "asistencia", icon: "clock", label: "Asistencia", group: "Asistencia y rostros" },
+      { key: "sucursales", icon: "mapPin", label: "Sucursales", group: "Asistencia y rostros" },
+      { key: "horarios", icon: "calendarDays", label: "Horarios", group: "Asistencia y rostros" },
+      { key: "importar-horarios", icon: "file", label: "Importar horarios", group: "Asistencia y rostros" },
+      { key: "calibracion", icon: "shield", label: "Calibración del cotejo", group: "Asistencia y rostros" },
+      { key: "rostros", icon: "camera", label: "Rostros", group: "Asistencia y rostros" },
+      { key: "expedientes", icon: "folder", label: "Expedientes", group: "Equipo" },
+      { key: "reconocimientos", icon: "award", label: "Reconocimientos", group: "Equipo" },
+      { key: "eventospersonal", icon: "cake", label: "Cumpleaños y Aniversarios", group: "Equipo" },
+      { key: "encuestas", icon: "clipboard", label: "Encuestas", group: "Encuestas y reportes" },
+      { key: "reportes", icon: "trending", label: "Reportes", group: "Encuestas y reportes" },
+      { key: "config", icon: "settings", label: "Config", group: "Herramientas" },
+      { key: "mensajes", icon: "message", label: "Mensajes", group: "Herramientas" },
+      { key: "soporte", icon: "wrench", label: "Soporte TI", group: "Herramientas" },
+      { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
     ],
     // rh tiene paridad admin: conserva sus vistas propias (Vacaciones, Permisos,
     // Descuentos, Calendario, Reportes RH, Bolsa) y suma las opciones del admin.
@@ -84,27 +86,27 @@ const Sidebar = () => {
       { key: "asistencia", icon: "clock", label: "Asistencia" },
       { key: "usuarios", icon: "userCog", label: "Gestión de Personal" },
       { key: "empleados", icon: "users", label: "Empleados" },
-      { key: "ai", icon: "ai", label: "AI Engine" },
-      { key: "vacaciones", icon: "vacation", label: "Vacaciones" },
-      { key: "permisos", icon: "clipboardCheck", label: "Permisos" },
-      { key: "horarios", icon: "calendarDays", label: "Horarios" },
-      { key: "importar-horarios", icon: "file", label: "Importar horarios" },
-      { key: "calibracion", icon: "shield", label: "Calibración del cotejo" },
-      { key: "rostros", icon: "camera", label: "Rostros" },
-      { key: "sucursales", icon: "mapPin", label: "Sucursales" },
-      { key: "descuentos", icon: "dollar", label: "Descuentos" },
-      { key: "calendario", icon: "calendar", label: "Calendario" },
-      { key: "eventospersonal", icon: "cake", label: "Cumpleaños y Aniversarios" },
-      { key: "reconocimientos", icon: "award", label: "Reconocimientos" },
-      { key: "expedientes", icon: "folder", label: "Expedientes" },
-      { key: "encuestas", icon: "clipboard", label: "Encuestas" },
-      { key: "reportes", icon: "trending", label: "Reportes" },
-      { key: "reportesrh", icon: "trending", label: "Reportes RH" },
-      { key: "confidenciales", icon: "lock", label: "Reportes Confidenciales" },
-      { key: "bolsa", icon: "briefcase", label: "Bolsa de trabajo" },
-      { key: "config", icon: "settings", label: "Config" },
-      { key: "soporte", icon: "wrench", label: "Soporte TI" },
-      { key: "perfil", icon: "user", label: "Mi perfil" },
+      { key: "ai", icon: "ai", label: "AI Engine", group: "Herramientas" },
+      { key: "vacaciones", icon: "vacation", label: "Vacaciones", group: "RH" },
+      { key: "permisos", icon: "clipboardCheck", label: "Permisos", group: "RH" },
+      { key: "horarios", icon: "calendarDays", label: "Horarios", group: "Asistencia y rostros" },
+      { key: "importar-horarios", icon: "file", label: "Importar horarios", group: "Asistencia y rostros" },
+      { key: "calibracion", icon: "shield", label: "Calibración del cotejo", group: "Asistencia y rostros" },
+      { key: "rostros", icon: "camera", label: "Rostros", group: "Asistencia y rostros" },
+      { key: "sucursales", icon: "mapPin", label: "Sucursales", group: "Asistencia y rostros" },
+      { key: "descuentos", icon: "dollar", label: "Descuentos", group: "RH" },
+      { key: "calendario", icon: "calendar", label: "Calendario", group: "RH" },
+      { key: "eventospersonal", icon: "cake", label: "Cumpleaños y Aniversarios", group: "Equipo" },
+      { key: "reconocimientos", icon: "award", label: "Reconocimientos", group: "Equipo" },
+      { key: "expedientes", icon: "folder", label: "Expedientes", group: "Equipo" },
+      { key: "encuestas", icon: "clipboard", label: "Encuestas", group: "Encuestas y reportes" },
+      { key: "reportes", icon: "trending", label: "Reportes", group: "Encuestas y reportes" },
+      { key: "reportesrh", icon: "trending", label: "Reportes RH", group: "RH" },
+      { key: "confidenciales", icon: "lock", label: "Reportes Confidenciales", group: "Encuestas y reportes" },
+      { key: "bolsa", icon: "briefcase", label: "Bolsa de trabajo", group: "Equipo" },
+      { key: "config", icon: "settings", label: "Config", group: "Herramientas" },
+      { key: "soporte", icon: "wrench", label: "Soporte TI", group: "Herramientas" },
+      { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
     ],
     empleado: [
       { key: "inicio", icon: "home", label: "Inicio" },
@@ -113,13 +115,13 @@ const Sidebar = () => {
       { key: "checador", icon: "clock", label: "Checador" },
       { key: "encuesta", icon: "clipboardCheck", label: "Mi Encuesta" },
       { key: "historial", icon: "history", label: "Historial" },
-      { key: "rostro", icon: "camera", label: "Mi rostro" },
-      { key: "permisosempleado", icon: "vacation", label: "Vacaciones" },
-      { key: "reconocimientos", icon: "award", label: "Reconocimientos" },
-      { key: "reporteconfidencial", icon: "lock", label: "Reporte Confidencial" },
-      { key: "soporte", icon: "wrench", label: "Soporte TI" },
-      { key: "mensajes", icon: "message", label: "Mensajes" },
-      { key: "perfil", icon: "user", label: "Mi perfil" },
+      { key: "rostro", icon: "camera", label: "Mi rostro", group: "Mi trabajo" },
+      { key: "permisosempleado", icon: "vacation", label: "Vacaciones", group: "Mi trabajo" },
+      { key: "reconocimientos", icon: "award", label: "Reconocimientos", group: "Mi trabajo" },
+      { key: "reporteconfidencial", icon: "lock", label: "Reporte Confidencial", group: "Mi trabajo" },
+      { key: "soporte", icon: "wrench", label: "Soporte TI", group: "Herramientas" },
+      { key: "mensajes", icon: "message", label: "Mensajes", group: "Herramientas" },
+      { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
     ],
   };
 
@@ -131,6 +133,20 @@ const Sidebar = () => {
   const tabsExtra = items.slice(PRIMARIOS);
   const irA = (key) => { setMasOpen(false); navigate(`/${user.role}/${key}`); };
   const extraActivo = tabsExtra.some((i) => i.key === active);
+
+  // Agrupa tabsExtra para la hoja "Más": las secciones salen en el orden en que aparece
+  // su primer ítem, y cada ítem cae en su sección aunque estén repartidos en el arreglo
+  // (p. ej. RH tiene Vacaciones/Permisos separados de Descuentos/Calendario).
+  const gruposExtra = [];
+  const indiceGrupo = new Map();
+  for (const item of tabsExtra) {
+    const grupo = item.group || "Otros";
+    if (!indiceGrupo.has(grupo)) {
+      indiceGrupo.set(grupo, gruposExtra.length);
+      gruposExtra.push({ nombre: grupo, items: [] });
+    }
+    gruposExtra[indiceGrupo.get(grupo)].items.push(item);
+  }
 
   const handleLogout = async () => {
     const ok = await notify.confirm({
@@ -301,20 +317,25 @@ const Sidebar = () => {
               <Icon name="user" size={16} className="mobile-sheet-user-chevron" />
             </button>
             <div className="mobile-sheet-list">
-              {tabsExtra.map((item) => {
-                const isActive = active === item.key;
-                return (
-                  <button
-                    key={item.key}
-                    type="button"
-                    className={`mobile-sheet-item${isActive ? " mobile-sheet-item--active" : ""}`}
-                    onClick={() => irA(item.key)}
-                  >
-                    <span className="mobile-sheet-icon"><Icon name={item.icon} size={18} /></span>
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
+              {gruposExtra.map((grupo) => (
+                <div className="mobile-sheet-group" key={grupo.nombre}>
+                  <div className="mobile-sheet-group-title">{grupo.nombre}</div>
+                  {grupo.items.map((item) => {
+                    const isActive = active === item.key;
+                    return (
+                      <button
+                        key={item.key}
+                        type="button"
+                        className={`mobile-sheet-item${isActive ? " mobile-sheet-item--active" : ""}`}
+                        onClick={() => irA(item.key)}
+                      >
+                        <span className="mobile-sheet-icon"><Icon name={item.icon} size={18} /></span>
+                        <span>{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
             <button type="button" className="mobile-sheet-logout mobile-sheet-theme" onClick={toggleTheme} style={{ marginBottom: 8 }}>
               <Icon name={theme === "dark" ? "sun" : "moon"} size={16} /> {theme === "dark" ? "Modo claro" : "Modo oscuro"}

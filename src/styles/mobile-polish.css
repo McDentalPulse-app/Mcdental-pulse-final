@@ -150,3 +150,22 @@ a,
   color: var(--mc-marca-texto) !important;
   border-color: var(--mc-borde-suave) !important;
 }
+
+/* Secciones de la hoja "Más": con la paridad admin, rh/psicologa/admin pasaron a tener
+   15-21 ítems fuera de la tabbar. Sin agrupar era una lista plana del mismo peso visual
+   de arriba a abajo — imposible de escanear de un vistazo en el celular. Un título de
+   sección por categoría (Asistencia y rostros, Equipo, RH, etc.) le da al ojo un punto
+   de referencia antes de buscar el ítem exacto. */
+.mobile-sheet-group + .mobile-sheet-group {
+  margin-top: 10px;
+  padding-top: 6px;
+  border-top: 1px solid var(--mc-gris-suave);
+}
+.mobile-sheet-group-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--mc-texto-secundario);
+  padding: 4px 10px 6px;
+}
