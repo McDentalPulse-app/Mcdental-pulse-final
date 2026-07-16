@@ -27,18 +27,23 @@ import Config from '../settings/Config';
 import BolsaTrabajo from '../rh/BolsaTrabajo';
 import Perfil from '../common/Perfil';
 import SoporteTI from '../common/SoporteTI';
+import AvisoPush from '../asistencia/AvisoPush';
+import { useAvisoPush } from '../../hooks/useAvisoPush';
+import AvisosPanel from '../avisos/AvisosPanel';
 
 export default function HRLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
-  const { vacaciones, permisos, descuentos, calendarioExtra, reconocimientos, encuestas, mensajes, notas, reportesConfidenciales, archivosExpediente, horarios, setHorarios } = globals;
-  const { updateVacacionEstado, updatePermisoEstado, updateDescuentoEstado, addDescuento, addReconocimiento, subirArchivoExpediente } = actions;
+  const { vacaciones, permisos, descuentos, calendarioExtra, reconocimientos, encuestas, mensajes, notas, reportesConfidenciales, archivosExpediente, horarios, setHorarios, avisos } = globals;
+  const { updateVacacionEstado, updatePermisoEstado, updateDescuentoEstado, addDescuento, addReconocimiento, subirArchivoExpediente, addAviso, updateAviso, deleteAviso } = actions;
+  const { ofrecerPush, activarAvisos, cerrarOfertaPush } = useAvisoPush();
 
   return (
     <div className="app-shell">
       <Sidebar />
       <main className="app-main">
         <div className="app-main-inner">
+          {ofrecerPush && <AvisoPush onActivar={activarAvisos} onCerrar={cerrarOfertaPush} />}
           <Routes>
             <Route path="dashboard" element={<HRDashboard users={USERS} />} />
             <Route path="ai" element={<AIEngine encuestas={encuestas} mensajes={mensajes} notas={notas} userRole="rh" permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>} />
@@ -64,6 +69,7 @@ export default function HRLayout({ user, globals, actions }) {
             <Route path="confidenciales" element={<ReportesConfidencialesPanel reportes={reportesConfidenciales} />} />
             <Route path="config" element={<Config />} />
             <Route path="soporte" element={<SoporteTI user={user} />} />
+            <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} />} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Routes>

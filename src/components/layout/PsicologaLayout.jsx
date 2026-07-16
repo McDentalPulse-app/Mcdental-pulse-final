@@ -23,18 +23,23 @@ import Reportes from '../rh/Reportes';
 import Config from '../settings/Config';
 import Perfil from '../common/Perfil';
 import SoporteTI from '../common/SoporteTI';
+import AvisoPush from '../asistencia/AvisoPush';
+import { useAvisoPush } from '../../hooks/useAvisoPush';
+import AvisosPanel from '../avisos/AvisosPanel';
 
 export default function PsicologaLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
-  const { encuestas, mensajes, notas, permisos, descuentos, reconocimientos, reportesConfidenciales, vacaciones, horarios, setHorarios, archivosExpediente } = globals;
-  const { restablecerPasswordUsuario, addNota, sendMensaje, marcarMensajesLeidos, addReconocimiento, subirArchivoExpediente } = actions;
+  const { encuestas, mensajes, notas, permisos, descuentos, reconocimientos, reportesConfidenciales, vacaciones, horarios, setHorarios, archivosExpediente, avisos } = globals;
+  const { restablecerPasswordUsuario, addNota, sendMensaje, marcarMensajesLeidos, addReconocimiento, subirArchivoExpediente, addAviso, updateAviso, deleteAviso } = actions;
+  const { ofrecerPush, activarAvisos, cerrarOfertaPush } = useAvisoPush();
 
   return (
     <div className="app-shell">
       <Sidebar />
       <main className="app-main">
         <div className="app-main-inner">
+          {ofrecerPush && <AvisoPush onActivar={activarAvisos} onCerrar={cerrarOfertaPush} />}
           <Routes>
             <Route path="dashboard" element={<PsicologaDashboard encuestas={encuestas} mensajes={mensajes} reportesConfidenciales={reportesConfidenciales} />} />
             <Route path="ai" element={<AIEngine encuestas={encuestas} mensajes={mensajes} notas={notas} userRole="psicologa" permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>} />
@@ -56,6 +61,7 @@ export default function PsicologaLayout({ user, globals, actions }) {
             <Route path="reportes" element={<Reportes users={USERS} encuestas={encuestas} preguntas={encuestaPreguntas} />} />
             <Route path="config" element={<Config />} />
             <Route path="soporte" element={<SoporteTI user={user} />} />
+            <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} />} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Routes>

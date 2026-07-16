@@ -11,6 +11,7 @@ import { useAuth } from "./AuthContext";
 import { notify } from "../utils/notify";
 
 import { getEncuestas, subscribeEncuestas } from "../services/supabase/encuestasService";
+import { getAvisos, getAvisosLeidos, subscribeAvisos } from "../services/supabase/avisosService";
 import { getMensajes } from "../services/supabase/mensajesService";
 import { getReportesConfidenciales } from "../services/supabase/reportesService";
 import { getReconocimientos } from "../services/supabase/reconocimientosService";
@@ -35,6 +36,11 @@ export const GlobalProvider = ({ children }) => {
     normalizePreguntasList(ENCUESTA_PREGUNTAS)
   );
   const [encuestas, setEncuestas] = useState([]);
+  // Avisos: para los 4 roles, sin importar quién es (el modal bloqueante y la pantalla
+  // de historial los necesitan todos, a diferencia del resto de recursos que sí están
+  // gateados por rol más abajo).
+  const [avisos, setAvisos] = useState([]);
+  const [avisosLeidos, setAvisosLeidos] = useState([]);
   const [mensajes, setMensajes] = useState(MENSAJES_INIT);
   const [reportesConfidenciales, setReportesConfidenciales] = useState(REPORTES_CONFIDENCIALES_INIT);
   const [reconocimientos, setReconocimientos] = useState([]);
@@ -91,6 +97,8 @@ export const GlobalProvider = ({ children }) => {
         let dbNotas = null;
         let dbHorarios = null;
         let dbChecadasHoy = null;
+        let dbAvisos = null;
+        let dbAvisosLeidos = null;
 
         // Base data for everyone.
         // La PII de la plantilla (teléfono, email, fechas) solo la necesitan los roles
@@ -102,6 +110,11 @@ export const GlobalProvider = ({ children }) => {
 
         promises.push(cargarUsuarios().then(res => dbUsuarios = res).catch(() => { huboError = true; }));
         promises.push(getEncuestaPreguntas().then(res => dbPreguntas = res).catch(() => { huboError = true; }));
+
+        // Avisos: para TODOS los roles, sin condición — el modal bloqueante y la
+        // pantalla de historial son de la app entera, no de un rol en particular.
+        promises.push(getAvisos().then(res => dbAvisos = res).catch(() => { huboError = true; }));
+        promises.push(getAvisosLeidos().then(res => dbAvisosLeidos = res).catch(() => { huboError = true; }));
 
         // Encuestas y mensajes y reconocimientos: admin, rh, psicologa, empleado
         // (rh ahora tiene paridad admin: AI Engine, Encuestas, Reconocimientos)
@@ -176,6 +189,8 @@ export const GlobalProvider = ({ children }) => {
         if (dbNotas) setNotas(dbNotas);
         if (dbHorarios) setHorarios(dbHorarios);
         if (dbChecadasHoy) setChecadasHoy(dbChecadasHoy);
+        if (dbAvisos) setAvisos(dbAvisos);
+        if (dbAvisosLeidos) setAvisosLeidos(dbAvisosLeidos);
 
         if (huboError) {
           notify.toast.error("No se pudieron cargar algunos datos. Revisa tu conexión.");
@@ -231,12 +246,50 @@ export const GlobalProvider = ({ children }) => {
     };
   }, [user, refreshEncuestas]);
 
+  // Refetch puntual de avisos, mismo motivo que refreshEncuestas.
+  const refreshAvisos = useCallback(async () => {
+    try {
+      const rows = await getAvisos();
+      setAvisos(rows);
+    } catch (error) {
+      console.error("Error refrescando avisos:", error);
+    }
+  }, []);
+
+  // Sincronización en vivo de avisos, para los 4 roles sin excepción (a diferencia de
+  // encuestas): si aparece un aviso nuevo con la sesión ya abierta, el modal bloqueante
+  // tiene que verlo sin que la persona recargue la página.
+  useEffect(() => {
+    if (!user) return;
+
+    const unsubscribe = subscribeAvisos((nuevo) => {
+      setAvisos((prev) => (prev.some((a) => a.id === nuevo.id) ? prev : [nuevo, ...prev]));
+    });
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refreshAvisos();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === "visible") refreshAvisos();
+    }, 60000);
+
+    return () => {
+      unsubscribe();
+      document.removeEventListener("visibilitychange", onVisible);
+      clearInterval(intervalId);
+    };
+  }, [user, refreshAvisos]);
+
   return (
     <GlobalContext.Provider
       value={{
         usuarios, setUsuarios,
         encuestaPreguntas, setEncuestaPreguntas,
         encuestas, setEncuestas,
+        avisos, setAvisos,
+        avisosLeidos, setAvisosLeidos,
         mensajes, setMensajes,
         reportesConfidenciales, setReportesConfidenciales,
         reconocimientos, setReconocimientos,

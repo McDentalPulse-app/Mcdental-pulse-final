@@ -13,13 +13,14 @@ import ReporteConfidencialEmpleado from '../empleados/ReporteConfidencialEmplead
 import SoporteTI from '../common/SoporteTI';
 import Mensajes from '../comunicacion/Mensajes';
 import Perfil from '../common/Perfil';
+import AvisosPanel from '../avisos/AvisosPanel';
 
 import { getPsicologaPrincipal } from '../../utils/psicologa';
 
 export default function EmpleadoLayout({ user, globals, actions }) {
   const { usuarios: USERS } = useGlobal();
 
-  const { encuestas, mensajes, vacaciones, permisos, reconocimientos, checadasHoy, horarios } = globals;
+  const { encuestas, mensajes, vacaciones, permisos, reconocimientos, checadasHoy, horarios, avisos } = globals;
   const { addEncuesta, sendMensaje, addSolicitudEmpleadoRH, addReporteConfidencial, marcarMensajesLeidos, registrarChecada } = actions;
   const navigate = useNavigate();
 
@@ -42,6 +43,7 @@ export default function EmpleadoLayout({ user, globals, actions }) {
             <Route path="reporteconfidencial" element={<ReporteConfidencialEmpleado user={user} onSubmit={addReporteConfidencial} />} />
             <Route path="soporte" element={<SoporteTI user={user} />} />
             <Route path="mensajes" element={<Mensajes user={user} mensajes={userMensajes} onSend={(msg)=>sendMensaje({...msg,para:psicologaId})} onMarkRead={marcarMensajesLeidos}/>} />
+            <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} />} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="inicio" replace />} />
           </Routes>

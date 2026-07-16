@@ -6,6 +6,7 @@ import { useGlobal } from "./contexts/GlobalContext";
 import { useAppActions } from "./hooks/useAppActions";
 import LandingPage from "./components/landing/LandingPage";
 import Loader from './components/ui/Loader';
+import AvisoModal from "./components/avisos/AvisoModal";
 
 const AdminLayout = lazy(() => import("./components/layout/AdminLayout"));
 const PsicologaLayout = lazy(() => import("./components/layout/PsicologaLayout"));
@@ -56,23 +57,33 @@ export default function App() {
   };
 
   return (
-    <Suspense fallback={<Loader />}>
-      <Routes>
-        {user.role === 'admin' && (
-          <Route path="/admin/*" element={<AdminLayout user={user} globals={globals} actions={combinedActions} />} />
-        )}
-        {user.role === 'psicologa' && (
-          <Route path="/psicologa/*" element={<PsicologaLayout user={user} globals={globals} actions={combinedActions} />} />
-        )}
-        {user.role === 'rh' && (
-          <Route path="/rh/*" element={<HRLayout user={user} globals={globals} actions={combinedActions} />} />
-        )}
-        {user.role === 'empleado' && (
-          <Route path="/empleado/*" element={<EmpleadoLayout user={user} globals={globals} actions={combinedActions} />} />
-        )}
+    <>
+      {/* Bloqueante y común a los 4 roles: se monta acá (no en un layout) porque es el
+          único punto que todos comparten de verdad, y un overlay fixed se ve igual sin
+          importar dónde cuelgue en el árbol. */}
+      <AvisoModal
+        avisos={globals.avisos}
+        avisosLeidos={globals.avisosLeidos}
+        onMarcarLeido={actions.marcarAvisoLeido}
+      />
+      <Suspense fallback={<Loader />}>
+        <Routes>
+          {user.role === 'admin' && (
+            <Route path="/admin/*" element={<AdminLayout user={user} globals={globals} actions={combinedActions} />} />
+          )}
+          {user.role === 'psicologa' && (
+            <Route path="/psicologa/*" element={<PsicologaLayout user={user} globals={globals} actions={combinedActions} />} />
+          )}
+          {user.role === 'rh' && (
+            <Route path="/rh/*" element={<HRLayout user={user} globals={globals} actions={combinedActions} />} />
+          )}
+          {user.role === 'empleado' && (
+            <Route path="/empleado/*" element={<EmpleadoLayout user={user} globals={globals} actions={combinedActions} />} />
+          )}
 
-        <Route path="*" element={<div style={{ color:"#9ca3af",padding:40,textAlign:"center" }}>Vista en construcción / No encontrada</div>} />
-      </Routes>
-    </Suspense>
+          <Route path="*" element={<div style={{ color:"#9ca3af",padding:40,textAlign:"center" }}>Vista en construcción / No encontrada</div>} />
+        </Routes>
+      </Suspense>
+    </>
   );
 }

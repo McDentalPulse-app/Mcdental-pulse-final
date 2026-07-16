@@ -266,12 +266,12 @@ describe("construirDias", () => {
       { diaSemana: 2, horaEntrada: "09:00:00", horaSalida: "18:00:00", toleranciaMin: 10 },
     ];
     const checadas = [
-      checada("entrada", "2026-07-13T15:00:00Z", { fecha: "2026-07-13" }),
-      checada("salida", "2026-07-14T00:00:00Z", { fecha: "2026-07-13" }),
+      checada("entrada", "2026-07-20T15:00:00Z", { fecha: "2026-07-20" }),
+      checada("salida", "2026-07-21T00:00:00Z", { fecha: "2026-07-20" }),
     ];
 
-    // Lunes 13 (vino) y martes 14 (no vino).
-    const dias = construirDias({ desde: "2026-07-13", hasta: "2026-07-14", checadas, horarios });
+    // Lunes 20 (vino) y martes 21 (no vino). Ambas después de FECHA_INICIO_ASISTENCIA.
+    const dias = construirDias({ desde: "2026-07-20", hasta: "2026-07-21", checadas, horarios });
 
     expect(dias).toHaveLength(2);
     expect(dias[0].estado).toBe(ESTADOS_DIA.PRESENTE);
@@ -285,8 +285,8 @@ describe("construirDias", () => {
       { diaSemana: 1, horaEntrada: "09:00:00", horaSalida: "18:00:00", toleranciaMin: 10 },
       { diaSemana: 6, horaEntrada: "09:00:00", horaSalida: "13:00:00", toleranciaMin: 10 },
     ];
-    // 2026-07-19 es domingo: sin horario => descanso.
-    const dias = construirDias({ desde: "2026-07-18", hasta: "2026-07-19", checadas: [], horarios });
+    // 2026-07-26 es domingo: sin horario => descanso.
+    const dias = construirDias({ desde: "2026-07-25", hasta: "2026-07-26", checadas: [], horarios });
     expect(dias[0].estado).toBe(ESTADOS_DIA.FALTA); // sábado: sí tenía turno y no vino
     expect(dias[1].estado).toBe(ESTADOS_DIA.DESCANSO); // domingo: no tenía turno
   });
@@ -296,17 +296,29 @@ describe("construirDias", () => {
       { diaSemana: 1, horaEntrada: "09:00:00", horaSalida: "18:00:00", toleranciaMin: 10 },
       { diaSemana: 2, horaEntrada: "09:00:00", horaSalida: "18:00:00", toleranciaMin: 10 },
     ];
-    // Lunes 13 y martes 14; ingresó el martes 14.
+    // Lunes 20 y martes 21; ingresó el martes 21.
     const dias = construirDias({
-      desde: "2026-07-13",
-      hasta: "2026-07-14",
+      desde: "2026-07-20",
+      hasta: "2026-07-21",
       checadas: [],
       horarios,
-      fechaIngreso: "2026-07-14",
+      fechaIngreso: "2026-07-21",
     });
 
     expect(dias).toHaveLength(1);
-    expect(dias[0].fecha).toBe("2026-07-14");
+    expect(dias[0].fecha).toBe("2026-07-21");
+  });
+
+  it("no genera nada antes de FECHA_INICIO_ASISTENCIA: la plantilla no ha empezado a checar", () => {
+    const horarios = [
+      { diaSemana: 1, horaEntrada: "09:00:00", horaSalida: "18:00:00", toleranciaMin: 10 },
+      { diaSemana: 2, horaEntrada: "09:00:00", horaSalida: "18:00:00", toleranciaMin: 10 },
+    ];
+    // Lunes 13 y martes 14, ambos antes del arranque (2026-07-20): no debe salir ninguno,
+    // ni como falta ni como descanso, aunque ya tuvieran horario cargado.
+    const dias = construirDias({ desde: "2026-07-13", hasta: "2026-07-14", checadas: [], horarios });
+
+    expect(dias).toHaveLength(0);
   });
 });
 

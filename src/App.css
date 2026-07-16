@@ -2895,6 +2895,21 @@
   color: var(--mc-texto-sobre-alerta);
 }
 
+/* Modal bloqueante de avisos (AvisoModal.jsx): reusa .mc-notify-modal-*, solo suma el
+   cuerpo con más espacio de lectura y la firma de quién lo publicó. */
+.aviso-modal-cuerpo { text-align: left; max-height: 40vh; overflow-y: auto; }
+.aviso-modal-autor { margin: 0 0 22px; color: var(--mc-texto-apagado); font-size: 13px; font-style: italic; }
+
+/* Historial de avisos (AvisosPanel.jsx): el cuerpo se recorta a 2 líneas en la lista,
+   igual que otras vistas previas de texto largo en la app. */
+.aviso-row-cuerpo {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: pre-line;
+}
+
 .mc-toast-container {
   position: fixed;
   top: 20px;

@@ -21,6 +21,16 @@ import { getISOWeek } from "./constants";
  */
 export const TZ_CLINICA = "America/Monterrey";
 
+/**
+ * Desde cuándo cuenta la asistencia de verdad.
+ *
+ * Los horarios ya están cargados (para que el checador sepa desde el día 1 quién llega
+ * tarde), pero la plantilla todavía no empieza a checar — arranca esta fecha. Sin este
+ * corte, cada día entre "hoy" y el arranque real se clasificaría como FALTA (hay horario,
+ * no hay checada), y nadie faltó a un sistema que todavía no usaba.
+ */
+export const FECHA_INICIO_ASISTENCIA = "2026-07-20";
+
 export const ESTADOS_DIA = {
   PRESENTE: "presente",
   RETARDO: "retardo",
@@ -244,10 +254,15 @@ export const rangoDeFechas = (desde, hasta) => {
  * checadas, así que si se iterara sobre lo que hay en la tabla, las faltas serían
  * invisibles — que es el error clásico de un reporte de asistencia.
  *
- * `fechaIngreso` recorta el rango por abajo: sin esto, alguien contratado hace tres
- * días aparecía con 27 días de "descanso" o "falta" antes de existir en la empresa —
- * confuso y falso (no puede faltar a un trabajo que todavía no tenía). Los días
- * anteriores a su ingreso simplemente NO se generan, en vez de generarse y descartarse.
+ * El corte de abajo es el más tardío entre dos fechas:
+ *  - `fechaIngreso`: sin esto, alguien contratado hace tres días aparecía con 27 días de
+ *    "descanso" o "falta" antes de existir en la empresa (no puede faltar a un trabajo
+ *    que todavía no tenía).
+ *  - `FECHA_INICIO_ASISTENCIA`: la plantilla entera puede tener horario cargado desde
+ *    antes de empezar a checar de verdad (se configura con anticipación). Sin este
+ *    segundo corte, esos días de "todavía no usábamos esto" también saldrían FALTA.
+ * Los días anteriores al corte simplemente NO se generan, en vez de generarse y
+ * descartarse.
  */
 export const construirDias = ({
   desde,
@@ -268,9 +283,10 @@ export const construirDias = ({
 
   const porDia = new Map(horarios.filter((h) => h).map((h) => [h.diaSemana, h]));
   const ingreso = fechaIngreso ? String(fechaIngreso).slice(0, 10) : null;
+  const corte = ingreso && ingreso > FECHA_INICIO_ASISTENCIA ? ingreso : FECHA_INICIO_ASISTENCIA;
 
   return rangoDeFechas(desde, hasta)
-    .filter((fecha) => !ingreso || fecha >= ingreso)
+    .filter((fecha) => fecha >= corte)
     .map((fecha) =>
       clasificarDia({
         fecha,

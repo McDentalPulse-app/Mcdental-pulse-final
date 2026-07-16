@@ -23,18 +23,23 @@ import AsistenciaPanel from '../asistencia/AsistenciaPanel';
 import EnrolarRostros from '../asistencia/EnrolarRostros';
 import Perfil from '../common/Perfil';
 import SoporteTI from '../common/SoporteTI';
+import AvisoPush from '../asistencia/AvisoPush';
+import { useAvisoPush } from '../../hooks/useAvisoPush';
+import AvisosPanel from '../avisos/AvisosPanel';
 
 export default function AdminLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
-  const { encuestas, mensajes, notas, permisos, descuentos, reconocimientos, reportesConfidenciales, vacaciones, archivosExpediente, horarios, setHorarios } = globals;
-  const { restablecerPasswordUsuario, subirArchivoExpediente, addReconocimiento } = actions;
+  const { encuestas, mensajes, notas, permisos, descuentos, reconocimientos, reportesConfidenciales, vacaciones, archivosExpediente, horarios, setHorarios, avisos } = globals;
+  const { restablecerPasswordUsuario, subirArchivoExpediente, addReconocimiento, addAviso, updateAviso, deleteAviso } = actions;
+  const { ofrecerPush, activarAvisos, cerrarOfertaPush } = useAvisoPush();
 
   return (
     <div className="app-shell">
       <Sidebar />
       <main className="app-main">
         <div className="app-main-inner">
+          {ofrecerPush && <AvisoPush onActivar={activarAvisos} onCerrar={cerrarOfertaPush} />}
           <Routes>
             <Route path="dashboard" element={<AdminDashboard encuestas={encuestas} mensajes={mensajes}/>} />
             <Route path="ai" element={<AIEngine encuestas={encuestas} mensajes={mensajes} notas={notas} userRole="admin" permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>} />
@@ -64,6 +69,7 @@ export default function AdminLayout({ user, globals, actions }) {
               </Card>
             } />
             <Route path="soporte" element={<SoporteTI user={user} />} />
+            <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} />} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Routes>

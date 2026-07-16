@@ -13,6 +13,12 @@ import { addReporteConfidencial as addReporteConfidencialDb } from "../services/
 import { addReconocimiento as addReconocimientoDb } from "../services/supabase/reconocimientosService";
 import { subirArchivoExpediente as subirArchivoExpedienteDb } from "../services/supabase/archivosExpedienteService";
 import { registrarChecada as registrarChecadaDb } from "../services/supabase/asistenciasService";
+import {
+  addAviso as addAvisoDb,
+  updateAviso as updateAvisoDb,
+  deleteAviso as deleteAvisoDb,
+  marcarAvisoLeido as marcarAvisoLeidoDb,
+} from "../services/supabase/avisosService";
 
 export const useAppActions = () => {
   const { usuarios: USERS } = useGlobal();
@@ -23,6 +29,7 @@ export const useAppActions = () => {
     vacaciones,
     permisos,
     descuentos,
+    avisos,
     setVacaciones,
     setPermisos,
     setDescuentos,
@@ -33,6 +40,8 @@ export const useAppActions = () => {
     setReconocimientos,
     setArchivosExpediente,
     setChecadasHoy,
+    setAvisos,
+    setAvisosLeidos,
   } = useGlobal();
 
   const addEncuesta = async (enc) => {
@@ -272,6 +281,63 @@ export const useAppActions = () => {
     }
   };
 
+  const addAviso = async ({ titulo, cuerpo }) => {
+    try {
+      const nuevo = await addAvisoDb({ titulo, cuerpo, creadoPor: user?.id });
+      setAvisos(prev => [nuevo, ...prev]);
+      return true;
+    } catch (error) {
+      console.error("Error guardando aviso:", error);
+      notify.toast.error(error?.message || "No se pudo guardar el aviso.");
+      return false;
+    }
+  };
+
+  const updateAviso = async (id, { titulo, cuerpo }) => {
+    const previo = avisos.find(a => a.id === id);
+    setAvisos(prev => prev.map(a => a.id === id ? { ...a, titulo, cuerpo } : a));
+
+    try {
+      await updateAvisoDb({ id, titulo, cuerpo });
+      return true;
+    } catch (error) {
+      console.error("Error actualizando aviso:", error);
+      if (previo) setAvisos(prev => prev.map(a => a.id === id ? previo : a));
+      notify.toast.error(error?.message || "No se pudo actualizar el aviso.");
+      return false;
+    }
+  };
+
+  const deleteAviso = async (id) => {
+    const previos = avisos;
+    setAvisos(prev => prev.filter(a => a.id !== id));
+
+    try {
+      await deleteAvisoDb(id);
+      return true;
+    } catch (error) {
+      console.error("Error eliminando aviso:", error);
+      setAvisos(previos);
+      notify.toast.error(error?.message || "No se pudo eliminar el aviso.");
+      return false;
+    }
+  };
+
+  // Sin optimismo ni revertir: si falla, el modal bloqueante simplemente lo vuelve a
+  // ofrecer la próxima vez. Marcarlo como leído sin que la escritura se haya
+  // confirmado sería la única forma en que un aviso se "perdería" sin que nadie lo viera.
+  const marcarAvisoLeido = async (avisoId) => {
+    try {
+      const leido = await marcarAvisoLeidoDb(avisoId, user?.id);
+      setAvisosLeidos(prev => [...prev, leido]);
+      return true;
+    } catch (error) {
+      console.error("Error marcando aviso como leído:", error);
+      notify.toast.error("No se pudo marcar el aviso como leído.");
+      return false;
+    }
+  };
+
   return {
     addEncuesta,
     sendMensaje,
@@ -285,6 +351,10 @@ export const useAppActions = () => {
     addReporteConfidencial,
     addReconocimiento,
     subirArchivoExpediente,
-    registrarChecada
+    registrarChecada,
+    addAviso,
+    updateAviso,
+    deleteAviso,
+    marcarAvisoLeido,
   };
 };
