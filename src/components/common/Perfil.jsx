@@ -168,8 +168,8 @@ export default function Perfil() {
           <span>Actualizaciones</span>
         </div>
         <p className="perfil-info-note" style={{ marginBottom: 12 }}>
-          La app se actualiza sola en segundo plano. Si notas algo raro o querés forzar la
-          última versión ya, tocá el botón.
+          La app se actualiza sola en segundo plano. Si notas algo raro o quieres forzar la
+          última versión ya, presiona el botón.
         </p>
         <button
           type="button"
