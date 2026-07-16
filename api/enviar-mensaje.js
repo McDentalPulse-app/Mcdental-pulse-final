@@ -37,14 +37,25 @@ export default async function handler(req, res) {
 
   const supabase = admin();
 
-  const payload = { de_id: quien.id, para_id: paraId, texto: String(texto).trim() };
-  if (fecha) payload.fecha = fecha;
-
   const { data: destinatario } = await supabase
     .from("usuarios")
     .select("id, role")
     .eq("id", paraId)
     .single();
+
+  if (!destinatario) {
+    return res.status(400).json({ error: "Destinatario no encontrado." });
+  }
+
+  // Un empleado solo puede escribir a alguien de gestión (admin/rh/psicóloga), nunca a otro
+  // empleado: este es el canal confidencial empleado↔psicóloga, no un chat entre compañeros.
+  const esGestion = (role) => ["admin", "rh", "psicologa"].includes(role);
+  if (quien.role === "empleado" && !esGestion(destinatario.role)) {
+    return res.status(403).json({ error: "No puedes enviar mensajes a otro empleado por este canal." });
+  }
+
+  const payload = { de_id: quien.id, para_id: paraId, texto: String(texto).trim().slice(0, 2000) };
+  if (fecha) payload.fecha = fecha;
 
   const { data: mensaje, error } = await supabase
     .from("mensajes")

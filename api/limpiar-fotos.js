@@ -32,7 +32,11 @@ export default async function handler(req, res) {
   // Vercel Cron manda este header. Sin él, cualquiera podría llamar al endpoint y forzar el
   // borrado de las fotos de esta semana — que son justo las que RH todavía puede necesitar.
   const secreto = process.env.CRON_SECRET;
-  if (secreto && req.headers.authorization !== `Bearer ${secreto}`) {
+  if (!secreto) {
+    console.error("CRON_SECRET no configurado: rechazando por seguridad.");
+    return res.status(500).json({ error: "Tarea no configurada." });
+  }
+  if (req.headers.authorization !== `Bearer ${secreto}`) {
     return res.status(401).json({ error: "No autorizado." });
   }
 

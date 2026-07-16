@@ -55,6 +55,12 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: "No puedes registrar el rostro de otra persona." });
   }
 
+  // Cada ruta tiene que estar bajo la carpeta del empleado que se está enrolando — si no,
+  // alguien podría enrolar el rostro de X usando fotos subidas a la carpeta de Y.
+  if (fotos.some((f) => !String(f).startsWith(`${destino}/`))) {
+    return res.status(403).json({ error: "Las fotos no pertenecen a este empleado." });
+  }
+
   const supabase = admin();
 
   // Un empleado no puede rehacer un registro ya APROBADO: si pudiera, cambiaría la cara de

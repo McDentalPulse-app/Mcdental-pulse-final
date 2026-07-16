@@ -63,6 +63,86 @@ src/
 
 ## Changelog
 
+### 2026-07-16 · Auditoría de seguridad: frontend, backend y base de datos
+
+> Tres auditorías en paralelo (frontend, API serverless, migraciones de Supabase) sobre el
+> sistema completo, con foco en el checador facial biométrico y los datos de RH más
+> sensibles (notas psicológicas, expedientes, reportes confidenciales). **2 hallazgos
+> ALTOS y 6 MEDIOS/BAJOS corregidos**, verificados contra el código real (no contra lo que
+> decía el reporte) antes de escribir cada fix, y aplicados tanto en el repo como en la
+> base de datos de producción.
+
+#### 🔴 Backend — control de acceso roto
+
+- **Replay attack en el checador (`api/checar.js`).** El `selfiePath` que manda el
+  cliente no se validaba: cualquiera podía reenviar la ruta de una selfie **vieja ya
+  aprobada** (visible en su propio historial) y volver a "checar" sin estar frente a la
+  cámara. El freno de abuso tampoco lo detectaba, porque solo cuenta intentos **fallidos**
+  y un replay exitoso nunca falla. Ahora se exige que el path sea de la propia carpeta del
+  empleado (`${empleadoId}/…`) y tenga menos de 60 segundos.
+- **`CRON_SECRET` fail-open.** `api/limpiar-fotos.js` y `api/tareas-programadas.js`
+  comprobaban el secreto con `if (secreto && header !== …)`: si la variable de entorno no
+  estaba configurada —que era el caso real en producción— la condición entera se saltaba y
+  el endpoint quedaba **público**. Ahora es fail-closed: sin `CRON_SECRET` configurado, el
+  endpoint responde 500 en vez de abrirse.
+- **`api/gemini.js` sin chequeo de rol.** Validaba el JWT pero nunca leía
+  `usuarios.role`, así que cualquier empleado autenticado podía pegarle directo al proxy de
+  IA (reservado a admin/RH/psicóloga en la UI) con `curl` y saltarse el guardarraíl.
+  Corregido reusando `quienLlama()` de `_auth.js`, el mismo patrón que ya usa el resto de
+  `api/`.
+- **`api/enviar-mensaje.js` sin validar el par remitente/destinatario.** El canal
+  "confidencial" empleado↔psicóloga dejaba a cualquier empleado escribirle a cualquier
+  otro empleado. Ahora un empleado solo puede escribir a alguien de gestión
+  (admin/rh/psicologa).
+- **`api/enrolar-rostro.js`** tenía el mismo hueco que el checador: las fotos que RH sube
+  para enrolar a otra persona no se comprobaban contra la carpeta de destino.
+- **Límites de tamaño** agregados en los tres payloads que no pasaban por Storage
+  (`retoFoto` base64, `prompt` de Gemini, `texto` de mensajes) — sin ellos, un payload
+  grande forzaba una decodificación/inferencia cara en cada llamada.
+
+#### 🗄️ Base de datos — migración 059
+
+- **Regresión de InitPlan en 5 policies.** La migración 050 (que amplió `encuestas`,
+  `notas_psicologicas`, `reportes_confidenciales` y `reconocimientos` a rh/psicologa) las
+  recreó **sin** el wrapper `(select current_role())` que la migración 028 exige para que
+  Postgres evalúe la función una vez por consulta, no por fila. Justo las tablas que crecen
+  sin techo.
+- **Auto-aprobación de vacaciones y permisos.** `vacaciones_insert_own_or_rh` y
+  `permisos_insert_own_or_rh` (migración 016) solo validaban `empleado_id`, no
+  `estado`/`origen`: un empleado podía insertar su propia solicitud, vía `supabase-js`
+  directo, ya con `estado='aprobado'` y `origen='rh'`, saltándose el flujo de aprobación
+  entero. Mismo tipo de hueco que ya se había cerrado en `usuarios` (mig 023/025) y
+  `mensajes` (mig 032), pero se había quedado suelto acá.
+- **`descuentos.monto` sin `CHECK`.** Se agrega `CHECK (monto > 0)` como `NOT VALID`
+  (exige el mínimo desde ahora sin escanear el histórico, que no se pudo auditar desde el
+  repo).
+
+#### 🛡️ Cabeceras de seguridad
+
+`vercel.json` suma `Content-Security-Policy`, `X-Frame-Options: DENY` y
+`X-Content-Type-Options: nosniff`. La CSP incluye `wasm-unsafe-eval` y
+`worker-src blob:` porque el detector de rostro del cliente (MediaPipe) carga su propio
+wasm y worker desde `/mediapipe`.
+
+#### ⚠️ Decisiones y pendientes
+
+- **La contraseña temporal `emp123` no se toca** — se identificó como hallazgo (fija e
+  igual para todas las cuentas nuevas/reseteadas) pero es una decisión de negocio explícita
+  del dueño, no un bug a corregir en esta ronda.
+- **`CRON_SECRET` queda pendiente de configurar en Vercel** (Settings → Environment
+  Variables) — sin eso, los crons de limpieza y tareas programadas devuelven 500 a
+  propósito en vez de quedar abiertos.
+- Un Personal Access Token de Supabase quedó expuesto en el chat de la sesión (dos veces).
+  **Pendiente de rotar.**
+
+#### 🧪 Verificación
+
+`npm run lint` (0 errores nuevos sobre los 92 preexistentes del repo, ninguno en los
+archivos tocados) y `npm test` (296/296) antes de commitear. La migración 059 se aplicó a
+mano vía el SQL Editor de Supabase (el CLI local no estaba autenticado) y se verificó
+contra la base real: `pg_constraint` confirma `descuentos_monto_positivo`, `pg_policies`
+confirma las 7 policies recreadas.
+
 ### 2026-07-13 · El modo oscuro deja de ser un parche
 
 > Rehacer los estilos para que el tema oscuro **forme parte del sistema** en vez de ir por detrás

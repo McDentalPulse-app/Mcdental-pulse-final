@@ -64,6 +64,25 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Tipo de checada inválido." });
   }
 
+  // El selfiePath tiene que ser DE ESTE empleado y de HACE UN MOMENTO: si no se exige
+  // ninguna de las dos cosas, cualquiera puede reenviar la ruta de una selfie vieja ya
+  // aprobada (la ve en su propio historial) y volver a pasar el cotejo sin haber estado
+  // frente a la cámara. Formato del path, fijado por asistenciasService.js: `${empleadoId}/${Date.now()}.jpg`.
+  if (selfiePath) {
+    const [carpeta, archivo] = String(selfiePath).split("/");
+    const marca = Number(archivo?.split(".")[0]);
+    const FRESCURA_MS = 60 * 1000;
+    if (carpeta !== quien.id || !marca || Date.now() - marca > FRESCURA_MS) {
+      return res.status(403).json({ error: "La foto debe ser tuya y reciente. Vuelve a intentarlo." });
+    }
+  }
+
+  // Tope de tamaño de la foto del reto (viaja como base64 en el body, no por Storage):
+  // sin esto, un payload gigante fuerza una decodificación/inferencia cara en cada llamada.
+  if (retoFoto && Buffer.byteLength(retoFoto, "base64") > 1_500_000) {
+    return res.status(413).json({ error: "Foto demasiado grande." });
+  }
+
   const supabase = admin();
 
   const desdeVentana = new Date(Date.now() - 15 * 60 * 1000).toISOString();

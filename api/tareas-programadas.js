@@ -210,7 +210,11 @@ export default async function handler(req, res) {
 
   // Mismo candado que api/limpiar-fotos.js: sin esto, cualquiera podría disparar el barrido.
   const secreto = process.env.CRON_SECRET;
-  if (secreto && req.headers.authorization !== `Bearer ${secreto}`) {
+  if (!secreto) {
+    console.error("CRON_SECRET no configurado: rechazando por seguridad.");
+    return res.status(500).json({ error: "Tarea no configurada." });
+  }
+  if (req.headers.authorization !== `Bearer ${secreto}`) {
     return res.status(401).json({ error: "No autorizado." });
   }
 
