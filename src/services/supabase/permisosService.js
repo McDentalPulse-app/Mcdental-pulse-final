@@ -31,7 +31,7 @@ export const getPermisos = async () => {
   }
 };
 
-export const addPermiso = async ({ empleadoId, fecha, fechaFin, hora, causa, motivo, comentario, origen }) => {
+export const addPermiso = async ({ empleadoId, fecha, fechaFin, hora, causa, motivo, comentario, origen, estado }) => {
   const { data, error } = await supabase
     .from("permisos")
     .insert({
@@ -45,6 +45,10 @@ export const addPermiso = async ({ empleadoId, fecha, fechaFin, hora, causa, mot
       motivo,
       comentario,
       origen: origen || "empleado",
+      // Sin estado: la base lo deja en 'pendiente' (default). Gestión lo usa para
+      // justificar una falta ya aprobada de una — no tiene sentido pedirle a RH que
+      // apruebe su propia corrección.
+      ...(estado ? { estado } : {}),
     })
     .select(SELECT_CON_EMPLEADO)
     .single();

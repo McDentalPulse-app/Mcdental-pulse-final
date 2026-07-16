@@ -31,7 +31,7 @@ export default function PsicologaLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
   const { encuestas, mensajes, notas, permisos, descuentos, reconocimientos, reportesConfidenciales, vacaciones, horarios, setHorarios, archivosExpediente, avisos } = globals;
-  const { restablecerPasswordUsuario, addNota, sendMensaje, marcarMensajesLeidos, addReconocimiento, subirArchivoExpediente, addAviso, updateAviso, deleteAviso } = actions;
+  const { restablecerPasswordUsuario, addNota, sendMensaje, marcarMensajesLeidos, addReconocimiento, subirArchivoExpediente, addAviso, updateAviso, deleteAviso, justificarFalta } = actions;
   const { ofrecerPush, activarAvisos, cerrarOfertaPush } = useAvisoPush();
 
   return (
@@ -49,7 +49,7 @@ export default function PsicologaLayout({ user, globals, actions }) {
             <Route path="expedientes" element={<ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} archivosExpediente={archivosExpediente} onSubirArchivoExpediente={subirArchivoExpediente} />} />
             <Route path="mensajes" element={<Mensajes user={user} mensajes={mensajes} onSend={sendMensaje} onMarkRead={marcarMensajesLeidos}/>} />
             <Route path="usuarios" element={<GestionUsuarios />} />
-            <Route path="asistencia" element={<AsistenciaPanel usuarios={USERS} horarios={horarios} permisos={permisos} vacaciones={vacaciones} />} />
+            <Route path="asistencia" element={<AsistenciaPanel usuarios={USERS} horarios={horarios} permisos={permisos} vacaciones={vacaciones} puedeJustificar onJustificarFalta={justificarFalta} />} />
             <Route path="sucursales" element={<GestionSucursales />} />
             <Route path="horarios" element={<GestionHorarios usuarios={USERS} horarios={horarios} setHorarios={setHorarios} />} />
             <Route path="importar-horarios" element={<ImportarHorarios usuarios={USERS} />} />

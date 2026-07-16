@@ -31,7 +31,7 @@ export default function AdminLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
   const { encuestas, mensajes, notas, permisos, descuentos, reconocimientos, reportesConfidenciales, vacaciones, archivosExpediente, horarios, setHorarios, avisos } = globals;
-  const { restablecerPasswordUsuario, subirArchivoExpediente, addReconocimiento, addAviso, updateAviso, deleteAviso } = actions;
+  const { restablecerPasswordUsuario, subirArchivoExpediente, addReconocimiento, addAviso, updateAviso, deleteAviso, justificarFalta } = actions;
   const { ofrecerPush, activarAvisos, cerrarOfertaPush } = useAvisoPush();
 
   return (
@@ -46,8 +46,9 @@ export default function AdminLayout({ user, globals, actions }) {
             <Route path="empleados" element={<EmpleadosList encuestas={encuestas} notas={notas} role="admin" currentUser={user} onRestablecerPassword={restablecerPasswordUsuario} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} />} />
             <Route path="usuarios" element={<GestionUsuarios />} />
             {/* puedeAnular: admin también puede anular checadas (migración 060 amplía el
-                UPDATE de asistencias, antes exclusivo de RH). */}
-            <Route path="asistencia" element={<AsistenciaPanel usuarios={USERS} horarios={horarios} permisos={permisos} vacaciones={vacaciones} puedeAnular />} />
+                UPDATE de asistencias, antes exclusivo de RH). puedeJustificar: admin/rh/
+                psicologa pueden justificar una falta directo (migración 061). */}
+            <Route path="asistencia" element={<AsistenciaPanel usuarios={USERS} horarios={horarios} permisos={permisos} vacaciones={vacaciones} puedeAnular puedeJustificar onJustificarFalta={justificarFalta} />} />
             <Route path="sucursales" element={<GestionSucursales />} />
             <Route path="horarios" element={<GestionHorarios usuarios={USERS} horarios={horarios} setHorarios={setHorarios} />} />
             <Route path="importar-horarios" element={<ImportarHorarios usuarios={USERS} />} />

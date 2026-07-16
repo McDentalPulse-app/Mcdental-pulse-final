@@ -176,6 +176,30 @@ export const useAppActions = () => {
     }
   };
 
+  // Justifica una falta directamente (admin/rh/psicologa), sin pasar por el flujo normal
+  // de solicitud+aprobación de permisos: se crea ya 'aprobado'. Reusa la misma justificación
+  // que clasificarDia() ya busca (permiso aprobado que cubre la fecha) — cero lógica nueva
+  // en el cálculo de asistencia, solo una forma de insertar el permiso.
+  const justificarFalta = async ({ empleadoId, fecha, motivo }) => {
+    try {
+      const nuevo = await addPermiso({
+        empleadoId,
+        fecha,
+        fechaFin: null,
+        causa: "otro",
+        motivo: "Corrección de falta",
+        comentario: motivo,
+        origen: "rh",
+        estado: "aprobado",
+      });
+      setPermisos((prev) => [nuevo, ...prev]);
+      notify.toast.success("Falta justificada.");
+    } catch (error) {
+      console.error("Error justificando falta:", error);
+      notify.toast.error(error.message || "No se pudo justificar la falta.");
+    }
+  };
+
   const updateDescuentoEstado = async (id, estado) => {
     const previo = descuentos.find(d => d.id === id);
     setDescuentos(prev => prev.map(d => d.id === id ? { ...d, estado } : d));
@@ -352,6 +376,7 @@ export const useAppActions = () => {
     addReconocimiento,
     subirArchivoExpediente,
     registrarChecada,
+    justificarFalta,
     addAviso,
     updateAviso,
     deleteAviso,

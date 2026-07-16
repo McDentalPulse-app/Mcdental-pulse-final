@@ -92,7 +92,7 @@ const tituloCeldaCalendario = (d) => {
  * existen de verdad (dentro del rango cargado y desde la fecha de ingreso); los que
  * faltan (antes de ingresar, o después de "hoy" si es el mes en curso) se pintan como
  * celda vacía, sin color ni tooltip. */
-const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia }) => {
+const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustificar, onJustificarDia }) => {
   const [anio, mes] = mesInicio.split("-").map(Number);
   const diasEnMes = new Date(Date.UTC(anio, mes, 0)).getUTCDate();
   const columnaInicial = diaISO(mesInicio); // 1=lunes … 7=domingo
@@ -122,16 +122,22 @@ const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia }) => {
             </div>
           );
         }
+        // Anular (hay checada) y justificar (falta, sin checada) son mutuamente
+        // excluyentes: una falta es justo un día SIN entrada ni salida.
         const anulable = puedeAnular && (c.entrada || c.salida);
+        const justificable = !anulable && puedeJustificar && c.estado === ESTADOS_DIA.FALTA;
+        const accionable = anulable || justificable;
+        const accion = anulable ? () => onAnularDia(c) : justificable ? () => onJustificarDia(c) : undefined;
+        const pista = anulable ? "clic para anular" : justificable ? "clic para justificar" : null;
         return (
           <div
             key={c.fecha}
-            className={`asistencia-calendario-celda asistencia-calendario-celda--${c.estado}${anulable ? " asistencia-calendario-celda--anulable" : ""}`}
-            title={anulable ? `${tituloCeldaCalendario(c)} · clic para anular` : tituloCeldaCalendario(c)}
-            role={anulable ? "button" : undefined}
-            tabIndex={anulable ? 0 : undefined}
-            onClick={anulable ? () => onAnularDia(c) : undefined}
-            onKeyDown={anulable ? (e) => { if (e.key === "Enter" || e.key === " ") onAnularDia(c); } : undefined}
+            className={`asistencia-calendario-celda asistencia-calendario-celda--${c.estado}${accionable ? " asistencia-calendario-celda--anulable" : ""}`}
+            title={pista ? `${tituloCeldaCalendario(c)} · ${pista}` : tituloCeldaCalendario(c)}
+            role={accionable ? "button" : undefined}
+            tabIndex={accionable ? 0 : undefined}
+            onClick={accion}
+            onKeyDown={accionable ? (e) => { if (e.key === "Enter" || e.key === " ") accion(); } : undefined}
           >
             <span className="asistencia-calendario-numero">{Number(c.fecha.slice(-2))}</span>
           </div>
@@ -141,7 +147,7 @@ const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia }) => {
   );
 };
 
-export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos = [], vacaciones = [], puedeAnular = false }) {
+export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos = [], vacaciones = [], puedeAnular = false, puedeJustificar = false, onJustificarFalta }) {
   const { toast, prompt, confirm } = useNotification();
 
   const [desde, setDesde] = useState(() => primerDiaDeMes(hoyClinica()));
@@ -344,6 +350,20 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
     handleAnular(objetivo);
   };
 
+  // Justifica una falta (día sin ninguna checada) directo, sin pasar por el flujo normal
+  // de solicitud+aprobación de permisos — para corregir un error del sistema (checador
+  // que falló, horario mal cargado), no una ausencia real que alguien tenga que pedir.
+  const handleJustificarDia = async (dia) => {
+    const motivo = await prompt({
+      title: "Justificar falta",
+      description: `¿Por qué se justifica la falta del ${dia.fecha}?`,
+      confirmText: "Justificar",
+    });
+    if (motivo === null) return; // canceló
+    await onJustificarFalta?.({ empleadoId: dia.empleadoId, fecha: dia.fecha, motivo: motivo || "Sin especificar" });
+    cargar();
+  };
+
   const exportarCSV = () => {
     const filas = [
       ["Empleado", "Sucursal", "Periodo", "Presentes", "Retardos", "Faltas", "Justificados", "Horas trabajadas", "Puntualidad %"],
@@ -472,6 +492,7 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
         <StatCard iconName="clock" value={totales.retardos} label="Retardos" valueClass="admin-stat-value--amber" />
         <StatCard iconName="alert" value={totales.faltas} label="Faltas" valueClass="admin-stat-value--red" />
         <StatCard iconName="vacation" value={totales.justificados} label="Justificados" valueClass="admin-stat-value--blue" />
+        <StatCard iconName="history" value={totales.incompletos} label="Sin salida" valueClass="admin-stat-value--aqua" />
       </div>
 
       {paraRevisar.length > 0 && (
@@ -547,6 +568,8 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
                     mesInicio={primerDiaDeMes(desde)}
                     puedeAnular={puedeAnular}
                     onAnularDia={handleAnularDia}
+                    puedeJustificar={puedeJustificar}
+                    onJustificarDia={(dia) => handleJustificarDia({ ...dia, empleadoId: empleado.id })}
                   />
                 ) : (
                   <div className="asistencia-periodos">

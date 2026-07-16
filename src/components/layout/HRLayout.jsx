@@ -35,7 +35,7 @@ export default function HRLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
   const { vacaciones, permisos, descuentos, calendarioExtra, reconocimientos, encuestas, mensajes, notas, reportesConfidenciales, archivosExpediente, horarios, setHorarios, avisos } = globals;
-  const { updateVacacionEstado, updatePermisoEstado, updateDescuentoEstado, addDescuento, addReconocimiento, subirArchivoExpediente, addAviso, updateAviso, deleteAviso } = actions;
+  const { updateVacacionEstado, updatePermisoEstado, updateDescuentoEstado, addDescuento, addReconocimiento, subirArchivoExpediente, addAviso, updateAviso, deleteAviso, justificarFalta } = actions;
   const { ofrecerPush, activarAvisos, cerrarOfertaPush } = useAvisoPush();
 
   return (
@@ -49,7 +49,7 @@ export default function HRLayout({ user, globals, actions }) {
             <Route path="ai" element={<AIEngine encuestas={encuestas} mensajes={mensajes} notas={notas} userRole="rh" permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>} />
             <Route path="empleados" element={<EmpleadosList encuestas={encuestas} notas={notas} role="rh" currentUser={user} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} />} />
             <Route path="usuarios" element={<GestionUsuarios />} />
-            <Route path="asistencia" element={<AsistenciaPanel usuarios={USERS} horarios={horarios} permisos={permisos} vacaciones={vacaciones} puedeAnular />} />
+            <Route path="asistencia" element={<AsistenciaPanel usuarios={USERS} horarios={horarios} permisos={permisos} vacaciones={vacaciones} puedeAnular puedeJustificar onJustificarFalta={justificarFalta} />} />
             <Route path="horarios" element={<GestionHorarios usuarios={USERS} horarios={horarios} setHorarios={setHorarios} />} />
             <Route path="importar-horarios" element={<ImportarHorarios usuarios={USERS} />} />
             <Route path="calibracion" element={<Calibracion usuarios={USERS} />} />
