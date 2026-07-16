@@ -273,6 +273,19 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
     [porEmpleado]
   );
 
+  // Todas las faltas VISIBLES ahora mismo (respeta los filtros ya puestos: rango de
+  // fechas, empleado, sucursal, búsqueda) — es lo que hace que "justificar en bloque"
+  // sea preciso: filtrás a quién/cuándo aplica, y el botón actúa solo sobre eso.
+  const faltasVisibles = useMemo(
+    () =>
+      porEmpleado.flatMap(({ empleado, dias }) =>
+        dias
+          .filter((d) => d.estado === ESTADOS_DIA.FALTA)
+          .map((d) => ({ empleadoId: empleado.id, empleado: empleado.name, fecha: d.fecha }))
+      ),
+    [porEmpleado]
+  );
+
   // Un mismo teléfono checando a dos personas distintas el mismo día. Es la señal más
   // fuerte de suplantación y necesita ver el conjunto del día, no una checada suelta.
   const compartidos = useMemo(() => detectarDispositivosCompartidos(checadas), [checadas]);
@@ -364,6 +377,41 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
     cargar();
   };
 
+  // Justificar TODAS las faltas visibles de una — un feriado que nadie cargó, un corte de
+  // luz, el primer día de uso real del sistema. Respeta los filtros puestos (fechas,
+  // empleado, sucursal): si querés acotarlo a una persona o una sucursal, filtrá primero.
+  const handleJustificarTodas = async () => {
+    if (!faltasVisibles.length) return;
+
+    const nombres = [...new Set(faltasVisibles.map((f) => f.empleado))];
+    const ok = await confirm({
+      title: "Justificar faltas en bloque",
+      description: `Se van a justificar ${faltasVisibles.length} falta(s) de ${nombres.length} empleado(s) en el período y filtros actuales (${desde} a ${hasta}). Esto no se puede deshacer en bloque, solo una por una.`,
+      variant: "warning",
+      confirmText: "Sí, justificar todas",
+    });
+    if (!ok) return;
+
+    const motivo = await prompt({
+      title: "Motivo",
+      description: "Un solo motivo para todas las faltas que se van a justificar.",
+      confirmText: "Justificar",
+    });
+    if (motivo === null) return;
+
+    let exitosas = 0;
+    for (const f of faltasVisibles) {
+      try {
+        await onJustificarFalta?.({ empleadoId: f.empleadoId, fecha: f.fecha, motivo: motivo || "Sin especificar" });
+        exitosas += 1;
+      } catch {
+        // onJustificarFalta ya muestra su propio toast de error; se sigue con las demás.
+      }
+    }
+    toast.success(`${exitosas} de ${faltasVisibles.length} faltas justificadas.`);
+    cargar();
+  };
+
   const exportarCSV = () => {
     const filas = [
       ["Empleado", "Sucursal", "Periodo", "Presentes", "Retardos", "Faltas", "Justificados", "Horas trabajadas", "Puntualidad %"],
@@ -405,6 +453,11 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
         title="Asistencia"
         subtitle={granularidad === "dia" ? nombreMes(desde) : `Del ${desde} al ${hasta}`}
       >
+        {puedeJustificar && faltasVisibles.length > 0 && (
+          <button type="button" className="mc-btn-outline mc-btn-outline--danger" onClick={handleJustificarTodas}>
+            <Icon name="check" size={16} /> Justificar {faltasVisibles.length} falta{faltasVisibles.length === 1 ? "" : "s"}
+          </button>
+        )}
         <button type="button" className="mc-btn-outline" onClick={exportarCSV} disabled={cargando}>
           <Icon name="file" size={16} /> Exportar CSV
         </button>
