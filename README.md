@@ -63,6 +63,18 @@ src/
 
 ## Changelog
 
+### 2026-07-16 · Hotfix: la CSP de la auditoría rompía Realtime y fuentes
+
+> La `Content-Security-Policy` agregada en la auditoría de seguridad de este mismo día
+> bloqueaba en producción: el WebSocket de Supabase Realtime (`connect-src` no cubre
+> `wss://` con solo `https://*.supabase.co` — son esquemas distintos para CSP) y la carga
+> de Fira Code/Fira Sans desde Google Fonts (`style-src` sin `fonts.googleapis.com`,
+> `font-src` sin `fonts.gstatic.com`). Se detectó por el propio usuario viendo la consola
+> en producción, no en esta sesión. Corregido agregando los tres orígenes faltantes.
+> **Lección**: `vercel.json` no aplica en `npm run dev`, así que una CSP nueva solo se
+> valida de verdad mirando la consola en producción tras el deploy — no alcanza con que
+> compile.
+
 ### 2026-07-16 · Aviso de actualización de la PWA
 
 > El service worker ya se actualizaba solo (`skipWaiting` + `clientsClaim`), pero eso solo
