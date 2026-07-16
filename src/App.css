@@ -2959,6 +2959,19 @@
   font-weight: 600;
 }
 
+.mc-toast-action {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--mc-marca-texto, var(--mc-verde-medio));
+  cursor: pointer;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .mc-toast-close {
   flex-shrink: 0;
   border: none;

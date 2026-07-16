@@ -2,6 +2,7 @@ import React, { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { registerSW } from 'virtual:pwa-register'
+import { notify } from './utils/notify'
 import './index.css'
 import './App.css'
 import './styles/mobile-polish.css'
@@ -75,6 +76,31 @@ class ErrorBoundary extends React.Component {
 
 if ('serviceWorker' in navigator) {
   registerSW({ immediate: true })
+
+  // sw.js ya se activa solo (skipWaiting + clientsClaim): el navegador pasa el control al SW
+  // nuevo sin pedir permiso. Pero el JS que la pestaña ya tiene cargado en memoria sigue siendo
+  // el viejo hasta que se recarga. 'controllerchange' es exactamente el momento del relevo —
+  // ahí se avisa con un toast, en vez de recargar solo y cortarle a alguien una foto a medias.
+  let avisado = false
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (avisado) return
+    avisado = true
+    notify.toast.update('Hay una versión nueva de la app.', {
+      label: 'Actualizar',
+      onClick: () => window.location.reload(),
+    })
+  })
+
+  // Un PWA en el celular casi nunca navega ni se cierra del todo, así que el navegador no
+  // revisa solo si hay una versión nueva (eso solo pasa en la navegación). Se fuerza el chequeo
+  // cada 10 minutos y cada vez que la app vuelve a primer plano.
+  navigator.serviceWorker.ready.then((registration) => {
+    const revisar = () => registration.update().catch(() => {})
+    setInterval(revisar, 10 * 60 * 1000)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') revisar()
+    })
+  })
 }
 
 createRoot(document.getElementById('root')).render(

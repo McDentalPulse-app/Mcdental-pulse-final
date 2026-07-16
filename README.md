@@ -63,6 +63,25 @@ src/
 
 ## Changelog
 
+### 2026-07-16 · Aviso de actualización de la PWA
+
+> El service worker ya se actualizaba solo (`skipWaiting` + `clientsClaim`), pero eso solo
+> mueve el *worker*: el JS que la pestaña tenía cargado en memoria seguía siendo el viejo
+> hasta un reload, y en un PWA de celular —que casi nunca navega ni se cierra del todo— el
+> navegador tampoco revisaba solo si había versión nueva. Los usuarios terminaban con la
+> app desactualizada sin saber que había que borrar caché a mano.
+
+- **Chequeo activo, no pasivo.** `registration.update()` cada 10 minutos y cada vez que la
+  app vuelve a primer plano (`visibilitychange`) — antes solo se revisaba en una navegación
+  completa, que en un PWA que se queda abierto en el celular casi no pasa.
+- **Aviso en el momento exacto del relevo.** `navigator.serviceWorker.oncontrollerchange`
+  dispara justo cuando el SW nuevo toma el control. Ahí se muestra un toast — no un reload
+  forzado, que podría cortarle a alguien una foto a medias en el checador.
+- **Un toast nuevo: persistente y con acción.** `notify.toast.update(mensaje, { label,
+  onClick })` reusa el mismo componente `Toast` de siempre (mismo estilo, mismo
+  contenedor), solo que no se autocierra a los 4.2s y suma un botón. Sin dashboard nuevo ni
+  componente aparte.
+
 ### 2026-07-16 · Auditoría de seguridad: frontend, backend y base de datos
 
 > Tres auditorías en paralelo (frontend, API serverless, migraciones de Supabase) sobre el

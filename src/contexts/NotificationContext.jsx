@@ -17,9 +17,9 @@ export const NotificationProvider = ({ children }) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const pushToast = useCallback((message, type) => {
+  const pushToast = useCallback((message, type, options) => {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    setToasts((prev) => [...prev, { id, message, type }]);
+    setToasts((prev) => [...prev, { id, message, type, ...options }]);
   }, []);
 
   const toastApi = useCallback(
@@ -28,6 +28,10 @@ export const NotificationProvider = ({ children }) => {
       error: (message) => pushToast(message, "error"),
       warning: (message) => pushToast(message, "warning"),
       info: (message) => pushToast(message, "info"),
+      // Persistente (no se autocierra) y con un botón de acción: para avisos que necesitan un
+      // click, no que la persona los vea pasar. Único uso hoy: "hay una versión nueva".
+      update: (message, action) =>
+        pushToast(message, "info", { persistent: true, action }),
     }),
     [pushToast]
   );
