@@ -71,7 +71,12 @@ export default async function handler(req, res) {
   if (selfiePath) {
     const [carpeta, archivo] = String(selfiePath).split("/");
     const marca = Number(archivo?.split(".")[0]);
-    const FRESCURA_MS = 60 * 1000;
+    // 10 minutos, no 60 segundos: sigue acotando el replay (no se puede reusar una selfie
+    // de hace horas/días, que era el ataque real) sin depender de que el reloj del teléfono
+    // esté sincronizado al segundo con el servidor — un desfase de más de 10 min en un
+    // teléfono ya sería en sí mismo un problema mayor del dispositivo. 60s rechazaba
+    // checadas reales en teléfonos con el reloj desincronizado.
+    const FRESCURA_MS = 10 * 60 * 1000;
     if (carpeta !== quien.id || !marca || Date.now() - marca > FRESCURA_MS) {
       return res.status(403).json({ error: "La foto debe ser tuya y reciente. Vuelve a intentarlo." });
     }
