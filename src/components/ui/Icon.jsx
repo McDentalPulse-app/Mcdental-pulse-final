@@ -61,6 +61,7 @@ import {
   Camera,
   MapPin,
   ChevronDown,
+  RefreshCw,
 } from "lucide-react";
 
 const ICON_MAP = {
@@ -129,6 +130,7 @@ const ICON_MAP = {
   camera: Camera,
   mapPin: MapPin,
   chevronDown: ChevronDown,
+  refresh: RefreshCw,
 };
 
 const Icon = ({ name, size = 18, className = "", strokeWidth = 1.75, color }) => {

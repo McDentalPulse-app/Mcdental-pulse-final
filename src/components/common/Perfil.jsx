@@ -3,6 +3,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useGlobal } from "../../contexts/GlobalContext";
 import { useNotification } from "../../contexts/NotificationContext";
 import { notify } from "../../utils/notify";
+import { buscarActualizacion } from "../../utils/appUpdate";
 import { subirAvatarUsuario, quitarAvatarUsuario } from "../../services/supabase/avatarService";
 import { formatFechaIngreso, formatFechaCumpleanos, formatAntiguedadEmpleado } from "../../utils/helpers";
 import { normalizeSucursal } from "../../utils/constants";
@@ -27,8 +28,22 @@ export default function Perfil() {
   const { setUsuarios } = useGlobal();
   const { toast } = useNotification();
   const [subiendoFoto, setSubiendoFoto] = useState(false);
+  const [buscandoUpdate, setBuscandoUpdate] = useState(false);
 
   if (!user) return null;
+
+  // Escape hatch manual: el chequeo automático (cada 10min + al volver del background,
+  // en main.jsx) puede tardar en notar una versión nueva si el celular no vuelve a
+  // primer plano seguido. Este botón fuerza el mismo chequeo ya, sin esperar.
+  const handleBuscarActualizacion = async () => {
+    setBuscandoUpdate(true);
+    try {
+      await buscarActualizacion();
+    } catch {
+      setBuscandoUpdate(false);
+      toast.error("No se pudo comprobar si hay una versión nueva.");
+    }
+  };
 
   const propagarAvatar = (avatarUrl) => {
     setUser((prev) => (prev ? { ...prev, avatarUrl } : prev));
@@ -145,6 +160,26 @@ export default function Perfil() {
           <Icon name="lock" size={13} />
           Para cambiar tus datos (nombre, puesto, sucursal…) contacta a Recursos Humanos.
         </p>
+      </Card>
+
+      <Card className="perfil-info-card">
+        <div className="perfil-info-title">
+          <Icon name="refresh" size={16} />
+          <span>Actualizaciones</span>
+        </div>
+        <p className="perfil-info-note" style={{ marginBottom: 12 }}>
+          La app se actualiza sola en segundo plano. Si notas algo raro o querés forzar la
+          última versión ya, tocá el botón.
+        </p>
+        <button
+          type="button"
+          className="perfil-foto-btn perfil-foto-btn--ghost"
+          disabled={buscandoUpdate}
+          onClick={handleBuscarActualizacion}
+        >
+          <Icon name="refresh" size={15} />
+          {buscandoUpdate ? "Buscando..." : "Buscar actualización"}
+        </button>
       </Card>
     </div>
   );

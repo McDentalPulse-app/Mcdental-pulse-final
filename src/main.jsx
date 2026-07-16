@@ -96,6 +96,7 @@ if ('serviceWorker' in navigator) {
   // cada 10 minutos y cada vez que la app vuelve a primer plano.
   navigator.serviceWorker.ready.then((registration) => {
     const revisar = () => registration.update().catch(() => {})
+    revisar() // chequeo inmediato al cargar, no solo cada 10 min
     setInterval(revisar, 10 * 60 * 1000)
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') revisar()

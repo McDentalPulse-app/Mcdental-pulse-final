@@ -71,16 +71,21 @@ src/
 > navegador tampoco revisaba solo si había versión nueva. Los usuarios terminaban con la
 > app desactualizada sin saber que había que borrar caché a mano.
 
-- **Chequeo activo, no pasivo.** `registration.update()` cada 10 minutos y cada vez que la
-  app vuelve a primer plano (`visibilitychange`) — antes solo se revisaba en una navegación
-  completa, que en un PWA que se queda abierto en el celular casi no pasa.
+- **Chequeo activo, no pasivo.** `registration.update()` al cargar, cada 10 minutos y cada
+  vez que la app vuelve a primer plano (`visibilitychange`) — antes solo se revisaba en una
+  navegación completa, que en un PWA que se queda abierto en el celular casi no pasa.
 - **Aviso en el momento exacto del relevo.** `navigator.serviceWorker.oncontrollerchange`
   dispara justo cuando el SW nuevo toma el control. Ahí se muestra un toast — no un reload
   forzado, que podría cortarle a alguien una foto a medias en el checador.
 - **Un toast nuevo: persistente y con acción.** `notify.toast.update(mensaje, { label,
   onClick })` reusa el mismo componente `Toast` de siempre (mismo estilo, mismo
-  contenedor), solo que no se autocierra a los 4.2s y suma un botón. Sin dashboard nuevo ni
-  componente aparte.
+  contenedor), solo que no se autocierra a los 4.2s y suma un botón.
+- **Escape hatch manual, en "Mi perfil" (los 4 roles).** El chequeo automático depende de
+  que el celular vuelva a primer plano o pasen los 10 minutos — probado en un Android real,
+  el aviso automático no siempre llega a tiempo de notarse. Se agrega un botón "Buscar
+  actualización" que fuerza el mismo chequeo (`registration.update()`) al toque y recarga,
+  sin esperar. `src/utils/appUpdate.js` centraliza la lógica para que el chequeo automático
+  y el manual no diverjan.
 
 ### 2026-07-16 · Auditoría de seguridad: frontend, backend y base de datos
 
