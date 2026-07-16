@@ -63,6 +63,41 @@ src/
 
 ## Changelog
 
+### 2026-07-16 · Hotfix del checador + sidebar seccionada + filtros de Asistencia
+
+> El usuario reportó "no se registran los datos de asistencia" junto con tres pedidos de UI.
+> Investigando ese reporte apareció una segunda regresión de la auditoría de seguridad de
+> hoy mismo — no algo que el usuario supiera nombrar, la encontró la investigación.
+
+- **🔴 Hotfix: `api/checar.js` rechazaba checadas reales.** El chequeo de "frescura" del
+  `selfiePath` agregado en la auditoría de hoy comparaba `Date.now()` del servidor contra un
+  timestamp puesto por el **navegador del empleado** en el nombre del archivo. Con 60
+  segundos de margen, cualquier teléfono con el reloj desincronizado —común en Android de
+  gama baja— rechazaba la checada siempre, sin importar que la persona estuviera al frente
+  de la cámara. Confirmado por el usuario: ni admin/RH ni el propio empleado en "Historial"
+  veían checadas nuevas, lo que descarta un problema de RLS y apunta a que la fila nunca se
+  llegaba a crear. Ventana ampliada a 10 minutos — sigue acotando el replay (no se puede
+  reusar una selfie de horas/días atrás) sin depender de que el reloj del teléfono esté
+  sincronizado al segundo.
+- **Sidebar de escritorio seccionada.** Cada ítem de navegación ya traía un campo `group`
+  opcional, usado hasta ahora solo para agrupar la hoja "Más" del tabbar móvil — el desktop
+  lo ignoraba y pintaba 20-24 ítems como lista plana. Se generalizó la función de agrupado
+  para reusarla también en desktop: cero cambios en los datos de navegación, mismo campo,
+  ahora leído en los dos lugares.
+- **Filtros de Asistencia sin estilo.** "Agrupar por" y "Empleado" (y los inputs de fecha)
+  no tenían `className`: quedaban con el widget nativo del navegador en vez del estilo del
+  resto de la app. Se aplicaron las clases `list-filter-select`/`list-filter-input`, que ya
+  existían y ya se usan en otras pantallas.
+- **Búsqueda + filtro por sucursal en Asistencia.** Mismo patrón que `GestionUsuarios.jsx`
+  (`list-filters-grid--2col` + `table-search` + `SUCURSALES`), alimentando el `useMemo` de
+  `empleados` — el resto de la lógica de días/resumen/CSV no se tocó.
+
+**Pendiente de confirmar por el usuario**: probar una checada real en un teléfono de la
+clínica tras el deploy. Si el reloj de algún dispositivo está desfasado más de 10 minutos,
+seguiría fallando — en ese caso el fix correcto es comparar contra la fecha real de subida
+en Storage (metadata del servidor) en vez del nombre del archivo, que no depende de ningún
+reloj de cliente pero cuesta una llamada extra a Storage por checada.
+
 ### 2026-07-16 · Hotfix: la CSP de la auditoría rompía Realtime y fuentes
 
 > La `Content-Security-Policy` agregada en la auditoría de seguridad de este mismo día
