@@ -8436,6 +8436,13 @@
   gap: 14px;
 }
 
+/* .list-filters-grid es display:grid con columnas fr; como hijo directo de un flex
+   container (.asistencia-filtros) necesita flex-basis:100% explícito, si no el fr no
+   tiene contra qué resolverse y el grid queda angosto. */
+.asistencia-filtros .list-filters-grid {
+  flex: 1 1 100%;
+}
+
 .asistencia-filtros label {
   display: flex;
   flex-direction: column;

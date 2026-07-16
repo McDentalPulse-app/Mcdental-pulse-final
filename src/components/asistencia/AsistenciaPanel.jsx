@@ -21,6 +21,7 @@ import {
   ESTADOS_DIA,
   TZ_CLINICA,
 } from "../../utils/asistencia";
+import { SUCURSALES, normalizeSucursal } from "../../utils/constants";
 
 const GRANULARIDADES = [
   { valor: "dia", label: "Día" },
@@ -142,6 +143,8 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
   const [hasta, setHasta] = useState(hoyClinica());
   const [granularidad, setGranularidad] = useState("dia");
   const [empleadoId, setEmpleadoId] = useState("");
+  const [busqueda, setBusqueda] = useState("");
+  const [filtroSucursal, setFiltroSucursal] = useState("Todas");
 
   const [checadas, setChecadas] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -226,10 +229,14 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
     return desuscribir;
   }, [cargar, desde, hasta]);
 
-  const empleados = useMemo(
-    () => usuarios.filter((u) => !u.inactivo).sort((a, b) => (a.name || "").localeCompare(b.name || "")),
-    [usuarios]
-  );
+  const empleados = useMemo(() => {
+    const texto = busqueda.trim().toLowerCase();
+    return usuarios
+      .filter((u) => !u.inactivo)
+      .filter((u) => !texto || (u.name || "").toLowerCase().includes(texto))
+      .filter((u) => filtroSucursal === "Todas" || normalizeSucursal(u.sucursal) === filtroSucursal)
+      .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  }, [usuarios, busqueda, filtroSucursal]);
 
   // Los días clasificados, por empleado. Es donde vive todo el criterio (falta vs
   // justificado vs retardo) y está probado en src/utils/asistencia.test.js.
@@ -361,6 +368,25 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
       </PageHeader>
 
       <Card className="asistencia-filtros">
+        <div className="list-filters-grid list-filters-grid--2col">
+          <input
+            type="text"
+            className="table-search"
+            placeholder="Buscar empleado por nombre..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+          />
+          <select
+            className="list-filter-select"
+            value={filtroSucursal}
+            onChange={(e) => setFiltroSucursal(e.target.value)}
+          >
+            <option value="Todas">Todas las sucursales</option>
+            {SUCURSALES.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </div>
         {granularidad === "dia" ? (
           // En "día" el detalle es un calendario: se navega mes a mes en vez de un
           // rango libre, que no tendría cómo dibujarse en una cuadrícula.
@@ -383,17 +409,17 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
           <>
             <label>
               Desde
-              <input type="date" value={desde} max={hasta} onChange={(e) => setDesde(e.target.value)} />
+              <input type="date" className="list-filter-input" value={desde} max={hasta} onChange={(e) => setDesde(e.target.value)} />
             </label>
             <label>
               Hasta
-              <input type="date" value={hasta} min={desde} max={hoyClinica()} onChange={(e) => setHasta(e.target.value)} />
+              <input type="date" className="list-filter-input" value={hasta} min={desde} max={hoyClinica()} onChange={(e) => setHasta(e.target.value)} />
             </label>
           </>
         )}
         <label>
           Agrupar por
-          <select value={granularidad} onChange={(e) => cambiarGranularidad(e.target.value)}>
+          <select className="list-filter-select" value={granularidad} onChange={(e) => cambiarGranularidad(e.target.value)}>
             {GRANULARIDADES.map((g) => (
               <option key={g.valor} value={g.valor}>{g.label}</option>
             ))}
@@ -401,7 +427,7 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
         </label>
         <label>
           Empleado
-          <select value={empleadoId} onChange={(e) => setEmpleadoId(e.target.value)}>
+          <select className="list-filter-select" value={empleadoId} onChange={(e) => setEmpleadoId(e.target.value)}>
             <option value="">Todos</option>
             {empleados.map((u) => (
               <option key={u.id} value={u.id}>{u.name}</option>
