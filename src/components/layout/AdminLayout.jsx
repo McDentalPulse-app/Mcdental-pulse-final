@@ -45,10 +45,9 @@ export default function AdminLayout({ user, globals, actions }) {
             <Route path="ai" element={<AIEngine encuestas={encuestas} mensajes={mensajes} notas={notas} userRole="admin" permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>} />
             <Route path="empleados" element={<EmpleadosList encuestas={encuestas} notas={notas} role="admin" currentUser={user} onRestablecerPassword={restablecerPasswordUsuario} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} />} />
             <Route path="usuarios" element={<GestionUsuarios />} />
-            {/* Sin puedeAnular: el UPDATE de asistencias es exclusivo de RH en el RLS
-                (migración 036), igual que ya pasa con permisos y vacaciones. Ofrecerle a
-                admin un botón de anular que la base va a rechazar sería mentirle. */}
-            <Route path="asistencia" element={<AsistenciaPanel usuarios={USERS} horarios={horarios} permisos={permisos} vacaciones={vacaciones} />} />
+            {/* puedeAnular: admin también puede anular checadas (migración 060 amplía el
+                UPDATE de asistencias, antes exclusivo de RH). */}
+            <Route path="asistencia" element={<AsistenciaPanel usuarios={USERS} horarios={horarios} permisos={permisos} vacaciones={vacaciones} puedeAnular />} />
             <Route path="sucursales" element={<GestionSucursales />} />
             <Route path="horarios" element={<GestionHorarios usuarios={USERS} horarios={horarios} setHorarios={setHorarios} />} />
             <Route path="importar-horarios" element={<ImportarHorarios usuarios={USERS} />} />
