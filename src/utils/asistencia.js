@@ -29,7 +29,7 @@ export const TZ_CLINICA = "America/Monterrey";
  * corte, cada día entre "hoy" y el arranque real se clasificaría como FALTA (hay horario,
  * no hay checada), y nadie faltó a un sistema que todavía no usaba.
  */
-export const FECHA_INICIO_ASISTENCIA = "2026-07-20";
+export const FECHA_INICIO_ASISTENCIA = "2026-07-16";
 
 export const ESTADOS_DIA = {
   PRESENTE: "presente",
