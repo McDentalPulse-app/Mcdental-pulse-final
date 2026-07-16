@@ -283,12 +283,13 @@ export const useAppActions = () => {
    * Devuelve la fila registrada para que la pantalla pueda decirle al empleado qué pasó
    * con su ubicación, o null si falló.
    */
-  const registrarChecada = async ({ tipo, coords, selfieBlob, deviceId }) => {
+  const registrarChecada = async ({ tipo, coords, selfieBlob, retoBlob, deviceId }) => {
     try {
       const checada = await registrarChecadaDb({
         tipo,
         coords,
         selfieBlob,
+        retoBlob,
         deviceId,
         empleadoId: user?.id,
       });
