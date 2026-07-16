@@ -85,7 +85,7 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (avisado) return
     avisado = true
-    notify.toast.update('Hay una versión nueva de la app.', {
+    notify.toast.update('Hay una versión nueva de la app. Tocá para verla.', {
       label: 'Actualizar',
       onClick: () => window.location.reload(),
     })
