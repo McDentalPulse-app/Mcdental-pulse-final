@@ -8563,6 +8563,18 @@
 .asistencia-calendario-celda--justificado { background: var(--mc-info-bg); color: var(--mc-info-texto); }
 .asistencia-calendario-celda--descanso { background: transparent; color: var(--mc-texto-apagado); opacity: 0.6; }
 
+/* Admin/RH: clic en un día con checada para anularla (no solo las marcadas sospechosas). */
+.asistencia-calendario-celda--anulable {
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 1px;
+  transition: outline-color 0.15s;
+}
+.asistencia-calendario-celda--anulable:hover,
+.asistencia-calendario-celda--anulable:focus-visible {
+  outline-color: var(--mc-rojo-apagado);
+}
+
 @media (max-width: 480px) {
   .asistencia-calendario-celda { font-size: 0.72rem; border-radius: 6px; }
   .asistencia-calendario-encabezado { font-size: 0.65rem; }

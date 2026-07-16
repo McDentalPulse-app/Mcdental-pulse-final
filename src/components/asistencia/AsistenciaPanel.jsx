@@ -92,7 +92,7 @@ const tituloCeldaCalendario = (d) => {
  * existen de verdad (dentro del rango cargado y desde la fecha de ingreso); los que
  * faltan (antes de ingresar, o después de "hoy" si es el mes en curso) se pintan como
  * celda vacía, sin color ni tooltip. */
-const CalendarioMes = ({ dias, mesInicio }) => {
+const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia }) => {
   const [anio, mes] = mesInicio.split("-").map(Number);
   const diasEnMes = new Date(Date.UTC(anio, mes, 0)).getUTCDate();
   const columnaInicial = diaISO(mesInicio); // 1=lunes … 7=domingo
@@ -122,11 +122,16 @@ const CalendarioMes = ({ dias, mesInicio }) => {
             </div>
           );
         }
+        const anulable = puedeAnular && (c.entrada || c.salida);
         return (
           <div
             key={c.fecha}
-            className={`asistencia-calendario-celda asistencia-calendario-celda--${c.estado}`}
-            title={tituloCeldaCalendario(c)}
+            className={`asistencia-calendario-celda asistencia-calendario-celda--${c.estado}${anulable ? " asistencia-calendario-celda--anulable" : ""}`}
+            title={anulable ? `${tituloCeldaCalendario(c)} · clic para anular` : tituloCeldaCalendario(c)}
+            role={anulable ? "button" : undefined}
+            tabIndex={anulable ? 0 : undefined}
+            onClick={anulable ? () => onAnularDia(c) : undefined}
+            onKeyDown={anulable ? (e) => { if (e.key === "Enter" || e.key === " ") onAnularDia(c); } : undefined}
           >
             <span className="asistencia-calendario-numero">{Number(c.fecha.slice(-2))}</span>
           </div>
@@ -137,7 +142,7 @@ const CalendarioMes = ({ dias, mesInicio }) => {
 };
 
 export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos = [], vacaciones = [], puedeAnular = false }) {
-  const { toast, prompt } = useNotification();
+  const { toast, prompt, confirm } = useNotification();
 
   const [desde, setDesde] = useState(() => primerDiaDeMes(hoyClinica()));
   const [hasta, setHasta] = useState(hoyClinica());
@@ -319,6 +324,24 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
     } catch (e) {
       toast.error(e?.message || "No se pudo anular la checada.");
     }
+  };
+
+  // Anular desde el calendario: a diferencia de "requiere revisión" (solo checadas
+  // marcadas como sospechosas), esto deja anular CUALQUIER checada — el caso típico es
+  // limpiar un registro de prueba o un error que nunca disparó ninguna alerta.
+  const handleAnularDia = async (dia) => {
+    if (!dia.entrada && !dia.salida) return;
+    let objetivo = dia.entrada || dia.salida;
+    if (dia.entrada && dia.salida) {
+      const esEntrada = await confirm({
+        title: "¿Qué checada anular?",
+        description: `${dia.fecha} tiene entrada y salida registradas.`,
+        confirmText: "Anular entrada",
+        cancelText: "Anular salida",
+      });
+      objetivo = esEntrada ? dia.entrada : dia.salida;
+    }
+    handleAnular(objetivo);
   };
 
   const exportarCSV = () => {
@@ -519,7 +542,12 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
                 {granularidad === "dia" ? (
                   // A nivel día, el detalle es un calendario del mes en curso (la
                   // navegación de arriba ya garantiza que desde-hasta es un mes completo).
-                  <CalendarioMes dias={dias} mesInicio={primerDiaDeMes(desde)} />
+                  <CalendarioMes
+                    dias={dias}
+                    mesInicio={primerDiaDeMes(desde)}
+                    puedeAnular={puedeAnular}
+                    onAnularDia={handleAnularDia}
+                  />
                 ) : (
                   <div className="asistencia-periodos">
                     {grupos.map((g) => (
