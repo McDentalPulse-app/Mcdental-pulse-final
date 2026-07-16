@@ -78,13 +78,16 @@ export const retoAlAzar = () => (Math.random() < 0.5 ? POSE.DERECHA : POSE.IZQUI
 /**
  * Cada cuántas checadas se pide el reto.
  *
- * No en todas: la fricción diaria de 60 personas girando la cabeza dos veces al día, todos los
- * días, es un precio alto y acabaría con alguien buscando cómo saltárselo. Al azar, el tramposo
- * no sabe cuándo le va a tocar, así que necesita poder pasarlo SIEMPRE — y el que va de buena fe
- * casi nunca lo nota.
+ * ACTUALIZACIÓN (2026-07-16): estaba en 0.2 (1 de cada 5) para no cansar a la plantilla, pero
+ * eso deja 4 de cada 5 checadas SIN ninguna barrera contra una foto impresa o de pantalla —
+ * confirmado en vivo: una foto delante de la cámara dejó marcar asistencia. Hasta que exista
+ * un anti-spoofing real y calibrado (ver UMBRAL_ANTISPOOF_OBVIO en _rostro.js, todavía
+ * conservador), el reto es la única barrera contra "mostrar la foto de otro y girar tu propia
+ * cabeza" — así que se pide SIEMPRE. Más fricción diaria a cambio de cerrar el ataque más
+ * fácil de hacer. Bajarlo otra vez solo si el anti-spoofing calibrado lo hace innecesario.
  *
  * El sorteo tiene una regla que lo sostiene todo (ver api/reto.js): una vez que sale, SE QUEDA
  * PEGADO hasta que se pase. Si fallar el reto permitiera volver a tirar el dado, bastaría con
  * reintentar hasta que saliera "sin reto" — y el reto sería puro teatro.
  */
-export const PROBABILIDAD_RETO = 0.2;
+export const PROBABILIDAD_RETO = 1.0;

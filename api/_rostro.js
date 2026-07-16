@@ -61,6 +61,17 @@ const LADO_DET = 640;  // tamaño de entrada FIJO de este YuNet: no acepta otro
 export const UMBRAL_MISMA_PERSONA = 0.50;
 
 /**
+ * Piso MÍNIMO de anti-spoofing (2026-07-16). NO es el umbral calibrado del modelo (0.62,
+ * su default) — ese sigue apagado a propósito: activar sin 2-3 semanas de datos reales de
+ * esta clínica repetiría "el error del 0.363" (ver comentario en checar.js). Este piso es
+ * deliberadamente mucho más bajo: solo bloquea lo OBVIO (pantalla, papel liso, foto muy
+ * plana), la zona donde nunca debería caer una persona real así tenga mala luz. Mejor dejar
+ * pasar algo dudoso hoy que rechazar a alguien real el primer día. Subir con confianza una
+ * vez que Calibración tenga datos de verdad.
+ */
+export const UMBRAL_ANTISPOOF_OBVIO = 0.10;
+
+/**
  * Dónde deben acabar los 5 puntos de la cara en la imagen de 112x112. Es la plantilla
  * canónica de ArcFace, la misma que usa OpenCV, y el orden importa: ojo derecho de la
  * persona (izquierda de la imagen), ojo izquierdo, nariz, comisura derecha, comisura

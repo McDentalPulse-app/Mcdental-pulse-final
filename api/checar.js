@@ -1,5 +1,5 @@
 import { configOk, admin, quienLlama } from "./_auth.js";
-import { analizarFoto, similitud, UMBRAL_MISMA_PERSONA } from "./_rostro.js";
+import { analizarFoto, similitud, UMBRAL_MISMA_PERSONA, UMBRAL_ANTISPOOF_OBVIO } from "./_rostro.js";
 import { giroCorrecto } from "./_pose.js";
 import { enviarARH } from "./_push.js";
 
@@ -216,9 +216,17 @@ export default async function handler(req, res) {
         } else {
           let girada = null;
           try {
-            girada = await analizarFoto(Buffer.from(retoFoto, "base64"));
+            // {viveza:true}: antes esta foto no medía anti-spoofing en absoluto — la
+            // única de las dos que sí se somete a un giro real, y la que más valdría medir.
+            girada = await analizarFoto(Buffer.from(retoFoto, "base64"), { viveza: true });
           } catch (error) {
             console.error("Error analizando la foto del reto:", error);
+          }
+
+          // El peor de los dos valores, no el promedio ni el primero: para "¿es una cara
+          // de verdad?" importa el caso más dudoso de las dos fotos, no el más favorable.
+          if (girada?.viveza != null) {
+            viveza = viveza == null ? girada.viveza : Math.min(viveza, girada.viveza);
           }
 
           if (!girada?.huella) {
@@ -250,7 +258,14 @@ export default async function handler(req, res) {
   // 2. ¿Se bloquea?
   // ---------------------------------------------------------------------------
   const hayQueCotejar = !!rostro; // sin rostro aprobado no hay contra qué comparar
-  const fallo = hayQueCotejar && (verificado !== true || retoSuperado === false);
+
+  // Piso mínimo de anti-spoofing: NO es el umbral calibrado (sigue apagado, ver
+  // UMBRAL_ANTISPOOF_OBVIO en _rostro.js), solo bloquea lo obviamente falso (pantalla,
+  // papel liso). Si la medición falló (viveza null), no cuenta — que se caiga el modelo
+  // no puede ser motivo de bloqueo.
+  const spoofObvio = hayQueCotejar && viveza != null && viveza < UMBRAL_ANTISPOOF_OBVIO;
+
+  const fallo = hayQueCotejar && (verificado !== true || retoSuperado === false || spoofObvio);
 
   if (fallo) {
     // El reto NO se limpia al fallar: se queda pegado. Si al fallarlo se volviera a tirar el
@@ -281,11 +296,13 @@ export default async function handler(req, res) {
     // que al impostor solo le costaría empujar tres veces.
     // Al que falla el reto se le dice QUÉ falló y que le va a volver a tocar. Ocultarle que el
     // reto sigue ahí lo dejaría reintentando a ciegas contra una puerta que no se va a abrir.
-    const mensaje = motivoReto
-      ? `${motivoReto} Vuelve a intentarlo: te pediremos otra vez que gires la cabeza.`
-      : score === null
-        ? "No se distingue tu cara en la foto. Ponte de frente, con buena luz, e inténtalo otra vez."
-        : "No pudimos confirmar que eres tú. Mira de frente, con buena luz, e inténtalo otra vez.";
+    const mensaje = spoofObvio
+      ? "No pudimos confirmar que estás frente a la cámara en este momento. Ponte de frente, con buena luz, sin nada entre tu cara y la cámara."
+      : motivoReto
+        ? `${motivoReto} Vuelve a intentarlo: te pediremos otra vez que gires la cabeza.`
+        : score === null
+          ? "No se distingue tu cara en la foto. Ponte de frente, con buena luz, e inténtalo otra vez."
+          : "No pudimos confirmar que eres tú. Mira de frente, con buena luz, e inténtalo otra vez.";
 
     return res.status(403).json({
       error: mensaje,
