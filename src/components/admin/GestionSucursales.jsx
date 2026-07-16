@@ -121,7 +121,7 @@ export default function GestionSucursales() {
                   onChange={(e) => cambiarRadio(s, Number(e.target.value))}
                   disabled={!s.tieneGeocerca}
                 >
-                  {[50, 100, 150, 250, 500].map((r) => (
+                  {[5, 10, 15, 20, 50, 100, 150, 250, 500].map((r) => (
                     <option key={r} value={r}>{r} m</option>
                   ))}
                 </select>
