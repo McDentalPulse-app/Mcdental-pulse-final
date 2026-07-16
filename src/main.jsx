@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { registerSW } from 'virtual:pwa-register'
 import { notify } from './utils/notify'
+import { buscarActualizacion } from './utils/appUpdate'
 import './index.css'
 import './App.css'
 import './styles/mobile-polish.css'
@@ -87,7 +88,7 @@ if ('serviceWorker' in navigator) {
     avisado = true
     notify.toast.update('Hay una versión nueva de la app.', {
       label: 'Actualizar',
-      onClick: () => window.location.reload(),
+      onClick: () => buscarActualizacion(),
     })
   })
 

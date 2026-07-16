@@ -93,3 +93,31 @@ export const desactivar = async () => {
   await post("DELETE", { suscripcion: suscripcion.toJSON() });
   await suscripcion.unsubscribe();
 };
+
+/**
+ * Fuerza una suscripción NUEVA, descartando la que hubiera.
+ *
+ * `activar()` reusa la suscripción existente si ya hay una — perfecto la mayoría del
+ * tiempo, pero si la clave VAPID pública cambió (rotación, o como pasó el 2026-07-16: se
+ * terminó de configurar recién) esa suscripción vieja quedó atada a una clave que ya no es
+ * la que firma los envíos, y se queda sorda para siempre. No hay ningún error visible — el
+ * push simplemente nunca llega — así que no basta con esperar a que alguien note el
+ * síntoma. Se llama sola cada vez que se busca actualización de la app (appUpdate.js), sin
+ * pedir permiso de nuevo si ya estaba concedido.
+ */
+export const refrescarSuscripcion = async () => {
+  if (!soportado() || !VAPID_PUBLICA || Notification.permission !== "granted") return;
+
+  const registro = await navigator.serviceWorker.ready;
+  const vieja = await registro.pushManager.getSubscription();
+  if (vieja) {
+    await post("DELETE", { suscripcion: vieja.toJSON() }).catch(() => {});
+    await vieja.unsubscribe();
+  }
+
+  const nueva = await registro.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: claveABytes(VAPID_PUBLICA),
+  });
+  await post("POST", { suscripcion: nueva.toJSON() });
+};
