@@ -138,19 +138,32 @@ const Sidebar = () => {
   const irA = (key) => { setMasOpen(false); navigate(`/${user.role}/${key}`); };
   const extraActivo = tabsExtra.some((i) => i.key === active);
 
-  // Agrupa tabsExtra para la hoja "Más": las secciones salen en el orden en que aparece
-  // su primer ítem, y cada ítem cae en su sección aunque estén repartidos en el arreglo
-  // (p. ej. RH tiene Vacaciones/Permisos separados de Descuentos/Calendario).
-  const gruposExtra = [];
-  const indiceGrupo = new Map();
-  for (const item of tabsExtra) {
-    const grupo = item.group || "Otros";
-    if (!indiceGrupo.has(grupo)) {
-      indiceGrupo.set(grupo, gruposExtra.length);
-      gruposExtra.push({ nombre: grupo, items: [] });
+  // Agrupa una lista de ítems por su campo `group`: las secciones salen en el orden en que
+  // aparece su primer ítem, y cada ítem cae en su sección aunque estén repartidos en el
+  // arreglo (p. ej. RH tiene Vacaciones/Permisos separados de Descuentos/Calendario). Los
+  // ítems sin `group` van a un grupo sin nombre (sin encabezado al pintarlo).
+  const agruparPorCampo = (lista) => {
+    const grupos = [];
+    const indice = new Map();
+    for (const item of lista) {
+      const grupo = item.group || null;
+      if (!indice.has(grupo)) {
+        indice.set(grupo, grupos.length);
+        grupos.push({ nombre: grupo, items: [] });
+      }
+      grupos[indice.get(grupo)].items.push(item);
     }
-    gruposExtra[indiceGrupo.get(grupo)].items.push(item);
-  }
+    return grupos;
+  };
+
+  // Hoja "Más" del móvil: acá sí todo grupo sin nombre cae en "Otros" (no hay ítems sueltos
+  // en esa hoja, los primeros 4 son la tabbar y nunca llegan a tabsExtra).
+  const gruposExtra = agruparPorCampo(tabsExtra).map((g) => ({ ...g, nombre: g.nombre || "Otros" }));
+
+  // Desktop: la lista completa, agrupada igual. Los ítems sin `group` (Dashboard y los 2-3
+  // más usados de cada rol) quedan sueltos arriba sin encabezado — mismo criterio que ya
+  // los hace la tabbar del móvil.
+  const gruposDesktop = agruparPorCampo(items);
 
   const handleLogout = async () => {
     const ok = await notify.confirm({
@@ -187,35 +200,41 @@ const Sidebar = () => {
       </div>
 
       <nav className="sidebar-nav">
-        {items.map((item, i) => {
-          const isActive = active === item.key;
-          return (
-            <button
-              key={item.key}
-              type="button"
-              title={item.label}
-              aria-label={item.label}
-              aria-current={isActive ? "page" : undefined}
-              onClick={() => navigate(`/${user.role}/${item.key}`)}
-              className={`sidebar-nav-btn${isActive ? " sidebar-nav-btn--active" : ""}`}
-              style={{ "--i": i }}
-            >
-              {isActive && (
-                <motion.span
-                  layoutId="sidebarActivePill"
-                  className="sidebar-pill"
-                  transition={pillTransition}
-                  aria-hidden="true"
-                />
-              )}
-              <span className="sidebar-nav-icon">
-                <Icon name={item.icon} size={17} />
-              </span>
-              <span className="sidebar-nav-label">{item.label}</span>
-              {item.badge && <span className="sidebar-nav-badge">{item.badge}</span>}
-            </button>
-          );
-        })}
+        {gruposDesktop.map((grupo, gi) => (
+          <div key={grupo.nombre || `sin-seccion-${gi}`} className="sidebar-section">
+            {grupo.nombre && <div className="sidebar-section-title">{grupo.nombre}</div>}
+            {grupo.items.map((item) => {
+              const i = items.indexOf(item);
+              const isActive = active === item.key;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  title={item.label}
+                  aria-label={item.label}
+                  aria-current={isActive ? "page" : undefined}
+                  onClick={() => navigate(`/${user.role}/${item.key}`)}
+                  className={`sidebar-nav-btn${isActive ? " sidebar-nav-btn--active" : ""}`}
+                  style={{ "--i": i }}
+                >
+                  {isActive && (
+                    <motion.span
+                      layoutId="sidebarActivePill"
+                      className="sidebar-pill"
+                      transition={pillTransition}
+                      aria-hidden="true"
+                    />
+                  )}
+                  <span className="sidebar-nav-icon">
+                    <Icon name={item.icon} size={17} />
+                  </span>
+                  <span className="sidebar-nav-label">{item.label}</span>
+                  {item.badge && <span className="sidebar-nav-badge">{item.badge}</span>}
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       <div className="sidebar-footer">

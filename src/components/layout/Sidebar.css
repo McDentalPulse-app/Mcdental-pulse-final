@@ -110,9 +110,27 @@
 .sidebar--rail .sidebar-nav-label,
 .sidebar--rail .sidebar-nav-badge,
 .sidebar--rail .sidebar-user-text,
-.sidebar--rail .sidebar-logout-label {
+.sidebar--rail .sidebar-logout-label,
+.sidebar--rail .sidebar-section-title {
   display: none;
 }
+
+/* ── Encabezados de sección (desktop, no-rail) ── */
+.sidebar-section + .sidebar-section {
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.sidebar-section-title {
+  padding: 4px 10px 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+/* En rail solo queda el separador (sin texto), para no perder la agrupación de un vistazo */
+.sidebar--rail .sidebar-section + .sidebar-section { padding-top: 8px; }
 .sidebar--rail .sidebar-brand-row { padding-right: 0; justify-content: center; }
 
 /* En rail el toggle baja y se centra bajo el logo (evita solaparlo) */
