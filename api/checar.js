@@ -321,7 +321,7 @@ export default async function handler(req, res) {
     // al cruzarlo (===), no en cada fallo posterior: si se enviara del 3.º al 12.º intento, RH
     // recibiría diez avisos del mismo incidente y acabaría silenciándolos todos.
     if (intentos === INTENTOS_ANTES_DE_AVISAR) {
-      notificarGestion({
+      await notificarGestion({
         tipo: "checada",
         titulo: "Posible suplantación",
         cuerpo: `Varios intentos fallidos de checar como ${quien.name}. La cara no coincide.`,

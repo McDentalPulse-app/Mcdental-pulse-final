@@ -172,7 +172,7 @@ export default async function handler(req, res) {
   // cola hasta que a alguien se le ocurre mirar — y mientras, esa persona no puede checar.
   if (estado === "pendiente") {
     const { data: emp } = await supabase.from("usuarios").select("name").eq("id", destino).single();
-    notificarGestion({
+    await notificarGestion({
       tipo: "rostro",
       titulo: "Rostro por revisar",
       cuerpo: `${emp?.name || "Un empleado"} registró su rostro y espera tu aprobación.`,

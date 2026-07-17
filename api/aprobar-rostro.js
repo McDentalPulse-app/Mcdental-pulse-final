@@ -133,7 +133,7 @@ export default async function handler(req, res) {
 
   // Avisar al empleado: registró su rostro y estaba esperando el veredicto. Es de los avisos que
   // más se agradecen — sin él, hay que entrar a mirar cada día "¿ya me aprobaron?".
-  notificar(empleadoId, {
+  await notificar(empleadoId, {
     tipo: "rostro",
     titulo: aprobar ? "Rostro verificado" : "Rostro rechazado",
     cuerpo: aprobar

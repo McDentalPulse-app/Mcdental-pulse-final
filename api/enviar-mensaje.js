@@ -68,7 +68,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "No se pudo enviar el mensaje." });
   }
 
-  notificar(paraId, {
+  await notificar(paraId, {
     tipo: "mensaje",
     titulo: `Nuevo mensaje de ${quien.name}`,
     cuerpo: mensaje.texto.slice(0, 120),

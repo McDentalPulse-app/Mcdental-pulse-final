@@ -49,13 +49,15 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "No se pudo actualizar el permiso." });
   }
 
-  // El aviso, en segundo plano. No se hace await bloqueante del resultado: la respuesta a RH no
-  // tiene por qué esperar a que Apple/Google confirmen la entrega.
+  // El aviso SE ESPERA (await), no se lanza en segundo plano: en serverless la función se congela
+  // apenas responde, y un push no-esperado nunca se termina de enviar (ese era el bug: la
+  // notificación de aprobación no llegaba al teléfono). notificar() nunca lanza, así que esperarlo
+  // es seguro; el costo es ~medio segundo de más en la respuesta, a cambio de que el push exista.
   const fecha = new Date(`${permiso.fecha}T12:00:00`).toLocaleDateString("es-MX", {
     day: "numeric",
     month: "long",
   });
-  notificar(permiso.empleado_id, {
+  await notificar(permiso.empleado_id, {
     tipo: "permiso",
     titulo: estado === "aprobado" ? "Permiso aprobado" : "Permiso rechazado",
     cuerpo:

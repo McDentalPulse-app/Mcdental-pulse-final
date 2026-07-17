@@ -50,7 +50,7 @@ export default async function handler(req, res) {
     month: "long",
   });
 
-  notificar(vacacion.empleado_id, {
+  await notificar(vacacion.empleado_id, {
     tipo: "vacacion",
     titulo: estado === "aprobado" ? "Vacaciones aprobadas" : "Vacaciones rechazadas",
     cuerpo:
