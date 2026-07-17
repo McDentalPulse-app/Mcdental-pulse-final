@@ -448,25 +448,20 @@ export const puedeRegistrarSalida = (horario, ahora = new Date(), horaAutorizada
     }
   }
 
+  // Ya se puede marcar salida a CUALQUIER hora después de la entrada (pasada la jornada mínima):
+  // no se bloquea por la ventana de fin de turno. Si sale muy temprano, el servidor avisa a
+  // gestión — no se le impide. El turno solo se usa para el texto de confirmación del permiso.
   if (!horario?.horaSalida) return { permitido: true, disponibleDesde: null, autorizada: false };
 
   const turno = horaAMinutos(horario.horaSalida);
-  if (turno == null) return { permitido: true, disponibleDesde: null, autorizada: false };
-
   const autorizada = horaAMinutos(horaAutorizada);
-  const salida = autorizada != null ? Math.min(autorizada, turno) : turno;
-
-  const desde = salida - MARGEN_SALIDA_MIN;
-  const ahoraMin = minutosLocales(ahora instanceof Date ? ahora.toISOString() : ahora);
-  if (ahoraMin == null) return { permitido: true, disponibleDesde: null };
+  const conAutorizacion = autorizada != null && turno != null && autorizada < turno;
 
   return {
-    permitido: ahoraMin >= desde,
-    disponibleDesde: minutosAHora(desde),
-    // Para poder decirle "tu salida está autorizada para las 15:00" en vez de repetirle la
-    // hora de su turno, que ya no es la que manda hoy.
-    autorizada: autorizada != null && autorizada < turno,
-    horaAutorizada: autorizada != null && autorizada < turno ? minutosAHora(autorizada) : null,
+    permitido: true,
+    disponibleDesde: null,
+    autorizada: conAutorizacion,
+    horaAutorizada: conAutorizacion ? minutosAHora(autorizada) : null,
   };
 };
 

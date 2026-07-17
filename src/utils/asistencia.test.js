@@ -441,20 +441,22 @@ describe("puedeRegistrarSalida", () => {
   // fichar la jornada entera de golpe a las nueve de la mañana.
   const turno = { horaSalida: "18:00:00" };
 
+  // Ahora la salida se marca a CUALQUIER hora después de la entrada: ya no se bloquea por la
+  // ventana de fin de turno (si sale temprano, el servidor avisa a gestión, no lo impide).
   it.each([
-    ["2026-07-14T15:00:00Z", false], // 09:00 — acaba de entrar
-    ["2026-07-14T23:00:00Z", false], // 17:00 — todavía no
-    ["2026-07-14T23:44:00Z", false], // 17:44 — un minuto antes de la ventana
-    ["2026-07-14T23:45:00Z", true],  // 17:45 — se abre justo aquí (15 min antes)
-    ["2026-07-15T00:00:00Z", true],  // 18:00 — su hora
-    ["2026-07-15T02:00:00Z", true],  // 20:00 — se quedó hasta tarde: siempre permitido
-  ])("a las %s => permitido: %s", (ts, esperado) => {
-    expect(puedeRegistrarSalida(turno, new Date(ts)).permitido).toBe(esperado);
+    "2026-07-14T15:00:00Z", // 09:00 — muy temprano
+    "2026-07-14T23:00:00Z", // 17:00
+    "2026-07-15T00:00:00Z", // 18:00 — su hora
+    "2026-07-15T02:00:00Z", // 20:00 — tarde
+  ])("permite marcar salida a cualquier hora (%s)", (ts) => {
+    expect(puedeRegistrarSalida(turno, new Date(ts)).permitido).toBe(true);
   });
 
-  it("dice desde qué hora podrá, no solo que no puede", () => {
-    // Un "no puedes" a secas no le dice qué hacer y acaba en una llamada a RH.
-    expect(puedeRegistrarSalida(turno, new Date("2026-07-14T15:00:00Z")).disponibleDesde).toBe("17:45");
+  it("aún respeta la jornada mínima: no deja fichar salida justo tras la entrada", () => {
+    const entrada = "2026-07-14T15:00:00Z"; // 09:00
+    const r = puedeRegistrarSalida(turno, new Date("2026-07-14T15:10:00Z"), null, entrada);
+    expect(r.permitido).toBe(false);
+    expect(r.reciente).toBe(true);
   });
 
   it("sin horario ese día, puede salir a cualquier hora", () => {
@@ -571,10 +573,11 @@ describe("salida anticipada", () => {
     expect(r.horaAutorizada).toBe("15:00");
   });
 
-  it("antes de la hora autorizada sigue bloqueado", () => {
+  it("con permiso, la salida sigue permitida a cualquier hora (la autorización solo informa)", () => {
+    // Ya no se bloquea por hora: aunque salga antes de la hora autorizada, puede marcar salida.
     const r = puedeRegistrarSalida(turno, new Date("2026-07-14T20:00:00Z"), "15:00"); // 14:00 local
-    expect(r.permitido).toBe(false);
-    expect(r.disponibleDesde).toBe("14:45");
+    expect(r.permitido).toBe(true);
+    expect(r.autorizada).toBe(true);
   });
 
   it("un permiso con hora POSTERIOR a su turno se ignora", () => {
