@@ -8,8 +8,20 @@ import CalendarioMensual from "../common/CalendarioMensual";
 import { normalizeSucursal } from "../../utils/constants";
 
 const pad2 = (n) => String(n).padStart(2, "0");
-// Cumpleaños y aniversarios recurren cada año: se ubican en la fecha de ESTE año para el calendario.
-const fechaEsteAnio = (d) => (d ? `${new Date().getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}` : null);
+// Cumpleaños y aniversarios recurren cada año: se ubican en la fecha de ESTE año para el
+// calendario. Las fechas llegan como STRING: cumpleaños en "MM-DD" y el ingreso en "YYYY-MM-DD"
+// (o legacy completo). Se extrae mes/día sin asumir que es un objeto Date.
+const fechaEsteAnio = (str) => {
+  if (!str) return null;
+  const partes = String(str).trim().split(/[-/]/).map((p) => Number(p.trim()));
+  let mm;
+  let dd;
+  if (partes.length === 2) [mm, dd] = partes;            // "MM-DD"
+  else if (partes.length === 3) [, mm, dd] = partes;     // "YYYY-MM-DD"
+  else return null;
+  if (!mm || !dd || mm > 12 || dd > 31) return null;
+  return `${new Date().getFullYear()}-${pad2(mm)}-${pad2(dd)}`;
+};
 import {
   daysUntilCumpleanos,
   daysUntilDate,
