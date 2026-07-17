@@ -6,10 +6,11 @@ import Icon from "../ui/Icon";
 import CapturaSelfie from "./CapturaSelfie";
 import AvisoPush from "./AvisoPush";
 import { useNotification } from "../../contexts/NotificationContext";
-import { obtenerUbicacion, textoUbicacion } from "../../utils/geo";
+import { obtenerUbicacion, textoUbicacion, evaluarUbicacion, textoCandado } from "../../utils/geo";
 import { useNavigate } from "react-router-dom";
 import { getDeviceId } from "../../utils/dispositivo";
 import { getMiRostro } from "../../services/supabase/rostrosService";
+import { getSucursales } from "../../services/supabase/sucursalesService";
 import { pedirReto } from "../../services/supabase/asistenciasService";
 import { soportado, estadoPermiso, activar } from "../../services/pushService";
 import { getAjustes } from "../../services/supabase/ajustesService";
@@ -65,6 +66,57 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
   }, [user?.id]);
   const [enviando, setEnviando] = useState(false);
   const [ultima, setUltima] = useState(null);
+
+  // -------------------------------------------------------------------------
+  // Candado de geocerca EN VIVO: no se le deja fichar desde fuera del área.
+  // -------------------------------------------------------------------------
+  //
+  // El servidor es la ley (api/checar.js rechaza igual), pero avisar acá evita que la persona
+  // haga todo el baile de selfie/reto para rebotar al final. `undefined` = todavía cargando la
+  // sucursal (se trata como "buscando ubicación", botón bloqueado); `null` = la clínica no tiene
+  // geocerca configurada (no bloquea, es un olvido de admin, no del empleado).
+  const [sucursal, setSucursal] = useState(undefined);
+  const [ubicacion, setUbicacion] = useState(null); // último fix del GPS
+
+  useEffect(() => {
+    let vivo = true;
+    getSucursales()
+      .then((lista) => {
+        if (!vivo) return;
+        setSucursal(lista.find((s) => s.nombre === user?.sucursal) ?? null);
+      })
+      .catch(() => { if (vivo) setSucursal(null); }); // ante la duda, no bloquear por geocerca
+    return () => { vivo = false; };
+  }, [user?.sucursal]);
+
+  // watchPosition (no una sola lectura): el estado se auto-corrige a medida que el GPS se
+  // asienta, y el botón se habilita solo en cuanto la persona entra al área — sin pelearse con
+  // un botón de "volver a comprobar".
+  useEffect(() => {
+    if (!navigator.geolocation) return undefined;
+    const id = navigator.geolocation.watchPosition(
+      (pos) =>
+        setUbicacion({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          precision: Math.round(pos.coords.accuracy),
+        }),
+      (error) => {
+        console.warn("watchPosition falló:", error?.message || error);
+        setUbicacion(null); // sin ubicación => sin_gps => botón bloqueado (GPS denegado no ficha)
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+    return () => navigator.geolocation.clearWatch(id);
+  }, []);
+
+  const candado = useMemo(
+    // sucursal aún cargando: se fuerza "sin_gps" para que el botón espere y muestre "buscando".
+    () => (sucursal === undefined ? { estado: "sin_gps", distanciaM: null } : evaluarUbicacion(ubicacion, sucursal)),
+    [ubicacion, sucursal]
+  );
+
+  const fueraDeArea = candado.estado === "fuera" || candado.estado === "sin_gps";
 
   // El encuadre lo vigila la cámara. Sin esto, la gente se pega al móvil, la cara llena el
   // cuadro y sale deformada por la lente — y entonces el cotejo del servidor no reconoce a
@@ -301,17 +353,30 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
               type="button"
               className={`checador-boton checador-boton--${siguiente}`}
               onClick={handleChecar}
-              disabled={enviando || bloqueado || !encuadre.ok}
+              disabled={enviando || bloqueado || fueraDeArea || !encuadre.ok}
             >
               <Icon name={siguiente === "entrada" ? "check" : "logout"} size={22} />
               {enviando
                 ? "Registrando…"
-                : !encuadre.ok
-                  ? "Colócate en el recuadro"
-                  : siguiente === "entrada"
-                    ? "Registrar entrada"
-                    : "Registrar salida"}
+                : fueraDeArea
+                  ? candado.estado === "sin_gps"
+                    ? "Buscando tu ubicación…"
+                    : "Estás fuera del área"
+                  : !encuadre.ok
+                    ? "Colócate en el recuadro"
+                    : siguiente === "entrada"
+                      ? "Registrar entrada"
+                      : "Registrar salida"}
             </button>
+
+            {fueraDeArea && (
+              // El candado del cliente. El servidor rechaza igual; esto solo evita el baile de
+              // selfie/reto para rebotar al final. Se auto-actualiza con cada fix del GPS.
+              <p className={`checador-pill ${candado.estado === "fuera" ? "checador-pill--alerta" : "checador-pill--aviso"}`}>
+                <Icon name={candado.estado === "fuera" ? "alert" : "mapPin"} size={15} />
+                {textoCandado(candado.estado, candado.distanciaM, user?.sucursal)}
+              </p>
+            )}
 
             {bloqueado && (
               // Se le dice a qué hora podrá y qué hacer si tiene que irse antes. Un "no

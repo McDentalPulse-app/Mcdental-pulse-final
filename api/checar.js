@@ -90,6 +90,42 @@ export default async function handler(req, res) {
 
   const supabase = admin();
 
+  // ---------------------------------------------------------------------------
+  // 0. Geocerca. ANTES del cotejo, que es lo caro (dos inferencias de red neuronal).
+  //
+  // Fuera del área o sin GPS => no hay checada, y ni se tocan los modelos. El cliente ya
+  // deshabilita el botón en estos casos; esto es el backstop de servidor por si alguien fuerza
+  // el navegador. 'sin_geocerca' (la clínica no tiene ubicación configurada) NO bloquea: es un
+  // olvido del admin, no del empleado, y castigarlo dejaría a toda una sucursal sin fichar.
+  // ---------------------------------------------------------------------------
+  const { data: ubic, error: errorUbic } = await supabase.rpc("checar_ubicacion", {
+    p_empleado_id: quien.id,
+    p_lat: lat ?? null,
+    p_lng: lng ?? null,
+    p_precision: precision ?? null,
+  });
+
+  if (errorUbic) {
+    console.error("Error evaluando la ubicación:", errorUbic);
+    return res.status(500).json({ error: "No se pudo verificar tu ubicación. Inténtalo de nuevo." });
+  }
+
+  // La RPC tiene parámetros OUT: supabase-js la devuelve como fila (a veces envuelta en array).
+  const veredicto = Array.isArray(ubic) ? ubic[0] : ubic;
+
+  if (veredicto?.estado === "fuera" || veredicto?.estado === "sin_gps") {
+    return res.status(403).json({
+      error:
+        veredicto.estado === "fuera"
+          ? `Estás fuera del área de marcado${
+              veredicto.distancia != null ? ` (a ${veredicto.distancia} m)` : ""
+            }. Acércate a tu clínica para poder checar.`
+          : "No pudimos confirmar tu ubicación. Activa el GPS de tu teléfono para poder checar.",
+      fueraDeArea: true,
+      bloqueado: true,
+    });
+  }
+
   const desdeVentana = new Date(Date.now() - 15 * 60 * 1000).toISOString();
 
   const contarIntentos = async () => {
@@ -102,7 +138,7 @@ export default async function handler(req, res) {
   };
 
   // ---------------------------------------------------------------------------
-  // 0. Freno de coste. ANTES de tocar los modelos, que es lo caro.
+  // 0.5. Freno de coste. ANTES de tocar los modelos, que es lo caro.
   // ---------------------------------------------------------------------------
   if ((await contarIntentos()) >= TOPE_INTENTOS) {
     return res.status(429).json({
