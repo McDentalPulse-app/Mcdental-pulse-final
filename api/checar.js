@@ -1,7 +1,7 @@
 import { configOk, admin, quienLlama } from "./_auth.js";
 import { analizarFoto, similitud, UMBRAL_MISMA_PERSONA, UMBRAL_ANTISPOOF_OBVIO } from "./_rostro.js";
 import { giroCorrecto } from "./_pose.js";
-import { enviarARH } from "./_push.js";
+import { notificarGestion } from "./_notificaciones.js";
 
 /**
  * Registrar una checada. Es el ÚNICO camino: la RPC ya no la puede llamar el navegador.
@@ -321,7 +321,8 @@ export default async function handler(req, res) {
     // al cruzarlo (===), no en cada fallo posterior: si se enviara del 3.º al 12.º intento, RH
     // recibiría diez avisos del mismo incidente y acabaría silenciándolos todos.
     if (intentos === INTENTOS_ANTES_DE_AVISAR) {
-      enviarARH({
+      notificarGestion({
+        tipo: "checada",
         titulo: "Posible suplantación",
         cuerpo: `Varios intentos fallidos de checar como ${quien.name}. La cara no coincide.`,
         url: { admin: "/admin/asistencia", rh: "/rh/asistencia", psicologa: "/psicologa/asistencia" },

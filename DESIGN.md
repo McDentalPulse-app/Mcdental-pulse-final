@@ -102,6 +102,7 @@ modo oscuro funciona solo, sin un archivo de overrides.
 | `.mc-empty` · `.mc-hint` | Dos utilidades que faltaban en el sistema (texto de "no hay nada" y de ayuda) |
 | `.rostro-cotejo` · `.rostro-cotejo-col` · `.rostro-cotejo-label` | Revisión de rostros (`admin/rostros`): foto de perfil vs fotos registradas, lado a lado y grandes, para cotejar identidad de un vistazo. Fondo `superficie-sutil` |
 | `.asistencia-revision` | Lista "Todos los empleados" de rostros: filas avatar + datos + pill dentro de la Card (antes era un `<ul>` con viñetas sin estilar) |
+| `.campana` · `.campana-boton` · `.campana-badge` · `.campana-panel` · `.campana-item` | Campana de notificaciones global: botón fijo arriba a la derecha (`z-index: 300`) con badge de no-leídos (`rojo-apagado`) y dropdown con la bandeja. Se monta una vez en `App.jsx` para los 4 roles. Cero hex |
 
 ## Estado de la migración a Tailwind
 

@@ -1,6 +1,6 @@
 import { configOk, admin, quienLlama } from "./_auth.js";
 import { calcularHuella } from "./_rostro.js";
-import { enviarARH } from "./_push.js";
+import { notificarGestion } from "./_notificaciones.js";
 
 const MIN_FOTOS = 1;
 const MAX_FOTOS = 5; // 3 base + 2 sin lentes
@@ -172,7 +172,8 @@ export default async function handler(req, res) {
   // cola hasta que a alguien se le ocurre mirar — y mientras, esa persona no puede checar.
   if (estado === "pendiente") {
     const { data: emp } = await supabase.from("usuarios").select("name").eq("id", destino).single();
-    enviarARH({
+    notificarGestion({
+      tipo: "rostro",
       titulo: "Rostro por revisar",
       cuerpo: `${emp?.name || "Un empleado"} registró su rostro y espera tu aprobación.`,
       url: { admin: "/admin/rostros", rh: "/rh/rostros", psicologa: "/psicologa/rostros" },

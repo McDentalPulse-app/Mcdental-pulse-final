@@ -1,5 +1,5 @@
 import { configOk, admin, quienLlama } from "./_auth.js";
-import { enviar } from "./_push.js";
+import { notificar } from "./_notificaciones.js";
 
 /**
  * RH aprueba o rechaza un permiso.
@@ -55,7 +55,8 @@ export default async function handler(req, res) {
     day: "numeric",
     month: "long",
   });
-  enviar(permiso.empleado_id, {
+  notificar(permiso.empleado_id, {
+    tipo: "permiso",
     titulo: estado === "aprobado" ? "Permiso aprobado" : "Permiso rechazado",
     cuerpo:
       estado === "aprobado"

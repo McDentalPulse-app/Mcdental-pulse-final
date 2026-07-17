@@ -1,5 +1,5 @@
 import { configOk, admin, quienLlama } from "./_auth.js";
-import { enviar } from "./_push.js";
+import { notificar } from "./_notificaciones.js";
 
 /**
  * RH aprueba o rechaza una solicitud de vacaciones. Calcado de api/aprobar-permiso.js: pasa por
@@ -50,7 +50,8 @@ export default async function handler(req, res) {
     month: "long",
   });
 
-  enviar(vacacion.empleado_id, {
+  notificar(vacacion.empleado_id, {
+    tipo: "vacacion",
     titulo: estado === "aprobado" ? "Vacaciones aprobadas" : "Vacaciones rechazadas",
     cuerpo:
       estado === "aprobado"

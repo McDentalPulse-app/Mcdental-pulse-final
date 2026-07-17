@@ -1,5 +1,6 @@
 import { admin, configOk } from "./_auth.js";
-import { enviar, pushDisponible } from "./_push.js";
+import { pushDisponible } from "./_push.js";
+import { notificar } from "./_notificaciones.js";
 
 /**
  * Dos tareas de fondo en un solo endpoint, un solo cron diario.
@@ -75,7 +76,8 @@ const recordatorioEncuestas = async (supabase) => {
 
   await Promise.all(
     pendientes.map((u) =>
-      enviar(u.id, {
+      notificar(u.id, {
+        tipo: "encuesta",
         titulo: "Encuesta semanal pendiente",
         cuerpo: "Todavía no respondes tu encuesta de esta semana. Te toma un par de minutos.",
         url: "/empleado/encuesta",
@@ -189,7 +191,8 @@ const revisarTickets = async (supabase) => {
             );
 
           const estadoTexto = ESTADO_LABEL[t.status] || t.status;
-          enviar(u.id, {
+          notificar(u.id, {
+            tipo: "ticket",
             titulo: "Tu ticket de soporte cambió de estado",
             cuerpo: `#${ticketId} · ${t.subject || "Ticket"} ahora está ${estadoTexto}.`,
             url: RUTA_POR_ROL[u.role] || "/empleado/soporte",
@@ -229,6 +232,21 @@ export default async function handler(req, res) {
   } else {
     resultado.motivo = "push no configurado";
   }
+
+  // Purga de la bandeja: leídas > 30 días, no leídas > 90 días. Corre SIEMPRE, no depende del
+  // push — es limpieza de la tabla que la campana consulta, para que no crezca sin techo.
+  const hace = (dias) => new Date(Date.now() - dias * 86_400_000).toISOString();
+  const { count: leidasViejas } = await supabase
+    .from("notificaciones")
+    .delete({ count: "exact" })
+    .eq("leida", true)
+    .lt("creada_en", hace(30));
+  const { count: noLeidasViejas } = await supabase
+    .from("notificaciones")
+    .delete({ count: "exact" })
+    .eq("leida", false)
+    .lt("creada_en", hace(90));
+  resultado.notificacionesPurgadas = (leidasViejas || 0) + (noLeidasViejas || 0);
 
   return res.status(200).json(resultado);
 }

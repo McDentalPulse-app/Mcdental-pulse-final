@@ -1,6 +1,6 @@
 import { configOk, admin, quienLlama } from "./_auth.js";
 import { similitud } from "./_rostro.js";
-import { enviar } from "./_push.js";
+import { notificar } from "./_notificaciones.js";
 
 /**
  * Por encima de esto, dos caras DISTINTAS se parecen lo bastante como para que el cotejo pueda
@@ -133,7 +133,8 @@ export default async function handler(req, res) {
 
   // Avisar al empleado: registró su rostro y estaba esperando el veredicto. Es de los avisos que
   // más se agradecen — sin él, hay que entrar a mirar cada día "¿ya me aprobaron?".
-  enviar(empleadoId, {
+  notificar(empleadoId, {
+    tipo: "rostro",
     titulo: aprobar ? "Rostro verificado" : "Rostro rechazado",
     cuerpo: aprobar
       ? "Ya puedes checar tu entrada y salida con la cámara."

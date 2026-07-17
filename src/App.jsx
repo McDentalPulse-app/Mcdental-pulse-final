@@ -7,6 +7,7 @@ import { useAppActions } from "./hooks/useAppActions";
 import LandingPage from "./components/landing/LandingPage";
 import Loader from './components/ui/Loader';
 import AvisoModal from "./components/avisos/AvisoModal";
+import CampanaNotificaciones from "./components/notificaciones/CampanaNotificaciones";
 
 const AdminLayout = lazy(() => import("./components/layout/AdminLayout"));
 const PsicologaLayout = lazy(() => import("./components/layout/PsicologaLayout"));
@@ -66,6 +67,9 @@ export default function App() {
         avisosLeidos={globals.avisosLeidos}
         onMarcarLeido={actions.marcarAvisoLeido}
       />
+      {/* Campana global: fija arriba a la derecha, común a los 4 roles (mismo motivo que
+          AvisoModal). Es la ventana a la bandeja persistente de notificaciones. */}
+      <CampanaNotificaciones user={user} />
       <Suspense fallback={<Loader />}>
         <Routes>
           {user.role === 'admin' && (

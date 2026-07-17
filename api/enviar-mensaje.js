@@ -1,5 +1,5 @@
 import { configOk, admin, quienLlama } from "./_auth.js";
-import { enviar } from "./_push.js";
+import { notificar } from "./_notificaciones.js";
 
 /**
  * Envía un mensaje del canal confidencial empleado ↔ psicóloga y avisa por push a quien lo
@@ -68,7 +68,8 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "No se pudo enviar el mensaje." });
   }
 
-  enviar(paraId, {
+  notificar(paraId, {
+    tipo: "mensaje",
     titulo: `Nuevo mensaje de ${quien.name}`,
     cuerpo: mensaje.texto.slice(0, 120),
     url: RUTA_POR_ROL[destinatario?.role] || "/",
