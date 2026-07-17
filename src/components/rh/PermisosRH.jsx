@@ -57,7 +57,8 @@ const PermisosRH = ({ permisos, onUpdateEstado, horarios = [] }) => {
         <SectionTitle icon="clipboard">Solicitudes de permisos</SectionTitle>
 
         <div className="rh-data-list">
-          {permisos.map(p => (
+          {/* Pendientes primero (sort estable: dentro de cada grupo se conserva el orden). */}
+          {[...permisos].sort((a, b) => (b.estado === "pendiente") - (a.estado === "pendiente")).map(p => (
             <div key={p.id} className="rh-data-row">
               <div className="rh-data-row-main">
                 <div className="rh-data-row-title">{p.empleado}</div>

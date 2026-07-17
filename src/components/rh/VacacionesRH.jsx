@@ -43,7 +43,8 @@ const VacacionesRH = ({ vacaciones, onUpdateEstado }) => {
         <SectionTitle icon="vacation">Solicitudes de vacaciones</SectionTitle>
 
         <div className="rh-data-list">
-          {vacaciones.map(v => (
+          {/* Pendientes primero (sort estable: dentro de cada grupo se conserva el orden). */}
+          {[...vacaciones].sort((a, b) => (b.estado === "pendiente") - (a.estado === "pendiente")).map(v => (
             <div key={v.id} className="rh-data-row">
               <div className="rh-data-row-main">
                 <div className="rh-data-row-title">{v.empleado}</div>

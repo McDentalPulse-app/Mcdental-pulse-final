@@ -8723,7 +8723,9 @@
 .asistencia-revision-acciones { display: flex; justify-content: flex-end; }
 
 /* --- Campana de notificaciones (global, fija arriba a la derecha) --- */
-.campana { position: fixed; top: 16px; right: 24px; z-index: 300; }
+/* top con safe-area: en iPhone con notch, `top: 16px` la metía bajo la barra de estado y no
+   se podía pulsar. env(safe-area-inset-top) la baja lo que mida esa barra. */
+.campana { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); right: 24px; z-index: 300; }
 
 .campana-boton {
   position: relative;

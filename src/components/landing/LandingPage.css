@@ -451,3 +451,23 @@
   .gw-card-inner, .gw-card-face { transition: none; }   /* flip y swap instantáneos */
   .gw-changepass-panel { transition: none; }             /* deslizamiento instantáneo */
 }
+
+/* Ojo para ver/ocultar la contraseña en el login. */
+.auth-input-wrap { position: relative; }
+.auth-input--con-ojo { padding-right: 42px; }
+.auth-ojo {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.5);
+  transition: color 0.2s;
+}
+.auth-ojo:hover { color: var(--mc-aqua); }

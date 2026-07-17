@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowRight, ArrowLeft, Fingerprint, Activity, Clock, ShieldCheck, HeartPulse } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Fingerprint, Clock, ShieldCheck, HeartPulse, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import './LandingPage.css';
 
@@ -12,6 +12,7 @@ export default function LandingPage() {
   const [u, setU] = useState('');
   const [p, setP] = useState('');
   const [err, setErr] = useState('');
+  const [verPass, setVerPass] = useState(false);
   const userRef = useRef(null);
 
   // Panel de cambio de contraseña: desliza sobre el flip card cuando hace falta.
@@ -108,12 +109,6 @@ export default function LandingPage() {
       <div className="gw-container">
         {/* IZQUIERDA: branding */}
         <div className="gw-left">
-          <div className="gw-badge">
-            <span className="gw-badge-dot" />
-            <Activity size={13} />
-            <span>Bienvenido</span>
-          </div>
-
           <h1 className="gw-title">
             <span className="gw-title-line">McDental</span>
             <span className="gw-title-line gw-title-accent">Pulse.</span>
@@ -199,15 +194,25 @@ export default function LandingPage() {
 
                     <div className="auth-field">
                       <label className="auth-label" htmlFor="gw-pass">Contraseña</label>
-                      <input
-                        id="gw-pass"
-                        type="password"
-                        className="auth-input"
-                        placeholder="Tu contraseña"
-                        value={p}
-                        onChange={e => setP(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                      />
+                      <div className="auth-input-wrap">
+                        <input
+                          id="gw-pass"
+                          type={verPass ? 'text' : 'password'}
+                          className="auth-input auth-input--con-ojo"
+                          placeholder="Tu contraseña"
+                          value={p}
+                          onChange={e => setP(e.target.value)}
+                          onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                        />
+                        <button
+                          type="button"
+                          className="auth-ojo"
+                          onClick={() => setVerPass(v => !v)}
+                          aria-label={verPass ? 'Ocultar contraseña' : 'Ver contraseña'}
+                        >
+                          {verPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
                     </div>
 
                     {err && <div className="auth-error">{err}</div>}
