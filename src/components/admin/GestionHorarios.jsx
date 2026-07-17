@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../common/PageHeader";
 import Card from "../common/Card";
 import Icon from "../ui/Icon";
@@ -33,9 +33,27 @@ export default function GestionHorarios({ usuarios = [], horarios = [], setHorar
   const { toast, confirm } = useNotification();
   const [guardando, setGuardando] = useState(null); // `${empleadoId}-${dia}`
 
+  // Se ve UNA sucursal a la vez: con ~100 empleados, una sola lista era interminable.
+  const [filtroSucursal, setFiltroSucursal] = useState("");
+
   const empleados = useMemo(
     () => usuarios.filter((u) => !u.inactivo).sort((a, b) => (a.name || "").localeCompare(b.name || "")),
     [usuarios]
+  );
+
+  const sucursales = useMemo(
+    () => [...new Set(empleados.map((u) => u.sucursal).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    [empleados]
+  );
+
+  // Arranca en la primera sucursal, no en vacío: así nunca se ve la lista completa de golpe.
+  useEffect(() => {
+    if (!filtroSucursal && sucursales.length) setFiltroSucursal(sucursales[0]);
+  }, [sucursales, filtroSucursal]);
+
+  const empleadosFiltrados = useMemo(
+    () => empleados.filter((u) => u.sucursal === filtroSucursal),
+    [empleados, filtroSucursal]
   );
 
   const buscar = (empleadoId, diaSemana) =>
@@ -96,9 +114,19 @@ export default function GestionHorarios({ usuarios = [], horarios = [], setHorar
           La <strong>tolerancia</strong> son los minutos de gracia antes de contar retardo. Con
           entrada a las 9:00 y 10 minutos de tolerancia, las 9:10 llegan a tiempo; las 9:11, no.
         </p>
+        <label className="horarios-filtro">
+          <Icon name="mapPin" size={15} />
+          <span>Sucursal</span>
+          <select value={filtroSucursal} onChange={(e) => setFiltroSucursal(e.target.value)}>
+            {sucursales.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+          <em>{empleadosFiltrados.length} {empleadosFiltrados.length === 1 ? "empleado" : "empleados"}</em>
+        </label>
       </Card>
 
-      {empleados.map((u) => (
+      {empleadosFiltrados.map((u) => (
         <Card key={u.id} className="horarios-empleado">
           <header className="asistencia-empleado-head">
             <Avatar name={u.name} photoUrl={u.avatarUrl} size={32} />
