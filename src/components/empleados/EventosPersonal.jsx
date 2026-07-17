@@ -4,7 +4,12 @@ import SectionTitle from "../common/SectionTitle";
 import StatCard from "../common/StatCard";
 import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
+import CalendarioMensual from "../common/CalendarioMensual";
 import { normalizeSucursal } from "../../utils/constants";
+
+const pad2 = (n) => String(n).padStart(2, "0");
+// Cumpleaños y aniversarios recurren cada año: se ubican en la fecha de ESTE año para el calendario.
+const fechaEsteAnio = (d) => (d ? `${new Date().getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}` : null);
 import {
   daysUntilCumpleanos,
   daysUntilDate,
@@ -51,6 +56,14 @@ const EventosPersonal = ({ users }) => {
     .filter(e => e.dias <= 30)
     .sort((a, b) => a.dias - b.dias);
 
+  // Todos los cumpleaños/aniversarios del equipo, ubicados en el calendario de este año.
+  const eventosCal = [
+    ...empleados.map(u => { const f = fechaEsteAnio(resolveFechaCumpleanos(u)); return f && { fecha: f, titulo: `🎂 ${u.name}`, detalle: "Cumpleaños", color: "rojo" }; }),
+    ...empleados.map(u => { const f = fechaEsteAnio(resolveFechaIngreso(u)); return f && { fecha: f, titulo: `🎉 ${u.name}`, detalle: "Aniversario", color: "azul" }; }),
+  ].filter(Boolean);
+
+  const proximo = eventos[0] || null;
+
   const hoy = eventos.filter(e => e.dias === 0).length;
   const proximos3 = eventos.filter(e => e.dias > 0 && e.dias <= 3).length;
   const proximos7 = eventos.filter(e => e.dias > 0 && e.dias <= 7).length;
@@ -82,6 +95,24 @@ const EventosPersonal = ({ users }) => {
         <StatCard iconName="calendar" value={proximos7} label="Próximos 7 días" valueClass="admin-stat-value--amber" />
         <StatCard iconName="party" value={eventos.length} label="Próximos 30 días" valueClass="admin-stat-value--green" />
       </div>
+
+      <Card>
+        <SectionTitle icon="calendarDays">Calendario</SectionTitle>
+        <CalendarioMensual eventos={eventosCal} />
+      </Card>
+
+      {proximo && (
+        <Card className="eventos-proximo">
+          <div className="eventos-proximo-label">
+            <Icon name={proximo.icon} size={16} /> Próximo
+          </div>
+          <div className="eventos-proximo-main">
+            <strong>{proximo.empleado}</strong>
+            <span>{proximo.tipo} · {proximo.fechaTexto}</span>
+          </div>
+          <span className={pillClass(proximo.dias)}>{textoDias(proximo.dias)}</span>
+        </Card>
+      )}
 
       <Card>
         <SectionTitle icon="gift">Agenda de celebraciones</SectionTitle>

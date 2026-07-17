@@ -4,7 +4,11 @@ import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
 import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
+import CalendarioMensual from "../common/CalendarioMensual";
 import { normalizeSucursal } from "../../utils/constants";
+
+const colorTipo = (tipo) =>
+  tipo === "Vacaciones" ? "aqua" : tipo === "Permiso" ? "ambar" : "verde";
 
 const tipoPillClass = (tipo) => {
   if (tipo === "Vacaciones") return "mc-status-pill--vacaciones";
@@ -66,6 +70,19 @@ const CalendarioRH = ({ vacaciones, permisos, eventosExtra }) => {
         <StatCard iconName="clipboard" value={resumen.permisos} label="Permisos" valueClass="admin-stat-value--amber" />
         <StatCard iconName="party" value={resumen.extra} label="Festivos / Asuetos" valueClass="admin-stat-value--green" />
       </div>
+
+      <Card>
+        <SectionTitle icon="calendarDays">Calendario</SectionTitle>
+        <CalendarioMensual
+          eventos={eventos.map((e) => ({
+            fecha: e.fecha,
+            fechaFin: e.fechaFin,
+            titulo: e.titulo,
+            detalle: normalizeSucursal(e.sucursal),
+            color: colorTipo(e.tipo),
+          }))}
+        />
+      </Card>
 
       <Card>
         <SectionTitle icon="calendar">Agenda laboral</SectionTitle>
