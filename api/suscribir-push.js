@@ -32,9 +32,8 @@ export default async function handler(req, res) {
   // campana, y devuelve el resultado exacto para saber si de verdad llega. Vive AQUÍ, y no en su
   // propio endpoint, porque Vercel Hobby topa en 12 funciones y ya estábamos en el límite.
   if (req.method === "POST" && req.body?.accion === "probar") {
-    if (quien.role !== "admin") {
-      return res.status(403).json({ error: "Solo un administrador puede enviar una prueba." });
-    }
+    // Cualquier usuario puede probar SU PROPIO push (solo se envía a sí mismo): sirve para que
+    // cada quien confirme que su teléfono recibe, sin depender de un admin.
     const aviso = {
       titulo: "Prueba de notificación",
       cuerpo: "Si ves esto en tu teléfono, el push funciona. 🎉",
