@@ -136,6 +136,10 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
   const [girando, setGirando] = useState(false); // ya tiene la frontal; espera la girada
   const esperandoGiroRef = useRef(null);         // el resolve() de la promesa que espera el giro
 
+  // La cámara NO se abre al entrar a la pantalla: solo cuando la persona pulsa "Registrar
+  // entrada/salida". Así no hay una cámara encendida "por si acaso" mientras nadie va a checar.
+  const [capturando, setCapturando] = useState(false);
+
   // La oferta de activar avisos, que aparece bajo la checada recién hecha (no un modal al entrar).
   const [ofrecerPush, setOfrecerPush] = useState(false);
 
@@ -270,6 +274,7 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
     } finally {
       setEnviando(false);
       cancelarGiro();
+      setCapturando(false); // se cierra la cámara: para la siguiente checada hay que volver a abrirla
       // Se vuelve a preguntar: si el reto se falló, el servidor LO MANTIENE y hay que volver a
       // pedírselo. Dejar la pantalla creyendo que ya no hay reto haría que el siguiente intento
       // mandara una sola foto y volviera a fallar, esta vez sin que la persona entienda por qué.
@@ -328,7 +333,7 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
       <Card>
         <CapturaSelfie
           ref={camaraRef}
-          activa={!!siguiente && !bloqueado}
+          activa={capturando && !bloqueado}
           onEncuadre={girando ? undefined : onEncuadre}
           poseRequerida={girando ? reto : null}
           onAutoCaptura={girando ? onGiroCapturado : null}
@@ -349,25 +354,49 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
 
         {siguiente && !girando ? (
           <>
-            <button
-              type="button"
-              className={`checador-boton checador-boton--${siguiente}`}
-              onClick={handleChecar}
-              disabled={enviando || bloqueado || fueraDeArea || !encuadre.ok}
-            >
-              <Icon name={siguiente === "entrada" ? "check" : "logout"} size={22} />
-              {enviando
-                ? "Registrando…"
-                : fueraDeArea
+            {!capturando ? (
+              // Paso 1: la cámara está apagada. Este botón la abre (no captura todavía).
+              <button
+                type="button"
+                className={`checador-boton checador-boton--${siguiente}`}
+                onClick={() => setCapturando(true)}
+                disabled={bloqueado || fueraDeArea}
+              >
+                <Icon name={siguiente === "entrada" ? "check" : "logout"} size={22} />
+                {fueraDeArea
                   ? candado.estado === "sin_gps"
                     ? "Buscando tu ubicación…"
                     : "Estás fuera del área"
-                  : !encuadre.ok
-                    ? "Colócate en el recuadro"
-                    : siguiente === "entrada"
-                      ? "Registrar entrada"
-                      : "Registrar salida"}
-            </button>
+                  : siguiente === "entrada"
+                    ? "Registrar entrada"
+                    : "Registrar salida"}
+              </button>
+            ) : (
+              // Paso 2: la cámara ya está abierta. Este botón toma la foto y registra.
+              <>
+                <button
+                  type="button"
+                  className={`checador-boton checador-boton--${siguiente}`}
+                  onClick={handleChecar}
+                  disabled={enviando || !encuadre.ok}
+                >
+                  <Icon name="camera" size={22} />
+                  {enviando
+                    ? "Registrando…"
+                    : !encuadre.ok
+                      ? "Colócate en el recuadro"
+                      : "Tomar foto y registrar"}
+                </button>
+                <button
+                  type="button"
+                  className="mc-btn-outline"
+                  onClick={() => setCapturando(false)}
+                  disabled={enviando}
+                >
+                  Cancelar
+                </button>
+              </>
+            )}
 
             {fueraDeArea && (
               // El candado del cliente. El servidor rechaza igual; esto solo evita el baile de
