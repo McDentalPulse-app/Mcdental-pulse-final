@@ -202,9 +202,19 @@ describe("clasificarDia", () => {
     expect(d.minutosTrabajados).toBeNull();
   });
 
-  it("sin checadas y sin justificante => falta", () => {
-    const d = clasificarDia({ fecha: "2026-07-13", checadas: [], horario: horarioNormal });
+  it("sin checadas y sin justificante => falta (día ya cerrado)", () => {
+    const d = clasificarDia({ fecha: "2026-07-13", checadas: [], horario: horarioNormal, hoy: "2026-07-17" });
     expect(d.estado).toBe(ESTADOS_DIA.FALTA);
+  });
+
+  it("el día EN CURSO sin checada aún no es falta: es pendiente hasta medianoche", () => {
+    // A media mañana, alguien con turno que todavía no checa NO es falta: aún puede llegar.
+    // Se finaliza cuando el día deja de ser hoy.
+    const hoy = clasificarDia({ fecha: "2026-07-17", checadas: [], horario: horarioNormal, hoy: "2026-07-17" });
+    expect(hoy.estado).toBe(ESTADOS_DIA.PENDIENTE);
+    // El mismo día, ya en el pasado, sí es falta.
+    const ayer = clasificarDia({ fecha: "2026-07-17", checadas: [], horario: horarioNormal, hoy: "2026-07-18" });
+    expect(ayer.estado).toBe(ESTADOS_DIA.FALTA);
   });
 
   it("un permiso APROBADO convierte la falta en justificada", () => {
@@ -271,7 +281,8 @@ describe("construirDias", () => {
     ];
 
     // Lunes 20 (vino) y martes 21 (no vino). Ambas después de FECHA_INICIO_ASISTENCIA.
-    const dias = construirDias({ desde: "2026-07-20", hasta: "2026-07-21", checadas, horarios });
+    // hoy fijo posterior para que el 21 cuente como día ya cerrado (falta), no en curso.
+    const dias = construirDias({ desde: "2026-07-20", hasta: "2026-07-21", checadas, horarios, hoy: "2026-08-01" });
 
     expect(dias).toHaveLength(2);
     expect(dias[0].estado).toBe(ESTADOS_DIA.PRESENTE);
@@ -286,7 +297,7 @@ describe("construirDias", () => {
       { diaSemana: 6, horaEntrada: "09:00:00", horaSalida: "13:00:00", toleranciaMin: 10 },
     ];
     // 2026-07-26 es domingo: sin horario => descanso.
-    const dias = construirDias({ desde: "2026-07-25", hasta: "2026-07-26", checadas: [], horarios });
+    const dias = construirDias({ desde: "2026-07-25", hasta: "2026-07-26", checadas: [], horarios, hoy: "2026-08-01" });
     expect(dias[0].estado).toBe(ESTADOS_DIA.FALTA); // sábado: sí tenía turno y no vino
     expect(dias[1].estado).toBe(ESTADOS_DIA.DESCANSO); // domingo: no tenía turno
   });
@@ -376,10 +387,17 @@ describe("resumen", () => {
     expect(r.puntualidad).toBe(100);
   });
 
-  it("un mes entero de vacaciones no divide entre cero", () => {
+  it("sin días juzgables la puntualidad es null (la UI muestra '—', no un 0% engañoso)", () => {
     const r = resumen([dia(ESTADOS_DIA.JUSTIFICADO), dia(ESTADOS_DIA.DESCANSO)]);
-    expect(r.puntualidad).toBe(0);
+    expect(r.puntualidad).toBeNull();
     expect(Number.isNaN(r.puntualidad)).toBe(false);
+  });
+
+  it("los días pendientes (en curso) no cuentan para la puntualidad ni son faltas", () => {
+    const r = resumen([dia(ESTADOS_DIA.PRESENTE), dia(ESTADOS_DIA.PENDIENTE)]);
+    expect(r.pendientes).toBe(1);
+    expect(r.faltas).toBe(0);
+    expect(r.puntualidad).toBe(100); // solo el presente entra al divisor
   });
 
   it("mitad presente, mitad retardo => 50%", () => {

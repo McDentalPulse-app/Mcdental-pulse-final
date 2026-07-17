@@ -8562,6 +8562,8 @@
 .asistencia-calendario-celda--falta { background: var(--mc-badge-rojo-bg); color: var(--mc-badge-rojo-texto); }
 .asistencia-calendario-celda--justificado { background: var(--mc-info-bg); color: var(--mc-info-texto); }
 .asistencia-calendario-celda--descanso { background: transparent; color: var(--mc-texto-apagado); opacity: 0.6; }
+/* Día en curso: aún no es falta. Neutral y con borde punteado — "sin decidir todavía". */
+.asistencia-calendario-celda--pendiente { background: transparent; color: var(--mc-texto-apagado); border: 1px dashed var(--mc-borde); }
 
 /* Admin/RH: clic en un día con checada para anularla (no solo las marcadas sospechosas). */
 .asistencia-calendario-celda--anulable {

@@ -37,6 +37,7 @@ const ETIQUETA_ESTADO = {
   [ESTADOS_DIA.JUSTIFICADO]: "Justificado",
   [ESTADOS_DIA.DESCANSO]: "Descanso",
   [ESTADOS_DIA.INCOMPLETO]: "Sin salida",
+  [ESTADOS_DIA.PENDIENTE]: "En curso",
 };
 
 const hoyClinica = () =>
@@ -428,7 +429,7 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
           g.resumen.faltas,
           g.resumen.justificados,
           (g.resumen.minutosTrabajados / 60).toFixed(1),
-          g.resumen.puntualidad,
+          g.resumen.puntualidad ?? "",
         ]);
       }
     }
@@ -546,6 +547,7 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
         <StatCard iconName="alert" value={totales.faltas} label="Faltas" valueClass="admin-stat-value--red" />
         <StatCard iconName="vacation" value={totales.justificados} label="Justificados" valueClass="admin-stat-value--blue" />
         <StatCard iconName="history" value={totales.incompletos} label="Sin salida" valueClass="admin-stat-value--aqua" />
+        <StatCard iconName="clock" value={totales.pendientes} label="Pendientes hoy" valueClass="admin-stat-value--orange" />
       </div>
 
       {paraRevisar.length > 0 && (
@@ -599,7 +601,7 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
                   <div className="rh-data-row-sub">{empleado.sucursal}</div>
                 </div>
                 <div className="rh-data-row-meta">
-                  <div className="rh-data-row-meta-primary">{r.puntualidad}% puntual</div>
+                  <div className="rh-data-row-meta-primary">{r.puntualidad == null ? "Sin evaluar" : `${r.puntualidad}% puntual`}</div>
                   <div className="rh-data-row-meta-secondary">{minutosAHoras(r.minutosTrabajados)}</div>
                 </div>
                 <div className="rh-data-row-status">

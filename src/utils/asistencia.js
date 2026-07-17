@@ -38,7 +38,14 @@ export const ESTADOS_DIA = {
   JUSTIFICADO: "justificado",
   DESCANSO: "descanso",
   INCOMPLETO: "incompleto",
+  // El día EN CURSO: tiene turno pero aún no checa y todavía no termina. No es falta —
+  // la persona aún puede llegar. Se finaliza a medianoche (cuando su fecha deja de ser hoy).
+  PENDIENTE: "pendiente",
 };
+
+/** "YYYY-MM-DD" de hoy en la zona de la clínica. Es el corte para "día en curso". */
+export const hoyEnClinica = () =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: TZ_CLINICA }).format(new Date());
 
 const MIN_POR_DIA = 24 * 60;
 
@@ -183,6 +190,7 @@ export const clasificarDia = ({
   horario = null,
   permisos = [],
   vacaciones = [],
+  hoy = hoyEnClinica(),
 } = {}) => {
   const { entrada, salida, extras } = emparejarChecadas(checadas);
 
@@ -209,10 +217,12 @@ export const clasificarDia = ({
   }
 
   if (!entrada && !salida) {
-    return {
-      ...base,
-      estado: justificacion ? ESTADOS_DIA.JUSTIFICADO : ESTADOS_DIA.FALTA,
-    };
+    // Un permiso/vacación aprobado justifica el día venga o no venga.
+    if (justificacion) return { ...base, estado: ESTADOS_DIA.JUSTIFICADO };
+    // Sin checada y sin justificación: es FALTA solo si el día ya pasó. El día en curso
+    // (fecha === hoy) todavía no cuenta — la persona aún puede llegar; se vuelve falta al
+    // cerrar el día. Contar hoy como falta a media mañana inflaba el panel entero.
+    return { ...base, estado: fecha >= hoy ? ESTADOS_DIA.PENDIENTE : ESTADOS_DIA.FALTA };
   }
 
   if (!salida) {
@@ -272,6 +282,7 @@ export const construirDias = ({
   permisos = [],
   vacaciones = [],
   fechaIngreso = null,
+  hoy = hoyEnClinica(),
 } = {}) => {
   const porFecha = new Map();
   for (const c of checadas) {
@@ -294,6 +305,7 @@ export const construirDias = ({
         horario: porDia.get(diaISO(fecha)) || null,
         permisos,
         vacaciones,
+        hoy,
       })
     );
 };
@@ -340,6 +352,7 @@ export const resumen = (dias = []) => {
     justificados: 0,
     descansos: 0,
     incompletos: 0,
+    pendientes: 0,
     minutosTrabajados: 0,
     minutosRetardo: 0,
     puntualidad: 0,
@@ -352,16 +365,18 @@ export const resumen = (dias = []) => {
     else if (d.estado === ESTADOS_DIA.JUSTIFICADO) r.justificados += 1;
     else if (d.estado === ESTADOS_DIA.DESCANSO) r.descansos += 1;
     else if (d.estado === ESTADOS_DIA.INCOMPLETO) r.incompletos += 1;
+    else if (d.estado === ESTADOS_DIA.PENDIENTE) r.pendientes += 1;
 
     r.minutosTrabajados += d.minutosTrabajados || 0;
     r.minutosRetardo += d.minutosRetardo || 0;
   }
 
-  // Puntualidad sobre los días en que SE ESPERABA que viniera y vino. Los descansos y
-  // los justificados no cuentan ni a favor ni en contra: castigar a alguien en su
-  // porcentaje de puntualidad por tener vacaciones aprobadas sería absurdo.
+  // Puntualidad sobre los días en que SE ESPERABA que viniera y vino. Descansos,
+  // justificados y días en curso (pendiente) no cuentan ni a favor ni en contra.
+  // Sin días juzgables => null (la UI muestra "—"): un 0% ahí es engañoso, no hubo
+  // ningún día que evaluar todavía.
   const juzgables = r.presentes + r.retardos + r.incompletos;
-  r.puntualidad = juzgables ? Math.round((r.presentes / juzgables) * 100) : 0;
+  r.puntualidad = juzgables ? Math.round((r.presentes / juzgables) * 100) : null;
 
   return r;
 };
