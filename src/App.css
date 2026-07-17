@@ -7929,31 +7929,29 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
+    gap: 3px;
     flex: 1;
-    padding: 6px 2px 9px;
+    padding: 6px 2px 8px;
     background: transparent;
     border: none;
     cursor: pointer;
     color: var(--mc-texto-secundario);
     font-family: inherit;
   }
-  .mobile-tab svg { position: relative; z-index: 1; }
-  .mobile-tab-label { font-size: 9.5px; font-weight: 600; white-space: nowrap; position: relative; z-index: 1; }
-  .mobile-tab--active { color: var(--mc-texto-titulo); }
-  .mobile-tab--active svg { color: var(--mc-aqua); }
-  /* Indicador activo: pastilla redondeada aqua DETRÁS del ícono (no una rayita), que motion
-     desliza entre tabs. El ícono y el label van encima (z-index 1). */
-  .mobile-tab-pill {
-    position: absolute;
-    top: 3px;
-    left: 50%;
-    width: 48px; height: 34px;
-    margin-left: -24px;
-    border-radius: 17px;
-    background: var(--mc-brand-suave);
-    z-index: 0;
+  /* Slot del ícono: la pastilla activa es SU FONDO, así siempre queda alineada con el ícono
+     (antes era un absoluto que se descuadraba con el centrado del flex). */
+  .mobile-tab-ico {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px; height: 32px;
+    border-radius: 16px;
+    transition: background 0.2s ease;
   }
+  .mobile-tab-label { font-size: 9.5px; font-weight: 600; white-space: nowrap; }
+  .mobile-tab--active { color: var(--mc-texto-titulo); }
+  .mobile-tab--active .mobile-tab-ico { background: var(--mc-brand-suave); }
+  .mobile-tab--active svg { color: var(--mc-aqua); }
 
   .mobile-sheet-overlay {
     display: block;

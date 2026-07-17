@@ -305,15 +305,9 @@ const Sidebar = () => {
             onClick={() => irA(item.key)}
             aria-current={isActive ? "page" : undefined}
           >
-            {isActive && (
-              <motion.span
-                layoutId="mobileTabPill"
-                className="mobile-tab-pill"
-                transition={pillTransition}
-                aria-hidden="true"
-              />
-            )}
-            <Icon name={item.icon} size={20} />
+            <span className={`mobile-tab-ico${isActive ? " mobile-tab-ico--active" : ""}`}>
+              <Icon name={item.icon} size={20} />
+            </span>
             <span className="mobile-tab-label">{item.label}</span>
           </button>
         );
@@ -325,7 +319,9 @@ const Sidebar = () => {
           onClick={() => setMasOpen((v) => !v)}
           aria-expanded={masOpen}
         >
-          <Icon name="settings" size={20} />
+          <span className={`mobile-tab-ico${masOpen || extraActivo ? " mobile-tab-ico--active" : ""}`}>
+            <Icon name="settings" size={20} />
+          </span>
           <span className="mobile-tab-label">Más</span>
         </button>
       )}
