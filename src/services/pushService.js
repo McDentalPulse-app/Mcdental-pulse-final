@@ -83,6 +83,25 @@ export const activar = async () => {
   return "granted";
 };
 
+/**
+ * Prueba de notificación (admin): pide al servidor que se mande un push a uno mismo y devuelve
+ * el resultado exacto ({ enviados, limpiados, motivo? }) para saber si de verdad llega.
+ */
+export const probar = async () => {
+  const { data } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+  if (!token) throw new Error("Tu sesión expiró.");
+
+  const r = await fetch("/api/suscribir-push", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ accion: "probar" }),
+  });
+  const cuerpo = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(cuerpo.error || "No se pudo enviar la prueba.");
+  return cuerpo;
+};
+
 /** Deja de recibir: se borra la suscripción del navegador y del servidor. */
 export const desactivar = async () => {
   if (!soportado()) return;

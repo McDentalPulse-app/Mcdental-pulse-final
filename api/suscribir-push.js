@@ -1,4 +1,5 @@
 import { configOk, admin, quienLlama } from "./_auth.js";
+import { enviar, pushDisponible } from "./_push.js";
 
 /**
  * Guarda (o quita) la suscripción push de quien llama.
@@ -26,6 +27,31 @@ export default async function handler(req, res) {
   }
 
   const supabase = admin();
+
+  // Prueba de notificación (solo admin): se manda un push a uno mismo + deja una fila en la
+  // campana, y devuelve el resultado exacto para saber si de verdad llega. Vive AQUÍ, y no en su
+  // propio endpoint, porque Vercel Hobby topa en 12 funciones y ya estábamos en el límite.
+  if (req.method === "POST" && req.body?.accion === "probar") {
+    if (quien.role !== "admin") {
+      return res.status(403).json({ error: "Solo un administrador puede enviar una prueba." });
+    }
+    const aviso = {
+      titulo: "Prueba de notificación",
+      cuerpo: "Si ves esto en tu teléfono, el push funciona. 🎉",
+      url: "/",
+    };
+    try {
+      await supabase.from("notificaciones").insert({ empleado_id: quien.id, tipo: "prueba", ...aviso });
+    } catch (e) {
+      console.error("Error insertando notificación de prueba:", e?.message || e);
+    }
+    if (!pushDisponible()) {
+      return res.status(200).json({ ok: true, enviados: 0, motivo: "push no configurado en el servidor" });
+    }
+    const { enviados, limpiados } = await enviar(quien.id, aviso);
+    return res.status(200).json({ ok: true, enviados, limpiados });
+  }
+
   const { suscripcion } = req.body || {};
 
   // Darse de baja: se borra por endpoint, pero SOLO si es suyo. Sin el filtro por empleado_id, un

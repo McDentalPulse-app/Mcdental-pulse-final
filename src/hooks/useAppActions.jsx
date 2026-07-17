@@ -310,6 +310,8 @@ export const useAppActions = () => {
     try {
       const nuevo = await addAvisoDb({ titulo, cuerpo, creadoPor: user?.id });
       setAvisos(prev => [nuevo, ...prev]);
+      // La notificación a la plantilla (fila en la campana de cada quien) la dispara un trigger
+      // de BD al insertarse el aviso (migración 065), no el cliente.
       return true;
     } catch (error) {
       console.error("Error guardando aviso:", error);

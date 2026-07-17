@@ -10,11 +10,32 @@ import { useAuth } from '../../contexts/AuthContext';
 import { getAjustes, setExigirRostro } from '../../services/supabase/ajustesService';
 import { getRostros } from '../../services/supabase/rostrosService';
 import { useGlobal } from '../../contexts/GlobalContext';
+import { probar as probarPush } from '../../services/pushService';
 
 const Config = () => {
   const { toast, confirm } = useNotification();
   const { user } = useAuth();
   const { usuarios } = useGlobal();
+  const [probando, setProbando] = useState(false);
+
+  // Prueba de notificación: se manda un push a uno mismo y se reporta el resultado exacto.
+  const enviarPrueba = async () => {
+    setProbando(true);
+    try {
+      const { enviados, motivo } = await probarPush();
+      if (enviados > 0) {
+        toast.success(`Enviado a ${enviados} ${enviados === 1 ? "dispositivo" : "dispositivos"}. Revisa tu teléfono y la campana.`);
+      } else if (motivo) {
+        toast.error(`No se pudo: ${motivo}.`);
+      } else {
+        toast.info("No tienes ningún teléfono suscrito. Abre la app en tu celular y acepta las notificaciones.");
+      }
+    } catch (e) {
+      toast.error(e?.message || "No se pudo enviar la prueba.");
+    } finally {
+      setProbando(false);
+    }
+  };
 
   // El único ajuste de esta pantalla que se persiste de verdad (migración 044). El resto
   // sigue siendo la maqueta que ya estaba.
@@ -197,6 +218,19 @@ const Config = () => {
             <Icon name="check" size={16} /> Guardar configuración
           </button>
         </div>
+      </Card>
+
+      <Card className="config-panel">
+        <SectionTitle icon="bell">Notificaciones</SectionTitle>
+        <p className="mc-hint">
+          <Icon name="alert" size={15} />
+          Envíate una notificación de prueba para comprobar que el push llega a tu teléfono.
+          Antes, abre la app en tu celular y acepta las notificaciones.
+        </p>
+        <button type="button" className="mc-btn-primary mc-btn-with-icon" disabled={probando} onClick={enviarPrueba}>
+          <Icon name="bell" size={16} />
+          {probando ? "Enviando…" : "Enviar notificación de prueba"}
+        </button>
       </Card>
 
       <div className="admin-grid-2 config-info-grid">
