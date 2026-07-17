@@ -153,21 +153,38 @@ export default function EnrolarRostros({ usuarios = [] }) {
             const r = porEmpleado.get(u.id);
             return (
               <Card key={u.id} className="rostro-revision">
-                <header className="asistencia-empleado-head">
-                  <Avatar name={u.name} photoUrl={u.avatarUrl} size={48} />
-                  <div>
+                <header className="rostro-revision-head">
+                  <Avatar name={u.name} photoUrl={u.avatarUrl} size={44} />
+                  <div className="rostro-revision-id">
                     <strong>{u.name}</strong>
-                    <span>{u.sucursal} · {u.puesto}</span>
+                    <span>{[u.sucursal, u.puesto].filter(Boolean).join(" · ")}</span>
                   </div>
                 </header>
 
-                <div className="rostro-fotos">
-                  {(r?.fotos || []).map((ruta) => (
-                    urls[ruta]
-                      ? <img key={ruta} src={urls[ruta]} alt={`Foto de ${u.name}`} className="rostro-foto" />
-                      : <div key={ruta} className="rostro-foto rostro-foto--cargando" />
-                  ))}
+                {/* Cotejo lado a lado: la foto que YA teníamos (perfil) contra las que la persona
+                    acaba de registrar. Aprobar es afirmar que son la misma cara — la comparación
+                    tiene que caer de un vistazo, no obligar a recordar cómo era el perfil. */}
+                <div className="rostro-cotejo">
+                  <figure className="rostro-cotejo-col rostro-cotejo-col--perfil">
+                    <figcaption className="rostro-cotejo-label">Foto de perfil</figcaption>
+                    <Avatar name={u.name} photoUrl={u.avatarUrl} size={132} />
+                  </figure>
+
+                  <figure className="rostro-cotejo-col">
+                    <figcaption className="rostro-cotejo-label">
+                      Registró {(r?.fotos || []).length === 1 ? "esta foto" : `estas ${(r?.fotos || []).length} fotos`}
+                    </figcaption>
+                    <div className="rostro-fotos">
+                      {(r?.fotos || []).map((ruta) => (
+                        urls[ruta]
+                          ? <img key={ruta} src={urls[ruta]} alt={`Foto de ${u.name}`} className="rostro-foto" />
+                          : <div key={ruta} className="rostro-foto rostro-foto--cargando" />
+                      ))}
+                    </div>
+                  </figure>
                 </div>
+
+                <p className="rostro-cotejo-pregunta">¿Es la misma persona?</p>
 
                 <div className="enrolar-acciones">
                   <button

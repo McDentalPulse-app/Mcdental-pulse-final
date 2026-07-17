@@ -8663,6 +8663,65 @@
 
 .rostro-foto--cargando { background: var(--mc-gris-fondo); }
 
+/* --- Revisión de rostros (admin/rostros) --- */
+.rostro-revision-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.rostro-revision-head .mc-avatar { flex: none; }
+.rostro-revision-id { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rostro-revision-id strong { color: var(--mc-texto-titulo); font-weight: 800; font-size: 15px; }
+.rostro-revision-id span { color: var(--mc-texto-secundario); font-size: 13px; }
+
+/* El cotejo: perfil que ya teníamos vs fotos recién registradas, lado a lado y grandes. */
+.rostro-cotejo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  align-items: flex-start;
+  padding: 16px;
+  background: var(--mc-superficie-sutil);
+  border: 1px solid var(--mc-borde-suave);
+  border-radius: var(--mc-radio);
+}
+.rostro-cotejo-col { display: flex; flex-direction: column; gap: 8px; margin: 0; min-width: 0; }
+.rostro-cotejo-col--perfil { flex: none; }
+.rostro-cotejo-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mc-texto-secundario);
+}
+.rostro-cotejo-pregunta {
+  margin: 16px 0 0;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--mc-texto-titulo);
+}
+
+/* Alinea los botones bajo la pregunta (antes iban centrados). */
+.enrolar-acciones { justify-content: flex-start; }
+
+/* Lista "Todos los empleados": era un <ul> con viñetas sin alinear. Ahora filas limpias
+   dentro de la Card, con avatar + datos + pill, como el resto de listas de la app. */
+.asistencia-revision { list-style: none; margin: 0; padding: 0; }
+.asistencia-revision li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 2px;
+  border-bottom: 1px solid var(--mc-borde-suave);
+}
+.asistencia-revision li:last-child { border-bottom: none; }
+.asistencia-revision-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.asistencia-revision-main strong { color: var(--mc-texto-titulo); font-weight: 700; font-size: 14px; }
+.asistencia-revision-main span { color: var(--mc-texto-secundario); font-size: 12.5px; }
+.asistencia-revision-acciones { display: flex; justify-content: flex-end; }
+
 /* --- Guía de encuadre de la cámara (disparo automático) --- */
 
 .checador-guia {

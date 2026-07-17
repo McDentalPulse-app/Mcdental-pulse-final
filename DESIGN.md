@@ -100,6 +100,8 @@ modo oscuro funciona solo, sin un archivo de overrides.
 | `.asistencia-dia--falta/--retardo/--presente/…` | Color del estado del día. `--descanso` solo baja la opacidad: un día sin turno no es un error |
 | `.horarios-rejilla` · `.horarios-celda--descanso` | Rejilla empleado × día. La celda vacía se atenúa, **no se marca en rojo** |
 | `.mc-empty` · `.mc-hint` | Dos utilidades que faltaban en el sistema (texto de "no hay nada" y de ayuda) |
+| `.rostro-cotejo` · `.rostro-cotejo-col` · `.rostro-cotejo-label` | Revisión de rostros (`admin/rostros`): foto de perfil vs fotos registradas, lado a lado y grandes, para cotejar identidad de un vistazo. Fondo `superficie-sutil` |
+| `.asistencia-revision` | Lista "Todos los empleados" de rostros: filas avatar + datos + pill dentro de la Card (antes era un `<ul>` con viñetas sin estilar) |
 
 ## Estado de la migración a Tailwind
 
