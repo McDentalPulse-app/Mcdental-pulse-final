@@ -30,6 +30,29 @@ const Sidebar = () => {
     try { localStorage.setItem(RAIL_KEY, collapsed ? "1" : "0"); } catch { /* ignore */ }
   }, [collapsed]);
 
+  // Móvil: la tabbar flotante se esconde al hacer scroll hacia abajo y vuelve al subir. El
+  // contenedor que scrollea es `.app-main`, no la ventana, así que se escucha ahí.
+  const [navOculto, setNavOculto] = useState(false);
+  useEffect(() => {
+    const main = document.querySelector(".app-main");
+    if (!main) return undefined;
+    let ultimo = main.scrollTop;
+    const onScroll = () => {
+      const y = main.scrollTop;
+      if (y > ultimo + 4 && y > 60) setNavOculto(true);        // bajando: esconder
+      else if (y < ultimo - 4) setNavOculto(false);            // subiendo: mostrar
+      ultimo = y;
+    };
+    main.addEventListener("scroll", onScroll, { passive: true });
+    return () => main.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Al cambiar de pantalla, el contenido vuelve ARRIBA. Sin esto, la vista nueva heredaba el
+  // scroll de la anterior: el título quedaba fuera de cuadro y parecía "bajar solo".
+  useEffect(() => {
+    document.querySelector(".app-main")?.scrollTo({ top: 0 });
+  }, [location.pathname]);
+
   // `group` solo se usa en móvil (la hoja "Más"): agrupa los ítems que no caben en la
   // tabbar de 4 para que no sea una lista plana de 15-20 botones. El desktop lo ignora.
   const navItems = {
@@ -271,7 +294,7 @@ const Sidebar = () => {
     </aside>
 
     {/* Navegación móvil: barra inferior con tabs + "Más" */}
-    <nav className="mobile-tabbar" aria-label="Navegación principal">
+    <nav className={`mobile-tabbar${navOculto ? " mobile-tabbar--oculto" : ""}`} aria-label="Navegación principal">
       {tabsPrincipales.map((item) => {
         const isActive = active === item.key;
         return (

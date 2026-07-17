@@ -7901,37 +7901,57 @@
 
 @media (max-width: 768px) {
   .sidebar { display: none !important; }
-  .app-main { padding-bottom: calc(78px + env(safe-area-inset-bottom)) !important; }
+  .app-main { padding-bottom: calc(96px + env(safe-area-inset-bottom)) !important; }
 
+  /* Pill flotante, en la paleta de la app (superficie + acento aqua), no una barra full-width. */
   .mobile-tabbar {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: 1fr;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: 2px;
     position: fixed;
-    bottom: 0; left: 0; right: 0;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    left: 14px; right: 14px;
     z-index: 200;
-    background: var(--grad-brand);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
-    box-shadow: 0 -4px 20px rgba(6, 32, 29, 0.3);
+    background: var(--mc-superficie);
+    border: 1px solid var(--mc-borde-suave);
+    border-radius: 26px;
+    padding: 8px;
+    box-shadow: var(--mc-sombra-card);
+    transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
   }
+  /* Se esconde al hacer scroll hacia abajo y regresa al subir (clase la pone el Sidebar). */
+  .mobile-tabbar--oculto { transform: translateY(calc(100% + 24px)); }
+
   .mobile-tab {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
-    padding: 6px 2px;
-    min-height: 52px;
+    gap: 2px;
+    flex: 1;
+    padding: 6px 2px 9px;
     background: transparent;
     border: none;
     cursor: pointer;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--mc-texto-secundario);
     font-family: inherit;
   }
-  .mobile-tab-label { font-size: 10px; font-weight: 600; white-space: nowrap; }
-  .mobile-tab--active { color: var(--mc-blanco); }
+  .mobile-tab svg { position: relative; z-index: 1; }
+  .mobile-tab-label { font-size: 9.5px; font-weight: 600; white-space: nowrap; }
+  .mobile-tab--active { color: var(--mc-texto-titulo); }
   .mobile-tab--active svg { color: var(--mc-aqua); }
+  /* Indicador activo: barrita aqua bajo el ícono, que motion desliza entre tabs. */
+  .mobile-tab-pill {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 22px; height: 3px;
+    margin-left: -11px;
+    border-radius: 999px;
+    background: var(--mc-aqua);
+  }
 
   .mobile-sheet-overlay {
     display: block;
