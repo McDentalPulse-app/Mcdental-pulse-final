@@ -40,7 +40,9 @@ export const addPermiso = async ({ empleadoId, fecha, fechaFin, hora, causa, mot
       // null explícito, no undefined: un permiso de un día no tiene fecha de fin, y
       // mandar undefined haría que PostgREST omitiera la columna en vez de anularla.
       fecha_fin: fechaFin || null,
-      hora,
+      // Igual que fecha_fin: un permiso sin hora manda null, no "". Postgres rechaza la cadena
+      // vacía para el tipo `time` ("invalid input syntax for type time"), y tumbaba la solicitud.
+      hora: hora || null,
       causa: causa || null,
       motivo,
       comentario,
