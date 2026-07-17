@@ -21,7 +21,6 @@ import GestionEncuestas from '../admin/GestionEncuestas';
 import EmpleadosList from '../empleados/EmpleadosList';
 import ExpedienteIntegral from '../empleados/ExpedienteIntegral';
 import Reportes from '../rh/Reportes';
-import ReportesConfidencialesPanel from '../psicologia/ReportesConfidencialesPanel';
 import AIEngine from '../ia/AIEngine';
 import Config from '../settings/Config';
 import BolsaTrabajo from '../rh/BolsaTrabajo';
@@ -66,7 +65,6 @@ export default function HRLayout({ user, globals, actions }) {
             <Route path="expedientes" element={<ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} archivosExpediente={archivosExpediente} onSubirArchivoExpediente={subirArchivoExpediente} />} />
             <Route path="encuestas" element={<GestionEncuestas encuestas={encuestas} />} />
             <Route path="reportes" element={<Reportes users={USERS} encuestas={encuestas} preguntas={encuestaPreguntas} />} />
-            <Route path="confidenciales" element={<ReportesConfidencialesPanel reportes={reportesConfidenciales} />} />
             <Route path="config" element={<Config />} />
             <Route path="soporte" element={<SoporteTI user={user} />} />
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} />} />

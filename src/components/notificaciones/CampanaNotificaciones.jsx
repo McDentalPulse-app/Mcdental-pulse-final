@@ -18,6 +18,8 @@ const ICONO_TIPO = {
   checada: "shieldAlert",
   encuesta: "clipboard",
   ticket: "wrench",
+  confidencial: "lock",
+  aviso: "bell",
 };
 
 const tiempoRelativo = (iso) => {

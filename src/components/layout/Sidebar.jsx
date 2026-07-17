@@ -62,6 +62,9 @@ const Sidebar = () => {
       { key: "ai", icon: "ai", label: "AI Engine" },
       { key: "seguimiento", icon: "target", label: "Seguimiento" },
       { key: "confidenciales", icon: "lock", label: "Reportes Confidenciales" },
+      // La psicóloga es jefa de RH: tiene también los paneles de RH (aprobar permisos/vacaciones).
+      { key: "vacaciones", icon: "vacation", label: "Vacaciones", group: "RH" },
+      { key: "permisos", icon: "clipboardCheck", label: "Permisos", group: "RH" },
       { key: "empleados", icon: "users", label: "Empleados", group: "Equipo" },
       { key: "usuarios", icon: "userCog", label: "Gestión de Personal", group: "Equipo" },
       { key: "asistencia", icon: "clock", label: "Asistencia", group: "Asistencia y rostros" },
@@ -104,7 +107,6 @@ const Sidebar = () => {
       { key: "encuestas", icon: "clipboard", label: "Encuestas", group: "Encuestas y reportes" },
       { key: "reportes", icon: "trending", label: "Reportes", group: "Encuestas y reportes" },
       { key: "reportesrh", icon: "trending", label: "Reportes RH", group: "RH" },
-      { key: "confidenciales", icon: "lock", label: "Reportes Confidenciales", group: "Encuestas y reportes" },
       { key: "bolsa", icon: "briefcase", label: "Bolsa de trabajo", group: "Equipo" },
       { key: "config", icon: "settings", label: "Config", group: "Herramientas" },
       { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
