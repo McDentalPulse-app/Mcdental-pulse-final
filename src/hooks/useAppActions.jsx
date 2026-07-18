@@ -306,9 +306,9 @@ export const useAppActions = () => {
     }
   };
 
-  const addAviso = async ({ titulo, cuerpo }) => {
+  const addAviso = async ({ titulo, cuerpo, sucursales }) => {
     try {
-      const nuevo = await addAvisoDb({ titulo, cuerpo, creadoPor: user?.id });
+      const nuevo = await addAvisoDb({ titulo, cuerpo, creadoPor: user?.id, sucursales });
       setAvisos(prev => [nuevo, ...prev]);
       // La notificación a la plantilla (fila en la campana de cada quien) la dispara un trigger
       // de BD al insertarse el aviso (migración 065), no el cliente.
@@ -320,12 +320,12 @@ export const useAppActions = () => {
     }
   };
 
-  const updateAviso = async (id, { titulo, cuerpo }) => {
+  const updateAviso = async (id, { titulo, cuerpo, sucursales }) => {
     const previo = avisos.find(a => a.id === id);
-    setAvisos(prev => prev.map(a => a.id === id ? { ...a, titulo, cuerpo } : a));
+    setAvisos(prev => prev.map(a => a.id === id ? { ...a, titulo, cuerpo, sucursales } : a));
 
     try {
-      await updateAvisoDb({ id, titulo, cuerpo });
+      await updateAvisoDb({ id, titulo, cuerpo, sucursales });
       return true;
     } catch (error) {
       console.error("Error actualizando aviso:", error);

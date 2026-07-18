@@ -66,6 +66,7 @@ export default function App() {
         avisos={globals.avisos}
         avisosLeidos={globals.avisosLeidos}
         onMarcarLeido={actions.marcarAvisoLeido}
+        sucursalUsuario={user?.sucursal}
       />
       {/* Campana global: fija arriba a la derecha, común a los 4 roles (mismo motivo que
           AvisoModal). Es la ventana a la bandeja persistente de notificaciones. */}

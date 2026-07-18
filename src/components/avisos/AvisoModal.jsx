@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Icon from "../ui/Icon";
+import { sucursalMatches } from "../../utils/constants";
 
 const SEGUNDOS_ESPERA = 30;
 
@@ -66,14 +67,18 @@ const ContenidoAviso = ({ aviso, onAceptar }) => {
  * garantizan que alguien LEYÓ el aviso, pero si algo importante cabe en 30 segundos de
  * pantalla, es más probable que se lea que si el botón está listo desde el segundo cero.
  */
-const AvisoModal = ({ avisos = [], avisosLeidos = [], onMarcarLeido }) => {
+const AvisoModal = ({ avisos = [], avisosLeidos = [], onMarcarLeido, sucursalUsuario }) => {
   const pendientes = useMemo(() => {
     const leidosIds = new Set(avisosLeidos.map((l) => l.avisoId));
     return avisos
       .filter((a) => !leidosIds.has(a.id))
+      // Solo bloquea con avisos dirigidos a la sucursal de quien mira. Para un empleado
+      // RLS ya filtró (solo llegan los suyos); para la gestión NO (ve todos en el
+      // historial), así que sin este filtro un admin quedaría preso de cada aviso local.
+      .filter((a) => (a.sucursales || []).some((s) => sucursalMatches(s, sucursalUsuario)))
       .slice()
       .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-  }, [avisos, avisosLeidos]);
+  }, [avisos, avisosLeidos, sucursalUsuario]);
 
   const actual = pendientes[0] || null;
   if (!actual) return null;

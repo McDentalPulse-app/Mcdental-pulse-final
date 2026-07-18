@@ -2910,6 +2910,61 @@
   white-space: pre-line;
 }
 
+/* ── Avisos por sucursal (migración 068): selector de chips + badges de destino ── */
+.aviso-suc-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.aviso-suc-buscar { flex: 1 1 200px; min-width: 160px; }
+.aviso-suc-contador { font-size: 12.5px; font-weight: 700; color: var(--mc-texto-secundario); margin-left: auto; }
+.aviso-suc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 4px;
+}
+.aviso-suc-chip {
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--mc-card-borde);
+  background: var(--mc-superficie-input);
+  color: var(--mc-texto-secundario);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.aviso-suc-chip:hover { border-color: var(--mc-aqua); color: var(--mc-texto-titulo); }
+.aviso-suc-chip--activa {
+  background: var(--mc-brand-suave);
+  border-color: rgba(20, 200, 182, 0.4);
+  color: var(--mc-marca-texto);
+  font-weight: 800;
+}
+
+/* Badges de destino en el historial */
+.aviso-row-sucursales { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.aviso-suc-badge {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--mc-superficie-sutil);
+  border: 1px solid var(--mc-card-borde);
+  color: var(--mc-texto-secundario);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.aviso-suc-badge--todas {
+  background: var(--mc-brand-suave);
+  border-color: rgba(20, 200, 182, 0.35);
+  color: var(--mc-marca-texto);
+}
+
 .mc-toast-container {
   position: fixed;
   top: 20px;
@@ -8839,6 +8894,111 @@
 }
 .horarios-celda input:disabled { opacity: 0.55; cursor: wait; }
 .horarios-celda input[type="time"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.8; }
+
+/* ── Rediseño Horarios (2026-07-18): acordeón por empleado + turno estándar/días/excepciones ── */
+.horarios-empleado-row summary.rh-data-row { cursor: pointer; list-style: none; }
+.horarios-empleado-row summary.rh-data-row::-webkit-details-marker { display: none; }
+.horarios-empleado-row summary.rh-data-row::marker { content: ""; }
+.horarios-empleado-row:last-child summary.rh-data-row { border-bottom: none; }
+
+/* Mini-semana en la fila colapsada: 7 letras, las que tienen turno resaltadas */
+.horarios-mini-semana { display: flex; gap: 4px; }
+.horarios-mini-dia {
+  width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 6px;
+  font-size: 11px; font-weight: 800;
+  background: var(--mc-superficie-sutil);
+  color: var(--mc-texto-apagado);
+}
+.horarios-mini-dia--on { background: var(--mc-brand-suave); color: var(--mc-marca-texto); }
+
+/* Editor al expandir */
+.horarios-editor {
+  padding: 14px 18px 18px;
+  border-top: 1px solid var(--mc-borde-suave);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.horarios-editor-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--mc-texto-secundario);
+  margin-bottom: 8px;
+}
+.horarios-estandar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+.horarios-estandar > .horarios-editor-label { flex: 1 1 100%; margin-bottom: 0; }
+.horarios-estandar label {
+  display: flex; flex-direction: column; gap: 4px;
+  font-size: 0.8rem; color: var(--mc-texto-secundario); font-weight: 600;
+}
+.horarios-tol-wrap {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.8rem; color: var(--mc-texto-secundario);
+}
+
+/* Chips de días */
+.horarios-dias { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.horarios-dias > .horarios-editor-label { flex: 1 1 100%; margin-bottom: 0; }
+.horarios-dia-chip {
+  min-width: 46px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--mc-card-borde);
+  background: var(--mc-superficie-input);
+  color: var(--mc-texto-secundario);
+  font-family: inherit; font-size: 13px; font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.horarios-dia-chip:hover { border-color: var(--mc-aqua); color: var(--mc-texto-titulo); }
+.horarios-dia-chip--on {
+  background: var(--mc-brand-suave);
+  border-color: rgba(20, 200, 182, 0.4);
+  color: var(--mc-marca-texto);
+}
+
+/* Excepciones */
+.horarios-excepciones { display: flex; flex-direction: column; gap: 8px; }
+.horarios-excepciones > .horarios-editor-label { margin-bottom: 0; }
+.horarios-exc-row {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--mc-card-borde);
+  border-radius: 10px;
+  background: var(--mc-gris-fondo);
+}
+.horarios-exc-dia { font-weight: 800; color: var(--mc-texto-titulo); min-width: 34px; }
+
+/* Inputs del editor: mismo estilo que la app (superficie, borde, radio, foco teal) */
+.horarios-editor input[type="time"],
+.horarios-editor input[type="number"] {
+  padding: 8px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--mc-card-borde);
+  background: var(--mc-superficie-input);
+  color: var(--mc-texto);
+  font-family: inherit; font-size: 14px; font-weight: 600;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.horarios-editor input[type="number"] { width: 60px; text-align: left; }
+.horarios-editor input[type="time"]:hover,
+.horarios-editor input[type="number"]:hover { border-color: var(--mc-aqua); }
+.horarios-editor input[type="time"]:focus,
+.horarios-editor input[type="number"]:focus {
+  outline: none; border-color: var(--mc-aqua);
+  box-shadow: 0 0 0 3px rgba(20, 200, 182, 0.15);
+}
+.horarios-editor input:disabled { opacity: 0.55; cursor: wait; }
+
+@media (max-width: 640px) {
+  .horarios-mini-semana { display: none; }
+  .horarios-estandar label { flex: 1 1 40%; }
+}
 
 /* --- Enrolado de rostros (migración 041) --- */
 

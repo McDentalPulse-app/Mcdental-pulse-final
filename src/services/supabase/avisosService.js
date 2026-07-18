@@ -9,6 +9,7 @@ const mapAviso = (row) => ({
   cuerpo: row.cuerpo,
   creadoPor: row.creado_por,
   autor: row.usuarios?.name,
+  sucursales: row.sucursales || [],
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -58,10 +59,10 @@ export const subscribeAvisos = (onInsert) => {
   return () => supabase.removeChannel(channel);
 };
 
-export const addAviso = async ({ titulo, cuerpo, creadoPor }) => {
+export const addAviso = async ({ titulo, cuerpo, creadoPor, sucursales }) => {
   const { data, error } = await supabase
     .from("avisos")
-    .insert({ titulo, cuerpo, creado_por: creadoPor })
+    .insert({ titulo, cuerpo, creado_por: creadoPor, sucursales })
     .select(SELECT_CON_AUTOR)
     .single();
 
@@ -72,10 +73,10 @@ export const addAviso = async ({ titulo, cuerpo, creadoPor }) => {
   return mapAviso(data);
 };
 
-export const updateAviso = async ({ id, titulo, cuerpo }) => {
+export const updateAviso = async ({ id, titulo, cuerpo, sucursales }) => {
   const { data, error } = await supabase
     .from("avisos")
-    .update({ titulo, cuerpo })
+    .update({ titulo, cuerpo, sucursales })
     .eq("id", id)
     .select(SELECT_CON_AUTOR)
     .single();

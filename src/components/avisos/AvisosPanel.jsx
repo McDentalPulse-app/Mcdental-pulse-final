@@ -4,6 +4,7 @@ import PageHeader from "../common/PageHeader";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
 import { useNotification } from "../../contexts/NotificationContext";
+import { SUCURSALES } from "../../utils/constants";
 
 const ROLES_GESTION = ["admin", "rh", "psicologa"];
 
@@ -27,18 +28,29 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
 
   const [titulo, setTitulo] = useState("");
   const [cuerpo, setCuerpo] = useState("");
+  const [sucursalesSel, setSucursalesSel] = useState([]);
+  const [buscarSuc, setBuscarSuc] = useState("");
   const [editandoId, setEditandoId] = useState(null);
   const [enviando, setEnviando] = useState(false);
+
+  const toggleSucursal = (s) =>
+    setSucursalesSel((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
+  const sucursalesFiltradas = SUCURSALES.filter((s) =>
+    s.toLowerCase().includes(buscarSuc.trim().toLowerCase())
+  );
 
   const limpiarFormulario = () => {
     setTitulo("");
     setCuerpo("");
+    setSucursalesSel([]);
+    setBuscarSuc("");
     setEditandoId(null);
   };
 
   const iniciarEdicion = (aviso) => {
     setTitulo(aviso.titulo);
     setCuerpo(aviso.cuerpo);
+    setSucursalesSel(aviso.sucursales || []);
     setEditandoId(aviso.id);
   };
 
@@ -47,11 +59,15 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
       toast.warning("Completa el título y el cuerpo del aviso.");
       return;
     }
+    if (sucursalesSel.length === 0) {
+      toast.warning("No seleccionaste ninguna sucursal, elige al menos una para poder enviar el aviso.");
+      return;
+    }
 
     setEnviando(true);
     const ok = editandoId
-      ? await onUpdate(editandoId, { titulo: titulo.trim(), cuerpo: cuerpo.trim() })
-      : await onAdd({ titulo: titulo.trim(), cuerpo: cuerpo.trim() });
+      ? await onUpdate(editandoId, { titulo: titulo.trim(), cuerpo: cuerpo.trim(), sucursales: sucursalesSel })
+      : await onAdd({ titulo: titulo.trim(), cuerpo: cuerpo.trim(), sucursales: sucursalesSel });
     setEnviando(false);
 
     if (ok) {
@@ -109,6 +125,44 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
                 placeholder="Escribe el comunicado completo."
               />
             </div>
+
+            <div className="mc-form-group">
+              <label className="mc-form-label">Sucursales destino</label>
+              <div className="aviso-suc-toolbar">
+                <input
+                  className="mc-form-input aviso-suc-buscar"
+                  type="text"
+                  placeholder="Buscar sucursal…"
+                  value={buscarSuc}
+                  onChange={(e) => setBuscarSuc(e.target.value)}
+                />
+                <button type="button" className="mc-btn-outline" onClick={() => setSucursalesSel(SUCURSALES)}>
+                  Seleccionar todas
+                </button>
+                <button type="button" className="mc-btn-outline" onClick={() => setSucursalesSel([])}>
+                  Limpiar
+                </button>
+                <span className="aviso-suc-contador">{sucursalesSel.length} de {SUCURSALES.length}</span>
+              </div>
+              <div className="aviso-suc-chips">
+                {sucursalesFiltradas.map((s) => {
+                  const activa = sucursalesSel.includes(s);
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      className={`aviso-suc-chip${activa ? " aviso-suc-chip--activa" : ""}`}
+                      aria-pressed={activa}
+                      onClick={() => toggleSucursal(s)}
+                    >
+                      {s}
+                    </button>
+                  );
+                })}
+                {sucursalesFiltradas.length === 0 && <span className="mc-empty">Sin coincidencias.</span>}
+              </div>
+            </div>
+
             <div className="mc-form-row-2">
               <button type="button" className="mc-btn-primary mc-btn-with-icon" disabled={enviando} onClick={enviar}>
                 <Icon name={editandoId ? "check" : "bell"} size={16} />
@@ -135,6 +189,15 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
               <div className="rh-data-row-main">
                 <div className="rh-data-row-title">{a.titulo}</div>
                 <div className="rh-data-row-detail aviso-row-cuerpo">{a.cuerpo}</div>
+                {a.sucursales?.length > 0 && (
+                  <div className="aviso-row-sucursales">
+                    {a.sucursales.length === SUCURSALES.length ? (
+                      <span className="aviso-suc-badge aviso-suc-badge--todas">Todas las sucursales</span>
+                    ) : (
+                      a.sucursales.map((s) => <span key={s} className="aviso-suc-badge">{s}</span>)
+                    )}
+                  </div>
+                )}
               </div>
               <div className="rh-data-row-meta">
                 <div className="rh-data-row-meta-primary">{a.autor || "—"}</div>
