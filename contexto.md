@@ -207,3 +207,59 @@ Un checador de entradas/salidas con horarios, permisos, reportes, **verificació
 
 ### Verificación de la sesión
 294 tests (de 131 al empezar el checador), lint estable en la línea base (90 errores preexistentes), build verde en cada commit. Migraciones 047/048/049 aplicadas y verificadas contra Postgres local (RLS + GRANTs probados con roles reales). Scripts E2E `.mjs` temporales en la raíz, borrados tras cada uso (no commiteados) — mismo patrón que las sesiones anteriores.
+
+---
+
+## 🚀 Sesión 2026-07-17 — checador en operación: notificaciones, roles, push y pulido
+
+Sesión larga de operación real sobre **producción** (ya no local-only). ~20 commits desplegados a `prod`+`origin`. Todas las migraciones aplicadas vía **Management API + PAT** (mismo método de siempre; `db push` sigue sin servir). Ledger de prod avanzó **058 → 067**.
+
+### ⚠️ Hallazgo grave al arrancar: prod DB atrasada respecto a su código
+`prod/main` traía los archivos de migración **059–062 sin aplicar** a la BD (ledger en 058). El pipeline de Vercel **sube código pero NO corre migraciones**. Se aplicaron 059–062 (incluida la **059 de seguridad**: cerraba hallazgos de auditoría RLS que estuvieron abiertos en prod desde el 16-jul) + las nuevas 063–067. **Deriva detectada**: varias policies existían aplicadas "a mano" sin registrar versión → se resolvió con `drop policy if exists` idempotente (sin editar los archivos canónicos). **Para el futuro: cada deploy hay que aplicar las migraciones pendientes a mano.**
+
+### Migraciones nuevas (063–067) — todas en prod
+- **063 `geocerca_bloqueante`**: geocerca ahora BLOQUEA (antes solo marcaba 'fuera'). `evaluar_ubicacion()` (fórmula única con margen de precisión, tope 100m) usada por `registrar_checada` y por `checar_ubicacion()` (pre-chequeo barato). Reglas (grilling): sin_gps bloquea, sin_geocerca pasa, cliente pre-chequea + servidor refuerza, bloqueo seco sin fila, chequeo ANTES del cotejo.
+- **064 `notificaciones`**: tabla `notificaciones` (fila por destinatario, RLS dueño ve/marca, realtime). Fuente de verdad de la bandeja.
+- **065 `avisos_notifican`**: trigger que al crear un aviso notifica a toda la plantilla (bandeja).
+- **066 `psicologa_jefa_rh`**: psicóloga ⊇ RH. RLS `reportes_confidenciales` **quita a 'rh'** (solo admin+psicóloga). Triggers: solicitud permiso/vacaciones → rh+admin+psicóloga; reporte confidencial → psicóloga+admin (no rh).
+- **067 `salida_libre_aviso`**: salida a **cualquier hora** después de la entrada (quitado el bloqueo por ventana de fin de turno; se conserva jornada mínima 30min). Si sale >30min antes de su hora → aviso "Salida anticipada" a gestión (bandeja).
+
+### 🔔 Centro de notificaciones (campana + bandeja)
+- **Camino único**: `api/_notificaciones.js` — `notificar()` (fila + push), `notificarGestion()` (fila por persona de gestión + push). Los ~7 endpoints que antes llamaban `enviar`/`enviarARH` ahora notifican.
+- **Frontend**: `CampanaNotificaciones.jsx` (fija arriba-derecha, badge de no-leídos, dropdown, realtime), montada 1 vez en `App.jsx` para los 4 roles. `notificacionesService.js`. Purga 30/90 días en el cron.
+- **Íconos por tipo**, `tiempoRelativo`, marcar-leída/todas.
+
+### 📲 PUSH — dos bugs, ambos resueltos (era la queja principal)
+1. **Claves VAPID no casaban**: se configuraron el 16-jul y las suscripciones quedaron atadas a claves viejas → nada llegaba. **Rotadas** con `web-push` (par nuevo que casa), las 3 env de Vercel actualizadas vía API, redeploy (clave nueva horneada en el bundle, verificado), suscripciones viejas purgadas. `refrescarSuscripcion()` re-suscribe a todos al reabrir.
+2. **Fire-and-forget en serverless (el grande)**: los endpoints lanzaban `notificar().catch()` SIN await → en serverless la función se congela al responder y el push nunca se termina de enviar. **Fix: `await` antes de responder** en los 6 endpoints (aprobar-permiso/vacacion/rostro, enviar-mensaje, enrolar-rostro, checar). El botón de prueba SÍ llegaba porque él sí awaitea → así se diagnosticó.
+- **Botón "Enviar notificación de prueba"** para cualquier usuario en **Mi Perfil** (se manda push a uno mismo, reporta `enviados: N`). Vive dentro de `suscribir-push` (acción `probar`) para no crear función nueva.
+
+### ⚖️ Límite Vercel Hobby (12 funciones) — decisión de arquitectura
+El proyecto está en **Hobby, tope 12 funciones serverless** (los `_*.js` no cuentan). Ya estábamos en 12. Por eso: **avisos, solicitudes de permiso/vacaciones, reporte confidencial y salida anticipada notifican vía TRIGGER de BD (bandeja, sin push)** — un trigger no puede firmar VAPID. Los eventos con endpoint (aprobación, mensaje, checada sospechosa) sí pushean. Si se quiere push en los de trigger → subir a Pro o liberar un slot y moverlo a `checar.js`/endpoint.
+
+### 🐛 Bugs de prod corregidos (vistos en consola del usuario)
+- **Foto de perfil "archivo inválido"**: la **CSP no permitía `blob:`** en `img-src` → `comprimirImagen` (que carga el File por `URL.createObjectURL`) disparaba `img.onerror`. Agregado `blob:` a `img-src` en `vercel.json`. Arregla también el preview del cotejo.
+- **Permiso "llegar tarde" daba 400**: `addPermiso` mandaba `hora: ""` y Postgres rechaza cadena vacía para tipo `time`. Fix: `hora || null`.
+- **Crash `getMonth is not a function`** en Cumpleaños/Aniversarios: `resolveFechaCumpleanos/Ingreso` devuelven STRING, no Date; `fechaEsteAnio` les llamaba `.getMonth()`. Fix: parsear el string ("MM-DD" e "YYYY-MM-DD"). **Lección: `vite build` NO valida las funciones de `api/` ni crashes de runtime — hay que abrir la página.**
+
+### 💅 Lote de detalles UI
+- **Login**: quitado el badge "Bienvenido" + ojo 👁 para ver contraseña.
+- **Menú**: Vacaciones + Permisos agrupados en "Vacaciones y permisos"; solicitudes pendientes ordenadas arriba en PermisosRH/VacacionesRH.
+- **Campana iPhone**: `env(safe-area-inset-top)` (antes quedaba bajo la barra de estado, no se podía pulsar).
+- **Navbar móvil**: rediseñado a **pill flotante teal** (paleta de la app), se esconde al scroll abajo y vuelve al subir; indicador activo = **pastilla aqua como fondo del ícono** (antes una rayita descuadrada; el absolute peleaba con el centrado del flex).
+- **Bug cambio de pestaña**: `.app-main` no volvía arriba al navegar → título fuera de cuadro. Fix: scroll-to-top en cada cambio de ruta (Sidebar useEffect sobre `location.pathname`).
+- **Horarios**: filtro **por sucursal** (una a la vez, no ~100 empleados) + CSS del encabezado `asistencia-empleado-head` (no tenía).
+- **Calendarios reales**: componente reutilizable `CalendarioMensual.jsx` (rejilla mensual, navegación, puntos por evento, día seleccionado). Usado en **Calendario General** (vacaciones/permisos/festivos) y **Cumpleaños y Aniversarios** (cumpleaños rojo, aniversario azul, + tarjeta "Próximo").
+- **Checador cámara**: ya no se abre al entrar; "Registrar entrada/salida" ABRE la cámara, segundo botón "Tomar foto y registrar" captura.
+- **Panel asistencia**: el **día en curso ya no cuenta como falta** (estado PENDIENTE hasta medianoche); puntualidad `null` → "Sin evaluar" en vez de 0% engañoso (migración de lógica en `utils/asistencia.js`, sin cambio de BD).
+- **admin/rostros**: rediseño del cotejo (perfil vs fotos lado a lado). Sucursales geocerca radios 5–20m (mig 062).
+
+### 🧹 Datos de prueba limpiados en prod
+`permisos`, `vacaciones`, `asistencias`, `cotejo_intentos` → 0 (Reportes RH se alimenta de esas tablas, se limpió solo). Los calendarios se ven vacíos hasta que haya datos reales; cumpleaños/aniversarios sí salen (de las fechas de los empleados).
+
+### 🔑 Estado operativo / pendientes
+- **Geocercas**: solo **"Oficina Administrativa"** tiene geocerca (radio **10m** — muy justo para GPS de interior; el margen de 100m lo cubre casi siempre, pero valorar subirlo a ~50m). Las otras 24 sucursales sin geocerca → `sin_geocerca` (pasan). Con geocerca activa, quien **niegue el GPS ya NO puede fichar** (decisión del usuario, invierte el "GPS opcional" viejo).
+- **🔐 ROTAR TOKENS usados esta sesión** (quedaron en el chat): PAT de Supabase (`sbp_...`) y **token de Vercel (`vcp_...`)** — este último se usó para leer env y rotar VAPID.
+- **Env vars VAPID rotadas** en Vercel (valores nuevos, `sensitive`).
+- Sigue en Hobby (12 funciones, crons ≤1/día). `dist/assets` sigue quedando de root a veces (`sudo rm -rf dist` antes de build local).
+- Verificación: 302 tests ✓ al cierre, build verde en cada commit, migraciones probadas en local (smoke con roles reales) antes de aplicar a prod.
