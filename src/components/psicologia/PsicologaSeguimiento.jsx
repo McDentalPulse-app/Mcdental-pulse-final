@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
+import { useEscapeKey } from "../../hooks/useEscapeKey";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
 import PageHeader from "../common/PageHeader";
@@ -20,6 +21,7 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
   const semanaEnc = encuestas.filter(e => isSemanaActual(e.semana));
   const [nuevaNota, setNuevaNota] = useState({ empId: null, texto: "" });
   const [empleadoDetalle, setEmpleadoDetalle] = useState(null);
+  useEscapeKey(() => setEmpleadoDetalle(null), !!empleadoDetalle);
   const [filtroSucursal, setFiltroSucursal] = useState("Todas");
   const [filtroSemaforo, setFiltroSemaforo] = useState("Todos");
   const [busqueda, setBusqueda] = useState("");

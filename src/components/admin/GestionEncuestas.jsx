@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import { useNotification } from "../../contexts/NotificationContext";
+import { useEscapeKey } from "../../hooks/useEscapeKey";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
 import PageHeader from "../common/PageHeader";
@@ -72,6 +73,8 @@ const GestionEncuestas = ({ encuestas = [] }) => {
     setEditandoId(null);
     setForm(null);
   };
+
+  useEscapeKey(cerrarEditor, modalAbierto);
 
   const iniciarEdicion = (pregunta) => {
     setEditandoId(pregunta.id);

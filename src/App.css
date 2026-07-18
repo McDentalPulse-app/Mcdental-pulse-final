@@ -8450,26 +8450,140 @@
 
 /* --- Panel de RH / Admin --- */
 
-.asistencia-filtros {
+/* ── Rediseño Asistencia (2026-07-18): toolbar de filtros + tira de stats ──
+   Búsqueda + granularidad (segmented) + navegador de fecha siempre visibles;
+   Sucursal/Empleado en un panel bajo el botón "Filtros". */
+.asistencia-toolbar-card { position: relative; z-index: 20; overflow: visible; }
+.asistencia-toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
+  align-items: center;
+  gap: 12px;
+}
+.asistencia-toolbar-search { flex: 1 1 240px; min-width: 200px; }
+
+/* Granularidad como control segmentado (Día/Semana/Mes/Año) */
+.asistencia-segmented {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  background: var(--mc-superficie-input);
+  border: 1px solid var(--mc-card-borde);
+  border-radius: 10px;
+}
+.asistencia-segmented-btn {
+  border: none;
+  background: transparent;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mc-texto-secundario);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.asistencia-segmented-btn:hover { color: var(--mc-texto-titulo); }
+.asistencia-segmented-btn--activo {
+  background: var(--mc-brand-suave);
+  color: var(--mc-marca-texto);
+  font-weight: 800;
 }
 
-/* .list-filters-grid es display:grid con columnas fr; como hijo directo de un flex
-   container (.asistencia-filtros) necesita flex-basis:100% explícito, si no el fr no
-   tiene contra qué resolverse y el grid queda angosto. */
-.asistencia-filtros .list-filters-grid {
-  flex: 1 1 100%;
+/* Rango Desde/Hasta (granularidad distinta de "día") */
+.asistencia-rango { display: flex; gap: 10px; flex-wrap: wrap; }
+.asistencia-rango label {
+  display: flex; flex-direction: column; gap: 4px;
+  font-size: 0.82rem; color: var(--mc-texto-secundario); font-weight: 600;
 }
 
-.asistencia-filtros label {
+/* Botón "Filtros" + panel (Sucursal + Empleado) + badge de conteo activo */
+.asistencia-filtros-wrap { position: relative; margin-left: auto; }
+.asistencia-filtros-btn { display: inline-flex; align-items: center; gap: 8px; }
+.asistencia-filtros-caret { transition: transform 0.15s ease; }
+.asistencia-filtros-btn--abierto .asistencia-filtros-caret { transform: rotate(180deg); }
+.asistencia-filtros-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 999px;
+  background: var(--mc-aqua); color: #06231F;
+  font-size: 11px; font-weight: 800;
+}
+.asistencia-filtros-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 0.82rem;
-  color: var(--mc-texto-secundario);
-  font-weight: 600;
+  gap: 12px;
+  min-width: 240px;
+  padding: 14px;
+  background: var(--mc-superficie);
+  border: 1px solid var(--mc-gris-suave);
+  border-radius: 14px;
+  box-shadow: var(--mc-sombra);
+  animation: weekSelectIn 0.16s ease;
+}
+.asistencia-filtros-panel label {
+  display: flex; flex-direction: column; gap: 5px;
+  font-size: 0.82rem; color: var(--mc-texto-secundario); font-weight: 600;
+}
+
+/* Tira compacta de 6 indicadores (una fila; 3+3 / 2col en móvil — 6 divide parejo) */
+.asistencia-stat-strip {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+.asistencia-stat-tile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--mc-card-borde);
+  border-radius: 12px;
+  background: var(--mc-superficie);
+}
+.asistencia-stat-tile-icon {
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; flex-shrink: 0;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(20,200,182,0.16), rgba(14,140,122,0.12));
+  border: 1px solid rgba(20,200,182,0.20);
+  color: var(--mc-marca-texto);
+}
+.asistencia-stat-tile-body { display: flex; flex-direction: column; line-height: 1.1; min-width: 0; }
+.asistencia-stat-tile-value { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; }
+.asistencia-stat-tile-label { font-size: 11.5px; font-weight: 700; color: var(--mc-texto-secundario); white-space: nowrap; }
+
+/* Sección de checadas sospechosas: acento de alerta para que salte a la vista */
+.asistencia-revision {
+  border-left: 3px solid var(--mc-semaforo-rojo);
+  padding-left: 14px;
+  margin-left: 2px;
+}
+/* Puntito de alerta junto al nombre del empleado (conecta la lista con su fila) */
+.asistencia-empleado-alerta {
+  display: inline-block;
+  width: 8px; height: 8px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: var(--mc-semaforo-rojo);
+  vertical-align: middle;
+}
+
+@media (max-width: 768px) {
+  .asistencia-toolbar-search { flex: 1 1 100%; }
+  .asistencia-segmented { flex: 1 1 100%; }
+  .asistencia-segmented-btn { flex: 1; text-align: center; padding: 8px 6px; }
+  .asistencia-filtros-wrap { margin-left: 0; }
+  .asistencia-filtros-panel { right: auto; left: 0; min-width: min(260px, calc(100vw - 48px)); }
+  .asistencia-stat-strip { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 430px) {
+  .asistencia-stat-strip { grid-template-columns: repeat(2, 1fr); }
+  .asistencia-stat-tile-value { font-size: 20px; }
 }
 
 /* Navegación mes a mes (granularidad "día"): sustituye a los inputs Desde/Hasta. */
@@ -8653,6 +8767,11 @@
 .asistencia-empleado-head strong { color: var(--mc-texto-titulo); font-weight: 700; font-size: 14px; }
 .asistencia-empleado-head span { color: var(--mc-texto-secundario); font-size: 12.5px; }
 
+/* La tarjeta del filtro se eleva sobre las tarjetas de empleados que le siguen:
+   sin esto, el desplegable de sucursal (posición absoluta) queda tapado por la
+   primera tarjeta hermana, que se pinta después. */
+.horarios-panel { position: relative; z-index: 5; overflow: visible; }
+
 /* Filtro de sucursal de Horarios: una sucursal a la vez, no la lista completa. */
 .horarios-filtro {
   display: flex;
@@ -8664,18 +8783,62 @@
   font-size: 13px;
   font-weight: 600;
 }
+/* Trigger de sucursal: sin la flecha nativa, con caret teal propio, para que
+   combine con la tarjeta en vez del look del navegador. (La LISTA que se abre
+   sigue siendo nativa — se controla su modo oscuro vía color-scheme.) */
 .horarios-filtro select {
-  padding: 8px 12px;
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 9px 38px 9px 13px;
   border-radius: 10px;
-  border: 1px solid var(--mc-gris-suave);
-  background: var(--mc-superficie-input);
+  border: 1px solid var(--mc-card-borde);
+  background: var(--mc-superficie-input)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2314C8B6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat right 12px center;
   color: var(--mc-texto);
   font-family: inherit;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.horarios-filtro select:hover { border-color: var(--mc-aqua); }
+.horarios-filtro select:focus {
+  outline: none;
+  border-color: var(--mc-aqua);
+  box-shadow: 0 0 0 3px rgba(20, 200, 182, 0.15);
 }
 .horarios-filtro em { color: var(--mc-texto-apagado); font-style: normal; font-weight: 500; }
+
+/* Campos de hora (entrada/salida) y tolerancia: mismo lenguaje que la app
+   (superficie de input, borde de tarjeta, radio, foco teal). Antes eran el
+   input crudo del navegador y "cantaban" sobre la tarjeta. */
+.horarios-celda input[type="time"],
+.horarios-tolerancia input[type="number"] {
+  padding: 8px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--mc-card-borde);
+  background: var(--mc-superficie-input);
+  color: var(--mc-texto);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.horarios-celda input[type="time"] { width: 100%; }
+/* Ancho + alineado a la izquierda: el spinner nativo del number se ancla a la
+   derecha, así que centrar el dígito lo dejaba justo debajo de las flechas. */
+.horarios-tolerancia input[type="number"] { width: 64px; text-align: left; padding-right: 4px; }
+.horarios-celda input[type="time"]:hover,
+.horarios-tolerancia input[type="number"]:hover { border-color: var(--mc-aqua); }
+.horarios-celda input[type="time"]:focus,
+.horarios-tolerancia input[type="number"]:focus {
+  outline: none;
+  border-color: var(--mc-aqua);
+  box-shadow: 0 0 0 3px rgba(20, 200, 182, 0.15);
+}
+.horarios-celda input:disabled { opacity: 0.55; cursor: wait; }
+.horarios-celda input[type="time"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.8; }
 
 /* --- Enrolado de rostros (migración 041) --- */
 

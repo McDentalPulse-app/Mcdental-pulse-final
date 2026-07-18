@@ -74,6 +74,10 @@
 }
 
 :root {
+  /* Widgets nativos (popup de <select>, spinners de time/number, calendario,
+     scrollbar) en versión clara por defecto. Su par oscuro está en [data-theme="dark"]. */
+  color-scheme: light;
+
   /* ── Brand palette (teal corporativo + glow cyan) ── */
   --mc-verde: #0E8C7A;          /* acción primaria */
   --mc-verde-oscuro: #0A3B36;   /* texto/branding fuerte */
@@ -146,7 +150,7 @@
   /* Botón de contorno: en claro el verde de marca; en oscuro tiene que aclararse o desaparece
      sobre el fondo. --mc-verde-medio no cambia con el tema (es un color de marca), por eso
      necesitaba override. */
-  --mc-btn-outline-fg: var(--mc-verde-medio);
+  --mc-btn-outline-fg: var(--mc-marca-texto);
 
   /* Botones de contorno, por intención. El juego completo de cada uno junto, para que no haya
      que recordar cuatro valores sueltos repartidos por el archivo.
@@ -180,8 +184,10 @@
   /* El verde de marca USADO COMO TEXTO O ICONO. Distinto de --mc-verde-medio, que es el color
      de marca en sí (y como tal no debe cambiar: se usa también de fondo).
      Sobre el fondo oscuro, #0E8C7A da 3:1 — apagado y costoso de leer. Como texto tiene que
-     aclararse. 31 reglas lo usaban así, y era la causa de "algunas letras no son legibles". */
-  --mc-marca-texto: var(--mc-verde-medio);
+     aclararse. 31 reglas lo usaban así, y era la causa de "algunas letras no son legibles".
+     En CLARO, #0E8C7A sobre blanco da 4.16 (< 4.5 AA para texto normal): se oscurece a
+     #0B7A6B (5.24, AA), sigue siendo teal de marca pero legible como texto pequeño. */
+  --mc-marca-texto: #0B7A6B;
   --mc-icono-accion: var(--mc-marca-texto);
 
   /* El telón de fondo de la app. Son degradados decorativos genuinamente distintos por tema
@@ -347,6 +353,14 @@
    --mc-superficie-* y --mc-badge-*, consumidos desde los archivos en
    src/styles/dark/ (overrides aditivos, no tocan App.css). */
 [data-theme="dark"] {
+  /* El navegador pinta los widgets NATIVOS (popup del <select>, spinners de
+     <input type="time"> y type="number", calendario, scrollbar) según esto.
+     Sin él salían blancos aunque el trigger fuera oscuro — la lista de
+     sucursales y las flechitas de hora/tolerancia. accent-color tiñe el
+     resaltado del teal de marca en vez del azul de fábrica. */
+  color-scheme: dark;
+  accent-color: var(--mc-aqua);
+
   /* ═══════════════════════════════════════════════════════════════════════
      LO QUE FALTABA: el texto y las superficies.
      ═══════════════════════════════════════════════════════════════════════
@@ -884,3 +898,33 @@ img {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Accesibilidad global (auditoría 2026-07-18)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Foco de teclado visible y uniforme en TODO control interactivo. Antes solo
+   había :focus suelto en unos pocos sitios; los controles custom (trigger del
+   desplegable, tarjetas clickeables, botones de ícono) no mostraban anillo al
+   tabular. :focus-visible = solo teclado, no ensucia el click con mouse.
+   :where() tiene especificidad 0, así que los :focus propios siguen ganando
+   donde ya existen — es aditivo, no pisa nada. WCAG 2.4.7 AA. */
+:where(a, button, input, select, textarea, [tabindex], [role="button"]):focus-visible {
+  outline: 2px solid var(--mc-aqua);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Respeta "reducir movimiento" del sistema en TODA la app (antes solo cubierto
+   en 5 archivos; animaciones como la del desplegable quedaban fuera). WCAG 2.3.3. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Quita el retardo de 300ms al tocar en móvil, sin desactivar el zoom. */
+a, button, [role="button"], input, select, textarea, label { touch-action: manipulation; }

@@ -111,12 +111,12 @@ const Sidebar = () => {
     // Descuentos, Calendario, Reportes RH, Bolsa) y suma las opciones del admin.
     rh: [
       { key: "dashboard", icon: "dashboard", label: "Dashboard RH" },
-      { key: "asistencia", icon: "clock", label: "Asistencia" },
       { key: "usuarios", icon: "userCog", label: "Gestión de Personal" },
       { key: "empleados", icon: "users", label: "Empleados" },
       { key: "ai", icon: "ai", label: "AI Engine", group: "Herramientas" },
       { key: "vacaciones", icon: "vacation", label: "Vacaciones", group: "Vacaciones y permisos" },
       { key: "permisos", icon: "clipboardCheck", label: "Permisos", group: "Vacaciones y permisos" },
+      { key: "asistencia", icon: "clock", label: "Asistencia", group: "Asistencia y rostros" },
       { key: "horarios", icon: "calendarDays", label: "Horarios", group: "Asistencia y rostros" },
       { key: "importar-horarios", icon: "file", label: "Importar horarios", group: "Asistencia y rostros" },
       { key: "calibracion", icon: "shield", label: "Calibración del cotejo", group: "Asistencia y rostros" },

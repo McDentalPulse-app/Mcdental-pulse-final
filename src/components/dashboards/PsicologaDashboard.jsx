@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import { useAuth } from "../../contexts/AuthContext";
+import { useEscapeKey } from "../../hooks/useEscapeKey";
 import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
@@ -124,6 +125,7 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
   sucursalesRiesgo.forEach(s => s.emps.sort((a, b) => (a.nivel === "rojo" ? 0 : 1) - (b.nivel === "rojo" ? 0 : 1)));
 
   const [sucursalDetalle, setSucursalDetalle] = useState(null);
+  useEscapeKey(() => setSucursalDetalle(null), !!sucursalDetalle);
 
   const casosPrioritarios = estados
     .filter(e => e.nivel === "rojo" || e.nivel === "amarillo")

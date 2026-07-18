@@ -9,8 +9,10 @@ import {
   formatEncuestaFecha,
 } from "../../utils/encuestaDetail";
 import { nivelColor, nivelBadgeBg, nivelTinte } from "../../config/theme";
+import { useEscapeKey } from "../../hooks/useEscapeKey";
 
 const EncuestaDetalleModal = ({ encuesta, empleado, preguntas, onClose }) => {
+  useEscapeKey(onClose, !!encuesta);
   if (!encuesta) return null;
 
   const score = tieneScoreValido(encuesta.score) ? Number(encuesta.score) : null;

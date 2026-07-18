@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PageHeader from "../common/PageHeader";
+import { useEscapeKey } from "../../hooks/useEscapeKey";
 import Card from "../common/Card";
-import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
 import { useNotification } from "../../contexts/NotificationContext";
@@ -158,6 +158,13 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
   const [busqueda, setBusqueda] = useState("");
   const [filtroSucursal, setFiltroSucursal] = useState("Todas");
 
+  // Sucursal y Empleado viven en un panel que se abre con el botón "Filtros" (la búsqueda,
+  // la granularidad y el navegador de fecha quedan siempre a la vista). El badge cuenta
+  // cuántos de esos dos están puestos, para no perderlos de vista con el panel cerrado.
+  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
+  const filtrosRef = useRef(null);
+  const filtrosActivos = (filtroSucursal !== "Todas" ? 1 : 0) + (empleadoId ? 1 : 0);
+
   const [checadas, setChecadas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
@@ -295,6 +302,24 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
     () => checadas.filter((c) => requiereRevision(c) || compartidos.has(c.id)),
     [checadas, compartidos]
   );
+
+  // Empleados con al menos una checada sospechosa: conecta la lista de revisión con su
+  // fila del acordeón mediante un puntito de alerta (decisión A+C de la sesión).
+  const empleadosConAlerta = useMemo(
+    () => new Set(paraRevisar.map((c) => c.empleadoId)),
+    [paraRevisar]
+  );
+
+  // Cierra el panel de "Filtros" con Escape y con clic fuera (mismo patrón que WeekSelect).
+  useEscapeKey(() => setFiltrosAbiertos(false), filtrosAbiertos);
+  useEffect(() => {
+    if (!filtrosAbiertos) return;
+    const onDoc = (e) => {
+      if (filtrosRef.current && !filtrosRef.current.contains(e.target)) setFiltrosAbiertos(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [filtrosAbiertos]);
 
   // Por qué está marcada esta checada. Se enseña el motivo, no un icono de alerta a secas:
   // sin saber QUÉ mirar, RH no puede accionar nada y acaba ignorando la lista entera.
@@ -464,73 +489,88 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
         </button>
       </PageHeader>
 
-      <Card className="asistencia-filtros">
-        <div className="list-filters-grid list-filters-grid--2col">
+      <Card className="asistencia-toolbar-card">
+        <div className="asistencia-toolbar">
           <input
             type="text"
-            className="table-search"
+            className="table-search asistencia-toolbar-search"
             placeholder="Buscar empleado por nombre..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
           />
-          <select
-            className="list-filter-select"
-            value={filtroSucursal}
-            onChange={(e) => setFiltroSucursal(e.target.value)}
-          >
-            <option value="Todas">Todas las sucursales</option>
-            {SUCURSALES.map((s) => (
-              <option key={s} value={s}>{s}</option>
+
+          {/* Granularidad: control segmentado siempre a la vista — reconfigura el modo
+              entero de la pantalla (calendario vs periodos), no es un filtro de acotar. */}
+          <div className="asistencia-segmented" role="group" aria-label="Agrupar por">
+            {GRANULARIDADES.map((g) => (
+              <button
+                key={g.valor}
+                type="button"
+                className={`asistencia-segmented-btn${granularidad === g.valor ? " asistencia-segmented-btn--activo" : ""}`}
+                aria-pressed={granularidad === g.valor}
+                onClick={() => cambiarGranularidad(g.valor)}
+              >
+                {g.label}
+              </button>
             ))}
-          </select>
-        </div>
-        {granularidad === "dia" ? (
-          // En "día" el detalle es un calendario: se navega mes a mes en vez de un
-          // rango libre, que no tendría cómo dibujarse en una cuadrícula.
-          <div className="asistencia-mes-nav">
-            <button type="button" className="mc-btn-outline" onClick={() => irMes(-1)} aria-label="Mes anterior">
-              ‹
-            </button>
-            <strong className="asistencia-mes-nav-label">{nombreMes(desde)}</strong>
+          </div>
+
+          {/* Navegador de fecha: mes a mes en "día", rango libre en el resto. */}
+          {granularidad === "dia" ? (
+            <div className="asistencia-mes-nav">
+              <button type="button" className="mc-btn-outline" onClick={() => irMes(-1)} aria-label="Mes anterior">‹</button>
+              <strong className="asistencia-mes-nav-label">{nombreMes(desde)}</strong>
+              <button type="button" className="mc-btn-outline" onClick={() => irMes(1)} disabled={!puedeAvanzarMes} aria-label="Mes siguiente">›</button>
+            </div>
+          ) : (
+            <div className="asistencia-rango">
+              <label>
+                Desde
+                <input type="date" className="list-filter-input" value={desde} max={hasta} onChange={(e) => setDesde(e.target.value)} />
+              </label>
+              <label>
+                Hasta
+                <input type="date" className="list-filter-input" value={hasta} min={desde} max={hoyClinica()} onChange={(e) => setHasta(e.target.value)} />
+              </label>
+            </div>
+          )}
+
+          {/* Sucursal + Empleado en un panel bajo el botón; badge con el conteo activo. */}
+          <div className="asistencia-filtros-wrap" ref={filtrosRef}>
             <button
               type="button"
-              className="mc-btn-outline"
-              onClick={() => irMes(1)}
-              disabled={!puedeAvanzarMes}
-              aria-label="Mes siguiente"
+              className={`mc-btn-outline asistencia-filtros-btn${filtrosAbiertos ? " asistencia-filtros-btn--abierto" : ""}`}
+              onClick={() => setFiltrosAbiertos((v) => !v)}
+              aria-expanded={filtrosAbiertos}
             >
-              ›
+              Filtros
+              {filtrosActivos > 0 && <span className="asistencia-filtros-badge">{filtrosActivos}</span>}
+              <Icon name="chevronDown" size={15} className="asistencia-filtros-caret" />
             </button>
+            {filtrosAbiertos && (
+              <div className="asistencia-filtros-panel">
+                <label>
+                  Sucursal
+                  <select className="list-filter-select" value={filtroSucursal} onChange={(e) => setFiltroSucursal(e.target.value)}>
+                    <option value="Todas">Todas las sucursales</option>
+                    {SUCURSALES.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Empleado
+                  <select className="list-filter-select" value={empleadoId} onChange={(e) => setEmpleadoId(e.target.value)}>
+                    <option value="">Todos</option>
+                    {empleados.map((u) => (
+                      <option key={u.id} value={u.id}>{u.name}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            )}
           </div>
-        ) : (
-          <>
-            <label>
-              Desde
-              <input type="date" className="list-filter-input" value={desde} max={hasta} onChange={(e) => setDesde(e.target.value)} />
-            </label>
-            <label>
-              Hasta
-              <input type="date" className="list-filter-input" value={hasta} min={desde} max={hoyClinica()} onChange={(e) => setHasta(e.target.value)} />
-            </label>
-          </>
-        )}
-        <label>
-          Agrupar por
-          <select className="list-filter-select" value={granularidad} onChange={(e) => cambiarGranularidad(e.target.value)}>
-            {GRANULARIDADES.map((g) => (
-              <option key={g.valor} value={g.valor}>{g.label}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Empleado
-          <select className="list-filter-select" value={empleadoId} onChange={(e) => setEmpleadoId(e.target.value)}>
-            <option value="">Todos</option>
-            {empleados.map((u) => (
-              <option key={u.id} value={u.id}>{u.name}</option>
-            ))}
-          </select>
-        </label>
+        </div>
       </Card>
 
       {error && (
@@ -541,17 +581,29 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
         </Card>
       )}
 
-      <div className="admin-stat-grid">
-        <StatCard iconName="check" value={totales.presentes} label="Presentes" valueClass="admin-stat-value--green" />
-        <StatCard iconName="clock" value={totales.retardos} label="Retardos" valueClass="admin-stat-value--amber" />
-        <StatCard iconName="alert" value={totales.faltas} label="Faltas" valueClass="admin-stat-value--red" />
-        <StatCard iconName="vacation" value={totales.justificados} label="Justificados" valueClass="admin-stat-value--blue" />
-        <StatCard iconName="history" value={totales.incompletos} label="Sin salida" valueClass="admin-stat-value--aqua" />
-        <StatCard iconName="clock" value={totales.pendientes} label="Pendientes hoy" valueClass="admin-stat-value--orange" />
+      {/* Tira compacta de 6: una fila (wrap 3+3 / 2col en móvil), sin el hueco 4+2 de
+          las cards grandes y recuperando alto para el detalle. */}
+      <div className="asistencia-stat-strip">
+        {[
+          { icon: "check", value: totales.presentes, label: "Presentes", clase: "admin-stat-value--green" },
+          { icon: "clock", value: totales.retardos, label: "Retardos", clase: "admin-stat-value--amber" },
+          { icon: "alert", value: totales.faltas, label: "Faltas", clase: "admin-stat-value--red" },
+          { icon: "vacation", value: totales.justificados, label: "Justificados", clase: "admin-stat-value--blue" },
+          { icon: "history", value: totales.incompletos, label: "Sin salida", clase: "admin-stat-value--aqua" },
+          { icon: "clock", value: totales.pendientes, label: "Pendientes", clase: "admin-stat-value--orange" },
+        ].map((t) => (
+          <div key={t.label} className="asistencia-stat-tile">
+            <span className="asistencia-stat-tile-icon"><Icon name={t.icon} size={16} /></span>
+            <span className="asistencia-stat-tile-body">
+              <span className={`asistencia-stat-tile-value ${t.clase}`}>{t.value}</span>
+              <span className="asistencia-stat-tile-label">{t.label}</span>
+            </span>
+          </div>
+        ))}
       </div>
 
       {paraRevisar.length > 0 && (
-        <>
+        <section className="asistencia-revision">
           <SectionTitle icon="alert">Checadas que requieren revisión ({paraRevisar.length})</SectionTitle>
           {/* Esta lista es lo que hace que la comprobación sirva de algo: alguien la mira.
               Una selfie y una coordenada que nadie revisa son teatro. Mismo patrón
@@ -582,7 +634,7 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
               </div>
             ))}
           </div>
-        </>
+        </section>
       )}
 
       <SectionTitle icon="users">Detalle por empleado</SectionTitle>
@@ -597,7 +649,12 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
             <details key={empleado.id} className="asistencia-empleado-row" open={empleadoId === empleado.id}>
               <summary className="rh-data-row">
                 <div className="rh-data-row-main">
-                  <div className="rh-data-row-title">{empleado.name}</div>
+                  <div className="rh-data-row-title">
+                    {empleadosConAlerta.has(empleado.id) && (
+                      <span className="asistencia-empleado-alerta" title="Tiene checadas que requieren revisión" />
+                    )}
+                    {empleado.name}
+                  </div>
                   <div className="rh-data-row-sub">{empleado.sucursal}</div>
                 </div>
                 <div className="rh-data-row-meta">

@@ -72,6 +72,9 @@ function devApiProxy(mode) {
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
+  // En producción quita console.* y debugger del bundle: no filtrar información al
+  // cliente y no cargar 103 llamadas de log muertas. En dev se conservan.
+  esbuild: { drop: mode === 'production' ? ['console', 'debugger'] : [] },
   plugins: [
     react(),
     tailwindcss(),

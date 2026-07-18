@@ -3,6 +3,7 @@ import PageHeader from "../common/PageHeader";
 import Card from "../common/Card";
 import Icon from "../ui/Icon";
 import Avatar from "../ui/Avatar";
+import WeekSelect from "../common/WeekSelect";
 import { useNotification } from "../../contexts/NotificationContext";
 import { upsertHorario, deleteHorario } from "../../services/supabase/horariosService";
 
@@ -108,22 +109,23 @@ export default function GestionHorarios({ usuarios = [], horarios = [], setHorar
         subtitle="Un turno por empleado y día. Los días sin turno son descanso."
       />
 
-      <Card>
+      <Card className="horarios-panel">
         <p className="mc-hint">
           <Icon name="alert" size={15} />
           La <strong>tolerancia</strong> son los minutos de gracia antes de contar retardo. Con
           entrada a las 9:00 y 10 minutos de tolerancia, las 9:10 llegan a tiempo; las 9:11, no.
         </p>
-        <label className="horarios-filtro">
+        <div className="horarios-filtro">
           <Icon name="mapPin" size={15} />
           <span>Sucursal</span>
-          <select value={filtroSucursal} onChange={(e) => setFiltroSucursal(e.target.value)}>
-            {sucursales.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
+          <WeekSelect
+            value={filtroSucursal}
+            options={sucursales.map((s) => ({ value: s, label: s }))}
+            onChange={setFiltroSucursal}
+            icon={null}
+          />
           <em>{empleadosFiltrados.length} {empleadosFiltrados.length === 1 ? "empleado" : "empleados"}</em>
-        </label>
+        </div>
       </Card>
 
       {empleadosFiltrados.map((u) => (

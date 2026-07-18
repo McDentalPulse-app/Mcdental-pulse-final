@@ -3,7 +3,10 @@ import Icon from "../ui/Icon";
 
 // Desplegable propio (no nativo) para elegir semana. Se renderiza en la página,
 // así aparece en el lugar correcto también en la vista móvil/emulada.
-export default function WeekSelect({ value, options, onChange, className = "" }) {
+// icon: nombre de ícono en el trigger. Por defecto "calendar" (uso original: semanas).
+// Pasar icon={null} para un desplegable genérico sin ícono (p. ej. sucursal, que ya
+// trae su propio ícono en la etiqueta de al lado).
+export default function WeekSelect({ value, options, onChange, className = "", icon = "calendar" }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -30,7 +33,7 @@ export default function WeekSelect({ value, options, onChange, className = "" })
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        <Icon name="calendar" size={14} />
+        {icon && <Icon name={icon} size={14} />}
         <span className="week-select-value">{current?.label || value}</span>
         <span className={`week-select-caret${open ? " week-select-caret--open" : ""}`} />
       </button>

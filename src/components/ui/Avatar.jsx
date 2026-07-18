@@ -26,7 +26,7 @@ const Avatar = ({ name, size = 36, slug, color, photoUrl }) => {
       }}
     >
       {photoUrl
-        ? <img src={photoUrl} alt={name || "Avatar"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ? <img src={photoUrl} alt={name || "Avatar"} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         : getInitials(name)}
     </div>
   );
