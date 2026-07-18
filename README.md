@@ -63,6 +63,50 @@ src/
 
 ## Changelog
 
+### 2026-07-18 · Avisos por sucursal · rediseño de Asistencia y Horarios · auditoría a11y
+
+> Sesión larga de UI + una feature de datos. Todo se probó contra el Supabase **local**
+> antes de subir; la migración de avisos se aplica a producción por separado (Management
+> API + PAT), y frontend y migración deben desplegarse juntos.
+
+- **🆕 Avisos dirigidos por sucursal (migración 068).** Hasta ahora un aviso era para toda
+  la plantilla. Nueva columna `avisos.sucursales text[]` (con `check (cardinality >= 1)` —
+  **no** `array_length`, que devuelve `NULL` en arreglos vacíos y un CHECK con NULL *pasa*,
+  colando avisos sin destino). La RLS de SELECT se partió en dos: la gestión (admin/rh/
+  psicóloga) sigue viendo **todo** el historial para administrarlo, un empleado ve **solo**
+  los de su sucursal. El trigger `notificar_aviso_nuevo` (065) ahora notifica en la campana
+  solo a la plantilla de las sucursales destino. El **modal bloqueante** filtra del lado del
+  cliente por la sucursal de quien mira: sin eso, un admin —que sí puede leer todos— quedaría
+  preso del modal de cada aviso local. Los avisos que ya existían se rellenaron con las 25
+  sucursales (retrocompatible). El formulario trae un selector de chips con búsqueda,
+  "Seleccionar todas"/"Limpiar", contador y validación (mínimo una sucursal); el historial
+  muestra badges de destino. Verificado E2E: un aviso a "McDental Tuxpan" le llega a un
+  empleado de Tuxpan y **no** a uno de Palmas.
+- **Rediseño de la pestaña de Asistencia.** Los filtros pasaron a una barra: búsqueda +
+  granularidad como control **segmentado** (Día/Semana/Mes/Año) + navegador de fecha siempre
+  visibles, y Sucursal/Empleado en un panel que abre con el botón "Filtros" (con badge del
+  número de filtros activos, cierra con Escape y clic-fuera). Los 6 indicadores pasaron de un
+  grid que se partía 4+2 a una **tira compacta** de una fila (3+3 / 2 columnas en móvil). Las
+  checadas sospechosas ganaron un acento de alerta y un puntito en la fila del empleado
+  afectado. Sin cambios en la lógica de días/clasificación.
+- **Rediseño de la pestaña de Horarios.** Cada empleado dejó de ocupar un bloque de 7
+  tarjetas-día (scroll interminable con ~100 personas) y pasó a una fila de **acordeón** con
+  resumen (días marcados + turno estándar + nº de excepciones). Al expandir, un editor de
+  "**turno estándar + días**": defines entrada/salida/tolerancia una vez y marcas con chips
+  qué días lo usan; los días con un turno distinto salen como **excepciones** editables
+  aparte. El estándar se deriva del turno más frecuente de la persona. Reusa
+  `upsertHorario`/`deleteHorario`: cero cambios en la capa de datos.
+- **Menús desplegables y widgets nativos con tema.** Se agregó `color-scheme` (dark/light) +
+  `accent-color` al tema: los popups de `<select>` y los spinners de `<input type=time/number>`
+  ya no salían claros sobre el fondo oscuro. El `<select>` de sucursal en Horarios pasó a un
+  desplegable propio (reusa `WeekSelect`).
+- **Auditoría de accesibilidad y calidad.** Foco de teclado visible y uniforme
+  (`:focus-visible` global, WCAG 2.4.7); `prefers-reduced-motion` global; el teal usado como
+  texto en modo claro se oscureció (`#0E8C7A` → `#0B7A6B`) para pasar el 4.5:1 de AA; cierre
+  con Escape en cuatro modales que no lo tenían (hook `useEscapeKey`); `console.*` se elimina
+  del bundle de producción; guard de variables de entorno en `config/supabase.js`;
+  `loading="lazy"` en los avatares.
+
 ### 2026-07-16 · Hotfix del checador + sidebar seccionada + filtros de Asistencia
 
 > El usuario reportó "no se registran los datos de asistencia" junto con tres pedidos de UI.
