@@ -67,18 +67,21 @@ const ContenidoAviso = ({ aviso, onAceptar }) => {
  * garantizan que alguien LEYÓ el aviso, pero si algo importante cabe en 30 segundos de
  * pantalla, es más probable que se lea que si el botón está listo desde el segundo cero.
  */
-const AvisoModal = ({ avisos = [], avisosLeidos = [], onMarcarLeido, sucursalUsuario }) => {
+const AvisoModal = ({ avisos = [], avisosLeidos = [], onMarcarLeido, sucursalUsuario, usuarioId }) => {
   const pendientes = useMemo(() => {
     const leidosIds = new Set(avisosLeidos.map((l) => l.avisoId));
     return avisos
       .filter((a) => !leidosIds.has(a.id))
+      // No bloquear a quien PUBLICÓ el aviso: ya lo conoce (igual que el trigger 065 no le
+      // manda notificación de su propio aviso). Evita que un admin quede preso de su comunicado.
+      .filter((a) => a.creadoPor !== usuarioId)
       // Solo bloquea con avisos dirigidos a la sucursal de quien mira. Para un empleado
       // RLS ya filtró (solo llegan los suyos); para la gestión NO (ve todos en el
       // historial), así que sin este filtro un admin quedaría preso de cada aviso local.
       .filter((a) => (a.sucursales || []).some((s) => sucursalMatches(s, sucursalUsuario)))
       .slice()
       .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-  }, [avisos, avisosLeidos, sucursalUsuario]);
+  }, [avisos, avisosLeidos, sucursalUsuario, usuarioId]);
 
   const actual = pendientes[0] || null;
   if (!actual) return null;

@@ -98,15 +98,21 @@ export const deleteAviso = async (id) => {
 };
 
 export const marcarAvisoLeido = async (avisoId, usuarioId) => {
-  const { data, error } = await supabase
+  // Idempotente: si el aviso ya estaba marcado como leído, esto NO es un error — el
+  // aviso está leído igual y el modal debe cerrarse. Antes, un `insert().select().single()`
+  // fallaba en el segundo intento con "duplicate key" (23505) y dejaba el modal atrapado.
+  // `upsert` con ignoreDuplicates hace un INSERT ... ON CONFLICT DO NOTHING; sin `.select()`
+  // no dependemos de que el RETURNING pase RLS, construimos el "leído" en el cliente.
+  const { error } = await supabase
     .from("avisos_leidos")
-    .insert({ aviso_id: avisoId, usuario_id: usuarioId })
-    .select()
-    .single();
+    .upsert(
+      { aviso_id: avisoId, usuario_id: usuarioId },
+      { onConflict: "aviso_id,usuario_id", ignoreDuplicates: true }
+    );
 
   if (error) {
     console.error("Error marcando el aviso como leído:", error);
     throw new Error("No se pudo marcar el aviso como leído.");
   }
-  return mapLeido(data);
+  return { id: null, avisoId, usuarioId, leidoEn: new Date().toISOString() };
 };
