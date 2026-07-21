@@ -276,13 +276,13 @@ describe("construirDias", () => {
       { diaSemana: 2, horaEntrada: "09:00:00", horaSalida: "18:00:00", toleranciaMin: 10 },
     ];
     const checadas = [
-      checada("entrada", "2026-07-20T15:00:00Z", { fecha: "2026-07-20" }),
-      checada("salida", "2026-07-21T00:00:00Z", { fecha: "2026-07-20" }),
+      checada("entrada", "2026-07-27T15:00:00Z", { fecha: "2026-07-27" }),
+      checada("salida", "2026-07-28T00:00:00Z", { fecha: "2026-07-27" }),
     ];
 
-    // Lunes 20 (vino) y martes 21 (no vino). Ambas después de FECHA_INICIO_ASISTENCIA.
-    // hoy fijo posterior para que el 21 cuente como día ya cerrado (falta), no en curso.
-    const dias = construirDias({ desde: "2026-07-20", hasta: "2026-07-21", checadas, horarios, hoy: "2026-08-01" });
+    // Lunes 27 (vino) y martes 28 (no vino). Ambas después de FECHA_INICIO_ASISTENCIA.
+    // hoy fijo posterior para que el 28 cuente como día ya cerrado (falta), no en curso.
+    const dias = construirDias({ desde: "2026-07-27", hasta: "2026-07-28", checadas, horarios, hoy: "2026-08-01" });
 
     expect(dias).toHaveLength(2);
     expect(dias[0].estado).toBe(ESTADOS_DIA.PRESENTE);

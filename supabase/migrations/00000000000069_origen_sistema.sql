@@ -1,0 +1,12 @@
+-- Un tercer origen para las checadas y solicitudes: el propio sistema.
+--
+-- Nace para el cierre automático de jornada: si alguien marca entrada y se le olvida
+-- marcar salida, el cron de la madrugada le pone una salida para que el día no quede
+-- "incompleto" para siempre. Esa salida no la puso ni el empleado ni RH, la puso el
+-- sistema — y hay que poder distinguirla (en el panel, en reportes, en auditoría) de una
+-- salida real. Sin un valor propio habría que mentir con 'rh' o 'empleado'.
+--
+-- ADD VALUE IF NOT EXISTS es idempotente y no reescribe filas: solo amplía el conjunto de
+-- valores permitidos. No se puede usar el valor nuevo en la MISMA transacción que lo crea,
+-- por eso va solo en su migración.
+ALTER TYPE origen_solicitud ADD VALUE IF NOT EXISTS 'sistema';

@@ -40,6 +40,17 @@ const ETIQUETA_ESTADO = {
   [ESTADOS_DIA.PENDIENTE]: "En curso",
 };
 
+// Etiqueta de la tarjeta activa como filtro. La clave es la propiedad del resumen (la misma
+// que alimenta el número de cada tarjeta), no el ESTADO_DIA — "Sin salida" es `incompletos`.
+const ETIQUETA_FILTRO = {
+  presentes: "Presentes",
+  retardos: "Retardos",
+  faltas: "Faltas",
+  justificados: "Justificados",
+  incompletos: "Sin salida",
+  pendientes: "Pendientes",
+};
+
 const hoyClinica = () =>
   new Intl.DateTimeFormat("en-CA", { timeZone: TZ_CLINICA }).format(new Date());
 
@@ -157,6 +168,10 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
   const [empleadoId, setEmpleadoId] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [filtroSucursal, setFiltroSucursal] = useState("Todas");
+  // Filtro por estado: al tocar una de las 6 tarjetas de arriba (Faltas, Retardos…), el
+  // detalle se acota a los empleados que tienen al menos un día en ese estado. null = sin
+  // filtro (se ven todos). Es un toggle: tocar la tarjeta activa la quita.
+  const [filtroEstado, setFiltroEstado] = useState(null);
 
   // Sucursal y Empleado viven en un panel que se abre con el botón "Filtros" (la búsqueda,
   // la granularidad y el navegador de fecha quedan siempre a la vista). El badge cuenta
@@ -279,6 +294,13 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
   const totales = useMemo(
     () => resumen(porEmpleado.flatMap((e) => e.dias)),
     [porEmpleado]
+  );
+
+  // Con una tarjeta activa, el detalle solo muestra a quien tiene ≥1 día en ese estado. La
+  // clave del filtro es la misma propiedad del resumen que pinta el número de la tarjeta.
+  const listaEmpleados = useMemo(
+    () => (filtroEstado ? porEmpleado.filter((e) => (e.resumen?.[filtroEstado] || 0) > 0) : porEmpleado),
+    [porEmpleado, filtroEstado]
   );
 
   // Todas las faltas VISIBLES ahora mismo (respeta los filtros ya puestos: rango de
@@ -585,21 +607,31 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
           las cards grandes y recuperando alto para el detalle. */}
       <div className="asistencia-stat-strip">
         {[
-          { icon: "check", value: totales.presentes, label: "Presentes", clase: "admin-stat-value--green" },
-          { icon: "clock", value: totales.retardos, label: "Retardos", clase: "admin-stat-value--amber" },
-          { icon: "alert", value: totales.faltas, label: "Faltas", clase: "admin-stat-value--red" },
-          { icon: "vacation", value: totales.justificados, label: "Justificados", clase: "admin-stat-value--blue" },
-          { icon: "history", value: totales.incompletos, label: "Sin salida", clase: "admin-stat-value--aqua" },
-          { icon: "clock", value: totales.pendientes, label: "Pendientes", clase: "admin-stat-value--orange" },
-        ].map((t) => (
-          <div key={t.label} className="asistencia-stat-tile">
-            <span className="asistencia-stat-tile-icon"><Icon name={t.icon} size={16} /></span>
-            <span className="asistencia-stat-tile-body">
-              <span className={`asistencia-stat-tile-value ${t.clase}`}>{t.value}</span>
-              <span className="asistencia-stat-tile-label">{t.label}</span>
-            </span>
-          </div>
-        ))}
+          { icon: "check", value: totales.presentes, label: "Presentes", clase: "admin-stat-value--green", estado: "presentes" },
+          { icon: "clock", value: totales.retardos, label: "Retardos", clase: "admin-stat-value--amber", estado: "retardos" },
+          { icon: "alert", value: totales.faltas, label: "Faltas", clase: "admin-stat-value--red", estado: "faltas" },
+          { icon: "vacation", value: totales.justificados, label: "Justificados", clase: "admin-stat-value--blue", estado: "justificados" },
+          { icon: "history", value: totales.incompletos, label: "Sin salida", clase: "admin-stat-value--aqua", estado: "incompletos" },
+          { icon: "clock", value: totales.pendientes, label: "Pendientes", clase: "admin-stat-value--orange", estado: "pendientes" },
+        ].map((t) => {
+          const activo = filtroEstado === t.estado;
+          return (
+            <button
+              key={t.label}
+              type="button"
+              className={`asistencia-stat-tile asistencia-stat-tile--filtro${activo ? " asistencia-stat-tile--activo" : ""}`}
+              aria-pressed={activo}
+              title={activo ? `Quitar filtro: ${t.label}` : `Filtrar por ${t.label}`}
+              onClick={() => setFiltroEstado((prev) => (prev === t.estado ? null : t.estado))}
+            >
+              <span className="asistencia-stat-tile-icon"><Icon name={t.icon} size={16} /></span>
+              <span className="asistencia-stat-tile-body">
+                <span className={`asistencia-stat-tile-value ${t.clase}`}>{t.value}</span>
+                <span className="asistencia-stat-tile-label">{t.label}</span>
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {paraRevisar.length > 0 && (
@@ -637,16 +669,28 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
         </section>
       )}
 
-      <SectionTitle icon="users">Detalle por empleado</SectionTitle>
+      <SectionTitle icon="users">
+        Detalle por empleado
+        {filtroEstado && (
+          <button type="button" className="asistencia-filtro-chip" onClick={() => setFiltroEstado(null)}>
+            {ETIQUETA_FILTRO[filtroEstado]}
+            <Icon name="xCircle" size={13} />
+          </button>
+        )}
+      </SectionTitle>
 
       {cargando ? (
         <Card><p className="mc-empty">Cargando asistencia…</p></Card>
-      ) : porEmpleado.length === 0 ? (
-        <Card><p className="mc-empty">No hay empleados que mostrar.</p></Card>
+      ) : listaEmpleados.length === 0 ? (
+        <Card>
+          <p className="mc-empty">
+            {filtroEstado ? `Nadie con "${ETIQUETA_FILTRO[filtroEstado]}" en este período.` : "No hay empleados que mostrar."}
+          </p>
+        </Card>
       ) : (
         <div className="rh-data-list">
-          {porEmpleado.map(({ empleado, resumen: r, grupos, dias }) => (
-            <details key={empleado.id} className="asistencia-empleado-row" open={empleadoId === empleado.id}>
+          {listaEmpleados.map(({ empleado, resumen: r, grupos, dias }) => (
+            <details key={empleado.id} className="asistencia-empleado-row" open={empleadoId === empleado.id || !!filtroEstado}>
               <summary className="rh-data-row">
                 <div className="rh-data-row-main">
                   <div className="rh-data-row-title">

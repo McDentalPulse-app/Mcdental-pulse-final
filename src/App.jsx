@@ -8,6 +8,7 @@ import LandingPage from "./components/landing/LandingPage";
 import Loader from './components/ui/Loader';
 import AvisoModal from "./components/avisos/AvisoModal";
 import CampanaNotificaciones from "./components/notificaciones/CampanaNotificaciones";
+import ForzarNotificaciones from "./components/notificaciones/ForzarNotificaciones";
 
 const AdminLayout = lazy(() => import("./components/layout/AdminLayout"));
 const PsicologaLayout = lazy(() => import("./components/layout/PsicologaLayout"));
@@ -72,6 +73,9 @@ export default function App() {
       {/* Campana global: fija arriba a la derecha, común a los 4 roles (mismo motivo que
           AvisoModal). Es la ventana a la bandeja persistente de notificaciones. */}
       <CampanaNotificaciones user={user} />
+      {/* Empujón obligatorio para activar el push: se muestra a sí mismo solo si hace falta
+          (permiso sin conceder), común a los 4 roles. */}
+      <ForzarNotificaciones />
       <Suspense fallback={<Loader />}>
         <Routes>
           {user.role === 'admin' && (

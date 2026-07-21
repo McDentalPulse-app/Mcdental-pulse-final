@@ -206,6 +206,105 @@ const revisarTickets = async (supabase) => {
   return { revisados, avisados };
 };
 
+/** Día ISO (1=lunes … 7=domingo) de una fecha "YYYY-MM-DD", en UTC para que la zona del
+ * runtime no corra el día. Misma cuenta que src/utils/asistencia.js (diaISO). */
+const diaISODeFecha = (fecha) => {
+  const d = new Date(`${String(fecha).slice(0, 10)}T00:00:00Z`);
+  const dow = d.getUTCDay(); // 0=domingo … 6=sábado
+  return dow === 0 ? 7 : dow;
+};
+
+/**
+ * Cierra las jornadas que quedaron abiertas: entrada sí, salida no, de un día que ya pasó.
+ *
+ * EL PROBLEMA QUE RESUELVE: quien marca entrada y se le olvida marcar salida deja el día
+ * "incompleto" para siempre — y no se arregla solo, porque el checador de mañana empieza un
+ * día nuevo. Sin esto, se acumulan decenas de días a medio marcar que RH tendría que cerrar
+ * a mano uno por uno.
+ *
+ * CÓMO: a cada entrada huérfana se le pone una salida a la hora en que ESE día terminaba su
+ * turno (la de su horario), no la hora del cron — así las horas trabajadas salen razonables y
+ * no una jornada de 14 h porque el cron corre a las 7am. Si ese día no tenía horario cargado,
+ * se usa una salida por defecto a las 18:00. La salida lleva `origen = 'sistema'` y una nota,
+ * para que en el panel se distinga de una salida que la persona sí marcó.
+ *
+ * Solo toca días ANTERIORES a hoy: el día en curso todavía puede cerrarse solo, la persona
+ * aún puede marcar su salida real.
+ */
+const CIERRE_TZ_OFFSET = "-06:00"; // Monterrey es UTC-6 todo el año (México no aplica horario de verano).
+const HORA_SALIDA_DEFECTO = "18:00:00";
+
+const cerrarJornadasAbiertas = async (supabase) => {
+  const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Monterrey" }).format(new Date());
+
+  // Se acota a la última semana: una entrada huérfana más vieja que eso ya no vale la pena
+  // cerrarla (y evita un barrido enorme si alguna vez se re-siembra histórico).
+  const hace7 = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Monterrey" })
+    .format(new Date(Date.now() - 7 * 86_400_000));
+
+  const { data: entradas, error: errEnt } = await supabase
+    .from("asistencias")
+    .select("empleado_id, fecha")
+    .eq("tipo", "entrada")
+    .eq("anulada", false)
+    .gte("fecha", hace7)
+    .lt("fecha", hoy);
+
+  if (errEnt) {
+    console.error("Error buscando entradas abiertas:", errEnt);
+    return { cerradas: 0, error: "No se pudieron buscar las entradas." };
+  }
+  if (!entradas?.length) return { cerradas: 0 };
+
+  const { data: salidas } = await supabase
+    .from("asistencias")
+    .select("empleado_id, fecha")
+    .eq("tipo", "salida")
+    .gte("fecha", hace7)
+    .lt("fecha", hoy);
+
+  const conSalida = new Set((salidas || []).map((s) => `${s.empleado_id}|${s.fecha}`));
+  // Dedup por si un día tuviera dos entradas: una sola salida basta para cerrarlo.
+  const huerfanas = new Map();
+  for (const e of entradas) {
+    const clave = `${e.empleado_id}|${e.fecha}`;
+    if (!conSalida.has(clave)) huerfanas.set(clave, e);
+  }
+  if (!huerfanas.size) return { cerradas: 0 };
+
+  // Horario de quienes tienen jornada huérfana, para saber a qué hora cerraba su turno.
+  const empleadoIds = [...new Set([...huerfanas.values()].map((e) => e.empleado_id))];
+  const { data: horarios } = await supabase
+    .from("horarios")
+    .select("empleado_id, dia_semana, hora_salida")
+    .in("empleado_id", empleadoIds);
+
+  const horaPorClave = new Map(
+    (horarios || []).map((h) => [`${h.empleado_id}|${h.dia_semana}`, h.hora_salida])
+  );
+
+  const filas = [...huerfanas.values()].map((e) => {
+    const dia = diaISODeFecha(e.fecha);
+    const horaSalida = horaPorClave.get(`${e.empleado_id}|${dia}`) || HORA_SALIDA_DEFECTO;
+    return {
+      empleado_id: e.empleado_id,
+      tipo: "salida",
+      fecha: e.fecha,
+      marcada_en: `${e.fecha}T${horaSalida}${CIERRE_TZ_OFFSET}`,
+      ubicacion_estado: "sin_gps",
+      origen: "sistema",
+      nota_rh: "Salida automática: no marcó salida.",
+    };
+  });
+
+  const { error: errIns } = await supabase.from("asistencias").insert(filas);
+  if (errIns) {
+    console.error("Error insertando salidas automáticas:", errIns);
+    return { cerradas: 0, error: "No se pudieron cerrar las jornadas." };
+  }
+  return { cerradas: filas.length };
+};
+
 export default async function handler(req, res) {
   if (!configOk()) {
     return res.status(500).json({ error: "Supabase no está configurado en el servidor." });
@@ -223,6 +322,10 @@ export default async function handler(req, res) {
 
   const supabase = admin();
   const resultado = {};
+
+  // Cierre de jornadas abiertas: corre SIEMPRE, no depende del push — es higiene de datos, no
+  // un aviso. Sin esto, las entradas sin salida se acumulan como días "incompletos".
+  resultado.jornadasCerradas = await cerrarJornadasAbiertas(supabase);
 
   if (pushDisponible()) {
     if (DIAS_RECORDATORIO_ENCUESTA.includes(diaISOEnMexico())) {

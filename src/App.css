@@ -8612,6 +8612,74 @@
 .asistencia-stat-tile-value { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; }
 .asistencia-stat-tile-label { font-size: 11.5px; font-weight: 700; color: var(--mc-texto-secundario); white-space: nowrap; }
 
+/* Tarjeta como filtro (toggle): reset de <button> + estado activo. */
+.asistencia-stat-tile--filtro {
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+}
+.asistencia-stat-tile--filtro:hover { border-color: var(--mc-marca-texto); }
+.asistencia-stat-tile--filtro:focus-visible { outline: 2px solid var(--mc-marca-texto); outline-offset: 2px; }
+.asistencia-stat-tile--activo {
+  border-color: var(--mc-marca-texto);
+  background: linear-gradient(135deg, rgba(20,200,182,0.14), rgba(14,140,122,0.10));
+  box-shadow: inset 0 0 0 1px var(--mc-marca-texto);
+}
+
+/* Chip que indica el filtro activo, junto al título "Detalle por empleado". */
+.asistencia-filtro-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-left: 10px; padding: 3px 8px 3px 10px;
+  font-size: 12px; font-weight: 700;
+  border: 1px solid var(--mc-marca-texto); border-radius: 999px;
+  background: rgba(20,200,182,0.10); color: var(--mc-marca-texto);
+  cursor: pointer; vertical-align: middle;
+}
+.asistencia-filtro-chip:hover { background: rgba(20,200,182,0.18); }
+
+/* Modal obligatorio de activación de notificaciones (bloquea la app hasta decidir). */
+.forzar-push-overlay {
+  position: fixed; inset: 0; z-index: 5000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  background: rgba(4, 20, 18, 0.72);
+  backdrop-filter: blur(3px);
+}
+.forzar-push-card {
+  width: 100%; max-width: 400px;
+  background: var(--mc-superficie);
+  border: 1px solid var(--mc-card-borde);
+  border-radius: 18px;
+  padding: 26px 24px;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+}
+.forzar-push-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 54px; height: 54px; margin-bottom: 14px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(20,200,182,0.18), rgba(14,140,122,0.12));
+  border: 1px solid rgba(20,200,182,0.22);
+  color: var(--mc-marca-texto);
+}
+.forzar-push-titulo { font-size: 18px; font-weight: 800; margin: 0 0 8px; color: var(--mc-texto-principal); }
+.forzar-push-texto { font-size: 14px; line-height: 1.55; color: var(--mc-texto-secundario); margin: 0 0 18px; }
+.forzar-push-pasos { text-align: left; font-size: 13.5px; line-height: 1.6; color: var(--mc-texto-secundario); margin: 0 0 16px; padding-left: 20px; }
+.forzar-push-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  width: 100%; padding: 12px 16px; margin-top: 8px;
+  font-size: 15px; font-weight: 700;
+  border: none; border-radius: 12px; cursor: pointer;
+  background: var(--mc-marca-texto); color: #fff;
+}
+.forzar-push-btn:disabled { opacity: 0.7; cursor: default; }
+.forzar-push-btn--ghost {
+  background: transparent; color: var(--mc-texto-secundario);
+  border: 1px solid var(--mc-card-borde);
+}
+
 /* Sección de checadas sospechosas: acento de alerta para que salte a la vista */
 .asistencia-revision {
   border-left: 3px solid var(--mc-semaforo-rojo);

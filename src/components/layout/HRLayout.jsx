@@ -7,6 +7,7 @@ import VacacionesRH from '../rh/VacacionesRH';
 import PermisosRH from '../rh/PermisosRH';
 import DescuentosRH from '../rh/DescuentosRH';
 import AsistenciaPanel from '../asistencia/AsistenciaPanel';
+import ChecadorEmpleado from '../asistencia/ChecadorEmpleado';
 import EnrolarRostros from '../asistencia/EnrolarRostros';
 import GestionHorarios from '../admin/GestionHorarios';
 import ImportarHorarios from '../admin/ImportarHorarios';
@@ -33,8 +34,8 @@ import AvisosPanel from '../avisos/AvisosPanel';
 export default function HRLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
-  const { vacaciones, permisos, descuentos, calendarioExtra, reconocimientos, encuestas, mensajes, notas, reportesConfidenciales, archivosExpediente, horarios, setHorarios, avisos } = globals;
-  const { updateVacacionEstado, updatePermisoEstado, updateDescuentoEstado, addDescuento, addReconocimiento, subirArchivoExpediente, addAviso, updateAviso, deleteAviso, justificarFalta } = actions;
+  const { vacaciones, permisos, descuentos, calendarioExtra, reconocimientos, encuestas, mensajes, notas, reportesConfidenciales, archivosExpediente, horarios, setHorarios, avisos, checadasHoy } = globals;
+  const { updateVacacionEstado, updatePermisoEstado, updateDescuentoEstado, addDescuento, addReconocimiento, subirArchivoExpediente, addAviso, updateAviso, deleteAviso, justificarFalta, registrarChecada } = actions;
   const { ofrecerPush, activarAvisos, cerrarOfertaPush } = useAvisoPush();
 
   return (
@@ -49,6 +50,7 @@ export default function HRLayout({ user, globals, actions }) {
             <Route path="empleados" element={<EmpleadosList encuestas={encuestas} notas={notas} role="rh" currentUser={user} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} />} />
             <Route path="usuarios" element={<GestionUsuarios />} />
             <Route path="asistencia" element={<AsistenciaPanel usuarios={USERS} horarios={horarios} permisos={permisos} vacaciones={vacaciones} puedeAnular puedeJustificar onJustificarFalta={justificarFalta} />} />
+            <Route path="checador" element={<ChecadorEmpleado user={user} checadasHoy={checadasHoy} horarios={horarios} permisos={permisos} onChecar={registrarChecada} />} />
             <Route path="horarios" element={<GestionHorarios usuarios={USERS} horarios={horarios} setHorarios={setHorarios} />} />
             <Route path="importar-horarios" element={<ImportarHorarios usuarios={USERS} />} />
             <Route path="calibracion" element={<Calibracion usuarios={USERS} />} />

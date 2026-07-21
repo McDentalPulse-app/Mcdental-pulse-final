@@ -17,6 +17,27 @@ import { supabase } from "../config/supabase";
 
 const VAPID_PUBLICA = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 
+// Huella de la clave pública con la que se hizo la última suscripción de ESTE navegador. Es la
+// pieza que faltaba para que el push dejara de romperse en silencio: cada vez que se rota la
+// clave VAPID (ya pasó dos veces), las suscripciones viejas quedan atadas a la clave anterior y
+// se vuelven sordas sin ningún error visible. Guardando la huella se detecta el desajuste al
+// abrir la app y se re-suscribe solo, sin que nadie tenga que tocar un botón.
+const FP_KEY = "mcdental_push_vapid_fp";
+
+/** Hash corto y estable (djb2) de la clave pública. No es criptográfico: solo sirve para
+ * comparar "¿es la misma clave que la última vez?" sin guardar la clave entera. */
+const huellaClave = (clave) => {
+  let h = 5381;
+  for (let i = 0; i < clave.length; i += 1) h = ((h << 5) + h + clave.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+};
+
+const guardarHuella = () => {
+  try {
+    if (VAPID_PUBLICA) localStorage.setItem(FP_KEY, huellaClave(VAPID_PUBLICA));
+  } catch { /* almacenamiento no disponible: no es crítico */ }
+};
+
 /** ¿Este navegador puede recibir push? (En Safari sin instalar, no.) */
 export const soportado = () =>
   "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
@@ -80,6 +101,7 @@ export const activar = async () => {
     }));
 
   await post("POST", { suscripcion: suscripcion.toJSON() });
+  guardarHuella();
   return "granted";
 };
 
@@ -139,4 +161,52 @@ export const refrescarSuscripcion = async () => {
     applicationServerKey: claveABytes(VAPID_PUBLICA),
   });
   await post("POST", { suscripcion: nueva.toJSON() });
+  guardarHuella();
+};
+
+/**
+ * Se auto-repara al abrir la app: si el permiso ya está concedido pero (a) no hay suscripción
+ * en este navegador, o (b) la clave VAPID cambió desde la última vez, re-suscribe solo. Es lo
+ * que hace que un cambio de clave o una suscripción caducada deje de necesitar que alguien pulse
+ * "Buscar actualización" — la causa #1 por la que el push se rompía y no se arreglaba solo.
+ *
+ * No pide permiso y no hace nada si el permiso no está concedido: es silencioso a propósito.
+ */
+export const sincronizarSuscripcion = async () => {
+  if (!soportado() || !VAPID_PUBLICA || Notification.permission !== "granted") return;
+
+  const registro = await navigator.serviceWorker.ready;
+  const actual = await registro.pushManager.getSubscription();
+  let huellaGuardada = null;
+  try { huellaGuardada = localStorage.getItem(FP_KEY); } catch { /* ignore */ }
+
+  // Ya suscrito y con la clave vigente: nada que hacer.
+  if (actual && huellaGuardada === huellaClave(VAPID_PUBLICA)) return;
+
+  // Falta suscripción, o la clave cambió: re-suscribir de cero (esto ya reguarda la huella).
+  await refrescarSuscripcion();
+};
+
+/**
+ * Diagnóstico para saber por qué NO llega el push. Devuelve si el servidor tiene el push
+ * configurado y la huella de SU clave pública, y la huella de la clave del bundle del cliente.
+ * Si las dos huellas no coinciden, ahí está el problema: cliente y servidor firman con claves
+ * distintas y todo falla en silencio.
+ */
+export const diagnostico = async () => {
+  const { data } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+  if (!token) throw new Error("Tu sesión expiró.");
+
+  const r = await fetch("/api/suscribir-push", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ accion: "diagnostico" }),
+  });
+  const cuerpo = await r.json().catch(() => ({}));
+  return {
+    ...cuerpo,
+    clientePublicaFp: VAPID_PUBLICA ? huellaClave(VAPID_PUBLICA) : null,
+    coincide: Boolean(cuerpo.servidorPublicaFp) && cuerpo.servidorPublicaFp === (VAPID_PUBLICA ? huellaClave(VAPID_PUBLICA) : null),
+  };
 };

@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { registerSW } from 'virtual:pwa-register'
 import { notify } from './utils/notify'
 import { buscarActualizacion } from './utils/appUpdate'
+import { sincronizarSuscripcion } from './services/pushService'
 import './index.css'
 import './App.css'
 import './styles/mobile-polish.css'
@@ -84,6 +85,10 @@ if ('serviceWorker' in navigator) {
   // ahí se avisa con un toast, en vez de recargar solo y cortarle a alguien una foto a medias.
   let avisado = false
   navigator.serviceWorker.addEventListener('controllerchange', () => {
+    // Un SW nuevo tomó el control: casi siempre es un deploy, el momento donde la clave VAPID
+    // pudo cambiar. Se re-sincroniza la suscripción SOLA (silenciosa, no pide permiso), que es
+    // justo lo que antes solo pasaba si alguien pulsaba "Buscar actualización" a mano.
+    sincronizarSuscripcion().catch(() => {})
     if (avisado) return
     avisado = true
     notify.toast.update('Hay una versión nueva de la app.', {
@@ -102,6 +107,9 @@ if ('serviceWorker' in navigator) {
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') revisar()
     })
+    // Al cargar (con el SW ya listo): auto-reparar la suscripción si quedó atada a una clave
+    // vieja o desapareció. No pide permiso — solo actúa si ya estaba concedido.
+    sincronizarSuscripcion().catch(() => {})
   })
 }
 

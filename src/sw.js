@@ -65,6 +65,39 @@ self.addEventListener("push", (event) => {
 });
 
 /**
+ * El navegador rota la suscripción por su cuenta (caduca, o el proveedor la renueva). Cuando
+ * pasa, la suscripción vieja MUERE y, sin este manejador, nada crea la nueva: el aparato queda
+ * mudo para siempre. Aquí se re-suscribe con la MISMA clave VAPID (la del evento) y se le avisa
+ * al servidor para que mueva la fila del endpoint viejo al nuevo — sin JWT, porque un service
+ * worker no tiene sesión de Supabase (por eso el endpoint usa la acción "rotar").
+ *
+ * Es una de las tres causas por las que el push se rompía y no se arreglaba solo.
+ */
+self.addEventListener("pushsubscriptionchange", (event) => {
+  const rotar = async () => {
+    const clave = event.oldSubscription?.options?.applicationServerKey;
+    if (!clave) return; // sin la clave vieja no se puede re-suscribir a ciegas.
+
+    const nueva = await self.registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: clave,
+    });
+
+    await fetch("/api/suscribir-push", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        accion: "rotar",
+        endpointViejo: event.oldSubscription?.endpoint,
+        suscripcion: nueva.toJSON(),
+      }),
+    });
+  };
+
+  event.waitUntil(rotar().catch((e) => console.error("Error rotando suscripción push:", e)));
+});
+
+/**
  * La persona toca la notificación. Debe abrir LA PANTALLA del aviso, no la home.
  *
  * Y si ya tiene la app abierta, se reutiliza esa pestaña en vez de abrir una segunda: nada

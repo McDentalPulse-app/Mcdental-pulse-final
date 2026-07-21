@@ -82,6 +82,8 @@ const Sidebar = () => {
     // el resto de opciones del admin.
     psicologa: [
       { key: "dashboard", icon: "dashboard", label: "Dashboard" },
+      // La psicóloga también marca su asistencia: el checador va arriba, a la vista.
+      { key: "checador", icon: "clock", label: "Checador" },
       { key: "ai", icon: "ai", label: "AI Engine" },
       { key: "seguimiento", icon: "target", label: "Seguimiento" },
       { key: "confidenciales", icon: "lock", label: "Reportes Confidenciales" },
@@ -111,6 +113,8 @@ const Sidebar = () => {
     // Descuentos, Calendario, Reportes RH, Bolsa) y suma las opciones del admin.
     rh: [
       { key: "dashboard", icon: "dashboard", label: "Dashboard RH" },
+      // RH también marca su asistencia: el checador va arriba, a la vista.
+      { key: "checador", icon: "clock", label: "Checador" },
       { key: "usuarios", icon: "userCog", label: "Gestión de Personal" },
       { key: "empleados", icon: "users", label: "Empleados" },
       { key: "ai", icon: "ai", label: "AI Engine", group: "Herramientas" },
