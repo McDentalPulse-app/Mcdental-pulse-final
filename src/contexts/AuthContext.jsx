@@ -27,6 +27,7 @@ const mapUsuarioRow = (row) =>
     inactivo: row.inactivo,
     debeCambiarPassword: row.debe_cambiar_password,
     avatarUrl: row.avatar_url,
+    colorAcento: row.color_acento,
   };
 
 export const AuthProvider = ({ children }) => {

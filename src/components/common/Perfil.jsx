@@ -12,6 +12,7 @@ import PageHeader from "./PageHeader";
 import Card from "./Card";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
+import SelectorColor from "../settings/SelectorColor";
 
 // Etiqueta legible del rol (no hay un mapa central; local y pequeño).
 const ROLE_LABEL = {
@@ -183,6 +184,8 @@ export default function Perfil() {
           Para cambiar tus datos (nombre, puesto, sucursal…) contacta a Recursos Humanos.
         </p>
       </Card>
+
+      <SelectorColor />
 
       <Card className="perfil-info-card">
         <div className="perfil-info-title">

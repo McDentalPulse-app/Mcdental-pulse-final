@@ -25,9 +25,9 @@
   inset: 0;
   z-index: 0;
   border-radius: 10px;
-  background: rgba(20, 200, 182, 0.16);
-  border: 1px solid rgba(20, 200, 182, 0.32);
-  box-shadow: inset 3px 0 0 var(--mc-aqua), 0 6px 18px -8px rgba(20, 200, 182, 0.5);
+  background: rgba(var(--mc-aqua-rgb) / 0.16);
+  border: 1px solid rgba(var(--mc-aqua-rgb) / 0.32);
+  box-shadow: inset 3px 0 0 var(--mc-aqua), 0 6px 18px -8px rgba(var(--mc-aqua-rgb) / 0.5);
 }
 /* El estado activo ya no pinta fondo: lo hace el pill */
 .sidebar-nav-btn--active {
@@ -86,7 +86,7 @@
   transition: background 0.18s, color 0.18s;
 }
 .sidebar-rail-toggle:hover {
-  background: rgba(20, 200, 182, 0.2);
+  background: rgba(var(--mc-aqua-rgb) / 0.2);
   color: var(--mc-blanco);
 }
 .sidebar-rail-chevron {
@@ -154,7 +154,7 @@
   inset: 4px 10px;
   z-index: 0;
   border-radius: 12px;
-  background: rgba(20, 200, 182, 0.16);
+  background: rgba(var(--mc-aqua-rgb) / 0.16);
 }
 .mobile-tab > svg,
 .mobile-tab-label { position: relative; z-index: 1; }

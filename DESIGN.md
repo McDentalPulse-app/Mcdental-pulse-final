@@ -30,6 +30,26 @@ valor según ese atributo, así que:
 **No hace falta escribir `dark:` casi nunca.** Si te encuentras poniendo `dark:` en todas partes,
 es señal de que falta un token semántico. `dark:` es para excepciones, no para la norma.
 
+## Color de marca personalizable por usuario
+
+El color de marca (el teal) **ya no es fijo**: cada usuario elige el suyo — presets o color
+propio — y se guarda en su fila (`usuarios.color_acento`, migración `...070`). El tema (claro/
+oscuro) y el color son **ortogonales**: `data-theme` decide claro/oscuro, el color solo rota el
+tono de la familia de marca.
+
+- **Cómo:** `AccentContext` toma una semilla hex y `src/utils/accentPalette.js` genera toda la
+  familia de marca por **rotación de tono** (conserva S y L de cada tono → la curva y el contraste
+  AA se mantienen). El resultado se aplica como variables inline sobre `<html>`.
+- **Selector:** `src/components/settings/SelectorColor.jsx`, dentro de **Mi perfil** (universal a
+  los 4 roles; Config es solo admin/rh/psicóloga).
+- **Canales RGB:** los ~156 `rgba()` de glow/aurora/borde del CSS **ya no llevan el teal a pelo**;
+  apuntan a `--mc-aqua-rgb`, `--mc-verde-rgb`, `--mc-verde-oscuro-rgb`, `--mc-brand600-rgb`,
+  `--mc-brand300-rgb`, `--mc-brand200-rgb` (formato `R G B`, usados como `rgba(var(--x) / α)`).
+  Por eso el color cambia **de verdad** en todo (login, fondo, aurora), no solo en los botones.
+
+> **Regresión cero por defecto:** con la semilla teal (`#0E8C7A`) `generarPaleta` reproduce
+> EXACTAMENTE los valores de `index.css` (sin drift). La app sin elección se ve igual que siempre.
+
 ## Tokens
 
 ### Primitivos — la marca. No cambian con el tema.

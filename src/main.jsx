@@ -13,6 +13,7 @@ import { AuthProvider } from './contexts/AuthContext.jsx'
 import { GlobalProvider } from './contexts/GlobalContext.jsx'
 import { NotificationProvider } from './contexts/NotificationContext.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
+import { AccentProvider } from './contexts/AccentContext.jsx'
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -120,7 +121,9 @@ createRoot(document.getElementById('root')).render(
         <AuthProvider>
           <GlobalProvider>
             <NotificationProvider>
-              <ErrorBoundary><App /></ErrorBoundary>
+              <AccentProvider>
+                <ErrorBoundary><App /></ErrorBoundary>
+              </AccentProvider>
             </NotificationProvider>
           </GlobalProvider>
         </AuthProvider>

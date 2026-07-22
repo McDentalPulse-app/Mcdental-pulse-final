@@ -96,6 +96,25 @@
   --brand-300: #46D6C5;
   --brand-200: #8AE9DD;
 
+  /* ── Canales RGB de la marca (color personalizable) ──
+     Los ~156 rgba() literales del CSS (glows, aurora del fondo, bordes con tinte
+     de marca) apuntan a estos canales en vez de llevar el teal escrito a pelo.
+     Así, cuando AccentContext reescribe estas variables en <html> con el color
+     que el usuario eligió, TODO ese glow/aurora/borde se recolorea de una.
+     Los valores de aquí son el teal actual: sin usuario/JS, la app se ve igual.
+     Formato "R G B" (separado por espacios) para usarse como rgba(var(--x) / α). */
+  /* Rotación de tono de la marca en grados OKLCH. Las superficies/fondos del modo
+     oscuro se escriben como oklch(L C calc(<tono-teal> + var(--mc-brand-dh))):
+     AccentContext lo reescribe con el mismo delta que aplica a los swatches, y el
+     fondo oscuro rota de tono conservando su L/C. Fallback (sin JS) = 0 → teal. */
+  --mc-brand-dh: 0;
+  --mc-aqua-rgb: 20 200 182;          /* #14C8B6 */
+  --mc-verde-rgb: 14 140 122;         /* #0E8C7A */
+  --mc-verde-oscuro-rgb: 0 109 91;    /* #006D5B */
+  --mc-brand600-rgb: 16 116 99;       /* #107463 */
+  --mc-brand300-rgb: 70 214 197;      /* #46D6C5 */
+  --mc-brand200-rgb: 138 233 221;     /* #8AE9DD */
+
   /* ── Layout colors ── */
   --mc-gris-fondo: #EEF5F4;
   --mc-gris-perla: #F6FAFA;
@@ -115,7 +134,7 @@
   --mc-card-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.78) 0%, rgba(246, 251, 250, 0.66) 100%);
   --mc-card-borde: rgba(255, 255, 255, 0.7);
   --mc-card-blur: blur(6px) saturate(120%);
-  --mc-card-borde-hover: rgba(20, 200, 182, 0.35);
+  --mc-card-borde-hover: rgba(var(--mc-aqua-rgb) / 0.35);
   --mc-card-sombra-hover: 0 18px 38px -20px rgba(4, 35, 31, 0.45);
   --mc-minibar-hover: rgba(255, 255, 255, 0.85);
 
@@ -157,7 +176,7 @@
      `.expediente-foto-upload` y `.expediente-foto-quitar` son clones de "editar" y "borrar":
      usan estos mismos tokens en vez de tener su propia copia. */
   --mc-btn-edit-fg: var(--mc-verde-medio);
-  --mc-btn-edit-borde: rgba(14, 140, 122, 0.35);
+  --mc-btn-edit-borde: rgba(var(--mc-verde-rgb) / 0.35);
   --mc-btn-edit-bg: var(--mc-brand-suave);
   --mc-btn-edit-bg-hover: var(--mc-verde-claro);
 
@@ -173,7 +192,7 @@
   --mc-btn-danger-bg-hover: var(--mc-badge-rojo-bg);
   --mc-btn-danger-borde-hover: var(--mc-rojo-apagado);
 
-  --mc-borde-modal: rgba(0, 109, 91, 0.08);
+  --mc-borde-modal: rgba(var(--mc-verde-oscuro-rgb) / 0.08);
 
   /* Badge neutro y pill de "vacaciones": no son del semáforo ni de marca, tienen su propio
      hue (índigo / azul en oscuro). Por eso no podían salir de ningún token existente. */
@@ -194,15 +213,15 @@
      (no un color que se invierte), así que el token guarda el degradado entero. */
   --mc-fondo-shell: var(--mc-gris-perla);
   --mc-fondo-app:
-    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(20, 200, 182, 0.16) 0%, transparent 55%),
-    radial-gradient(ellipse 50% 40% at 0% 100%, rgba(16, 116, 99, 0.13) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(var(--mc-aqua-rgb) / 0.16) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 0% 100%, rgba(var(--mc-brand600-rgb) / 0.13) 0%, transparent 55%),
     linear-gradient(180deg, var(--mc-slate-50) 0%, var(--mc-gris-fondo) 100%);
   --mc-fondo-rejilla:
     linear-gradient(rgba(10, 51, 46, 0.09) 1px, transparent 1px),
     linear-gradient(90deg, rgba(10, 51, 46, 0.09) 1px, transparent 1px);
   --mc-fondo-aurora:
-    radial-gradient(circle 340px at 96% 0%, rgba(20, 200, 182, 0.22), transparent 72%),
-    radial-gradient(circle 380px at 2% 96%, rgba(16, 116, 99, 0.20), transparent 72%);
+    radial-gradient(circle 340px at 96% 0%, rgba(var(--mc-aqua-rgb) / 0.22), transparent 72%),
+    radial-gradient(circle 380px at 2% 96%, rgba(var(--mc-brand600-rgb) / 0.20), transparent 72%);
   --mc-fondo-aurora-filtro: blur(16px);
   --mc-fondo-aurora-anim: appMainOrbFloat 18s ease-in-out infinite;
   --mc-fondo-sweep: transparent;
@@ -370,9 +389,12 @@
      "no funcionara del todo". Los overrides de src/styles/dark/ intentaban
      tapar esto pantalla por pantalla, y por eso quedaban huecos.
      ═════════════════════════════════════════════════════════════════════ */
-  --mc-texto: #E6F2F0;
-  --mc-superficie: #0F332C;
-  --mc-superficie-input: #0A2420;
+  /* Texto y superficies del modo oscuro por matiz de marca: conservan su
+     luminosidad/saturación (mismo aspecto que #E6F2F0 / #0F332C / #0A2420 con el
+     teal por defecto) y rotan de tono con el color elegido. */
+  --mc-texto: oklch(95.16% 0.0130 calc(185.09 + var(--mc-brand-dh)));
+  --mc-superficie: oklch(29.35% 0.0420 calc(182.74 + var(--mc-brand-dh)));
+  --mc-superficie-input: oklch(23.86% 0.0328 calc(181.83 + var(--mc-brand-dh)));
 
   /* El semáforo tampoco cambiaba: un #059669 sobre fondo #0A2420 queda apagado.
      Se usan las versiones claras que este mismo archivo ya había validado como
@@ -391,20 +413,20 @@
      ═════════════════════════════════════════════════════════════════════ */
   /* Fondo suave de marca: en oscuro, un tinte del acento sobre el fondo, no un pastel
      atenuado (que se vería gris sucio). */
-  --mc-brand-suave: rgba(20, 200, 182, 0.10);
+  --mc-brand-suave: rgba(var(--mc-aqua-rgb) / 0.10);
 
   --mc-slate-900: #F1F5F9;
   --mc-slate-700: #E2E8F0;
   --mc-slate-600: #CBD5E1;
-  --mc-slate-500: #9DBDB6;
-  --mc-slate-400: #8FA8A3;
+  --mc-slate-500: oklch(77.32% 0.0353 calc(184.95 + var(--mc-brand-dh)));
+  --mc-slate-400: oklch(71.13% 0.0284 calc(184.85 + var(--mc-brand-dh)));
   /* Los bordes en oscuro llevan un tinte de la marca (brand-200), no blanco puro.
      En una paleta que es toda teal, un borde blanco canta: se lee como un contorno
      gris ajeno, sobre todo donde el borde es de 1.5px (los chips del AI Engine). */
-  --mc-slate-200: rgba(138, 233, 221, 0.16);
+  --mc-slate-200: rgba(var(--mc-brand200-rgb) / 0.16);
   --mc-slate-100: rgba(255, 255, 255, 0.06);
   --mc-slate-50:  rgba(255, 255, 255, 0.03);
-  --mc-borde-suave: rgba(138, 233, 221, 0.12);
+  --mc-borde-suave: rgba(var(--mc-brand200-rgb) / 0.12);
 
   /* Avisos y errores: en oscuro no se atenúa el pastel (quedaría gris sucio), se
      usa el color a baja opacidad sobre el fondo + texto claro. */
@@ -434,7 +456,7 @@
 
   --mc-superficie-sutil: var(--mc-superficie-input);
   --mc-superficie-sutil-hover: var(--mc-superficie-input-focus);
-  --mc-superficie-input-focus: #123A33;
+  --mc-superficie-input-focus: oklch(31.83% 0.0459 calc(181.77 + var(--mc-brand-dh)));
 
   --mc-btn-outline-fg: var(--mc-aqua);
 
@@ -460,25 +482,28 @@
   --mc-pill-vacaciones-bg: #1E3A8A;
 
   --mc-marca-texto: var(--mc-aqua);
-  --mc-icono-accion: #46D6C5;
+  /* var(--brand-300), no el hex, para que el color de marca personalizable llegue
+     también a los iconos en modo oscuro (en claro ya sigue vía --mc-marca-texto).
+     brand-300 es #46D6C5: mismo valor con la paleta teal por defecto. */
+  --mc-icono-accion: var(--brand-300);
 
-  --mc-fondo-shell: #071613;
+  --mc-fondo-shell: oklch(18.58% 0.0215 calc(184.64 + var(--mc-brand-dh)));
   --mc-fondo-app:
-    radial-gradient(ellipse 90% 50% at 50% -10%, rgba(14, 140, 122, 0.20) 0%, transparent 60%),
-    linear-gradient(180deg, #081815 0%, #060F0D 55%, #081A16 100%);
+    radial-gradient(ellipse 90% 50% at 50% -10%, rgba(var(--mc-verde-rgb) / 0.20) 0%, transparent 60%),
+    linear-gradient(180deg, oklch(19.41% 0.0224 calc(185.18 + var(--mc-brand-dh))) 0%, oklch(15.85% 0.0146 calc(187.49 + var(--mc-brand-dh))) 55%, oklch(20.16% 0.0244 calc(186.06 + var(--mc-brand-dh))) 100%);
   --mc-fondo-rejilla:
-    linear-gradient(rgba(70, 214, 197, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(70, 214, 197, 0.055) 1px, transparent 1px);
+    linear-gradient(rgba(var(--mc-brand300-rgb) / 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--mc-brand300-rgb) / 0.055) 1px, transparent 1px);
   --mc-fondo-aurora:
-    radial-gradient(circle 420px at 88% -4%, rgba(20, 200, 182, 0.20), transparent 68%),
+    radial-gradient(circle 420px at 88% -4%, rgba(var(--mc-aqua-rgb) / 0.20), transparent 68%),
     radial-gradient(circle 460px at -6% 100%, rgba(34, 211, 238, 0.12), transparent 70%),
-    radial-gradient(circle 300px at 55% 118%, rgba(138, 233, 221, 0.08), transparent 75%);
+    radial-gradient(circle 300px at 55% 118%, rgba(var(--mc-brand200-rgb) / 0.08), transparent 75%);
   --mc-fondo-aurora-filtro: none;
   --mc-fondo-aurora-anim: mcAuroraDrift 32s ease-in-out infinite;
   --mc-fondo-sweep: conic-gradient(
     from 210deg at 50% 50%,
     transparent 0deg,
-    rgba(20, 200, 182, 0.07) 40deg,
+    rgba(var(--mc-aqua-rgb) / 0.07) 40deg,
     rgba(34, 211, 238, 0.05) 80deg,
     transparent 130deg
   );
@@ -498,16 +523,16 @@
   /* Badges en oscuro: fondo saturado + texto claro. Ya estaban definidos más
      abajo en este mismo bloque; se conservan tal cual. */
 
-  --mc-gris-fondo: #0A2420;
-  --mc-gris-perla: #0D2B26;
-  --mc-gris-suave: rgba(138, 233, 221, 0.16);
+  --mc-gris-fondo: oklch(23.86% 0.0328 calc(181.83 + var(--mc-brand-dh)));
+  --mc-gris-perla: oklch(26.51% 0.0364 calc(183.48 + var(--mc-brand-dh)));
+  --mc-gris-suave: rgba(var(--mc-brand200-rgb) / 0.16);
 
   --mc-sombra: 0 18px 48px -16px rgba(0, 0, 0, 0.55), 0 4px 12px -6px rgba(0, 0, 0, 0.35);
   --mc-sombra-suave: 0 8px 24px -12px rgba(0, 0, 0, 0.4);
   --mc-sombra-card: 0 1px 3px rgba(0, 0, 0, 0.25), 0 6px 20px -14px rgba(0, 0, 0, 0.45);
 
   --mc-texto-titulo: var(--brand-200);
-  --mc-texto-secundario: #9DBDB6;
+  --mc-texto-secundario: oklch(77.32% 0.0353 calc(184.95 + var(--mc-brand-dh)));
 
   /* Stat/KPI: versiones claras/brillantes (mismos hues que los badges dark,
      ya validados como legibles sobre #0F332C). */
@@ -520,8 +545,8 @@
 
   /* Superficies: tarjetas/modales/inputs/tabla, todas un poco más claras que
      el fondo de página para que se distingan como "elevadas". */
-  --mc-superficie-card: #0F332C;
-  --mc-superficie-card-border: rgba(138, 233, 221, 0.12);
+  --mc-superficie-card: oklch(29.35% 0.0420 calc(182.74 + var(--mc-brand-dh)));
+  --mc-superficie-card-border: rgba(var(--mc-brand200-rgb) / 0.12);
 
   /* En claro la tarjeta es un "glass" blanco translúcido; en oscuro pasa a superficie sólida
      elevada sobre el fondo de página. Es el mismo aspecto que ya daba styles/dark/surfaces.css,
@@ -529,11 +554,11 @@
   --mc-card-bg: var(--mc-superficie-card);
   --mc-card-borde: var(--mc-superficie-card-border);
   --mc-card-blur: none;
-  --mc-card-borde-hover: rgba(20, 200, 182, 0.4);
+  --mc-card-borde-hover: rgba(var(--mc-aqua-rgb) / 0.4);
   --mc-card-sombra-hover: 0 18px 38px -20px rgba(0, 0, 0, 0.6);
-  --mc-minibar-hover: rgba(138, 233, 221, 0.14);
-  --mc-superficie-input: #0A2420;
-  --mc-superficie-input-focus: #123A33;
+  --mc-minibar-hover: rgba(var(--mc-brand200-rgb) / 0.14);
+  --mc-superficie-input: oklch(23.86% 0.0328 calc(181.83 + var(--mc-brand-dh)));
+  --mc-superficie-input-focus: oklch(31.83% 0.0459 calc(181.77 + var(--mc-brand-dh)));
   --mc-superficie-th: rgba(255, 255, 255, 0.04);
 
   /* Badges/pills invertidos: fondo saturado oscuro + texto claro (no solo
@@ -594,8 +619,8 @@ img {
   padding: 32px 24px;
   overflow: hidden;
   background:
-    radial-gradient(ellipse 70% 55% at 18% 12%, rgba(20, 200, 182, 0.22) 0%, transparent 55%),
-    radial-gradient(ellipse 60% 50% at 88% 88%, rgba(16, 116, 99, 0.30) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 55% at 18% 12%, rgba(var(--mc-aqua-rgb) / 0.22) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 50% at 88% 88%, rgba(var(--mc-brand600-rgb) / 0.30) 0%, transparent 55%),
     var(--grad-brand);
 }
 
@@ -613,12 +638,12 @@ img {
 .auth-page::before {
   width: 420px; height: 420px;
   top: -120px; left: -100px;
-  background: radial-gradient(circle, rgba(20, 200, 182, 0.55), transparent 70%);
+  background: radial-gradient(circle, rgba(var(--mc-aqua-rgb) / 0.55), transparent 70%);
 }
 .auth-page::after {
   width: 480px; height: 480px;
   bottom: -160px; right: -120px;
-  background: radial-gradient(circle, rgba(14, 140, 122, 0.5), transparent 70%);
+  background: radial-gradient(circle, rgba(var(--mc-verde-rgb) / 0.5), transparent 70%);
   animation-delay: -7s;
 }
 
@@ -745,7 +770,7 @@ img {
 
 .auth-input:focus {
   border-color: var(--mc-aqua);
-  box-shadow: 0 0 0 3px rgba(20, 200, 182, 0.20);
+  box-shadow: 0 0 0 3px rgba(var(--mc-aqua-rgb) / 0.20);
   background: rgba(255, 255, 255, 0.14);
 }
 
@@ -771,13 +796,13 @@ img {
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  box-shadow: 0 10px 26px -10px rgba(20, 200, 182, 0.6);
+  box-shadow: 0 10px 26px -10px rgba(var(--mc-aqua-rgb) / 0.6);
   transition: filter 0.2s, transform 0.15s, box-shadow 0.2s;
 }
 
 .auth-btn:hover:not(:disabled) {
   filter: brightness(1.06);
-  box-shadow: 0 14px 32px -10px rgba(20, 200, 182, 0.72);
+  box-shadow: 0 14px 32px -10px rgba(var(--mc-aqua-rgb) / 0.72);
 }
 
 .auth-btn:active:not(:disabled) {
@@ -928,3 +953,21 @@ img {
 
 /* Quita el retardo de 300ms al tocar en móvil, sin desactivar el zoom. */
 a, button, [role="button"], input, select, textarea, label { touch-action: manipulation; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Barras de scroll ocultas en TODA la app
+   ═══════════════════════════════════════════════════════════════════════
+   El scroll sigue funcionando (rueda, touch, teclado, arrastre) — solo se
+   oculta la barra visible. Va con !important a propósito: hay decenas de
+   reglas ::-webkit-scrollbar específicas (listas, tablas, modales) con más
+   especificidad que un selector universal, y esta las tiene que ganar todas.
+   ═════════════════════════════════════════════════════════════════════ */
+* {
+  scrollbar-width: none !important;      /* Firefox */
+  -ms-overflow-style: none !important;   /* Edge/IE viejo */
+}
+*::-webkit-scrollbar {                   /* Chrome / Safari / WebKit */
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
