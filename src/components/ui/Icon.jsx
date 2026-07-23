@@ -1,4 +1,6 @@
 import {
+  PartyPopper,
+  Repeat,
   LayoutDashboard,
   Bot,
   Search,
@@ -115,6 +117,8 @@ const ICON_MAP = {
   minus: Minus,
   search: Search,
   party: Gift,
+  partyPopper: PartyPopper,
+  repeat: Repeat,
   xCircle: XCircle,
   star: Star,
   note: StickyNote,

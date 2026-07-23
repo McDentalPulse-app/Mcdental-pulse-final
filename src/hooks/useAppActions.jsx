@@ -9,6 +9,9 @@ import { addNota as addNotaDb } from "../services/supabase/notasService";
 import { addVacacion, updateEstadoVacacion as updateEstadoVacacionDb } from "../services/supabase/vacacionesService";
 import { addPermiso, updateEstadoPermiso as updateEstadoPermisoDb } from "../services/supabase/permisosService";
 import { addDescuento as addDescuentoDb, updateDescuentoEstado as updateDescuentoEstadoDb } from "../services/supabase/descuentosService";
+import { crearComision as crearComisionDb, revisarComision as revisarComisionDb } from "../services/supabase/comisionesService";
+import { addFestivo as addFestivoDb, deleteFestivo as deleteFestivoDb } from "../services/supabase/festivosService";
+import { solicitarIntercambio as solicitarIntercambioDb, resolverIntercambio as resolverIntercambioDb } from "../services/supabase/intercambiosService";
 import { addReporteConfidencial as addReporteConfidencialDb } from "../services/supabase/reportesService";
 import { addReconocimiento as addReconocimientoDb } from "../services/supabase/reconocimientosService";
 import { subirArchivoExpediente as subirArchivoExpedienteDb } from "../services/supabase/archivosExpedienteService";
@@ -29,10 +32,16 @@ export const useAppActions = () => {
     vacaciones,
     permisos,
     descuentos,
+    comisiones,
+    intercambios,
     avisos,
     setVacaciones,
     setPermisos,
     setDescuentos,
+    setComisiones,
+    setFestivos,
+    setIntercambios,
+    setDestinosOcupados,
     setEncuestas,
     setMensajes,
     setNotas,
@@ -227,6 +236,99 @@ export const useAppActions = () => {
     }
   };
 
+  // El doctor sube un recibo (foto + nota). No es optimista: el registro depende de que la
+  // foto suba primero al bucket, así que se espera la fila real que devuelve el servicio.
+  const crearComision = async ({ archivo, nota }) => {
+    try {
+      const nueva = await crearComisionDb({ doctorId: user?.id, archivo, nota });
+      setComisiones(prev => [nueva, ...prev]);
+      notify.toast.success("Recibo enviado. RH lo revisará.");
+      return true;
+    } catch (error) {
+      console.error("Error creando comisión:", error);
+      notify.toast.error(error?.message || "No se pudo enviar el recibo.");
+      return false;
+    }
+  };
+
+  // RH valida/rechaza un recibo. Optimista con reversión, como los updates de vacaciones.
+  const revisarComision = async (id, estado, comentario = "") => {
+    const previo = comisiones.find(c => c.id === id);
+    setComisiones(prev => prev.map(c => c.id === id ? { ...c, estado, comentarioRH: comentario } : c));
+
+    try {
+      await revisarComisionDb(id, estado, comentario);
+      return true;
+    } catch (error) {
+      console.error("Error revisando comisión:", error);
+      if (previo) setComisiones(prev => prev.map(c => c.id === id ? previo : c));
+      notify.toast.error(error?.message || "No se pudo actualizar el recibo.");
+      return false;
+    }
+  };
+
+  // --- Calendario: festivos e intercambios de día ---------------------------
+
+  // El empleado/doctor aparta un festivo para cambiarlo por otro día. No optimista: el índice
+  // único del destino puede rechazarlo en el servidor, así que se espera la fila confirmada.
+  const solicitarIntercambio = async ({ fechaFestivo, fechaDestino }) => {
+    try {
+      const nuevo = await solicitarIntercambioDb({ fechaFestivo, fechaDestino });
+      setIntercambios(prev => [nuevo, ...prev]);
+      setDestinosOcupados(prev => [...prev, nuevo.fechaDestino]);
+      notify.toast.success("Solicitud enviada. RH la revisará.");
+      return true;
+    } catch (error) {
+      console.error("Error solicitando intercambio:", error);
+      notify.toast.error(error?.message || "No se pudo enviar la solicitud.");
+      return false;
+    }
+  };
+
+  // RH aprueba/rechaza. Optimista con reversión, como vacaciones.
+  const resolverIntercambio = async (id, estado, comentario = "") => {
+    const previo = intercambios.find(i => i.id === id);
+    setIntercambios(prev => prev.map(i => i.id === id ? { ...i, estado, comentarioRH: comentario } : i));
+
+    try {
+      await resolverIntercambioDb(id, estado, comentario);
+      return true;
+    } catch (error) {
+      console.error("Error resolviendo intercambio:", error);
+      if (previo) setIntercambios(prev => prev.map(i => i.id === id ? previo : i));
+      notify.toast.error(error?.message || "No se pudo actualizar la solicitud.");
+      return false;
+    }
+  };
+
+  const addFestivo = async ({ fecha, nombre }) => {
+    try {
+      const nuevo = await addFestivoDb({ fecha, nombre });
+      setFestivos(prev => [...prev, nuevo].sort((a, b) => a.fecha.localeCompare(b.fecha)));
+      notify.toast.success("Festivo agregado.");
+      return true;
+    } catch (error) {
+      console.error("Error agregando festivo:", error);
+      notify.toast.error(error?.message || "No se pudo agregar el festivo.");
+      return false;
+    }
+  };
+
+  const deleteFestivo = async (id) => {
+    const previos = [];
+    setFestivos(prev => { previos.push(...prev); return prev.filter(f => f.id !== id); });
+
+    try {
+      await deleteFestivoDb(id);
+      return true;
+    } catch (error) {
+      console.error("Error eliminando festivo:", error);
+      setFestivos(previos);
+      notify.toast.error(error?.message || "No se pudo eliminar el festivo.");
+      return false;
+    }
+  };
+
   const addReporteConfidencial = async (reporte) => {
     try {
       const nuevoReporte = await addReporteConfidencialDb(reporte);
@@ -375,6 +477,12 @@ export const useAppActions = () => {
     addSolicitudEmpleadoRH,
     updateDescuentoEstado,
     addDescuento,
+    crearComision,
+    revisarComision,
+    solicitarIntercambio,
+    resolverIntercambio,
+    addFestivo,
+    deleteFestivo,
     addReporteConfidencial,
     addReconocimiento,
     subirArchivoExpediente,

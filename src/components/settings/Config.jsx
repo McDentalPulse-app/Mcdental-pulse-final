@@ -54,7 +54,7 @@ const Config = () => {
     return () => { activo = false; };
   }, []);
 
-  const empleados = usuarios.filter((u) => !u.inactivo && u.role === "empleado").length;
+  const empleados = usuarios.filter((u) => !u.inactivo && ["empleado", "doctor"].includes(u.role)).length;
   const sinRegistrar = rostrosAprobados === null ? null : Math.max(0, empleados - rostrosAprobados);
 
   const cambiarExigencia = async (nuevo) => {

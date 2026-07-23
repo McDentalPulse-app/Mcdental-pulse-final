@@ -9768,3 +9768,159 @@
 .eventos-proximo-main strong { color: var(--mc-texto-titulo); font-size: 15px; }
 .eventos-proximo-main span { color: var(--mc-texto-secundario); font-size: 13px; }
 .eventos-proximo .mc-status-pill { margin-left: auto; }
+
+/* ============================================================================
+   Comisiones (recibos de doctores). Reutiliza mc-status-pill / mc-btn / StatCard;
+   aquí solo lo propio: los estados válida/inválida y la tarjeta con foto de recibo.
+   ============================================================================ */
+.mc-status-pill--valida { background: var(--mc-badge-verde-bg); color: var(--mc-badge-verde-texto); }
+.mc-status-pill--invalida { background: var(--mc-badge-rojo-bg); color: var(--mc-badge-rojo-texto); }
+
+.comision-fecha-hint {
+  display: flex; align-items: center; gap: 6px;
+  color: var(--mc-texto-secundario); font-size: 14px; margin: 4px 0 14px;
+}
+.comision-file-input { display: block; width: 100%; margin-bottom: 12px; color: var(--mc-texto-secundario); }
+.comision-file-input + .mc-form-textarea { margin-bottom: 12px; }
+
+.comision-grid {
+  display: grid; gap: 16px; margin-top: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+.comision-card {
+  display: flex; flex-direction: column;
+  border: 1px solid var(--mc-borde); border-radius: var(--mc-radio); overflow: hidden;
+  background: var(--mc-superficie);
+}
+.comision-card-body { display: flex; flex-direction: column; gap: 6px; padding: 12px; }
+.comision-card-doctor { font-weight: 600; color: var(--mc-texto-titulo); }
+.comision-card-fecha { font-size: 13px; color: var(--mc-texto-secundario); }
+.comision-card-nota { font-size: 13px; color: var(--mc-texto); }
+.comision-card-comentario { font-size: 13px; color: var(--mc-texto-secundario); font-style: italic; }
+.comision-card-body .mc-status-pill { align-self: flex-start; }
+.comision-card-actions { display: flex; gap: 8px; margin-top: 4px; }
+
+/* Miniatura del recibo (bucket privado, URL firmada). */
+.comision-recibo { display: block; width: 100%; aspect-ratio: 4 / 3; background: var(--mc-superficie-sutil); }
+.comision-recibo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.comision-recibo--loading { animation: pulse-bg 1.2s ease-in-out infinite; }
+.comision-recibo--error {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  color: var(--mc-texto-apagado); font-size: 13px;
+}
+@keyframes pulse-bg { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+/* ============================================================================
+   Calendario: intercambio de día (empleado/doctor) y gestión de festivos (RH).
+   Reutiliza .cal-* (CalendarioMensual), .mc-form-*, .rh-data-* y .mc-status-pill.
+   ============================================================================ */
+.intercambio-hint { color: var(--mc-texto-secundario); font-size: 14px; margin: 2px 0 14px; }
+.intercambio-error { display: block; margin-top: 6px; color: var(--mc-badge-rojo-texto); font-size: 13px; }
+
+/* Alta de festivo (RH): fecha + nombre + botón en una fila que colapsa en móvil. */
+.festivo-alta { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+.festivo-alta .mc-form-input { flex: 1 1 160px; min-width: 0; }
+.festivo-alta .mc-btn-sm-action { flex: 0 0 auto; }
+
+/* Captura de recibo con cámara (Comisiones). Reutiliza .checador-camara pero SIN espejo
+   (el texto de un recibo no debe verse invertido) y la vista previa se muestra completa. */
+.recibo-captura { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 12px; }
+.recibo-captura .checador-camara-video { transform: none; }
+.recibo-captura-preview { width: 100%; height: 100%; object-fit: contain; background: var(--mc-gris-fondo); }
+/* Capa del marco de detección: misma resolución nativa que el vídeo y mismo object-fit,
+   así el rectángulo naranja queda alineado con lo que se ve. */
+.recibo-captura-overlay { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.recibo-captura-guia { font-size: 13px; color: var(--mc-texto-secundario); text-align: center; margin: 0; }
+.recibo-captura-guia--ok { color: var(--mc-badge-verde-texto); font-weight: 600; }
+.recibo-captura-nota { font-size: 13px; color: var(--mc-texto-secundario); }
+
+/* ============================================================================
+   Comisiones: lista agrupada y colapsable (recibos ocultos hasta desplegar).
+   Grupo = por doctor (RH) o por estado (doctor). Item = una fila por recibo.
+   ============================================================================ */
+.comision-lista { display: flex; flex-direction: column; gap: 8px; }
+
+.comision-grupo { border: 1px solid var(--mc-borde); border-radius: var(--mc-radio); overflow: hidden; background: var(--mc-superficie); }
+.comision-grupo-head { width: 100%; display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: transparent; border: none; cursor: pointer; text-align: left; color: inherit; }
+.comision-grupo-head:hover { background: var(--mc-superficie-sutil); }
+.comision-grupo-titulo { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.comision-grupo-titulo strong { color: var(--mc-texto-titulo); }
+.comision-grupo-sub { font-size: 12px; color: var(--mc-texto-secundario); }
+.comision-grupo-badge { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--mc-badge-amarillo-bg); color: var(--mc-badge-amarillo-texto); white-space: nowrap; }
+.comision-grupo-conteo { font-size: 13px; color: var(--mc-texto-apagado); min-width: 18px; text-align: right; }
+.comision-grupo-body { border-top: 1px solid var(--mc-borde); padding: 6px; display: flex; flex-direction: column; gap: 6px; }
+
+.comision-item { border: 1px solid var(--mc-borde-suave); border-radius: var(--mc-radio); overflow: hidden; background: var(--mc-superficie); }
+.comision-item-head { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: transparent; border: none; cursor: pointer; text-align: left; color: inherit; }
+.comision-item-head:hover { background: var(--mc-superficie-sutil); }
+.comision-item-icono { color: var(--mc-texto-secundario); display: flex; }
+.comision-item-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.comision-item-doctor { font-weight: 600; color: var(--mc-texto-titulo); font-size: 14px; }
+.comision-item-fecha { font-size: 13px; color: var(--mc-texto-secundario); }
+.comision-item-nota { font-size: 12px; color: var(--mc-texto-apagado); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.comision-item-chevron { display: flex; color: var(--mc-texto-apagado); transition: transform 0.2s ease; }
+.comision-item-chevron--abierto { transform: rotate(180deg); }
+.comision-item-body { padding: 10px 12px; border-top: 1px solid var(--mc-borde-suave); display: flex; flex-direction: column; gap: 8px; }
+.comision-item-body .comision-recibo { max-width: 320px; border-radius: var(--mc-radio); }
+.comision-item-comentario { font-size: 13px; color: var(--mc-texto-secundario); font-style: italic; }
+.comision-item-actions { display: flex; gap: 8px; }
+
+/* ============================================================================
+   Calendario mensual: eventos DENTRO del día. Escritorio = chips con ícono+texto;
+   móvil (≤768px) = puntos de color + detalle al tocar. Festivo = celda resaltada.
+   ============================================================================ */
+.cal-celda { justify-content: flex-start; align-items: stretch; padding: 4px; gap: 2px; overflow: hidden; }
+.cal-num { align-self: flex-start; }
+
+/* Festivo: el día entero se resalta (aplica a toda la clínica), no es un chip más. */
+.cal-celda--festivo { background: color-mix(in srgb, var(--mc-rojo-apagado) 14%, var(--mc-superficie-sutil)); }
+.cal-festivo { display: flex; align-items: center; gap: 3px; min-width: 0; font-size: 10px; font-weight: 600; color: var(--mc-rojo-apagado); }
+.cal-festivo-ico { flex: none; display: inline-flex; align-items: center; }
+.cal-festivo-nom { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Chips (escritorio). Fondo tenue del color + barra lateral del color vivo + texto normal. */
+.cal-chips { display: flex; flex-direction: column; gap: 2px; width: 100%; min-width: 0; }
+.cal-chip {
+  display: flex; align-items: center; gap: 3px;
+  padding: 1px 4px; border-radius: 4px; font-size: 10px; line-height: 1.35;
+  background: color-mix(in srgb, var(--chip, var(--mc-aqua)) 18%, transparent);
+  color: var(--mc-texto); border-left: 3px solid var(--chip, var(--mc-aqua));
+  min-width: 0;
+}
+.cal-chip-ico { flex: none; display: inline-flex; align-items: center; color: var(--chip, var(--mc-aqua)); }
+.cal-chip-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cal-chip--mas { background: var(--mc-superficie-sutil); color: var(--mc-texto-secundario); border-left-color: transparent; font-weight: 600; }
+.cal-chip--aqua { --chip: var(--mc-aqua); }
+.cal-chip--azul { --chip: var(--mc-info-texto); }
+.cal-chip--ambar { --chip: var(--mc-ambar-apagado); }
+.cal-chip--verde { --chip: var(--mc-verde-medio); }
+.cal-chip--rojo { --chip: var(--mc-rojo-apagado); }
+.cal-chip--rosa { --chip: #ec4899; }
+.cal-punto--rosa { background: #ec4899; }
+
+/* Puntos: solo en móvil. En escritorio manda el chip. */
+.cal-puntos { display: none; margin-top: auto; align-self: center; }
+
+/* Ícono del detalle del día. */
+.cal-evento-ico { flex: none; display: inline-flex; align-items: center; }
+
+/* Colores de ícono por tipo (leyenda y detalle). */
+.cal-ico--aqua { color: var(--mc-aqua); }
+.cal-ico--azul { color: var(--mc-info-texto); }
+.cal-ico--ambar { color: var(--mc-ambar-apagado); }
+.cal-ico--verde { color: var(--mc-verde-medio); }
+.cal-ico--rojo { color: var(--mc-rojo-apagado); }
+.cal-ico--rosa { color: #ec4899; }
+
+/* Leyenda de tipos. */
+.cal-leyenda { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; font-size: 12px; color: var(--mc-texto-secundario); }
+.cal-leyenda-item { display: inline-flex; align-items: center; gap: 5px; }
+.cal-leyenda-ico { display: inline-flex; align-items: center; }
+
+@media (max-width: 768px) {
+  /* Celda chica: se ocultan los chips de texto y el nombre del festivo; mandan los puntos. */
+  .cal-chips { display: none; }
+  .cal-puntos { display: flex; }
+  .cal-festivo-nom { display: none; }
+  .cal-festivo { justify-content: center; }
+}

@@ -6,6 +6,7 @@ import HRDashboard from '../dashboards/HRDashboard';
 import VacacionesRH from '../rh/VacacionesRH';
 import PermisosRH from '../rh/PermisosRH';
 import DescuentosRH from '../rh/DescuentosRH';
+import ComisionesRH from '../comisiones/ComisionesRH';
 import AsistenciaPanel from '../asistencia/AsistenciaPanel';
 import ChecadorEmpleado from '../asistencia/ChecadorEmpleado';
 import EnrolarRostros from '../asistencia/EnrolarRostros';
@@ -13,6 +14,7 @@ import GestionHorarios from '../admin/GestionHorarios';
 import ImportarHorarios from '../admin/ImportarHorarios';
 import Calibracion from '../admin/Calibracion';
 import CalendarioRH from '../rh/CalendarioRH';
+import IntercambiosRH from '../calendario/IntercambiosRH';
 import EventosPersonal from '../empleados/EventosPersonal';
 import ReconocimientosGestion from '../rh/ReconocimientosGestion';
 import ReportesRH from '../rh/ReportesRH';
@@ -34,8 +36,8 @@ import AvisosPanel from '../avisos/AvisosPanel';
 export default function HRLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
-  const { vacaciones, permisos, descuentos, calendarioExtra, reconocimientos, encuestas, mensajes, notas, reportesConfidenciales, archivosExpediente, horarios, setHorarios, avisos, checadasHoy } = globals;
-  const { updateVacacionEstado, updatePermisoEstado, updateDescuentoEstado, addDescuento, addReconocimiento, subirArchivoExpediente, addAviso, updateAviso, deleteAviso, justificarFalta, registrarChecada } = actions;
+  const { vacaciones, permisos, descuentos, comisiones, intercambios, festivos, reconocimientos, encuestas, mensajes, notas, reportesConfidenciales, archivosExpediente, horarios, setHorarios, avisos, checadasHoy } = globals;
+  const { updateVacacionEstado, updatePermisoEstado, updateDescuentoEstado, addDescuento, revisarComision, resolverIntercambio, addFestivo, deleteFestivo, addReconocimiento, subirArchivoExpediente, addAviso, updateAviso, deleteAviso, justificarFalta, registrarChecada } = actions;
   const { ofrecerPush, activarAvisos, cerrarOfertaPush } = useAvisoPush();
 
   return (
@@ -58,7 +60,9 @@ export default function HRLayout({ user, globals, actions }) {
             <Route path="vacaciones" element={<VacacionesRH vacaciones={vacaciones} onUpdateEstado={updateVacacionEstado} />} />
             <Route path="permisos" element={<PermisosRH permisos={permisos} onUpdateEstado={updatePermisoEstado} horarios={horarios} />} />
             <Route path="descuentos" element={<DescuentosRH descuentos={descuentos} empleados={USERS} user={user} onUpdateEstado={updateDescuentoEstado} onAddDescuento={addDescuento} />} />
-            <Route path="calendario" element={<CalendarioRH vacaciones={vacaciones} permisos={permisos} eventosExtra={calendarioExtra} />} />
+            <Route path="comisiones" element={<ComisionesRH comisiones={comisiones} onRevisar={revisarComision} />} />
+            <Route path="calendario" element={<CalendarioRH vacaciones={vacaciones} permisos={permisos} festivos={festivos} intercambios={intercambios} />} />
+            <Route path="intercambios" element={<IntercambiosRH intercambios={intercambios} festivos={festivos} onResolver={resolverIntercambio} onAddFestivo={addFestivo} onDeleteFestivo={deleteFestivo} />} />
             <Route path="eventospersonal" element={<EventosPersonal users={USERS} />} />
             <Route path="reconocimientos" element={<ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />} />
             <Route path="reportesrh" element={<ReportesRH vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} />} />

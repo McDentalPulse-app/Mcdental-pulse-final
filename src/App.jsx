@@ -14,6 +14,7 @@ const AdminLayout = lazy(() => import("./components/layout/AdminLayout"));
 const PsicologaLayout = lazy(() => import("./components/layout/PsicologaLayout"));
 const HRLayout = lazy(() => import("./components/layout/HRLayout"));
 const EmpleadoLayout = lazy(() => import("./components/layout/EmpleadoLayout"));
+const DoctorLayout = lazy(() => import("./components/layout/DoctorLayout"));
 
 export default function App() {
   const {
@@ -89,6 +90,9 @@ export default function App() {
           )}
           {user.role === 'empleado' && (
             <Route path="/empleado/*" element={<EmpleadoLayout user={user} globals={globals} actions={combinedActions} />} />
+          )}
+          {user.role === 'doctor' && (
+            <Route path="/doctor/*" element={<DoctorLayout user={user} globals={globals} actions={combinedActions} />} />
           )}
 
           <Route path="*" element={<div style={{ color:"#9ca3af",padding:40,textAlign:"center" }}>Vista en construcción / No encontrada</div>} />

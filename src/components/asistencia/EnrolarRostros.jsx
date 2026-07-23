@@ -60,7 +60,7 @@ export default function EnrolarRostros({ usuarios = [] }) {
 
   const empleados = useMemo(
     () => usuarios
-      .filter((u) => !u.inactivo && u.role === "empleado")
+      .filter((u) => !u.inactivo && ["empleado", "doctor"].includes(u.role))
       .sort((a, b) => (a.name || "").localeCompare(b.name || "")),
     [usuarios]
   );

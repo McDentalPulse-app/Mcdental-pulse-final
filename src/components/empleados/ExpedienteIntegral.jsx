@@ -46,7 +46,7 @@ const ExpedienteIntegral = ({
 
  // A propósito INCLUYE inactivos: el expediente es archivo/historial y debe
  // seguir consultable tras la baja (los dashboards sí los excluyen).
- const empleados = users.filter(u => u.role === "empleado");
+ const empleados = users.filter(u => ["empleado", "doctor"].includes(u.role));
 const [filtroSucursalExp, setFiltroSucursalExp] = useState("Todas");
 const [empleadoId, setEmpleadoId] = useState(empleados[0]?.id || "");
 const [mostrarSubirArchivo, setMostrarSubirArchivo] = useState(false);

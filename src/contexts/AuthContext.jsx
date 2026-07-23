@@ -2,7 +2,7 @@ import React, { createContext, useState, useContext, useEffect, useRef } from "r
 import { supabase, usernameToSyntheticEmail } from "../config/supabase";
 import { notify } from "../utils/notify";
 
-const VALID_ROLES = new Set(["admin", "rh", "psicologa", "empleado"]);
+const VALID_ROLES = new Set(["admin", "rh", "psicologa", "empleado", "doctor"]);
 
 // Contraseña temporal por defecto (debe coincidir con TEMP_PASSWORD de
 // supabase/functions/_shared/username.ts). Entrar con ella siempre fuerza el

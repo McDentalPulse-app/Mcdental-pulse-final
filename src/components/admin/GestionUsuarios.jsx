@@ -182,7 +182,7 @@ const GestionUsuarios = () => {
                   <td className="mc-table-muted">{emp.user}</td>
                   <td>{normalizeSucursal(emp.sucursal)}</td>
                   <td>
-                    <span className={`mc-tag ${emp.role !== "empleado" ? "mc-tag--role-privileged" : ""}`}>
+                    <span className={`mc-tag ${!["empleado", "doctor"].includes(emp.role) ? "mc-tag--role-privileged" : ""}`}>
                       {emp.role}
                     </span>
                   </td>
@@ -255,7 +255,7 @@ const GestionUsuarios = () => {
                   </span>
                 </div>
                 <div className="gestion-personal-mobile-meta">
-                  <span className={`mc-tag ${emp.role !== "empleado" ? "mc-tag--role-privileged" : ""}`}>{emp.role}</span>
+                  <span className={`mc-tag ${!["empleado", "doctor"].includes(emp.role) ? "mc-tag--role-privileged" : ""}`}>{emp.role}</span>
                   <span className="gestion-personal-mobile-sucursal">{normalizeSucursal(emp.sucursal)}</span>
                 </div>
                 <div className="gestion-personal-mobile-actions">
@@ -322,6 +322,7 @@ const GestionUsuarios = () => {
                   <label className="mc-form-label" htmlFor="gu-role">Rol</label>
                   <select id="gu-role" className="mc-form-select" value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})}>
                     <option value="empleado">Empleado</option>
+                    <option value="doctor">Doctor</option>
                     <option value="rh">Recursos Humanos</option>
                     <option value="psicologa">Psicóloga</option>
                     <option value="admin">Administrador</option>

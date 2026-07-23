@@ -18,6 +18,9 @@ import { getReconocimientos } from "../services/supabase/reconocimientosService"
 import { getVacaciones } from "../services/supabase/vacacionesService";
 import { getPermisos } from "../services/supabase/permisosService";
 import { getDescuentos } from "../services/supabase/descuentosService";
+import { getComisiones } from "../services/supabase/comisionesService";
+import { getFestivos } from "../services/supabase/festivosService";
+import { getIntercambios, getDestinosOcupados } from "../services/supabase/intercambiosService";
 import { getArchivosExpediente } from "../services/supabase/archivosExpedienteService";
 import { getNotasPsicologicas } from "../services/supabase/notasService";
 import { getUsuarios, getUsuariosDirectorio, getEncuestaPreguntas } from "../services/supabase/usuariosService";
@@ -50,6 +53,13 @@ export const GlobalProvider = ({ children }) => {
   const [vacaciones, setVacaciones] = useState([]);
   const [permisos, setPermisos] = useState([]);
   const [descuentos, setDescuentos] = useState([]);
+  // Comisiones (recibos de doctores). El doctor ve las suyas; gestión, todas (RLS decide).
+  const [comisiones, setComisiones] = useState([]);
+  // Calendario: festivos (todos los ven) e intercambios de día (empleado/doctor los suyos,
+  // gestión todos). destinosOcupados = fechas destino ya apartadas por alguien (sin quién).
+  const [festivos, setFestivos] = useState([]);
+  const [intercambios, setIntercambios] = useState([]);
+  const [destinosOcupados, setDestinosOcupados] = useState([]);
 
   // Asistencia.
   //
@@ -94,6 +104,10 @@ export const GlobalProvider = ({ children }) => {
         let dbVacaciones = null;
         let dbPermisos = null;
         let dbDescuentos = null;
+        let dbComisiones = null;
+        let dbFestivos = null;
+        let dbIntercambios = null;
+        let dbDestinosOcupados = null;
         let dbNotas = null;
         let dbHorarios = null;
         let dbChecadasHoy = null;
@@ -116,9 +130,9 @@ export const GlobalProvider = ({ children }) => {
         promises.push(getAvisos().then(res => dbAvisos = res).catch(() => { huboError = true; }));
         promises.push(getAvisosLeidos().then(res => dbAvisosLeidos = res).catch(() => { huboError = true; }));
 
-        // Encuestas y mensajes y reconocimientos: admin, rh, psicologa, empleado
-        // (rh ahora tiene paridad admin: AI Engine, Encuestas, Reconocimientos)
-        if (role === "admin" || role === "rh" || role === "psicologa" || role === "empleado") {
+        // Encuestas y mensajes y reconocimientos: admin, rh, psicologa, empleado, doctor
+        // (el doctor es un empleado con extras: consume lo mismo que el empleado)
+        if (["admin", "rh", "psicologa", "empleado", "doctor"].includes(role)) {
           promises.push(getEncuestas().then(res => dbEncuestas = res).catch(() => { huboError = true; }));
           promises.push(getMensajes().then(res => dbMensajes = res).catch(() => { huboError = true; }));
           promises.push(getReconocimientos().then(res => dbReconocimientos = res).catch(() => { huboError = true; }));
@@ -129,8 +143,8 @@ export const GlobalProvider = ({ children }) => {
           promises.push(getReportesConfidenciales().then(res => dbReportes = res).catch(() => { huboError = true; }));
         }
 
-        // Vacaciones y permisos: admin, rh, psicologa, empleado
-        if (role === "admin" || role === "rh" || role === "psicologa" || role === "empleado") {
+        // Vacaciones y permisos: admin, rh, psicologa, empleado, doctor
+        if (["admin", "rh", "psicologa", "empleado", "doctor"].includes(role)) {
           promises.push(getVacaciones().then(res => dbVacaciones = res).catch(() => { huboError = true; }));
           promises.push(getPermisos().then(res => dbPermisos = res).catch(() => { huboError = true; }));
         }
@@ -138,6 +152,21 @@ export const GlobalProvider = ({ children }) => {
         // Descuentos: admin, rh, psicologa
         if (role === "admin" || role === "rh" || role === "psicologa") {
           promises.push(getDescuentos().then(res => dbDescuentos = res).catch(() => { huboError = true; }));
+        }
+
+        // Comisiones (recibos): el doctor carga las suyas; gestión, todas para revisarlas.
+        if (["doctor", "admin", "rh", "psicologa"].includes(role)) {
+          promises.push(getComisiones().then(res => dbComisiones = res).catch(() => { huboError = true; }));
+        }
+
+        // Calendario: los festivos los ve TODO el mundo. Los intercambios: el empleado/doctor
+        // los suyos + los destinos ya ocupados (para no pedir un día tomado); gestión, todos.
+        promises.push(getFestivos().then(res => dbFestivos = res).catch(() => { huboError = true; }));
+        if (["empleado", "doctor", "admin", "rh", "psicologa"].includes(role)) {
+          promises.push(getIntercambios().then(res => dbIntercambios = res).catch(() => { huboError = true; }));
+        }
+        if (["empleado", "doctor"].includes(role)) {
+          promises.push(getDestinosOcupados().then(res => dbDestinosOcupados = res).catch(() => { huboError = true; }));
         }
 
         // Archivos Expediente: admin, psicologa, rh
@@ -161,7 +190,7 @@ export const GlobalProvider = ({ children }) => {
         const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: TZ_CLINICA }).format(new Date());
         promises.push(getHorarios().then(res => dbHorarios = res).catch(() => { huboError = true; }));
         promises.push(
-          getAsistencias({ desde: hoy, hasta: hoy, empleadoId: role === "empleado" ? user.id : undefined })
+          getAsistencias({ desde: hoy, hasta: hoy, empleadoId: (role === "empleado" || role === "doctor") ? user.id : undefined })
             .then(res => dbChecadasHoy = res)
             .catch(() => { huboError = true; })
         );
@@ -186,6 +215,10 @@ export const GlobalProvider = ({ children }) => {
         if (dbVacaciones) setVacaciones(dbVacaciones);
         if (dbPermisos) setPermisos(dbPermisos);
         if (dbDescuentos) setDescuentos(dbDescuentos);
+        if (dbComisiones) setComisiones(dbComisiones);
+        if (dbFestivos) setFestivos(dbFestivos);
+        if (dbIntercambios) setIntercambios(dbIntercambios);
+        if (dbDestinosOcupados) setDestinosOcupados(dbDestinosOcupados);
         if (dbNotas) setNotas(dbNotas);
         if (dbHorarios) setHorarios(dbHorarios);
         if (dbChecadasHoy) setChecadasHoy(dbChecadasHoy);
@@ -224,7 +257,7 @@ export const GlobalProvider = ({ children }) => {
   useEffect(() => {
     if (!user) return;
     const { role } = user;
-    if (role !== "admin" && role !== "psicologa" && role !== "empleado") return;
+    if (role !== "admin" && role !== "psicologa" && role !== "empleado" && role !== "doctor") return;
 
     const unsubscribe = subscribeEncuestas((nueva) => {
       setEncuestas((prev) => (prev.some((e) => e.id === nueva.id) ? prev : [...prev, nueva]));
@@ -297,6 +330,10 @@ export const GlobalProvider = ({ children }) => {
         vacaciones, setVacaciones,
         permisos, setPermisos,
         descuentos, setDescuentos,
+        comisiones, setComisiones,
+        festivos, setFestivos,
+        intercambios, setIntercambios,
+        destinosOcupados, setDestinosOcupados,
         notas, setNotas,
         horarios, setHorarios,
         checadasHoy, setChecadasHoy,

@@ -10,7 +10,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 // falla con un error que no dice nada — el checador se pasó una tarde así.
 //
 // Cada endpoint nuevo en api/ hay que añadirlo a esta lista.
-const ENDPOINTS = ['gemini', 'soporte-ticket', 'checar', 'reto', 'enrolar-rostro', 'aprobar-rostro', 'aprobar-permiso', 'suscribir-push', 'limpiar-fotos']
+const ENDPOINTS = ['gemini', 'soporte-ticket', 'checar', 'reto', 'enrolar-rostro', 'aprobar-rostro', 'aprobar-permiso', 'aprobar-vacacion', 'enviar-mensaje', 'suscribir-push', 'limpiar-fotos', 'revisar-comision', 'solicitar-intercambio', 'resolver-intercambio']
 
 function devApiProxy(mode) {
   return {
@@ -75,6 +75,20 @@ export default defineConfig(({ mode }) => ({
   // En producción quita console.* y debugger del bundle: no filtrar información al
   // cliente y no cargar 103 llamadas de log muertas. En dev se conservan.
   esbuild: { drop: mode === 'production' ? ['console', 'debugger'] : [] },
+  build: {
+    rollupOptions: {
+      output: {
+        // OpenCV.js (~13 MB) + jscanify solo los usa la cámara de comisiones. Se fuerzan a un
+        // chunk propio ('opencv') que se carga SOLO al abrir esa pantalla (dynamic import), y
+        // se excluye del precache del PWA (globIgnores abajo). Así no pesa en el arranque ni le
+        // cuesta a quien nunca sube un recibo.
+        manualChunks(id) {
+          if (id.includes('@techstark/opencv-js') || id.includes('jscanify')) return 'opencv'
+          return undefined
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),
@@ -134,7 +148,7 @@ export default defineConfig(({ mode }) => ({
         //   - exceljs (~930 KB): solo lo toca un admin, y solo el día que importa horarios.
         // Meterlos aquí sería cobrarle a la psicóloga —que no va a checar ni a importar nada—
         // 1,7 MB al instalar la app. Se descargan bajo demanda y el navegador los cachea.
-        globIgnores: ['**/mediapipe/**', '**/exceljs*'],
+        globIgnores: ['**/mediapipe/**', '**/exceljs*', '**/opencv*'],
       },
       devOptions: {
         enabled: false,
