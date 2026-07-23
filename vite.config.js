@@ -10,7 +10,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 // falla con un error que no dice nada — el checador se pasó una tarde así.
 //
 // Cada endpoint nuevo en api/ hay que añadirlo a esta lista.
-const ENDPOINTS = ['gemini', 'soporte-ticket', 'checar', 'reto', 'enrolar-rostro', 'aprobar-rostro', 'aprobar-permiso', 'aprobar-vacacion', 'enviar-mensaje', 'suscribir-push', 'limpiar-fotos', 'revisar-comision', 'solicitar-intercambio', 'resolver-intercambio']
+const ENDPOINTS = ['gemini', 'soporte-ticket', 'checar', 'reto', 'enrolar-rostro', 'aprobar-rostro', 'resolver', 'enviar-mensaje', 'suscribir-push', 'limpiar-fotos', 'solicitar-intercambio']
 
 function devApiProxy(mode) {
   return {

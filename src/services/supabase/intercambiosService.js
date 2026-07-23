@@ -68,10 +68,10 @@ export const resolverIntercambio = async (id, estado, comentario = "") => {
   const token = sesion?.session?.access_token;
   if (!token) throw new Error("Tu sesión expiró. Vuelve a entrar.");
 
-  const r = await fetch("/api/resolver-intercambio", {
+  const r = await fetch("/api/resolver", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ intercambioId: id, estado, comentario }),
+    body: JSON.stringify({ recurso: "intercambio", id, estado, comentario }),
   });
 
   const cuerpo = await r.json().catch(() => ({}));

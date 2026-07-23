@@ -73,10 +73,10 @@ export const updateEstadoPermiso = async (id, estado, comentarioRH = "") => {
   const token = sesion?.session?.access_token;
   if (!token) throw new Error("Tu sesión expiró. Vuelve a entrar.");
 
-  const r = await fetch("/api/aprobar-permiso", {
+  const r = await fetch("/api/resolver", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ permisoId: id, estado, comentarioRh: comentarioRH }),
+    body: JSON.stringify({ recurso: "permiso", id, estado, comentario: comentarioRH }),
   });
 
   const cuerpo = await r.json().catch(() => ({}));
