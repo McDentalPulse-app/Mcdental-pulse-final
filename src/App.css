@@ -10074,3 +10074,28 @@
   .agenda-celda { min-height: 84px; }
   .agenda-semana { overflow-x: auto; }
 }
+
+/* ============================================================================
+   Editor de texto enriquecido (avisos) + render de HTML sanitizado.
+   ============================================================================ */
+.editor { border: 1px solid var(--mc-borde-suave); border-radius: var(--mc-radio); overflow: hidden; background: var(--mc-superficie-input); }
+.editor-toolbar { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; padding: 6px; border-bottom: 1px solid var(--mc-borde-suave); background: var(--mc-superficie-sutil); }
+.editor-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: none; border-radius: 6px; background: transparent; color: var(--mc-texto-secundario); cursor: pointer; }
+.editor-btn:hover { background: var(--mc-superficie); color: var(--mc-texto-titulo); }
+.editor-btn--activo { background: var(--mc-brand-suave); color: var(--mc-aqua); }
+.editor-sep { width: 1px; height: 20px; background: var(--mc-borde-suave); margin: 0 4px; }
+.editor-area { min-height: 140px; max-height: 360px; overflow-y: auto; padding: 12px 14px; outline: none; color: var(--mc-texto); font-size: 14px; line-height: 1.5; }
+.editor-area:focus { outline: none; }
+.editor-cargando { padding: 16px; color: var(--mc-texto-secundario); font-size: 14px; border: 1px solid var(--mc-borde-suave); border-radius: var(--mc-radio); }
+
+/* Estilos del contenido (dentro del editor y en el render sanitizado). */
+.editor-area p, .aviso-html p { margin: 0 0 8px; }
+.editor-area p:last-child, .aviso-html p:last-child { margin-bottom: 0; }
+.editor-area h2, .aviso-html h2 { font-size: 18px; font-weight: 700; color: var(--mc-texto-titulo); margin: 10px 0 6px; }
+.editor-area h3, .aviso-html h3 { font-size: 15px; font-weight: 700; color: var(--mc-texto-titulo); margin: 8px 0 4px; }
+.editor-area ul, .aviso-html ul { padding-left: 20px; margin: 0 0 8px; list-style: disc; }
+.editor-area ol, .aviso-html ol { padding-left: 20px; margin: 0 0 8px; list-style: decimal; }
+.editor-area li, .aviso-html li { margin: 2px 0; }
+.editor-area a, .aviso-html a { color: var(--mc-aqua); text-decoration: underline; }
+.editor-area blockquote, .aviso-html blockquote { border-left: 3px solid var(--mc-borde); padding-left: 10px; color: var(--mc-texto-secundario); margin: 0 0 8px; }
+.aviso-html { text-align: left; }

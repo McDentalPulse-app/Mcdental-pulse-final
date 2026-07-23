@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Icon from "../ui/Icon";
+import HtmlSeguro from "../common/HtmlSeguro";
 import { sucursalMatches } from "../../utils/constants";
 
 const SEGUNDOS_ESPERA = 30;
@@ -40,7 +41,7 @@ const ContenidoAviso = ({ aviso, onAceptar }) => {
         <Icon name="bell" size={22} />
       </div>
       <h2 id="aviso-modal-title" className="mc-notify-modal-title">{aviso.titulo}</h2>
-      <p className="mc-notify-modal-desc aviso-modal-cuerpo">{aviso.cuerpo}</p>
+      <HtmlSeguro className="mc-notify-modal-desc aviso-modal-cuerpo aviso-html" html={aviso.cuerpo} />
       {aviso.autor && <p className="aviso-modal-autor">— {aviso.autor}</p>}
       <div className="mc-notify-modal-actions">
         <button

@@ -1,10 +1,15 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import Card from "../common/Card";
 import PageHeader from "../common/PageHeader";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
+import HtmlSeguro from "../common/HtmlSeguro";
 import { useNotification } from "../../contexts/NotificationContext";
 import { SUCURSALES } from "../../utils/constants";
+
+// El editor enriquecido (TipTap) se carga solo al abrir el panel de avisos (gestión), no en el
+// bundle de empleados/doctores que solo LEEN los avisos.
+const EditorTexto = lazy(() => import("../common/EditorTexto"));
 
 const ROLES_GESTION = ["admin", "rh", "psicologa"];
 
@@ -115,15 +120,10 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
               />
             </div>
             <div className="mc-form-group">
-              <label className="mc-form-label" htmlFor="aviso-cuerpo">Cuerpo</label>
-              <textarea
-                id="aviso-cuerpo"
-                className="mc-form-textarea"
-                rows={5}
-                value={cuerpo}
-                onChange={(e) => setCuerpo(e.target.value)}
-                placeholder="Escribe el comunicado completo."
-              />
+              <label className="mc-form-label">Cuerpo</label>
+              <Suspense fallback={<div className="editor-cargando">Cargando editor…</div>}>
+                <EditorTexto value={cuerpo} onChange={setCuerpo} placeholder="Escribe el comunicado completo." />
+              </Suspense>
             </div>
 
             <div className="mc-form-group">
@@ -188,7 +188,7 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
             <div key={a.id} className="rh-data-row">
               <div className="rh-data-row-main">
                 <div className="rh-data-row-title">{a.titulo}</div>
-                <div className="rh-data-row-detail aviso-row-cuerpo">{a.cuerpo}</div>
+                <HtmlSeguro className="rh-data-row-detail aviso-row-cuerpo" html={a.cuerpo} />
                 {a.sucursales?.length > 0 && (
                   <div className="aviso-row-sucursales">
                     {a.sucursales.length === SUCURSALES.length ? (

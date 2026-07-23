@@ -84,6 +84,7 @@ export default defineConfig(({ mode }) => ({
         // cuesta a quien nunca sube un recibo.
         manualChunks(id) {
           if (id.includes('@techstark/opencv-js') || id.includes('jscanify')) return 'opencv'
+          if (id.includes('@tiptap') || id.includes('prosemirror')) return 'editor'
           return undefined
         },
       },
