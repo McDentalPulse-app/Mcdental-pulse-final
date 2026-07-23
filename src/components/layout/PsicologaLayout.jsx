@@ -22,6 +22,7 @@ import ReconocimientosGestion from '../rh/ReconocimientosGestion';
 import PermisosRH from '../rh/PermisosRH';
 import VacacionesRH from '../rh/VacacionesRH';
 import PermisosEmpleado from '../empleados/PermisosEmpleado';
+import ComisionesRH from '../comisiones/ComisionesRH';
 import EventosPersonal from '../empleados/EventosPersonal';
 import Reportes from '../rh/Reportes';
 import Config from '../settings/Config';
@@ -34,8 +35,8 @@ import AvisosPanel from '../avisos/AvisosPanel';
 export default function PsicologaLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
-  const { encuestas, mensajes, notas, permisos, descuentos, reconocimientos, reportesConfidenciales, vacaciones, horarios, setHorarios, archivosExpediente, avisos, checadasHoy } = globals;
-  const { restablecerPasswordUsuario, addNota, sendMensaje, marcarMensajesLeidos, addReconocimiento, subirArchivoExpediente, addAviso, updateAviso, deleteAviso, justificarFalta, updatePermisoEstado, updateVacacionEstado, agendarPropio, registrarChecada } = actions;
+  const { encuestas, mensajes, notas, permisos, descuentos, comisiones, reconocimientos, reportesConfidenciales, vacaciones, horarios, setHorarios, archivosExpediente, avisos, checadasHoy } = globals;
+  const { restablecerPasswordUsuario, addNota, sendMensaje, marcarMensajesLeidos, addReconocimiento, subirArchivoExpediente, addAviso, updateAviso, deleteAviso, justificarFalta, updatePermisoEstado, updateVacacionEstado, agendarPropio, revisarComision, registrarChecada } = actions;
   const { ofrecerPush, activarAvisos, cerrarOfertaPush } = useAvisoPush();
 
   return (
@@ -51,6 +52,7 @@ export default function PsicologaLayout({ user, globals, actions }) {
             <Route path="vacaciones" element={<VacacionesRH vacaciones={vacaciones} onUpdateEstado={updateVacacionEstado} />} />
             <Route path="permisos" element={<PermisosRH permisos={permisos} onUpdateEstado={updatePermisoEstado} horarios={horarios} />} />
             <Route path="mispermisos" element={<PermisosEmpleado user={user} vacaciones={vacaciones} permisos={permisos} horarios={horarios} onEnviarSolicitudEmpleado={agendarPropio} autoAprobar />} />
+            <Route path="comisiones" element={<ComisionesRH comisiones={comisiones} onRevisar={revisarComision} />} />
             <Route path="seguimiento" element={<PsicologaSeguimiento encuestas={encuestas} notas={notas} onUpdateNota={addNota}/>} />
             <Route path="confidenciales" element={<ReportesConfidencialesPanel reportes={reportesConfidenciales} />} />
             <Route path="empleados" element={<EmpleadosList encuestas={encuestas} notas={notas} role="psicologa" currentUser={user} onRestablecerPassword={restablecerPasswordUsuario} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} />} />

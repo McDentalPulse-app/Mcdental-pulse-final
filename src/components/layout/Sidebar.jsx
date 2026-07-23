@@ -91,6 +91,7 @@ const Sidebar = () => {
       { key: "vacaciones", icon: "vacation", label: "Vacaciones", group: "Vacaciones y permisos" },
       { key: "permisos", icon: "clipboardCheck", label: "Permisos", group: "Vacaciones y permisos" },
       { key: "mispermisos", icon: "vacation", label: "Mis vacaciones/permisos", group: "Vacaciones y permisos" },
+      { key: "comisiones", icon: "dollar", label: "Comisiones", group: "Vacaciones y permisos" },
       { key: "empleados", icon: "users", label: "Empleados", group: "Equipo" },
       { key: "usuarios", icon: "userCog", label: "Gestión de Personal", group: "Equipo" },
       { key: "asistencia", icon: "clock", label: "Asistencia", group: "Asistencia y rostros" },
