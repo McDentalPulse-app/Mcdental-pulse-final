@@ -124,7 +124,6 @@ const Sidebar = () => {
       { key: "mispermisos", icon: "vacation", label: "Mis vacaciones/permisos", group: "Vacaciones y permisos" },
       { key: "asistencia", icon: "clock", label: "Asistencia", group: "Asistencia y rostros" },
       { key: "horarios", icon: "calendarDays", label: "Horarios", group: "Asistencia y rostros" },
-      { key: "importar-horarios", icon: "file", label: "Importar horarios", group: "Asistencia y rostros" },
       { key: "calibracion", icon: "shield", label: "Calibración del cotejo", group: "Asistencia y rostros" },
       { key: "rostros", icon: "camera", label: "Rostros", group: "Asistencia y rostros" },
       { key: "sucursales", icon: "mapPin", label: "Sucursales", group: "Asistencia y rostros" },
