@@ -30,7 +30,7 @@ export const getVacaciones = async () => {
   }
 };
 
-export const addVacacion = async ({ empleadoId, fechaInicio, fechaFin, dias, motivo, comentario, origen }) => {
+export const addVacacion = async ({ empleadoId, fechaInicio, fechaFin, dias, motivo, comentario, origen, estado }) => {
   const { data, error } = await supabase
     .from("vacaciones")
     .insert({
@@ -41,6 +41,8 @@ export const addVacacion = async ({ empleadoId, fechaInicio, fechaFin, dias, mot
       motivo,
       comentario,
       origen: origen || "empleado",
+      // Sin estado explícito la BD usa 'pendiente'; gestión al auto-agendarse pasa 'aprobado'.
+      ...(estado ? { estado } : {}),
     })
     .select(SELECT_CON_EMPLEADO)
     .single();

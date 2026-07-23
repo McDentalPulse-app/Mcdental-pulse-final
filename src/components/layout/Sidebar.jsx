@@ -90,6 +90,7 @@ const Sidebar = () => {
       // La psicóloga es jefa de RH: tiene también los paneles de RH (aprobar permisos/vacaciones).
       { key: "vacaciones", icon: "vacation", label: "Vacaciones", group: "Vacaciones y permisos" },
       { key: "permisos", icon: "clipboardCheck", label: "Permisos", group: "Vacaciones y permisos" },
+      { key: "mispermisos", icon: "vacation", label: "Mis vacaciones/permisos", group: "Vacaciones y permisos" },
       { key: "empleados", icon: "users", label: "Empleados", group: "Equipo" },
       { key: "usuarios", icon: "userCog", label: "Gestión de Personal", group: "Equipo" },
       { key: "asistencia", icon: "clock", label: "Asistencia", group: "Asistencia y rostros" },
@@ -120,6 +121,7 @@ const Sidebar = () => {
       { key: "ai", icon: "ai", label: "AI Engine", group: "Herramientas" },
       { key: "vacaciones", icon: "vacation", label: "Vacaciones", group: "Vacaciones y permisos" },
       { key: "permisos", icon: "clipboardCheck", label: "Permisos", group: "Vacaciones y permisos" },
+      { key: "mispermisos", icon: "vacation", label: "Mis vacaciones/permisos", group: "Vacaciones y permisos" },
       { key: "asistencia", icon: "clock", label: "Asistencia", group: "Asistencia y rostros" },
       { key: "horarios", icon: "calendarDays", label: "Horarios", group: "Asistencia y rostros" },
       { key: "importar-horarios", icon: "file", label: "Importar horarios", group: "Asistencia y rostros" },

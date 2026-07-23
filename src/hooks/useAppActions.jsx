@@ -187,6 +187,43 @@ export const useAppActions = () => {
     }
   };
 
+  // RH / psicóloga se auto-agendan sus propias vacaciones o permisos: se crean YA APROBADOS
+  // (origen 'rh'), sin pasar por la aprobación de otro. El empleadoId viene del propio usuario
+  // (la pantalla lo pone). Reutiliza la misma pantalla del empleado, pero sin dejarlo pendiente.
+  const agendarPropio = async (solicitud) => {
+    try {
+      if (solicitud.tipo === "Vacaciones") {
+        const nueva = await addVacacion({
+          empleadoId: solicitud.empleadoId,
+          fechaInicio: solicitud.fechaInicio,
+          fechaFin: solicitud.fechaFin,
+          dias: solicitud.dias || 1,
+          motivo: solicitud.motivo,
+          comentario: solicitud.comentario || "",
+          origen: "rh",
+          estado: "aprobado",
+        });
+        setVacaciones((prev) => [nueva, ...prev]);
+      } else if (solicitud.tipo === "Permisos") {
+        const nuevo = await addPermiso({
+          empleadoId: solicitud.empleadoId,
+          fecha: solicitud.fechaInicio || solicitud.fecha,
+          fechaFin: solicitud.fechaFin || null,
+          causa: solicitud.causa || null,
+          hora: solicitud.hora,
+          motivo: solicitud.motivo,
+          comentario: solicitud.comentario || "",
+          origen: "rh",
+          estado: "aprobado",
+        });
+        setPermisos((prev) => [nuevo, ...prev]);
+      }
+    } catch (error) {
+      console.error("Error auto-agendando:", error);
+      notify.toast.error("No se pudo agendar. Intenta de nuevo.");
+    }
+  };
+
   // Justifica una falta directamente (admin/rh/psicologa), sin pasar por el flujo normal
   // de solicitud+aprobación de permisos: se crea ya 'aprobado'. Reusa la misma justificación
   // que clasificarDia() ya busca (permiso aprobado que cubre la fecha) — cero lógica nueva
@@ -518,6 +555,7 @@ export const useAppActions = () => {
     updateVacacionEstado,
     updatePermisoEstado,
     addSolicitudEmpleadoRH,
+    agendarPropio,
     updateDescuentoEstado,
     addDescuento,
     crearComision,

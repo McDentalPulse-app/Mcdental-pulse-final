@@ -15,7 +15,8 @@ export default function PermisosEmpleado({
   vacaciones = [],
   permisos = [],
   horarios = [],
-  onEnviarSolicitudEmpleado
+  onEnviarSolicitudEmpleado,
+  autoAprobar = false, // gestión (RH/psicóloga) se auto-agenda: crea ya aprobado, sin pedir a RH
 }) {
   const { toast, confirm } = useNotification();
   const [tipoSeleccionado, setTipoSeleccionado] = useState("Vacaciones");
@@ -135,9 +136,11 @@ export default function PermisosEmpleado({
             confirmText: "Sí, enviar la solicitud",
           }
         : {
-            title: "Enviar solicitud",
-            description: `¿Deseas enviar esta solicitud de "${tipo}"?`,
-            confirmText: "Enviar solicitud",
+            title: autoAprobar ? "Agendar" : "Enviar solicitud",
+            description: autoAprobar
+              ? `¿Agendar estos días de "${tipo}"? Quedarán registrados como aprobados.`
+              : `¿Deseas enviar esta solicitud de "${tipo}"?`,
+            confirmText: autoAprobar ? "Agendar" : "Enviar solicitud",
           }
     );
 
@@ -174,7 +177,7 @@ export default function PermisosEmpleado({
       onEnviarSolicitudEmpleado(nuevoPermiso);
     }
 
-    toast.success("Solicitud enviada correctamente a RH.");
+    toast.success(autoAprobar ? "Agendado correctamente." : "Solicitud enviada correctamente a RH.");
 
     form.reset();
     setTipoSeleccionado("Vacaciones");
@@ -190,7 +193,9 @@ export default function PermisosEmpleado({
       <PageHeader
         icon="vacation"
         title="Vacaciones y permisos"
-        subtitle="Solicita días de descanso o un permiso. RH revisará tu petición y te notificará el estatus."
+        subtitle={autoAprobar
+          ? "Agenda tus propios días de descanso o permisos. Quedan registrados como aprobados."
+          : "Solicita días de descanso o un permiso. RH revisará tu petición y te notificará el estatus."}
       />
 
       <Card className="empleado-form-card">
