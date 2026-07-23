@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowRight, ArrowLeft, Fingerprint, Clock, ShieldCheck, HeartPulse, Eye, EyeOff } from 'lucide-react';
+import {
+  ArrowRight, ArrowLeft, Fingerprint01 as Fingerprint, Clock,
+  ShieldTick as ShieldCheck, ActivityHeart as HeartPulse, Eye, EyeOff,
+} from '@untitledui/icons';
 import { useAuth } from '../../contexts/AuthContext';
 import './LandingPage.css';
 
