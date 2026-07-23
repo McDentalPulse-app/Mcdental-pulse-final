@@ -12,6 +12,7 @@ import { addDescuento as addDescuentoDb, updateDescuentoEstado as updateDescuent
 import { crearComision as crearComisionDb, revisarComision as revisarComisionDb } from "../services/supabase/comisionesService";
 import { addFestivo as addFestivoDb, deleteFestivo as deleteFestivoDb } from "../services/supabase/festivosService";
 import { solicitarIntercambio as solicitarIntercambioDb, resolverIntercambio as resolverIntercambioDb } from "../services/supabase/intercambiosService";
+import { addEventoCalendario as addEventoDb, updateEventoCalendario as updateEventoDb, deleteEventoCalendario as deleteEventoDb } from "../services/supabase/eventosCalendarioService";
 import { addReporteConfidencial as addReporteConfidencialDb } from "../services/supabase/reportesService";
 import { addReconocimiento as addReconocimientoDb } from "../services/supabase/reconocimientosService";
 import { subirArchivoExpediente as subirArchivoExpedienteDb } from "../services/supabase/archivosExpedienteService";
@@ -42,6 +43,7 @@ export const useAppActions = () => {
     setFestivos,
     setIntercambios,
     setDestinosOcupados,
+    setEventosCalendario,
     setEncuestas,
     setMensajes,
     setNotas,
@@ -301,6 +303,47 @@ export const useAppActions = () => {
     }
   };
 
+  // --- Eventos/citas de la agenda de la clínica ---
+  const addEvento = async (evento) => {
+    try {
+      const nuevo = await addEventoDb(evento, user?.id);
+      setEventosCalendario(prev => [...prev, nuevo]);
+      notify.toast.success("Evento agregado.");
+      return nuevo;
+    } catch (error) {
+      console.error("Error agregando evento:", error);
+      notify.toast.error(error?.message || "No se pudo agregar el evento.");
+      return null;
+    }
+  };
+
+  const updateEvento = async (id, evento) => {
+    try {
+      const act = await updateEventoDb(id, evento);
+      setEventosCalendario(prev => prev.map(e => e.id === id ? act : e));
+      notify.toast.success("Evento actualizado.");
+      return act;
+    } catch (error) {
+      console.error("Error actualizando evento:", error);
+      notify.toast.error(error?.message || "No se pudo actualizar el evento.");
+      return null;
+    }
+  };
+
+  const deleteEvento = async (id) => {
+    const previos = [];
+    setEventosCalendario(prev => { previos.push(...prev); return prev.filter(e => e.id !== id); });
+    try {
+      await deleteEventoDb(id);
+      return true;
+    } catch (error) {
+      console.error("Error eliminando evento:", error);
+      setEventosCalendario(previos);
+      notify.toast.error(error?.message || "No se pudo eliminar el evento.");
+      return false;
+    }
+  };
+
   const addFestivo = async ({ fecha, nombre }) => {
     try {
       const nuevo = await addFestivoDb({ fecha, nombre });
@@ -483,6 +526,9 @@ export const useAppActions = () => {
     resolverIntercambio,
     addFestivo,
     deleteFestivo,
+    addEvento,
+    updateEvento,
+    deleteEvento,
     addReporteConfidencial,
     addReconocimiento,
     subirArchivoExpediente,

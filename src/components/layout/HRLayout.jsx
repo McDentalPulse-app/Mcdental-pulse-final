@@ -36,8 +36,11 @@ import AvisosPanel from '../avisos/AvisosPanel';
 export default function HRLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
-  const { vacaciones, permisos, descuentos, comisiones, intercambios, festivos, reconocimientos, encuestas, mensajes, notas, reportesConfidenciales, archivosExpediente, horarios, setHorarios, avisos, checadasHoy } = globals;
-  const { updateVacacionEstado, updatePermisoEstado, updateDescuentoEstado, addDescuento, revisarComision, resolverIntercambio, addFestivo, deleteFestivo, addReconocimiento, subirArchivoExpediente, addAviso, updateAviso, deleteAviso, justificarFalta, registrarChecada } = actions;
+  const { vacaciones, permisos, descuentos, comisiones, intercambios, festivos, eventosCalendario, reconocimientos, encuestas, mensajes, notas, reportesConfidenciales, archivosExpediente, horarios, setHorarios, avisos, checadasHoy } = globals;
+  const { updateVacacionEstado, updatePermisoEstado, updateDescuentoEstado, addDescuento, revisarComision, resolverIntercambio, addFestivo, deleteFestivo, addEvento, updateEvento, deleteEvento, addReconocimiento, subirArchivoExpediente, addAviso, updateAviso, deleteAviso, justificarFalta, registrarChecada } = actions;
+
+  // Un solo handler para el calendario: sin id = crear, con id = actualizar.
+  const guardarEvento = (id, form) => (id ? updateEvento(id, form) : addEvento(form));
   const { ofrecerPush, activarAvisos, cerrarOfertaPush } = useAvisoPush();
 
   return (
@@ -61,7 +64,7 @@ export default function HRLayout({ user, globals, actions }) {
             <Route path="permisos" element={<PermisosRH permisos={permisos} onUpdateEstado={updatePermisoEstado} horarios={horarios} />} />
             <Route path="descuentos" element={<DescuentosRH descuentos={descuentos} empleados={USERS} user={user} onUpdateEstado={updateDescuentoEstado} onAddDescuento={addDescuento} />} />
             <Route path="comisiones" element={<ComisionesRH comisiones={comisiones} onRevisar={revisarComision} />} />
-            <Route path="calendario" element={<CalendarioRH vacaciones={vacaciones} permisos={permisos} festivos={festivos} intercambios={intercambios} />} />
+            <Route path="calendario" element={<CalendarioRH vacaciones={vacaciones} permisos={permisos} festivos={festivos} intercambios={intercambios} eventosCalendario={eventosCalendario} onGuardarEvento={guardarEvento} onEliminarEvento={deleteEvento} />} />
             <Route path="intercambios" element={<IntercambiosRH intercambios={intercambios} festivos={festivos} onResolver={resolverIntercambio} onAddFestivo={addFestivo} onDeleteFestivo={deleteFestivo} />} />
             <Route path="eventospersonal" element={<EventosPersonal users={USERS} />} />
             <Route path="reconocimientos" element={<ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />} />

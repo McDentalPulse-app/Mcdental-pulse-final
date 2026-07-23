@@ -4,7 +4,7 @@ import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
 import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
-import CalendarioMensual from "../common/CalendarioMensual";
+import AgendaClinica from "../calendario/AgendaClinica";
 import { normalizeSucursal } from "../../utils/constants";
 
 const colorTipo = (tipo) => {
@@ -46,7 +46,7 @@ const LEYENDA = [
 
 // Calendario general de RH: reúne, de datos REALES, los festivos, las vacaciones y permisos
 // (aprobados o pendientes, no los rechazados) y los intercambios de día ya aprobados.
-const CalendarioRH = ({ vacaciones = [], permisos = [], festivos = [], intercambios = [] }) => {
+const CalendarioRH = ({ vacaciones = [], permisos = [], festivos = [], intercambios = [], eventosCalendario = [], onGuardarEvento, onEliminarEvento }) => {
   const eventos = useMemo(() => {
     const activos = (estado) => estado !== "rechazado";
     return [
@@ -135,8 +135,8 @@ const CalendarioRH = ({ vacaciones = [], permisos = [], festivos = [], intercamb
           ))}
         </div>
 
-        <CalendarioMensual
-          eventos={eventos.map((e) => ({
+        <AgendaClinica
+          overlay={eventos.map((e) => ({
             fecha: e.fecha,
             fechaFin: e.fechaFin,
             titulo: e.titulo,
@@ -146,6 +146,10 @@ const CalendarioRH = ({ vacaciones = [], permisos = [], festivos = [], intercamb
             detalle: e.sucursal ? normalizeSucursal(e.sucursal) : e.detalle,
             color: colorTipo(e.tipo),
           }))}
+          citas={eventosCalendario}
+          onGuardarEvento={onGuardarEvento}
+          onEliminarEvento={onEliminarEvento}
+          puedeEditar
         />
       </Card>
 

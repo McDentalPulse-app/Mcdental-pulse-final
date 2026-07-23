@@ -20,6 +20,7 @@ import { getPermisos } from "../services/supabase/permisosService";
 import { getDescuentos } from "../services/supabase/descuentosService";
 import { getComisiones } from "../services/supabase/comisionesService";
 import { getFestivos } from "../services/supabase/festivosService";
+import { getEventosCalendario } from "../services/supabase/eventosCalendarioService";
 import { getIntercambios, getDestinosOcupados } from "../services/supabase/intercambiosService";
 import { getArchivosExpediente } from "../services/supabase/archivosExpedienteService";
 import { getNotasPsicologicas } from "../services/supabase/notasService";
@@ -60,6 +61,8 @@ export const GlobalProvider = ({ children }) => {
   const [festivos, setFestivos] = useState([]);
   const [intercambios, setIntercambios] = useState([]);
   const [destinosOcupados, setDestinosOcupados] = useState([]);
+  // Eventos/citas de la agenda de la clínica (con hora). Los ve todo el mundo; gestión los edita.
+  const [eventosCalendario, setEventosCalendario] = useState([]);
 
   // Asistencia.
   //
@@ -108,6 +111,7 @@ export const GlobalProvider = ({ children }) => {
         let dbFestivos = null;
         let dbIntercambios = null;
         let dbDestinosOcupados = null;
+        let dbEventosCal = null;
         let dbNotas = null;
         let dbHorarios = null;
         let dbChecadasHoy = null;
@@ -162,6 +166,7 @@ export const GlobalProvider = ({ children }) => {
         // Calendario: los festivos los ve TODO el mundo. Los intercambios: el empleado/doctor
         // los suyos + los destinos ya ocupados (para no pedir un día tomado); gestión, todos.
         promises.push(getFestivos().then(res => dbFestivos = res).catch(() => { huboError = true; }));
+        promises.push(getEventosCalendario().then(res => dbEventosCal = res).catch(() => { huboError = true; }));
         if (["empleado", "doctor", "admin", "rh", "psicologa"].includes(role)) {
           promises.push(getIntercambios().then(res => dbIntercambios = res).catch(() => { huboError = true; }));
         }
@@ -217,6 +222,7 @@ export const GlobalProvider = ({ children }) => {
         if (dbDescuentos) setDescuentos(dbDescuentos);
         if (dbComisiones) setComisiones(dbComisiones);
         if (dbFestivos) setFestivos(dbFestivos);
+        if (dbEventosCal) setEventosCalendario(dbEventosCal);
         if (dbIntercambios) setIntercambios(dbIntercambios);
         if (dbDestinosOcupados) setDestinosOcupados(dbDestinosOcupados);
         if (dbNotas) setNotas(dbNotas);
@@ -332,6 +338,7 @@ export const GlobalProvider = ({ children }) => {
         descuentos, setDescuentos,
         comisiones, setComisiones,
         festivos, setFestivos,
+        eventosCalendario, setEventosCalendario,
         intercambios, setIntercambios,
         destinosOcupados, setDestinosOcupados,
         notas, setNotas,
