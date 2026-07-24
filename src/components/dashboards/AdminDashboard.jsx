@@ -11,7 +11,7 @@ import SectionTitle from "../common/SectionTitle";
 import WeekSelect from "../common/WeekSelect";
 import PageHeader from "../common/PageHeader";
 import EmptyState from "../common/EmptyState";
-import { SUCURSALES, semanaActual, normalizeSucursal, sucursalMatches, formatSemanaDisplay } from "../../utils/constants";
+import { semanaActual, normalizeSucursal, sucursalMatches, formatSemanaDisplay } from "../../utils/constants";
 import { getPulseStatus, tieneScoreValido } from "../../utils/pulseScore";
 import { nivelColor, colorSerie } from "../../config/theme";
 import PulseScoreBadge from "../common/PulseScoreBadge";
@@ -96,7 +96,7 @@ const buildSucursalDetalle = (nombreSucursal, empleados, encBucket) => {
 };
 
 const AdminDashboard = ({ encuestas, mensajes }) => {
-  const { usuarios: USERS } = useGlobal();
+  const { usuarios: USERS, nombresSucursales } = useGlobal();
   const [sucursalModal, setSucursalModal] = useState(null);
   const [sucRiesgoModal, setSucRiesgoModal] = useState(null);
 
@@ -152,7 +152,7 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
   const amarillos = empleadosConDatos.filter((e) => e.status.semaforo === "Amarillo").length;
   const rojos = empleadosConDatos.filter((e) => e.status.semaforo === "Rojo").length;
 
-  const porSucursal = SUCURSALES.map((s) => {
+  const porSucursal = nombresSucursales.map((s) => {
     const empsIds = empleados.filter((e) => sucursalMatches(e.sucursal, s)).map((e) => e.id);
     const scores = empsIds.map((id) => { const enc = encDelBucket(id); return enc ? Number(enc.score) : null; })
       .filter((v) => Number.isFinite(v));

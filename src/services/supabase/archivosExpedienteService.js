@@ -56,6 +56,23 @@ export const subirArchivoExpediente = async ({ empleadoId, archivo, tipo, subido
   return mapArchivo(data);
 };
 
+// Borra el archivo: primero el objeto del storage y luego su fila. Si el objeto ya no estuviera
+// en el bucket, igual se borra la fila (no dejar metadata huérfana apuntando a algo inexistente).
+export const eliminarArchivoExpediente = async ({ id, rutaArchivo }) => {
+  const { error: storageError } = await supabase.storage.from(BUCKET).remove([rutaArchivo]);
+  if (storageError) {
+    console.error("Error borrando archivo de Storage:", storageError);
+    throw new Error("No se pudo borrar el archivo del almacenamiento.");
+  }
+
+  const { error } = await supabase.from("archivos_expediente").delete().eq("id", id);
+  if (error) {
+    console.error("Error borrando la referencia del archivo:", error);
+    throw new Error("No se pudo borrar la referencia del archivo.");
+  }
+  return true;
+};
+
 // El bucket es privado: no hay URL pública persistida, se genera on-demand.
 export const getSignedUrlArchivoExpediente = async (rutaArchivo, expiresInSeconds = 300) => {
   const { data, error } = await supabase.storage

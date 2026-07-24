@@ -6,7 +6,7 @@ import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
 import HtmlSeguro from "../common/HtmlSeguro";
 import { useNotification } from "../../contexts/NotificationContext";
-import { SUCURSALES } from "../../utils/constants";
+import { useGlobal } from "../../contexts/GlobalContext";
 
 // El editor enriquecido (TipTap) se carga solo al abrir el panel de avisos (gestión), no en el
 // bundle de empleados/doctores que solo LEEN los avisos.
@@ -30,6 +30,7 @@ const formatoFecha = (iso) => {
  */
 const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
   const { toast, confirm } = useNotification();
+  const { nombresSucursales } = useGlobal();
   const puedeGestionar = ROLES_GESTION.includes(user?.role);
 
   const [titulo, setTitulo] = useState("");
@@ -41,7 +42,7 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
 
   const toggleSucursal = (s) =>
     setSucursalesSel((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
-  const sucursalesFiltradas = SUCURSALES.filter((s) =>
+  const sucursalesFiltradas = nombresSucursales.filter((s) =>
     s.toLowerCase().includes(buscarSuc.trim().toLowerCase())
   );
 
@@ -137,13 +138,13 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
                   value={buscarSuc}
                   onChange={(e) => setBuscarSuc(e.target.value)}
                 />
-                <button type="button" className="mc-btn-outline" onClick={() => setSucursalesSel(SUCURSALES)}>
+                <button type="button" className="mc-btn-outline" onClick={() => setSucursalesSel(nombresSucursales)}>
                   Seleccionar todas
                 </button>
                 <button type="button" className="mc-btn-outline" onClick={() => setSucursalesSel([])}>
                   Limpiar
                 </button>
-                <span className="aviso-suc-contador">{sucursalesSel.length} de {SUCURSALES.length}</span>
+                <span className="aviso-suc-contador">{sucursalesSel.length} de {nombresSucursales.length}</span>
               </div>
               <div className="aviso-suc-chips">
                 {sucursalesFiltradas.map((s) => {
@@ -192,7 +193,7 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
                 <HtmlSeguro className="rh-data-row-detail aviso-row-cuerpo" html={a.cuerpo} />
                 {a.sucursales?.length > 0 && (
                   <div className="aviso-row-sucursales">
-                    {a.sucursales.length === SUCURSALES.length ? (
+                    {a.sucursales.length === nombresSucursales.length ? (
                       <span className="aviso-suc-badge aviso-suc-badge--todas">Todas las sucursales</span>
                     ) : (
                       a.sucursales.map((s) => <span key={s} className="aviso-suc-badge">{s}</span>)

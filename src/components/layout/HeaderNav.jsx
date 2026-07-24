@@ -145,7 +145,7 @@ export default function HeaderNav() {
                 <div className="cuenta-sep" />
                 {items.some((i) => i.key === "soporte") && (
                   <button type="button" className="topnav-menu-item" onClick={() => ir("soporte")}>
-                    <Icon name="wrench" size={16} /> Soporte
+                    <Icon name="lightbulb" size={16} /> Ideas de mejora
                   </button>
                 )}
                 {items.some((i) => i.key === "avisos") && (

@@ -15,7 +15,7 @@ import { solicitarIntercambio as solicitarIntercambioDb, resolverIntercambio as 
 import { addEventoCalendario as addEventoDb, updateEventoCalendario as updateEventoDb, deleteEventoCalendario as deleteEventoDb } from "../services/supabase/eventosCalendarioService";
 import { addReporteConfidencial as addReporteConfidencialDb } from "../services/supabase/reportesService";
 import { addReconocimiento as addReconocimientoDb } from "../services/supabase/reconocimientosService";
-import { subirArchivoExpediente as subirArchivoExpedienteDb } from "../services/supabase/archivosExpedienteService";
+import { subirArchivoExpediente as subirArchivoExpedienteDb, eliminarArchivoExpediente as eliminarArchivoExpedienteDb } from "../services/supabase/archivosExpedienteService";
 import { registrarChecada as registrarChecadaDb } from "../services/supabase/asistenciasService";
 import {
   addAviso as addAvisoDb,
@@ -454,6 +454,18 @@ export const useAppActions = () => {
     }
   };
 
+  const eliminarArchivoExpediente = async ({ id, rutaArchivo }) => {
+    if (!id || !rutaArchivo) return;
+    try {
+      await eliminarArchivoExpedienteDb({ id, rutaArchivo });
+      setArchivosExpediente(prev => prev.filter(a => a.id !== id));
+      notify.toast.success("Archivo eliminado.");
+    } catch (error) {
+      console.error("Error eliminando archivo de expediente:", error);
+      notify.toast.error(error?.message || "No se pudo eliminar el archivo.");
+    }
+  };
+
   /**
    * Registra una entrada o una salida.
    *
@@ -570,6 +582,7 @@ export const useAppActions = () => {
     addReporteConfidencial,
     addReconocimiento,
     subirArchivoExpediente,
+    eliminarArchivoExpediente,
     registrarChecada,
     justificarFalta,
     addAviso,

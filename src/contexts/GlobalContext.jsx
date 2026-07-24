@@ -1,4 +1,5 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from "react";
+import React, { createContext, useState, useContext, useEffect, useCallback, useMemo } from "react";
+import { SUCURSALES } from "../utils/constants";
 import {
   MENSAJES_INIT,
   NOTAS_INIT,
@@ -25,6 +26,7 @@ import { getIntercambios, getDestinosOcupados } from "../services/supabase/inter
 import { getArchivosExpediente } from "../services/supabase/archivosExpedienteService";
 import { getNotasPsicologicas } from "../services/supabase/notasService";
 import { getUsuarios, getUsuariosDirectorio, getEncuestaPreguntas } from "../services/supabase/usuariosService";
+import { getSucursales } from "../services/supabase/sucursalesService";
 import { getAsistencias } from "../services/supabase/asistenciasService";
 import { getHorarios } from "../services/supabase/horariosService";
 import { normalizePreguntasList } from "../utils/encuestaPreguntas";
@@ -36,6 +38,7 @@ export const GlobalProvider = ({ children }) => {
   const { user } = useAuth();
   // Estados iniciales
   const [usuarios, setUsuarios] = useState([]);
+  const [sucursales, setSucursales] = useState([]);
   const [encuestaPreguntas, setEncuestaPreguntas] = useState(() =>
     normalizePreguntasList(ENCUESTA_PREGUNTAS)
   );
@@ -98,6 +101,7 @@ export const GlobalProvider = ({ children }) => {
         let huboError = false;
 
         let dbUsuarios = null;
+        let dbSucursales = null;
         let dbPreguntas = null;
         let dbEncuestas = null;
         let dbMensajes = null;
@@ -127,6 +131,9 @@ export const GlobalProvider = ({ children }) => {
         const cargarUsuarios = puedeVerPII ? getUsuarios : getUsuariosDirectorio;
 
         promises.push(cargarUsuarios().then(res => dbUsuarios = res).catch(() => { huboError = true; }));
+        // Sucursales: las necesitan todos los roles (alimentan los desplegables de sucursal en
+        // toda la app). Es la fuente única desde la BD; el array fijo de constants queda de fallback.
+        promises.push(getSucursales().then(res => dbSucursales = res).catch(() => { huboError = true; }));
         promises.push(getEncuestaPreguntas().then(res => dbPreguntas = res).catch(() => { huboError = true; }));
 
         // Avisos: para TODOS los roles, sin condición — el modal bloqueante y la
@@ -206,6 +213,7 @@ export const GlobalProvider = ({ children }) => {
         // sea vacío). Si falló (null), se conserva el estado previo en vez de
         // pisarlo con datos vacíos que parecerían "sin registros".
         if (dbUsuarios) setUsuarios(dbUsuarios);
+        if (dbSucursales) setSucursales(dbSucursales);
         if (dbPreguntas && dbPreguntas.length > 0) {
           setEncuestaPreguntas(normalizePreguntasList(dbPreguntas));
         } else if (dbPreguntas) {
@@ -321,10 +329,20 @@ export const GlobalProvider = ({ children }) => {
     };
   }, [user, refreshAvisos]);
 
+  // Nombres de sucursal para los desplegables de toda la app: solo las activas, desde la BD.
+  // Si la carga falló o aún no hay datos, cae al array fijo de constants para no dejar los
+  // selects vacíos.
+  const nombresSucursales = useMemo(() => {
+    const activas = sucursales.filter((s) => s.activa).map((s) => s.nombre);
+    return activas.length ? activas : SUCURSALES;
+  }, [sucursales]);
+
   return (
     <GlobalContext.Provider
       value={{
         usuarios, setUsuarios,
+        sucursales, setSucursales,
+        nombresSucursales,
         encuestaPreguntas, setEncuestaPreguntas,
         encuestas, setEncuestas,
         avisos, setAvisos,

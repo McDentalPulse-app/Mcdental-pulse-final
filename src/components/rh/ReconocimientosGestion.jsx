@@ -8,42 +8,28 @@ import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { normalizeSucursal } from "../../utils/constants";
 import { esEmpleadoActivo } from "../../utils/helpers";
+import { CATEGORIAS_MEDALLA, getMedalla } from "../../config/medallas";
+import Medalla from "../ui/Medalla";
 
 const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) => {
   const { usuarios: USERS } = useGlobal();
-  const { toast, confirm } = useNotification();
+  const { toast } = useNotification();
 
   const empleados = users.filter(esEmpleadoActivo);
   const [empleadoId, setEmpleadoId] = useState(empleados[0]?.id || "");
-  const [categoria, setCategoria] = useState("Excelente actitud");
+  const [categoria, setCategoria] = useState(CATEGORIAS_MEDALLA[0]);
   const [comentario, setComentario] = useState("");
-  const [diplomaArchivo, setDiplomaArchivo] = useState(null);
 
-  const categorias = [
-    "Excelente actitud", "Liderazgo", "Trabajo en equipo", "Innovación",
-    "Atención al paciente", "Puntualidad", "Valores McDental"
-  ];
-
-  const otorgar = async () => {
+  const otorgar = () => {
     const empleado = empleados.find(e => String(e.id) === String(empleadoId));
     if (!empleado) { toast.warning("Selecciona un empleado."); return; }
     if (!comentario.trim()) { toast.warning("Escribe un comentario para el reconocimiento."); return; }
-    if (diplomaArchivo) {
-      const continuar = await confirm({
-        title: "Otorgar sin diploma",
-        description: "La carga de diplomas todavía no está disponible.\n\n¿Deseas otorgar el reconocimiento sin diploma?",
-        variant: "warning",
-        confirmText: "Otorgar sin diploma",
-      });
-      if (!continuar) return;
-    }
     onAdd({
       empleadoId: empleado.id, empleado: empleado.name, sucursal: normalizeSucursal(empleado.sucursal),
       puesto: empleado.puesto, categoria, otorgadoPor: currentUser.name, comentario
     });
-    setCategoria("Excelente actitud");
+    setCategoria(CATEGORIAS_MEDALLA[0]);
     setComentario("");
-    setDiplomaArchivo(null);
     toast.success("Reconocimiento otorgado.");
   };
 
@@ -75,7 +61,7 @@ const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) 
             <div className="mc-form-group">
               <label className="mc-form-label" htmlFor="rg-categoria">Categoría</label>
               <select id="rg-categoria" className="mc-form-select" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
-                {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+                {CATEGORIAS_MEDALLA.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div className="mc-form-group">
@@ -89,26 +75,6 @@ const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) 
                 rows={4}
               />
             </div>
-            <div className="mc-form-group">
-              <label className="mc-form-label" htmlFor="rg-diploma">Diploma del reconocimiento</label>
-              <label className="mc-file-input-wrap">
-                <span className="mc-file-input-icon"><Icon name="paperclip" size={18} /></span>
-                <span className="mc-file-input-text">
-                  {diplomaArchivo ? diplomaArchivo.name : "Seleccionar diploma (PDF o imagen)"}
-                </span>
-                <input
-                  id="rg-diploma"
-                  type="file"
-                  accept=".pdf,image/*"
-                  className="mc-file-input-overlay"
-                  onChange={(e) => setDiplomaArchivo(e.target.files?.[0] || null)}
-                />
-              </label>
-              <div className="mc-form-hint mc-form-hint--warn">
-                <Icon name="alert" size={14} />
-                <span>Adjunto preparado. La carga de diplomas todavía no está disponible.</span>
-              </div>
-            </div>
             <button type="button" className="mc-btn-primary mc-btn-with-icon" onClick={otorgar}>
               <Icon name="award" size={16} /> Otorgar reconocimiento
             </button>
@@ -118,16 +84,20 @@ const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) 
         <Card>
           <SectionTitle icon="clipboard">Historial reciente</SectionTitle>
           <div className="admin-list-scroll admin-list-scroll--tall">
-            {reconocimientos.slice().reverse().map(r => (
-              <div key={r.id} className="admin-list-item">
-                <div className="admin-list-item-title">{r.empleado}</div>
-                <div className="admin-list-item-meta" style={{ color: "var(--mc-verde-medio)", fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
-                  <Icon name="award" size={14} /> {r.categoria}
+            {reconocimientos.slice().reverse().map(r => {
+              const medalla = getMedalla(r.categoria);
+              return (
+              <div key={r.id} className="admin-list-item" style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                <Medalla categoria={r.categoria} size={44} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="admin-list-item-title">{r.empleado}</div>
+                  <div className="admin-list-item-meta" style={{ color: medalla.color, fontWeight: 700 }}>{r.categoria}</div>
+                  <div className="admin-list-item-meta">{r.fecha} · {normalizeSucursal(r.sucursal)} · Otorgado por {r.otorgadoPor}</div>
+                  <div className="admin-list-item-body">{r.comentario}</div>
                 </div>
-                <div className="admin-list-item-meta">{r.fecha} · {normalizeSucursal(r.sucursal)} · Otorgado por {r.otorgadoPor}</div>
-                <div className="admin-list-item-body">{r.comentario}</div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
       </div>

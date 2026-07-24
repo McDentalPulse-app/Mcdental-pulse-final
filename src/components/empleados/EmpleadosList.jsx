@@ -7,7 +7,7 @@ import KPI from "../common/KPI";
 import PageHeader from "../common/PageHeader";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
-import { SUCURSALES, semanaActual, normalizeSucursal, sucursalMatches, formatSemanaDisplay, isSemanaActual } from "../../utils/constants";
+import { semanaActual, normalizeSucursal, sucursalMatches, formatSemanaDisplay, isSemanaActual } from "../../utils/constants";
 
 import { calcPulseScore, getPulseStatus, calcRiesgos, getEmployeeAverageScore } from "../../utils/pulseScore";
 import { nivelColor } from "../../config/theme";

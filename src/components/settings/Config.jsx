@@ -5,7 +5,6 @@ import SectionTitle from '../common/SectionTitle';
 import StatCard from '../common/StatCard';
 import PageHeader from '../common/PageHeader';
 import Icon from '../ui/Icon';
-import { SUCURSALES } from '../../utils/constants';
 import { useAuth } from '../../contexts/AuthContext';
 import { getAjustes, setExigirRostro } from '../../services/supabase/ajustesService';
 import { getRostros } from '../../services/supabase/rostrosService';
@@ -15,7 +14,7 @@ import { probar as probarPush } from '../../services/pushService';
 const Config = () => {
   const { toast, confirm } = useNotification();
   const { user } = useAuth();
-  const { usuarios } = useGlobal();
+  const { usuarios, nombresSucursales } = useGlobal();
   const [probando, setProbando] = useState(false);
 
   // Prueba de notificación: se manda un push a uno mismo y se reporta el resultado exacto.
@@ -168,7 +167,7 @@ const Config = () => {
           </div>
           <SectionTitle icon="building" className="config-inline-title">Sucursales activas</SectionTitle>
           <div className="mc-tag-grid">
-            {SUCURSALES.map(s => (
+            {nombresSucursales.map(s => (
               <span key={s} className="mc-tag">{s}</span>
             ))}
           </div>

@@ -12,8 +12,6 @@ export const NAV_ITEMS = {
     { key: "asistencia", icon: "clock", label: "Asistencia", group: "Asistencia y rostros" },
     { key: "sucursales", icon: "mapPin", label: "Sucursales", group: "Asistencia y rostros" },
     { key: "horarios", icon: "calendarDays", label: "Horarios", group: "Asistencia y rostros" },
-    { key: "importar-horarios", icon: "file", label: "Importar horarios", group: "Asistencia y rostros" },
-    { key: "calibracion", icon: "shield", label: "Calibración del cotejo", group: "Asistencia y rostros" },
     { key: "rostros", icon: "camera", label: "Rostros", group: "Asistencia y rostros" },
     { key: "encuestas", icon: "clipboard", label: "Encuestas", group: "Encuestas y reportes" },
     { key: "reportes", icon: "trending", label: "Reportes", group: "Encuestas y reportes" },
@@ -21,7 +19,7 @@ export const NAV_ITEMS = {
     { key: "ai", icon: "ai", label: "AI Engine", group: "Herramientas" },
     { key: "config", icon: "settings", label: "Config", group: "Herramientas" },
     { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
-    { key: "soporte", icon: "wrench", label: "Soporte TI", group: "Herramientas" },
+    { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
     { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
   ],
   psicologa: [
@@ -50,7 +48,7 @@ export const NAV_ITEMS = {
     { key: "config", icon: "settings", label: "Config", group: "Herramientas" },
     { key: "mensajes", icon: "message", label: "Mensajes", group: "Herramientas" },
     { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
-    { key: "soporte", icon: "wrench", label: "Soporte TI", group: "Herramientas" },
+    { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
     { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
   ],
   rh: [
@@ -80,7 +78,7 @@ export const NAV_ITEMS = {
     { key: "ai", icon: "ai", label: "AI Engine", group: "Herramientas" },
     { key: "config", icon: "settings", label: "Config", group: "Herramientas" },
     { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
-    { key: "soporte", icon: "wrench", label: "Soporte TI", group: "Herramientas" },
+    { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
     { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
   ],
   empleado: [
@@ -95,7 +93,7 @@ export const NAV_ITEMS = {
     { key: "reporteconfidencial", icon: "lock", label: "Reporte Confidencial", group: "Mi trabajo" },
     { key: "mensajes", icon: "message", label: "Mensajes", group: "Herramientas" },
     { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
-    { key: "soporte", icon: "wrench", label: "Soporte TI", group: "Herramientas" },
+    { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
     { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
   ],
   doctor: [
@@ -111,7 +109,7 @@ export const NAV_ITEMS = {
     { key: "reporteconfidencial", icon: "lock", label: "Reporte Confidencial", group: "Mi trabajo" },
     { key: "mensajes", icon: "message", label: "Mensajes", group: "Herramientas" },
     { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
-    { key: "soporte", icon: "wrench", label: "Soporte TI", group: "Herramientas" },
+    { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
     { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
   ],
 };

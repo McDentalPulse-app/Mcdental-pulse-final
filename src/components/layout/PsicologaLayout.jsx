@@ -27,7 +27,7 @@ import EventosPersonal from '../empleados/EventosPersonal';
 import Reportes from '../rh/Reportes';
 import Config from '../settings/Config';
 import Perfil from '../common/Perfil';
-import SoporteTI from '../common/SoporteTI';
+import IdeasMejora from '../common/IdeasMejora';
 import AvisoPush from '../asistencia/AvisoPush';
 import { useAvisoPush } from '../../hooks/useAvisoPush';
 import AvisosPanel from '../avisos/AvisosPanel';
@@ -36,7 +36,7 @@ export default function PsicologaLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
   const { encuestas, mensajes, notas, permisos, descuentos, comisiones, reconocimientos, reportesConfidenciales, vacaciones, horarios, setHorarios, archivosExpediente, avisos, checadasHoy } = globals;
-  const { restablecerPasswordUsuario, addNota, sendMensaje, marcarMensajesLeidos, addReconocimiento, subirArchivoExpediente, addAviso, updateAviso, deleteAviso, justificarFalta, updatePermisoEstado, updateVacacionEstado, agendarPropio, revisarComision, registrarChecada } = actions;
+  const { restablecerPasswordUsuario, addNota, sendMensaje, marcarMensajesLeidos, addReconocimiento, subirArchivoExpediente, eliminarArchivoExpediente, addAviso, updateAviso, deleteAviso, justificarFalta, updatePermisoEstado, updateVacacionEstado, agendarPropio, revisarComision, registrarChecada } = actions;
   const { ofrecerPush, activarAvisos, cerrarOfertaPush } = useAvisoPush();
 
   return (
@@ -56,7 +56,7 @@ export default function PsicologaLayout({ user, globals, actions }) {
             <Route path="seguimiento" element={<PsicologaSeguimiento encuestas={encuestas} notas={notas} onUpdateNota={addNota}/>} />
             <Route path="confidenciales" element={<ReportesConfidencialesPanel reportes={reportesConfidenciales} />} />
             <Route path="empleados" element={<EmpleadosList encuestas={encuestas} notas={notas} role="psicologa" currentUser={user} onRestablecerPassword={restablecerPasswordUsuario} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} />} />
-            <Route path="expedientes" element={<ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} archivosExpediente={archivosExpediente} onSubirArchivoExpediente={subirArchivoExpediente} />} />
+            <Route path="expedientes" element={<ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} archivosExpediente={archivosExpediente} onSubirArchivoExpediente={subirArchivoExpediente} onEliminarArchivoExpediente={eliminarArchivoExpediente} />} />
             <Route path="mensajes" element={<Mensajes user={user} mensajes={mensajes} onSend={sendMensaje} onMarkRead={marcarMensajesLeidos}/>} />
             <Route path="usuarios" element={<GestionUsuarios />} />
             <Route path="asistencia" element={<AsistenciaPanel usuarios={USERS} horarios={horarios} permisos={permisos} vacaciones={vacaciones} puedeJustificar onJustificarFalta={justificarFalta} />} />
@@ -71,7 +71,7 @@ export default function PsicologaLayout({ user, globals, actions }) {
             <Route path="encuestas" element={<GestionEncuestas encuestas={encuestas} />} />
             <Route path="reportes" element={<Reportes users={USERS} encuestas={encuestas} preguntas={encuestaPreguntas} />} />
             <Route path="config" element={<Config />} />
-            <Route path="soporte" element={<SoporteTI user={user} />} />
+            <Route path="soporte" element={<IdeasMejora />} />
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} />} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="dashboard" replace />} />

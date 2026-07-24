@@ -3,8 +3,9 @@ import PageHeader from "../common/PageHeader";
 import Card from "../common/Card";
 import Icon from "../ui/Icon";
 import { useNotification } from "../../contexts/NotificationContext";
-import { getSucursales, updateGeocercaSucursal } from "../../services/supabase/sucursalesService";
+import { getSucursales, updateGeocercaSucursal, crearSucursal } from "../../services/supabase/sucursalesService";
 import { obtenerUbicacion } from "../../utils/geo";
+import { useGlobal } from "../../contexts/GlobalContext";
 
 /**
  * Captura de la geocerca de cada clínica.
@@ -20,9 +21,32 @@ import { obtenerUbicacion } from "../../utils/geo";
  */
 export default function GestionSucursales() {
   const { toast } = useNotification();
+  // El estado global también guarda las sucursales (alimenta los desplegables de toda la app):
+  // al crear una nueva hay que refrescar AMBAS listas para que aparezca al instante en los selects.
+  const { setSucursales: setSucursalesGlobal } = useGlobal();
   const [sucursales, setSucursales] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(null); // id de la sucursal en curso
+  const [nuevoNombre, setNuevoNombre] = useState("");
+  const [creando, setCreando] = useState(false);
+
+  const agregar = async () => {
+    const nombre = nuevoNombre.trim();
+    if (!nombre) { toast.warning("Escribe el nombre de la sucursal."); return; }
+    setCreando(true);
+    try {
+      const nueva = await crearSucursal({ nombre });
+      const ordenar = (lista) => [...lista, nueva].sort((a, b) => a.nombre.localeCompare(b.nombre));
+      setSucursales(ordenar);
+      setSucursalesGlobal(ordenar);
+      setNuevoNombre("");
+      toast.success(`Sucursal "${nueva.nombre}" agregada. Configura su ubicación cuando estés ahí.`);
+    } catch (e) {
+      toast.error(e?.message || "No se pudo crear la sucursal.");
+    } finally {
+      setCreando(false);
+    }
+  };
 
   useEffect(() => {
     let activo = true;
@@ -96,6 +120,28 @@ export default function GestionSucursales() {
           tengan ubicación siguen funcionando: sus checadas se registran, pero sin comprobar dónde
           se hicieron.
         </p>
+      </Card>
+
+      <Card>
+        <div className="mc-form-group">
+          <label className="mc-form-label" htmlFor="nueva-sucursal">Agregar sucursal</label>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input
+              id="nueva-sucursal"
+              className="mc-form-input"
+              style={{ flex: 1, minWidth: 200 }}
+              type="text"
+              placeholder="Nombre de la nueva clínica"
+              value={nuevoNombre}
+              onChange={(e) => setNuevoNombre(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") agregar(); }}
+              disabled={creando}
+            />
+            <button type="button" className="mc-btn-primary mc-btn-with-icon" onClick={agregar} disabled={creando}>
+              <Icon name="plus" size={16} /> {creando ? "Agregando…" : "Agregar"}
+            </button>
+          </div>
+        </div>
       </Card>
 
       {cargando ? (

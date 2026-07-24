@@ -2,15 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PageHeader from "../common/PageHeader";
 import { useEscapeKey } from "../../hooks/useEscapeKey";
 import Card from "../common/Card";
-import SectionTitle from "../common/SectionTitle";
-import Tabs from "../common/Tabs";
-import DateRangePicker from "../common/DateRangePicker";
 import Icon from "../ui/Icon";
 import { useNotification } from "../../contexts/NotificationContext";
 import {
   getAsistencias,
   subscribeAsistencias,
-  getSignedUrlSelfie,
   anularChecada,
 } from "../../services/supabase/asistenciasService";
 import {
@@ -23,14 +19,8 @@ import {
   ESTADOS_DIA,
   TZ_CLINICA,
 } from "../../utils/asistencia";
-import { SUCURSALES, normalizeSucursal } from "../../utils/constants";
-
-const GRANULARIDADES = [
-  { valor: "dia", label: "Día" },
-  { valor: "semana", label: "Semana" },
-  { valor: "mes", label: "Mes" },
-  { valor: "anio", label: "Año" },
-];
+import { normalizeSucursal } from "../../utils/constants";
+import { useGlobal } from "../../contexts/GlobalContext";
 
 const ETIQUETA_ESTADO = {
   [ESTADOS_DIA.PRESENTE]: "Presente",
@@ -42,16 +32,19 @@ const ETIQUETA_ESTADO = {
   [ESTADOS_DIA.PENDIENTE]: "En curso",
 };
 
-// Etiqueta de la tarjeta activa como filtro. La clave es la propiedad del resumen (la misma
-// que alimenta el número de cada tarjeta), no el ESTADO_DIA — "Sin salida" es `incompletos`.
-const ETIQUETA_FILTRO = {
-  presentes: "Presentes",
-  retardos: "Retardos",
-  faltas: "Faltas",
-  justificados: "Justificados",
-  incompletos: "Sin salida",
-  pendientes: "Pendientes",
-};
+// Leyenda de colores del calendario: qué significa cada color de celda. Cada swatch reusa la
+// misma clase que pinta la celda, así el color de la leyenda y el del día son SIEMPRE el mismo.
+const LEYENDA = [
+  { estado: "presente", label: "Presente" },
+  { estado: "retardo", label: "Retardo" },
+  { estado: "falta", label: "Falta" },
+  { estado: "justificado", label: "Justificado" },
+  { estado: "incompleto", label: "Sin salida" },
+  { estado: "descanso", label: "Descanso" },
+  { estado: "pendiente", label: "En curso" },
+];
+
+const MES_ABR = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
 
 const hoyClinica = () =>
   new Intl.DateTimeFormat("en-CA", { timeZone: TZ_CLINICA }).format(new Date());
@@ -66,23 +59,17 @@ const horaCorta = (ts) =>
 
 const minutosAHoras = (min) => (min ? `${Math.floor(min / 60)} h ${min % 60} min` : "—");
 
-// ---------------------------------------------------------------------------
-// Navegación mes a mes (solo para granularidad "día"): en vez de un rango de fechas
-// libre, un calendario navega por meses completos. Todo en UTC para no correr el mes
-// por el huso horario del navegador, mismo criterio que rangoDeFechas en utils/asistencia.js.
-// ---------------------------------------------------------------------------
+// Navegación mes a mes: el calendario siempre muestra un mes completo (el rango desde-hasta se
+// mantiene acotado a un mes). Todo en UTC para no correr el mes por el huso del navegador.
 const primerDiaDeMes = (fecha) => `${String(fecha).slice(0, 7)}-01`;
-
 const ultimoDiaDeMes = (fecha) => {
   const [y, m] = fecha.split("-").map(Number);
-  return new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10); // día 0 del mes siguiente
+  return new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
 };
-
 const sumarMeses = (fecha, delta) => {
   const [y, m] = fecha.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1 + delta, 1)).toISOString().slice(0, 10);
 };
-
 const nombreMes = (fecha) => {
   const [y, m] = fecha.split("-").map(Number);
   const etiqueta = new Intl.DateTimeFormat("es-MX", { month: "long", year: "numeric", timeZone: "UTC" })
@@ -102,11 +89,10 @@ const tituloCeldaCalendario = (d) => {
   return `${d.fecha} · ${estado}${horas}${retardo}`;
 };
 
-/** Un mes completo en cuadrícula (7 columnas, Lun-Dom). `dias` trae solo los días que
- * existen de verdad (dentro del rango cargado y desde la fecha de ingreso); los que
- * faltan (antes de ingresar, o después de "hoy" si es el mes en curso) se pintan como
- * celda vacía, sin color ni tooltip. */
-const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustificar, onJustificarDia }) => {
+/** Un mes completo en cuadrícula (7 columnas, Lun-Dom). Cada celda se colorea por el estado del
+ * día; clic en un día con checada lo anula, clic en una falta la justifica. Muestra la hora de
+ * entrada/salida cuando la hay, y un punto si esa checada quedó marcada para revisión. */
+const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustificar, onJustificarDia, revisarIds }) => {
   const [anio, mes] = mesInicio.split("-").map(Number);
   const diasEnMes = new Date(Date.UTC(anio, mes, 0)).getUTCDate();
   const columnaInicial = diaISO(mesInicio); // 1=lunes … 7=domingo
@@ -121,7 +107,7 @@ const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustifi
   }
 
   return (
-    <div className="asistencia-calendario">
+    <div className="asistencia-calendario asistencia-calendario--grande">
       {NOMBRES_DIA_SEMANA.map((n) => (
         <div key={n} className="asistencia-calendario-encabezado">{n}</div>
       ))}
@@ -136,13 +122,13 @@ const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustifi
             </div>
           );
         }
-        // Anular (hay checada) y justificar (falta, sin checada) son mutuamente
-        // excluyentes: una falta es justo un día SIN entrada ni salida.
         const anulable = puedeAnular && (c.entrada || c.salida);
         const justificable = !anulable && puedeJustificar && c.estado === ESTADOS_DIA.FALTA;
         const accionable = anulable || justificable;
         const accion = anulable ? () => onAnularDia(c) : justificable ? () => onJustificarDia(c) : undefined;
         const pista = anulable ? "clic para anular" : justificable ? "clic para justificar" : null;
+        const porRevisar = !!revisarIds && ((c.entrada && revisarIds.has(c.entrada.id)) || (c.salida && revisarIds.has(c.salida.id)));
+        const horaEntrada = c.entrada ? horaCorta(c.entrada.marcadaEn).replace(/\s?[ap]\.?\s?m\.?/i, "") : null;
         return (
           <div
             key={c.fecha}
@@ -153,7 +139,11 @@ const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustifi
             onClick={accion}
             onKeyDown={accionable ? (e) => { if (e.key === "Enter" || e.key === " ") accion(); } : undefined}
           >
-            <span className="asistencia-calendario-numero">{Number(c.fecha.slice(-2))}</span>
+            <span className="asistencia-calendario-numero">
+              {Number(c.fecha.slice(-2))}
+              {porRevisar && <span className="asistencia-calendario-revisar" title="Requiere revisión" />}
+            </span>
+            {horaEntrada && <span className="asistencia-calendario-hora">{horaEntrada}</span>}
           </div>
         );
       })}
@@ -163,46 +153,26 @@ const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustifi
 
 export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos = [], vacaciones = [], puedeAnular = false, puedeJustificar = false, onJustificarFalta }) {
   const { toast, prompt, confirm } = useNotification();
+  const { nombresSucursales } = useGlobal();
 
   const [desde, setDesde] = useState(() => primerDiaDeMes(hoyClinica()));
-  const [hasta, setHasta] = useState(hoyClinica());
-  const [granularidad, setGranularidad] = useState("dia");
+  const [hasta, setHasta] = useState(() => {
+    const fin = ultimoDiaDeMes(primerDiaDeMes(hoyClinica()));
+    const hoy = hoyClinica();
+    return fin > hoy ? hoy : fin;
+  });
   const [empleadoId, setEmpleadoId] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [filtroSucursal, setFiltroSucursal] = useState("Todas");
-  // Filtro por estado: al tocar una de las 6 tarjetas de arriba (Faltas, Retardos…), el
-  // detalle se acota a los empleados que tienen al menos un día en ese estado. null = sin
-  // filtro (se ven todos). Es un toggle: tocar la tarjeta activa la quita.
-  const [filtroEstado, setFiltroEstado] = useState(null);
 
-  // Sucursal y Empleado viven en un panel que se abre con el botón "Filtros" (la búsqueda,
-  // la granularidad y el navegador de fecha quedan siempre a la vista). El badge cuenta
-  // cuántos de esos dos están puestos, para no perderlos de vista con el panel cerrado.
+  // Sucursal en un panel que abre el botón "Filtros"; badge con el conteo activo.
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
   const filtrosRef = useRef(null);
-  const filtrosActivos = (filtroSucursal !== "Todas" ? 1 : 0) + (empleadoId ? 1 : 0);
+  const filtrosActivos = filtroSucursal !== "Todas" ? 1 : 0;
 
   const [checadas, setChecadas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
-
-  // En "día" se navega mes a mes (calendario), no con un rango libre. Al entrar a ese
-  // modo desde otro se acota el rango al mes que contenga la fecha "hasta" actual —
-  // así un cambio de granularidad no deja un rango a medias que el calendario no
-  // sabría dibujar. Se hace en el propio onChange (evento de usuario), no en un efecto:
-  // un setState síncrono en un efecto encadena un render extra de más (lo marca
-  // react-hooks/set-state-in-effect), y aquí no hace falta — el mount ya arranca con
-  // desde/hasta acotados al mes actual desde el estado inicial.
-  const cambiarGranularidad = (valor) => {
-    if (valor === "dia") {
-      const inicio = primerDiaDeMes(hasta);
-      const hoy = hoyClinica();
-      const fin = ultimoDiaDeMes(inicio);
-      setDesde(inicio);
-      setHasta(fin > hoy ? hoy : fin);
-    }
-    setGranularidad(valor);
-  };
 
   const irMes = (delta) => {
     const nuevoInicio = sumarMeses(primerDiaDeMes(desde), delta);
@@ -211,53 +181,35 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
     setDesde(nuevoInicio);
     setHasta(fin > hoy ? hoy : fin);
   };
-
+  const irMesActual = () => {
+    const inicio = primerDiaDeMes(hoyClinica());
+    const hoy = hoyClinica();
+    const fin = ultimoDiaDeMes(inicio);
+    setDesde(inicio);
+    setHasta(fin > hoy ? hoy : fin);
+  };
   const puedeAvanzarMes = primerDiaDeMes(desde) < primerDiaDeMes(hoyClinica());
 
-  // Fetch local acotado por rango, NO desde GlobalContext: esta tabla crece sin techo y
-  // el contexto se carga entero en cada login. Mismo patrón que BolsaTrabajo.jsx.
-  //
-  // El estado se toca SOLO en los callbacks del promise, nunca en el cuerpo síncrono del
-  // efecto: un setState síncrono ahí encadena un render extra en cada montaje (lo avisa
-  // react-hooks/set-state-in-effect).
-  //
-  // Consecuencia buscada: `cargando` solo vale para la carga inicial. Al cambiar un filtro
-  // se sigue viendo la tabla anterior hasta que llega la nueva, en vez de parpadear a
-  // "Cargando…" y volver. Es menos brusco y no esconde la información que RH estaba
-  // mirando.
-  //
-  // `cancelado` evita escribir estado de una petición vieja: si RH cambia el rango dos
-  // veces seguidas, la primera respuesta puede llegar DESPUÉS de la segunda y pisarla con
-  // datos que ya no son los que se están mirando.
+  // Fetch local acotado por rango (todo el mes, todos los empleados): esta tabla crece sin techo y
+  // el contexto se carga entero en cada login. Se carga el mes completo para poder pintar el estado
+  // de cada empleado en el selector, no solo el del seleccionado.
   const cargar = useCallback(() => {
     let cancelado = false;
-
-    getAsistencias({ desde, hasta, empleadoId: empleadoId || undefined })
-      .then((rows) => {
-        if (cancelado) return;
-        setChecadas(rows);
-        setError(null);
-      })
+    getAsistencias({ desde, hasta })
+      .then((rows) => { if (!cancelado) { setChecadas(rows); setError(null); } })
       .catch((e) => {
         if (cancelado) return;
         console.error("Error cargando asistencia:", e);
         setError(e?.message || "No se pudo cargar la asistencia.");
       })
-      .finally(() => {
-        if (!cancelado) setCargando(false);
-      });
-
+      .finally(() => { if (!cancelado) setCargando(false); });
     return () => { cancelado = true; };
-  }, [desde, hasta, empleadoId]);
+  }, [desde, hasta]);
 
   useEffect(() => cargar(), [cargar]);
 
-  // Realtime: cuando alguien checa, aparece aquí sin recargar.
-  //
-  // OJO: payload.new de Postgres NO trae el join con usuarios, así que la fila llega sin
-  // nombre ni sucursal. En vez de pintar una fila con el nombre vacío, se refresca desde
-  // la base — el coste es una consulta por checada y la alternativa es una interfaz que
-  // enseña huecos.
+  // Realtime: cuando alguien checa, aparece aquí sin recargar (payload.new no trae el join con
+  // usuarios, así que se refresca desde la base para no pintar filas sin nombre).
   useEffect(() => {
     const desuscribir = subscribeAsistencias((nueva) => {
       if (nueva.fecha >= desde && nueva.fecha <= hasta) cargar();
@@ -274,12 +226,10 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
       .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
   }, [usuarios, busqueda, filtroSucursal]);
 
-  // Los días clasificados, por empleado. Es donde vive todo el criterio (falta vs
-  // justificado vs retardo) y está probado en src/utils/asistencia.test.js.
-  const porEmpleado = useMemo(() => {
-    const objetivo = empleadoId ? empleados.filter((u) => u.id === empleadoId) : empleados;
-
-    return objetivo.map((u) => {
+  // Los días clasificados, por empleado (todo el criterio falta/justificado/retardo vive en
+  // construirDias, probado en utils/asistencia.test.js).
+  const porEmpleado = useMemo(() =>
+    empleados.map((u) => {
       const dias = construirDias({
         desde,
         hasta,
@@ -289,25 +239,17 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
         vacaciones: vacaciones.filter((v) => v.empleadoId === u.id),
         fechaIngreso: u.fechaIngreso,
       });
-      return { empleado: u, dias, resumen: resumen(dias), grupos: agruparPor(dias, granularidad) };
-    });
-  }, [empleados, empleadoId, checadas, horarios, permisos, vacaciones, desde, hasta, granularidad]);
-
-  const totales = useMemo(
-    () => resumen(porEmpleado.flatMap((e) => e.dias)),
-    [porEmpleado]
+      return { empleado: u, dias, resumen: resumen(dias), grupos: agruparPor(dias, "dia") };
+    }),
+    [empleados, checadas, horarios, permisos, vacaciones, desde, hasta]
   );
 
-  // Con una tarjeta activa, el detalle solo muestra a quien tiene ≥1 día en ese estado. La
-  // clave del filtro es la misma propiedad del resumen que pinta el número de la tarjeta.
-  const listaEmpleados = useMemo(
-    () => (filtroEstado ? porEmpleado.filter((e) => (e.resumen?.[filtroEstado] || 0) > 0) : porEmpleado),
-    [porEmpleado, filtroEstado]
-  );
+  // El empleado que se está viendo: el elegido, o el primero de la lista por defecto.
+  const effectiveId = empleadoId || empleados[0]?.id || "";
+  const seleccionado = porEmpleado.find((e) => e.empleado.id === effectiveId) || porEmpleado[0] || null;
+  const resumenSel = seleccionado ? seleccionado.resumen : resumen([]);
 
-  // Todas las faltas VISIBLES ahora mismo (respeta los filtros ya puestos: rango de
-  // fechas, empleado, sucursal, búsqueda) — es lo que hace que "justificar en bloque"
-  // sea preciso: filtrás a quién/cuándo aplica, y el botón actúa solo sobre eso.
+  // Todas las faltas VISIBLES (respeta filtros), para "justificar en bloque".
   const faltasVisibles = useMemo(
     () =>
       porEmpleado.flatMap(({ empleado, dias }) =>
@@ -318,23 +260,17 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
     [porEmpleado]
   );
 
-  // Un mismo teléfono checando a dos personas distintas el mismo día. Es la señal más
-  // fuerte de suplantación y necesita ver el conjunto del día, no una checada suelta.
+  // Checadas sospechosas: un punto en la celda del calendario + un punto junto al nombre en el
+  // selector, para no perder la señal ahora que no hay lista aparte de "requieren revisión".
   const compartidos = useMemo(() => detectarDispositivosCompartidos(checadas), [checadas]);
-
   const paraRevisar = useMemo(
     () => checadas.filter((c) => requiereRevision(c) || compartidos.has(c.id)),
     [checadas, compartidos]
   );
+  const revisarIds = useMemo(() => new Set(paraRevisar.map((c) => c.id)), [paraRevisar]);
+  const empleadosConAlerta = useMemo(() => new Set(paraRevisar.map((c) => c.empleadoId)), [paraRevisar]);
 
-  // Empleados con al menos una checada sospechosa: conecta la lista de revisión con su
-  // fila del acordeón mediante un puntito de alerta (decisión A+C de la sesión).
-  const empleadosConAlerta = useMemo(
-    () => new Set(paraRevisar.map((c) => c.empleadoId)),
-    [paraRevisar]
-  );
-
-  // Cierra el panel de "Filtros" con Escape y con clic fuera (mismo patrón que WeekSelect).
+  // Cierra el panel de "Filtros" con Escape y con clic fuera.
   useEscapeKey(() => setFiltrosAbiertos(false), filtrosAbiertos);
   useEffect(() => {
     if (!filtrosAbiertos) return;
@@ -345,47 +281,13 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
     return () => document.removeEventListener("mousedown", onDoc);
   }, [filtrosAbiertos]);
 
-  // Por qué está marcada esta checada. Se enseña el motivo, no un icono de alerta a secas:
-  // sin saber QUÉ mirar, RH no puede accionar nada y acaba ignorando la lista entera.
-  const motivoRevision = (c) => {
-    // La cara primero: es lo más grave que puede decir el sistema.
-    if (c.rostroVerificado === false) return "La cara de la foto NO coincide con la de esta persona.";
-    if (compartidos.has(c.id)) return "Este mismo teléfono checó hoy a más de un empleado.";
-    if (c.ubicacionEstado === "fuera") return `A ${c.distanciaM} m de ${c.sucursal}: fuera del área permitida.`;
-    if (c.dispositivoNuevo) return "Checó desde un teléfono que nunca había usado.";
-    if (!c.selfiePath && !c.fotoPurgada) return "Se registró sin foto.";
-    if (c.ubicacionEstado === "sin_gps") return "Sin ubicación: no dio permiso de GPS o falló.";
-    return "";
-  };
-
-  const verSelfie = async (checada) => {
-    if (checada.fotoPurgada) {
-      // Se distingue de "se registró sin foto": una es el funcionamiento normal, la otra es un
-      // hueco. Decirle lo mismo a RH en los dos casos le haría desconfiar de checadas
-      // perfectamente correctas.
-      toast.info("La foto se borró: solo se conservan una semana.");
-      return;
-    }
-    if (!checada.selfiePath) {
-      toast.info("Esa checada se registró sin foto.");
-      return;
-    }
-    try {
-      const url = await getSignedUrlSelfie(checada.selfiePath);
-      window.open(url, "_blank", "noopener,noreferrer");
-    } catch {
-      toast.error("No se pudo abrir la foto.");
-    }
-  };
-
   const handleAnular = async (checada) => {
     const nota = await prompt({
       title: "Anular checada",
       description: `¿Por qué se anula la ${checada.tipo} de ${checada.empleado}?`,
       confirmText: "Anular",
     });
-    if (nota === null) return; // canceló
-
+    if (nota === null) return;
     try {
       await anularChecada(checada.id, nota || "Anulada por RH");
       toast.success("Checada anulada.");
@@ -395,9 +297,8 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
     }
   };
 
-  // Anular desde el calendario: a diferencia de "requiere revisión" (solo checadas
-  // marcadas como sospechosas), esto deja anular CUALQUIER checada — el caso típico es
-  // limpiar un registro de prueba o un error que nunca disparó ninguna alerta.
+  // Anular desde el calendario: deja anular CUALQUIER checada (típico: limpiar un registro de
+  // prueba o un error que nunca disparó ninguna alerta).
   const handleAnularDia = async (dia) => {
     if (!dia.entrada && !dia.salida) return;
     let objetivo = dia.entrada || dia.salida;
@@ -413,26 +314,21 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
     handleAnular(objetivo);
   };
 
-  // Justifica una falta (día sin ninguna checada) directo, sin pasar por el flujo normal
-  // de solicitud+aprobación de permisos — para corregir un error del sistema (checador
-  // que falló, horario mal cargado), no una ausencia real que alguien tenga que pedir.
+  // Justifica una falta (día sin checada) directo, para corregir un error del sistema.
   const handleJustificarDia = async (dia) => {
     const motivo = await prompt({
       title: "Justificar falta",
       description: `¿Por qué se justifica la falta del ${dia.fecha}?`,
       confirmText: "Justificar",
     });
-    if (motivo === null) return; // canceló
+    if (motivo === null) return;
     await onJustificarFalta?.({ empleadoId: dia.empleadoId, fecha: dia.fecha, motivo: motivo || "Sin especificar" });
     cargar();
   };
 
-  // Justificar TODAS las faltas visibles de una — un feriado que nadie cargó, un corte de
-  // luz, el primer día de uso real del sistema. Respeta los filtros puestos (fechas,
-  // empleado, sucursal): si querés acotarlo a una persona o una sucursal, filtrá primero.
+  // Justificar TODAS las faltas visibles de una (respeta los filtros puestos).
   const handleJustificarTodas = async () => {
     if (!faltasVisibles.length) return;
-
     const nombres = [...new Set(faltasVisibles.map((f) => f.empleado))];
     const ok = await confirm({
       title: "Justificar faltas en bloque",
@@ -441,14 +337,12 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
       confirmText: "Sí, justificar todas",
     });
     if (!ok) return;
-
     const motivo = await prompt({
       title: "Motivo",
       description: "Un solo motivo para todas las faltas que se van a justificar.",
       confirmText: "Justificar",
     });
     if (motivo === null) return;
-
     let exitosas = 0;
     for (const f of faltasVisibles) {
       try {
@@ -466,7 +360,6 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
     const filas = [
       ["Empleado", "Sucursal", "Periodo", "Presentes", "Retardos", "Faltas", "Justificados", "Horas trabajadas", "Puntualidad %"],
     ];
-
     for (const { empleado, grupos } of porEmpleado) {
       for (const g of grupos) {
         filas.push([
@@ -482,12 +375,8 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
         ]);
       }
     }
-
     const contenido = filas.map((f) => f.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
-    // El BOM es lo que hace que Excel abra los acentos bien en vez de "MartÃ­nez". Se
-    // escribe escapado (\uFEFF) y no como carácter literal: un BOM invisible pegado en el
-    // código es imposible de ver al revisar un diff. Mismo efecto que en rh/Reportes.jsx.
-    const blob = new Blob(["\uFEFF" + contenido], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob(["﻿" + contenido], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -496,13 +385,11 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
     URL.revokeObjectURL(url);
   };
 
+  const hoy = new Date();
+
   return (
     <div className="admin-page">
-      <PageHeader
-        icon="clock"
-        title="Asistencia"
-        subtitle={granularidad === "dia" ? nombreMes(desde) : `Del ${desde} al ${hasta}`}
-      >
+      <PageHeader icon="clock" title="Asistencia" subtitle={nombreMes(desde)}>
         {puedeJustificar && faltasVisibles.length > 0 && (
           <button type="button" className="mc-btn-outline mc-btn-outline--danger" onClick={handleJustificarTodas}>
             <Icon name="check" size={16} /> Justificar {faltasVisibles.length} falta{faltasVisibles.length === 1 ? "" : "s"}
@@ -522,33 +409,6 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
           />
-
-          {/* Granularidad: control segmentado siempre a la vista — reconfigura el modo
-              entero de la pantalla (calendario vs periodos), no es un filtro de acotar. */}
-          <Tabs
-            ariaLabel="Agrupar por"
-            options={GRANULARIDADES.map((g) => ({ value: g.valor, label: g.label }))}
-            value={granularidad}
-            onChange={cambiarGranularidad}
-          />
-
-          {/* Navegador de fecha: mes a mes en "día", rango libre en el resto. */}
-          {granularidad === "dia" ? (
-            <div className="asistencia-mes-nav">
-              <button type="button" className="mc-btn-outline" onClick={() => irMes(-1)} aria-label="Mes anterior">‹</button>
-              <strong className="asistencia-mes-nav-label">{nombreMes(desde)}</strong>
-              <button type="button" className="mc-btn-outline" onClick={() => irMes(1)} disabled={!puedeAvanzarMes} aria-label="Mes siguiente">›</button>
-            </div>
-          ) : (
-            <DateRangePicker
-              desde={desde}
-              hasta={hasta}
-              max={hoyClinica()}
-              onChange={(nuevoDesde, nuevoHasta) => { setDesde(nuevoDesde); setHasta(nuevoHasta); }}
-            />
-          )}
-
-          {/* Sucursal + Empleado en un panel bajo el botón; badge con el conteo activo. */}
           <div className="asistencia-filtros-wrap" ref={filtrosRef}>
             <button
               type="button"
@@ -566,17 +426,8 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
                   Sucursal
                   <select className="list-filter-select" value={filtroSucursal} onChange={(e) => setFiltroSucursal(e.target.value)}>
                     <option value="Todas">Todas las sucursales</option>
-                    {SUCURSALES.map((s) => (
+                    {nombresSucursales.map((s) => (
                       <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Empleado
-                  <select className="list-filter-select" value={empleadoId} onChange={(e) => setEmpleadoId(e.target.value)}>
-                    <option value="">Todos</option>
-                    {empleados.map((u) => (
-                      <option key={u.id} value={u.id}>{u.name}</option>
                     ))}
                   </select>
                 </label>
@@ -588,155 +439,110 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
 
       {error && (
         <Card>
-          <p className="mc-empty">
-            <Icon name="alert" size={16} /> {error}
-          </p>
+          <p className="mc-empty"><Icon name="alert" size={16} /> {error}</p>
         </Card>
       )}
-
-      {/* Tira compacta de 6: una fila (wrap 3+3 / 2col en móvil), sin el hueco 4+2 de
-          las cards grandes y recuperando alto para el detalle. */}
-      <div className="asistencia-stat-strip">
-        {[
-          { icon: "check", value: totales.presentes, label: "Presentes", clase: "admin-stat-value--green", estado: "presentes" },
-          { icon: "clock", value: totales.retardos, label: "Retardos", clase: "admin-stat-value--amber", estado: "retardos" },
-          { icon: "alert", value: totales.faltas, label: "Faltas", clase: "admin-stat-value--red", estado: "faltas" },
-          { icon: "vacation", value: totales.justificados, label: "Justificados", clase: "admin-stat-value--blue", estado: "justificados" },
-          { icon: "history", value: totales.incompletos, label: "Sin salida", clase: "admin-stat-value--aqua", estado: "incompletos" },
-          { icon: "clock", value: totales.pendientes, label: "Pendientes", clase: "admin-stat-value--orange", estado: "pendientes" },
-        ].map((t) => {
-          const activo = filtroEstado === t.estado;
-          const variante = t.clase.replace("admin-stat-value--", "");
-          return (
-            <button
-              key={t.label}
-              type="button"
-              className={`asistencia-stat-tile asistencia-stat-tile--filtro${activo ? " asistencia-stat-tile--activo" : ""}`}
-              aria-pressed={activo}
-              title={activo ? `Quitar filtro: ${t.label}` : `Filtrar por ${t.label}`}
-              onClick={() => setFiltroEstado((prev) => (prev === t.estado ? null : t.estado))}
-            >
-              <span className={`asistencia-stat-tile-icon asistencia-stat-tile-icon--${variante}`}>
-                <Icon name={t.icon} size={16} />
-              </span>
-              <span className="asistencia-stat-tile-body">
-                <span className="asistencia-stat-tile-value">{t.value}</span>
-                <span className="asistencia-stat-tile-label">{t.label}</span>
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {paraRevisar.length > 0 && (
-        <section className="asistencia-revision">
-          <SectionTitle icon="alert">Checadas que requieren revisión ({paraRevisar.length})</SectionTitle>
-          {/* Esta lista es lo que hace que la comprobación sirva de algo: alguien la mira.
-              Una selfie y una coordenada que nadie revisa son teatro. Mismo patrón
-              rh-data-list/rh-data-row que PermisosRH/VacacionesRH: colapsa solo en móvil. */}
-          <div className="rh-data-list">
-            {paraRevisar.map((c) => (
-              <div key={c.id} className="rh-data-row">
-                <div className="rh-data-row-main">
-                  <div className="rh-data-row-title">{c.empleado}</div>
-                  <div className="rh-data-row-detail">{motivoRevision(c)}</div>
-                </div>
-                <div className="rh-data-row-meta">
-                  <div className="rh-data-row-meta-primary">{c.tipo === "entrada" ? "Entrada" : "Salida"}</div>
-                  <div className="rh-data-row-meta-secondary">{c.fecha} · {horaCorta(c.marcadaEn)}</div>
-                </div>
-                <div className="rh-data-row-actions">
-                  {c.selfiePath && (
-                    <button type="button" className="mc-btn-outline" onClick={() => verSelfie(c)}>
-                      <Icon name="camera" size={15} /> Ver foto
-                    </button>
-                  )}
-                  {puedeAnular && (
-                    <button type="button" className="mc-btn-outline mc-btn-outline--danger" onClick={() => handleAnular(c)}>
-                      Anular
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <SectionTitle icon="users">
-        Detalle por empleado
-        {filtroEstado && (
-          <button type="button" className="asistencia-filtro-chip" onClick={() => setFiltroEstado(null)}>
-            {ETIQUETA_FILTRO[filtroEstado]}
-            <Icon name="xCircle" size={13} />
-          </button>
-        )}
-      </SectionTitle>
 
       {cargando ? (
         <Card><p className="mc-empty">Cargando asistencia…</p></Card>
-      ) : listaEmpleados.length === 0 ? (
-        <Card>
-          <p className="mc-empty">
-            {filtroEstado ? `Nadie con "${ETIQUETA_FILTRO[filtroEstado]}" en este período.` : "No hay empleados que mostrar."}
-          </p>
-        </Card>
+      ) : empleados.length === 0 ? (
+        <Card><p className="mc-empty">No hay empleados que mostrar.</p></Card>
       ) : (
-        <div className="rh-data-list">
-          {listaEmpleados.map(({ empleado, resumen: r, grupos, dias }) => (
-            <details key={empleado.id} className="asistencia-empleado-row" open={empleadoId === empleado.id || !!filtroEstado}>
-              <summary className="rh-data-row">
-                <div className="rh-data-row-main">
-                  <div className="rh-data-row-title">
+        <div className="asistencia-layout">
+          {/* Selector de empleado: la lista sigue dando el vistazo general (quién tiene faltas o
+              alertas), y al elegir uno se ve su calendario grande a la derecha. */}
+          <div className="asistencia-emp-lista">
+            {porEmpleado.map(({ empleado, resumen: r }) => (
+              <button
+                key={empleado.id}
+                type="button"
+                className={`asistencia-emp-item${empleado.id === effectiveId ? " asistencia-emp-item--activo" : ""}`}
+                onClick={() => setEmpleadoId(empleado.id)}
+              >
+                <div className="asistencia-emp-item-main">
+                  <span className="asistencia-emp-item-nombre">
                     {empleadosConAlerta.has(empleado.id) && (
                       <span className="asistencia-empleado-alerta" title="Tiene checadas que requieren revisión" />
                     )}
                     {empleado.name}
-                  </div>
-                  <div className="rh-data-row-sub">{empleado.sucursal}</div>
+                  </span>
+                  <span className="asistencia-emp-item-suc">{normalizeSucursal(empleado.sucursal)}</span>
                 </div>
-                <div className="rh-data-row-meta">
-                  <div className="rh-data-row-meta-primary">{r.puntualidad == null ? "Sin evaluar" : `${r.puntualidad}% puntual`}</div>
-                  <div className="rh-data-row-meta-secondary">{minutosAHoras(r.minutosTrabajados)}</div>
-                </div>
-                <div className="rh-data-row-status">
-                  {r.faltas > 0 && <span className="mc-status-pill mc-status-pill--rechazado">{r.faltas} faltas</span>}
-                  {r.retardos > 0 && <span className="mc-status-pill mc-status-pill--pendiente">{r.retardos} retardos</span>}
-                  {r.faltas === 0 && r.retardos === 0 && (
-                    <span className="mc-status-pill mc-status-pill--aprobado">Al corriente</span>
-                  )}
-                </div>
-                <Icon name="chevronDown" size={18} className="asistencia-empleado-chevron" />
-              </summary>
+                <span className="asistencia-emp-item-estado">
+                  {r.faltas > 0
+                    ? <span className="mc-status-pill mc-status-pill--rechazado">{r.faltas} falta{r.faltas === 1 ? "" : "s"}</span>
+                    : r.retardos > 0
+                      ? <span className="mc-status-pill mc-status-pill--pendiente">{r.retardos} retardo{r.retardos === 1 ? "" : "s"}</span>
+                      : <span className="mc-status-pill mc-status-pill--aprobado">Al corriente</span>}
+                </span>
+              </button>
+            ))}
+          </div>
 
-              <div className="asistencia-empleado-detalle">
-                {granularidad === "dia" ? (
-                  // A nivel día, el detalle es un calendario del mes en curso (la
-                  // navegación de arriba ya garantiza que desde-hasta es un mes completo).
-                  <CalendarioMes
-                    dias={dias}
-                    mesInicio={primerDiaDeMes(desde)}
-                    puedeAnular={puedeAnular}
-                    onAnularDia={handleAnularDia}
-                    puedeJustificar={puedeJustificar}
-                    onJustificarDia={(dia) => handleJustificarDia({ ...dia, empleadoId: empleado.id })}
-                  />
-                ) : (
-                  <div className="asistencia-periodos">
-                    {grupos.map((g) => (
-                      <div key={g.clave} className="asistencia-periodo-row">
-                        <span className="asistencia-periodo-clave">{g.clave}</span>
-                        <span className="asistencia-periodo-stats">
-                          {g.resumen.presentes} pres. · {g.resumen.retardos || 0} ret. · {g.resumen.faltas || 0} falt. ·{" "}
-                          {g.resumen.justificados || 0} just. · {minutosAHoras(g.resumen.minutosTrabajados)}
-                        </span>
-                      </div>
-                    ))}
+          <div className="asistencia-cal-panel">
+            {seleccionado && (
+              <Card className="asistencia-cal-card">
+                {/* Cabecera del calendario (estilo pestaña Calendario): badge de hoy + mes + nav. */}
+                <div className="asistencia-cal-header">
+                  <div className="asistencia-cal-title">
+                    <div className="agenda-badge">
+                      <span className="agenda-badge-mes">{MES_ABR[hoy.getMonth()]}</span>
+                      <span className="agenda-badge-dia">{hoy.getDate()}</span>
+                    </div>
+                    <div>
+                      <div className="asistencia-cal-emp">{seleccionado.empleado.name}</div>
+                      <strong className="asistencia-cal-mes">{nombreMes(desde)}</strong>
+                    </div>
                   </div>
-                )}
-              </div>
-            </details>
-          ))}
+                  <div className="asistencia-cal-nav">
+                    <button type="button" className="cal-nav" onClick={() => irMes(-1)} aria-label="Mes anterior">‹</button>
+                    <button type="button" className="agenda-hoy" onClick={irMesActual}>Hoy</button>
+                    <button type="button" className="cal-nav" onClick={() => irMes(1)} disabled={!puedeAvanzarMes} aria-label="Mes siguiente">›</button>
+                  </div>
+                </div>
+
+                {/* Resumen del mes del empleado seleccionado. */}
+                <div className="asistencia-cal-resumen">
+                  {[
+                    { label: "Presentes", value: resumenSel.presentes, estado: "presente" },
+                    { label: "Retardos", value: resumenSel.retardos, estado: "retardo" },
+                    { label: "Faltas", value: resumenSel.faltas, estado: "falta" },
+                    { label: "Justificados", value: resumenSel.justificados, estado: "justificado" },
+                    { label: "Sin salida", value: resumenSel.incompletos, estado: "incompleto" },
+                  ].map((s) => (
+                    <div key={s.label} className="asistencia-cal-resumen-item">
+                      <span className={`asistencia-leyenda-swatch asistencia-calendario-celda--${s.estado}`} />
+                      <strong>{s.value}</strong> {s.label}
+                    </div>
+                  ))}
+                  <div className="asistencia-cal-resumen-item asistencia-cal-resumen-item--horas">
+                    <Icon name="clock" size={14} /> {minutosAHoras(resumenSel.minutosTrabajados)} ·{" "}
+                    {resumenSel.puntualidad == null ? "sin evaluar" : `${resumenSel.puntualidad}% puntual`}
+                  </div>
+                </div>
+
+                {/* Leyenda de colores. */}
+                <div className="asistencia-leyenda">
+                  {LEYENDA.map((l) => (
+                    <span key={l.estado} className="asistencia-leyenda-item">
+                      <span className={`asistencia-leyenda-swatch asistencia-calendario-celda--${l.estado}`} />
+                      {l.label}
+                    </span>
+                  ))}
+                </div>
+
+                <CalendarioMes
+                  dias={seleccionado.dias}
+                  mesInicio={primerDiaDeMes(desde)}
+                  puedeAnular={puedeAnular}
+                  onAnularDia={handleAnularDia}
+                  puedeJustificar={puedeJustificar}
+                  onJustificarDia={(dia) => handleJustificarDia({ ...dia, empleadoId: seleccionado.empleado.id })}
+                  revisarIds={revisarIds}
+                />
+              </Card>
+            )}
+          </div>
         </div>
       )}
     </div>

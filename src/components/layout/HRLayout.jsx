@@ -28,7 +28,7 @@ import AIEngine from '../ia/AIEngine';
 import Config from '../settings/Config';
 import BolsaTrabajo from '../rh/BolsaTrabajo';
 import Perfil from '../common/Perfil';
-import SoporteTI from '../common/SoporteTI';
+import IdeasMejora from '../common/IdeasMejora';
 import AvisoPush from '../asistencia/AvisoPush';
 import { useAvisoPush } from '../../hooks/useAvisoPush';
 import AvisosPanel from '../avisos/AvisosPanel';
@@ -37,7 +37,7 @@ export default function HRLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
   const { vacaciones, permisos, descuentos, comisiones, intercambios, festivos, eventosCalendario, reconocimientos, encuestas, mensajes, notas, reportesConfidenciales, archivosExpediente, horarios, setHorarios, avisos, checadasHoy } = globals;
-  const { updateVacacionEstado, updatePermisoEstado, updateDescuentoEstado, addDescuento, revisarComision, resolverIntercambio, addFestivo, deleteFestivo, addEvento, updateEvento, deleteEvento, agendarPropio, addReconocimiento, subirArchivoExpediente, addAviso, updateAviso, deleteAviso, justificarFalta, registrarChecada } = actions;
+  const { updateVacacionEstado, updatePermisoEstado, updateDescuentoEstado, addDescuento, revisarComision, resolverIntercambio, addFestivo, deleteFestivo, addEvento, updateEvento, deleteEvento, agendarPropio, addReconocimiento, subirArchivoExpediente, eliminarArchivoExpediente, addAviso, updateAviso, deleteAviso, justificarFalta, registrarChecada } = actions;
 
   // Un solo handler para el calendario: sin id = crear, con id = actualizar.
   const guardarEvento = (id, form) => (id ? updateEvento(id, form) : addEvento(form));
@@ -71,11 +71,11 @@ export default function HRLayout({ user, globals, actions }) {
             <Route path="reportesrh" element={<ReportesRH vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} />} />
             <Route path="bolsa" element={<BolsaTrabajo />} />
             <Route path="sucursales" element={<GestionSucursales />} />
-            <Route path="expedientes" element={<ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} archivosExpediente={archivosExpediente} onSubirArchivoExpediente={subirArchivoExpediente} />} />
+            <Route path="expedientes" element={<ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} archivosExpediente={archivosExpediente} onSubirArchivoExpediente={subirArchivoExpediente} onEliminarArchivoExpediente={eliminarArchivoExpediente} />} />
             <Route path="encuestas" element={<GestionEncuestas encuestas={encuestas} />} />
             <Route path="reportes" element={<Reportes users={USERS} encuestas={encuestas} preguntas={encuestaPreguntas} />} />
             <Route path="config" element={<Config />} />
-            <Route path="soporte" element={<SoporteTI user={user} />} />
+            <Route path="soporte" element={<IdeasMejora />} />
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} />} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="dashboard" replace />} />

@@ -22,7 +22,7 @@ import Calibracion from '../admin/Calibracion';
 import AsistenciaPanel from '../asistencia/AsistenciaPanel';
 import EnrolarRostros from '../asistencia/EnrolarRostros';
 import Perfil from '../common/Perfil';
-import SoporteTI from '../common/SoporteTI';
+import IdeasMejora from '../common/IdeasMejora';
 import AvisoPush from '../asistencia/AvisoPush';
 import { useAvisoPush } from '../../hooks/useAvisoPush';
 import AvisosPanel from '../avisos/AvisosPanel';
@@ -31,7 +31,7 @@ export default function AdminLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
   const { encuestas, mensajes, notas, permisos, descuentos, reconocimientos, reportesConfidenciales, vacaciones, archivosExpediente, horarios, setHorarios, avisos } = globals;
-  const { restablecerPasswordUsuario, subirArchivoExpediente, addReconocimiento, addAviso, updateAviso, deleteAviso, justificarFalta } = actions;
+  const { restablecerPasswordUsuario, subirArchivoExpediente, eliminarArchivoExpediente, addReconocimiento, addAviso, updateAviso, deleteAviso, justificarFalta } = actions;
   const { ofrecerPush, activarAvisos, cerrarOfertaPush } = useAvisoPush();
 
   return (
@@ -54,7 +54,7 @@ export default function AdminLayout({ user, globals, actions }) {
             <Route path="importar-horarios" element={<ImportarHorarios usuarios={USERS} />} />
             <Route path="calibracion" element={<Calibracion usuarios={USERS} />} />
             <Route path="rostros" element={<EnrolarRostros usuarios={USERS} />} />
-            <Route path="expedientes" element={<ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} archivosExpediente={archivosExpediente} onSubirArchivoExpediente={subirArchivoExpediente} />} />
+            <Route path="expedientes" element={<ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} archivosExpediente={archivosExpediente} onSubirArchivoExpediente={subirArchivoExpediente} onEliminarArchivoExpediente={eliminarArchivoExpediente} />} />
             <Route path="reconocimientos" element={<ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />} />
             <Route path="eventospersonal" element={<EventosPersonal users={USERS} />} />
             <Route path="reportes" element={<Reportes users={USERS} encuestas={encuestas} preguntas={encuestaPreguntas} />} />
@@ -68,7 +68,7 @@ export default function AdminLayout({ user, globals, actions }) {
                 <p className="admin-restricted-text">Este canal es privado y solo está disponible para empleados y psicóloga.</p>
               </Card>
             } />
-            <Route path="soporte" element={<SoporteTI user={user} />} />
+            <Route path="soporte" element={<IdeasMejora />} />
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} />} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="dashboard" replace />} />

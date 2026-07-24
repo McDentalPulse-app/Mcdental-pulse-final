@@ -7,6 +7,8 @@ import KPI from "../common/KPI";
 import SectionTitle from "../common/SectionTitle";
 import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
+import Medalla from "../ui/Medalla";
+import { getMedalla } from "../../config/medallas";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import { normalizeSucursal, sucursalMatches, formatSemanaDisplay } from "../../utils/constants";
@@ -30,7 +32,6 @@ import { nivelColor } from "../../config/theme";
 const ExpedienteIntegral = ({
   users,
   encuestas,
-  mensajes,
   notas,
   vacaciones,
   permisos,
@@ -39,7 +40,8 @@ const ExpedienteIntegral = ({
   reportesConfidenciales,
   currentUser,
   archivosExpediente = [],
-  onSubirArchivoExpediente
+  onSubirArchivoExpediente,
+  onEliminarArchivoExpediente
 }) => {
   const { usuarios: USERS, encuestaPreguntas, setUsuarios } = useGlobal();
   const { toast } = useNotification();
@@ -78,7 +80,6 @@ const empleado =
   }
 
   const encuestasEmpleado = getEncuestasEmpleado(encuestas, empleado.id);
-  const mensajesEmpleado = mensajes.filter(m => m.de === empleado.id || m.para === empleado.id);
   const vacacionesEmpleado = vacaciones.filter(v => v.empleadoId === empleado.id);
   const descuentosEmpleado = descuentos.filter(d => d.empleadoId === empleado.id);
   const reconocimientosEmpleado = reconocimientos.filter(r => r.empleadoId === empleado.id);
@@ -145,7 +146,7 @@ const empleado =
       <PageHeader
         icon="folderSearch"
         title="Expediente Integral"
-        subtitle="Vista consolidada del colaborador: bienestar, administración, comunicación y reconocimientos."
+        subtitle="Vista consolidada del colaborador: bienestar, administración y reconocimientos."
       />
 
       <Card>
@@ -353,20 +354,41 @@ const empleado =
                     <b>{a.tipoArchivo}</b>
                     <div className="admin-list-item-meta">{a.nombreArchivo}</div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      try {
-                        const url = await getSignedUrlArchivoExpediente(a.rutaArchivo);
-                        window.open(url, "_blank", "noopener,noreferrer");
-                      } catch (error) {
-                        notify.toast.error("No se pudo abrir el archivo.");
-                      }
-                    }}
-                    style={{ background: "none", border: "none", cursor: "pointer", color: "var(--mc-aqua)", fontWeight: 700, fontSize: 13 }}
-                  >
-                    Descargar
-                  </button>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const url = await getSignedUrlArchivoExpediente(a.rutaArchivo);
+                          window.open(url, "_blank", "noopener,noreferrer");
+                        } catch (error) {
+                          notify.toast.error("No se pudo abrir el archivo.");
+                        }
+                      }}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: "var(--mc-aqua)", fontWeight: 700, fontSize: 13 }}
+                    >
+                      Descargar
+                    </button>
+                    {onEliminarArchivoExpediente && (
+                      <button
+                        type="button"
+                        title="Eliminar archivo"
+                        aria-label={`Eliminar ${a.nombreArchivo}`}
+                        onClick={async () => {
+                          const ok = await notify.confirm({
+                            title: "Eliminar archivo",
+                            description: `¿Eliminar "${a.nombreArchivo}" del expediente? Esta acción no se puede deshacer.`,
+                            variant: "danger",
+                            confirmText: "Eliminar",
+                          });
+                          if (ok) onEliminarArchivoExpediente({ id: a.id, rutaArchivo: a.rutaArchivo });
+                        }}
+                        style={{ background: "none", border: "none", cursor: "pointer", color: "var(--mc-evento-rojo)", display: "inline-flex", alignItems: "center" }}
+                      >
+                        <Icon name="trash" size={16} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))
             )}
@@ -408,21 +430,19 @@ const empleado =
           <div className="expediente-list-scroll">
             {reconocimientosEmpleado.length === 0 ? (
               <p className="admin-list-item-meta">Sin reconocimientos registrados.</p>
-            ) : reconocimientosEmpleado.map(r => (
-              <div key={r.id} className="expediente-list-row">
-                <b>{r.categoria}</b>
-                <div className="admin-list-item-meta">{r.fecha} · {r.otorgadoPor}</div>
-                <div className="admin-list-item-body">{r.comentario}</div>
+            ) : reconocimientosEmpleado.map(r => {
+              const medalla = getMedalla(r.categoria);
+              return (
+              <div key={r.id} className="expediente-list-row" style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                <Medalla categoria={r.categoria} size={40} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <b style={{ color: medalla.color }}>{r.categoria}</b>
+                  <div className="admin-list-item-meta">{r.fecha} · {r.otorgadoPor}</div>
+                  <div className="admin-list-item-body">{r.comentario}</div>
+                </div>
               </div>
-            ))}
-          </div>
-        </Card>
-
-        <Card>
-          <SectionTitle icon="message">Comunicación</SectionTitle>
-          <div className="expediente-data-row">
-            <div><b>Mensajes relacionados:</b> {mensajesEmpleado.length}</div>
-            <div><b>Último contacto:</b> {mensajesEmpleado.length ? "Registrado" : "Sin mensajes"}</div>
+              );
+            })}
           </div>
         </Card>
 

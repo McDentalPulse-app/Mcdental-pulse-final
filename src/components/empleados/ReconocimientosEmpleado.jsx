@@ -4,6 +4,7 @@ import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
 import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
+import Medalla from "../ui/Medalla";
 
 const ReconocimientosEmpleado = ({ user, reconocimientos }) => {
   const misReconocimientos = reconocimientos.filter(r => r.empleadoId === user.id);
@@ -34,9 +35,7 @@ const ReconocimientosEmpleado = ({ user, reconocimientos }) => {
         <div className="empleado-award-grid">
           {misReconocimientos.map(r => (
             <Card key={r.id} className="empleado-award-card">
-              <div className="empleado-award-icon">
-                <Icon name="award" size={22} />
-              </div>
+              <Medalla categoria={r.categoria} size={64} />
               <div className="empleado-award-category">{r.categoria}</div>
               <div className="empleado-award-meta">
                 {r.fecha} · Otorgado por {r.otorgadoPor}

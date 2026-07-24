@@ -4,9 +4,11 @@ import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
 import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
-import { SUCURSALES, normalizeSucursal, sucursalMatches } from "../../utils/constants";
+import { normalizeSucursal, sucursalMatches } from "../../utils/constants";
+import { useGlobal } from "../../contexts/GlobalContext";
 
 const ReportesRH = ({ vacaciones, permisos, descuentos }) => {
+  const { nombresSucursales } = useGlobal();
   const totalDescuentosActivos = descuentos
     .filter(d => d.estado !== "pagado" && d.estado !== "cancelado")
     .reduce((sum, d) => sum + d.monto, 0);
@@ -34,7 +36,7 @@ const ReportesRH = ({ vacaciones, permisos, descuentos }) => {
       currency: "MXN"
     }).format(amount);
 
-  const resumenSucursal = SUCURSALES.map(sucursal => ({
+  const resumenSucursal = nombresSucursales.map(sucursal => ({
     sucursal,
     vacaciones: vacaciones.filter((v) => sucursalMatches(v.sucursal, sucursal)).length,
     permisos: permisos.filter((p) => sucursalMatches(p.sucursal, sucursal)).length,

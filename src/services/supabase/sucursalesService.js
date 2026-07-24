@@ -25,6 +25,31 @@ export const getSucursales = async () => {
 };
 
 /**
+ * Da de alta una sucursal nueva. Solo el nombre: la geocerca se captura después, estando en la
+ * clínica ("Usar mi ubicación actual"). Nace activa y sin coordenadas — sus checadas se registran
+ * igual (marcadas 'sin_geocerca'), como cualquier clínica todavía sin ubicación. RLS permite el
+ * insert solo a gestión (admin/rh/psicologa).
+ */
+export const crearSucursal = async ({ nombre }) => {
+  const limpio = (nombre || "").trim();
+  if (!limpio) throw new Error("Escribe el nombre de la sucursal.");
+
+  const { data, error } = await supabase
+    .from("sucursales")
+    .insert({ nombre: limpio })
+    .select()
+    .single();
+
+  if (error) {
+    // 23505 = nombre duplicado (índice único). Mensaje claro en vez del error crudo de Postgres.
+    if (error.code === "23505") throw new Error("Ya existe una sucursal con ese nombre.");
+    console.error("Error creando la sucursal:", error);
+    throw new Error("No se pudo crear la sucursal.");
+  }
+  return mapSucursal(data);
+};
+
+/**
  * Fija la geocerca de una clínica.
  *
  * Las coordenadas se capturan estando físicamente en la clínica ("Usar mi ubicación

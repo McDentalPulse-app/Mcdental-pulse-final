@@ -10,7 +10,7 @@ import ChecadorEmpleado from '../asistencia/ChecadorEmpleado';
 import MiRostro from '../asistencia/MiRostro';
 import ReconocimientosEmpleado from '../empleados/ReconocimientosEmpleado';
 import ReporteConfidencialEmpleado from '../empleados/ReporteConfidencialEmpleado';
-import SoporteTI from '../common/SoporteTI';
+import IdeasMejora from '../common/IdeasMejora';
 import Mensajes from '../comunicacion/Mensajes';
 import Perfil from '../common/Perfil';
 import AvisosPanel from '../avisos/AvisosPanel';
@@ -35,7 +35,7 @@ export default function EmpleadoLayout({ user, globals, actions }) {
         <div className="app-main-inner">
           <Routes>
             <Route path="inicio" element={<InicioEmpleado user={user} encuestas={encuestas} mensajes={userMensajes} setActive={(view) => navigate(`/empleado/${view}`)} />} />
-            <Route path="checador" element={<ChecadorEmpleado user={user} checadasHoy={checadasHoy} horarios={horarios} permisos={permisos} onChecar={registrarChecada} />} />
+            <Route path="checador" element={<ChecadorEmpleado user={user} checadasHoy={checadasHoy} horarios={horarios} permisos={permisos} encuestas={encuestas} onChecar={registrarChecada} />} />
             <Route path="rostro" element={<MiRostro user={user} />} />
             <Route path="encuesta" element={<EncuestaEmpleado user={user} encuestas={encuestas} onSubmit={addEncuesta}/>} />
             <Route path="historial" element={<HistorialEmpleado user={user} encuestas={encuestas} />} />
@@ -43,7 +43,7 @@ export default function EmpleadoLayout({ user, globals, actions }) {
             <Route path="calendario" element={<CalendarioIntercambio user={user} festivos={festivos} intercambios={intercambios} destinosOcupados={destinosOcupados} onSolicitar={solicitarIntercambio} />} />
             <Route path="reconocimientos" element={<ReconocimientosEmpleado user={user} reconocimientos={reconocimientos} />} />
             <Route path="reporteconfidencial" element={<ReporteConfidencialEmpleado user={user} onSubmit={addReporteConfidencial} />} />
-            <Route path="soporte" element={<SoporteTI user={user} />} />
+            <Route path="soporte" element={<IdeasMejora />} />
             <Route path="mensajes" element={<Mensajes user={user} mensajes={userMensajes} onSend={(msg)=>sendMensaje({...msg,para:psicologaId})} onMarkRead={marcarMensajesLeidos}/>} />
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} />} />
             <Route path="perfil" element={<Perfil />} />

@@ -14,7 +14,7 @@ import { resolveFechaCumpleanos, resolveFechaIngreso, normalizeFechaCumpleanosIn
 const DEFAULT_SUCURSAL = SUCURSALES[0];
 
 const GestionUsuarios = () => {
-  const { usuarios, setUsuarios } = useGlobal();
+  const { usuarios, setUsuarios, nombresSucursales } = useGlobal();
   const { user, restablecerPasswordUsuario } = useAuth();
   const { toast, confirm } = useNotification();
   const esAdmin = user?.role === "admin";
@@ -155,7 +155,7 @@ const GestionUsuarios = () => {
             onChange={(e) => setFiltroSucursal(e.target.value)}
           >
             <option value="Todas">Todas las sucursales</option>
-            {SUCURSALES.map((s) => (
+            {nombresSucursales.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
@@ -329,7 +329,7 @@ const GestionUsuarios = () => {
                 <div className="mc-form-group">
                   <label className="mc-form-label" htmlFor="gu-sucursal">Sucursal</label>
                   <select id="gu-sucursal" className="mc-form-select" value={formData.sucursal} onChange={(e) => setFormData({...formData, sucursal: e.target.value})}>
-                    {SUCURSALES.map((s) => (
+                    {nombresSucursales.map((s) => (
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>

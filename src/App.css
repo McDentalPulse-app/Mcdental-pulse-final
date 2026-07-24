@@ -5568,6 +5568,40 @@
   border: 1px solid var(--mc-gris-suave);
   background: var(--mc-superficie);
 }
+.empleado-solicitud-item .empleado-solicitud-main { flex: 1; min-width: 0; }
+
+/* Selección de tipo (Vacaciones / Permiso) como dos tarjetas grandes. */
+.solicitud-tipo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.solicitud-tipo-card {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1.5px solid var(--mc-gris-suave);
+  background: var(--mc-superficie);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: border-color .15s ease, background .15s ease;
+}
+.solicitud-tipo-card:hover { border-color: var(--mc-aqua); }
+.solicitud-tipo-card--activa { border-color: var(--mc-aqua); background: var(--mc-brand-suave); }
+.solicitud-tipo-txt { display: flex; flex-direction: column; line-height: 1.25; }
+.solicitud-tipo-txt strong { color: var(--mc-texto-titulo); font-size: 15px; }
+.solicitud-tipo-txt span { color: var(--mc-texto-secundario); font-size: 12px; }
+.solicitud-tipo-ico {
+  width: 40px; height: 40px; flex: none;
+  border-radius: 10px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--mc-brand-suave); color: var(--mc-aqua);
+}
+.solicitud-tipo-ico--sm { width: 34px; height: 34px; border-radius: 9px; }
+.solicitud-tipo-card--activa .solicitud-tipo-ico { background: var(--mc-superficie); }
+
+@media (max-width: 520px) {
+  .solicitud-tipo-grid { grid-template-columns: 1fr; }
+}
 
 .empleado-solicitud-title {
   font-weight: 800;
@@ -5616,6 +5650,10 @@
   justify-content: center;
   margin-bottom: 12px;
 }
+
+/* Medalla SVG (Medalla.jsx): sombra sutil bajo el medallón, sin recortar el listón. */
+.mc-medalla { filter: drop-shadow(0 3px 5px rgba(16, 24, 40, 0.18)); }
+.mc-medalla svg { display: block; }
 
 .empleado-award-category {
   font-size: 17px;
@@ -8920,6 +8958,132 @@
 @media (max-width: 480px) {
   .asistencia-calendario-celda { font-size: 0.72rem; border-radius: 6px; }
   .asistencia-calendario-encabezado { font-size: 0.65rem; }
+}
+
+/* ============================================================================
+   Refactor: calendario grande por empleado. Lista de empleados (izquierda,
+   mismo patrón que .mensajes-layout) + panel con el calendario grande del
+   empleado elegido (derecha). El calendario grande reusa .asistencia-calendario*
+   de arriba, solo cambia el tamaño de celda vía el modificador --grande.
+   ============================================================================ */
+.asistencia-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.asistencia-emp-lista {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--mc-card-borde);
+  border-radius: var(--mc-radio);
+  background: var(--mc-superficie);
+  overflow-y: auto;
+  max-height: min(720px, calc(100vh - 260px));
+}
+
+.asistencia-emp-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  border-bottom: 1px solid var(--mc-borde-suave);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+.asistencia-emp-item:last-child { border-bottom: none; }
+.asistencia-emp-item:hover { background: var(--mc-superficie-sutil); }
+.asistencia-emp-item--activo { background: var(--mc-brand-suave); }
+
+.asistencia-emp-item-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.asistencia-emp-item-nombre {
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--mc-texto-titulo);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.asistencia-emp-item-suc { font-size: 11.5px; color: var(--mc-texto-secundario); }
+.asistencia-emp-item-estado { flex-shrink: 0; }
+
+.asistencia-cal-panel { min-width: 0; }
+.asistencia-cal-card { display: flex; flex-direction: column; gap: 16px; }
+
+.asistencia-cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.asistencia-cal-title { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.asistencia-cal-emp {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mc-texto-secundario);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.asistencia-cal-mes { display: block; font-size: 18px; font-weight: 700; color: var(--mc-texto-titulo); }
+.asistencia-cal-nav { display: flex; align-items: center; gap: 8px; }
+
+.asistencia-cal-resumen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--mc-superficie-sutil);
+  font-size: 13px;
+  color: var(--mc-texto-secundario);
+}
+.asistencia-cal-resumen-item { display: flex; align-items: center; gap: 6px; }
+.asistencia-cal-resumen-item strong { color: var(--mc-texto-titulo); }
+.asistencia-cal-resumen-item--horas { margin-left: auto; }
+
+.asistencia-leyenda { display: flex; flex-wrap: wrap; gap: 12px; }
+.asistencia-leyenda-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--mc-texto-secundario); }
+.asistencia-leyenda-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+/* Celda grande: número arriba-izquierda + hora debajo (como .cal-celda de CalendarioMensual),
+   en vez del número centrado de la variante chica. */
+.asistencia-calendario--grande .asistencia-calendario-celda {
+  aspect-ratio: auto;
+  min-height: 76px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 10px;
+}
+.asistencia-calendario-numero { display: inline-flex; align-items: center; gap: 4px; font-size: 0.85rem; font-weight: 700; }
+.asistencia-calendario-hora { font-size: 0.7rem; font-weight: 600; opacity: 0.85; }
+.asistencia-calendario-revisar {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mc-semaforo-rojo);
+}
+
+@media (max-width: 860px) {
+  .asistencia-layout { grid-template-columns: 1fr; }
+  .asistencia-emp-lista { max-height: 260px; }
+}
+@media (max-width: 480px) {
+  .asistencia-calendario--grande .asistencia-calendario-celda { min-height: 52px; padding: 4px 5px; }
+  .asistencia-calendario-hora { display: none; }
 }
 
 /* --- Rejilla de horarios --- */
