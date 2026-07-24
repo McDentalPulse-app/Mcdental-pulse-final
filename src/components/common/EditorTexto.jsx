@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -25,6 +25,11 @@ function Btn({ accion, activo, icono, titulo }) {
  * props: value (HTML), onChange(html).
  */
 export default function EditorTexto({ value = "", onChange, placeholder = "Escribe el aviso…" }) {
+  // Último HTML conocido (lo que emitimos o pusimos). Comparar contra este ref evita llamar
+  // editor.getHTML() en el efecto — que crasheaba al reconectarse (Suspense/StrictMode) con el
+  // editor a medio destruir ("Cannot read properties of null (reading 'cached')").
+  const ultimoRef = useRef(value);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [2, 3] } }),
@@ -32,15 +37,23 @@ export default function EditorTexto({ value = "", onChange, placeholder = "Escri
       Link.configure({ openOnClick: false, autolink: true }),
     ],
     content: value,
-    onUpdate: ({ editor }) => onChange?.(editor.isEmpty ? "" : editor.getHTML()),
+    immediatelyRender: false, // evita el doble-render de StrictMode que dejaba el esquema en null
+    onUpdate: ({ editor }) => {
+      if (editor.isDestroyed) return;
+      const html = editor.isEmpty ? "" : editor.getHTML();
+      ultimoRef.current = html;
+      onChange?.(html);
+    },
     editorProps: { attributes: { class: "editor-area", "data-placeholder": placeholder } },
   });
 
-  // Sincroniza cuando el valor cambia DESDE FUERA (p. ej. al cargar un aviso para editar, o al
-  // limpiar el formulario tras guardar). Evita pisar lo que el usuario escribe comparando antes.
+  // Sincroniza cuando el valor cambia DESDE FUERA (cargar un aviso para editar, o limpiar tras
+  // guardar). Compara contra el ref (no contra getHTML) y solo actúa si el editor está vivo.
   useEffect(() => {
-    if (editor && value !== editor.getHTML() && !editor.isFocused) {
-      editor.commands.setContent(value || "", false);
+    if (!editor || editor.isDestroyed) return;
+    if (value !== ultimoRef.current) {
+      ultimoRef.current = value;
+      if (!editor.isFocused) editor.commands.setContent(value || "", false);
     }
   }, [value, editor]);
 
