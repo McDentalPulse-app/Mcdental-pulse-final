@@ -15,7 +15,8 @@ import { pedirReto } from "../../services/supabase/asistenciasService";
 import { soportado, estadoPermiso, activar } from "../../services/pushService";
 import { getAjustes } from "../../services/supabase/ajustesService";
 import { RESULTADO, MENSAJE } from "../../utils/rostro";
-import { emparejarChecadas, diaISO, puedeRegistrarSalida, horaSalidaAutorizada, TZ_CLINICA } from "../../utils/asistencia";
+import { emparejarChecadas, diaISO, puedeRegistrarSalida, horaSalidaAutorizada, minutosRetardo, TZ_CLINICA } from "../../utils/asistencia";
+import { useVoz, construirFraseChecada } from "../../utils/voz";
 
 const horaCorta = (timestamp) =>
   new Intl.DateTimeFormat("es-MX", {
@@ -140,6 +141,19 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
   // entrada/salida". Así no hay una cámara encendida "por si acaso" mientras nadie va a checar.
   const [capturando, setCapturando] = useState(false);
 
+  // Narración por voz: guía a quien no mira la pantalla mientras se encuadra, y confirma la
+  // checada en voz alta. Encendida por defecto; la preferencia se recuerda. El checador es el
+  // dispositivo personal de cada quien (no un kiosco compartido), así que la voz no molesta a nadie.
+  const [voz, setVoz] = useState(() => localStorage.getItem("mc-checador-voz") !== "off");
+  const { hablar, callar, disponible: vozDisponible } = useVoz(voz);
+  const alternarVoz = () =>
+    setVoz((v) => {
+      const nueva = !v;
+      localStorage.setItem("mc-checador-voz", nueva ? "on" : "off");
+      if (!nueva) callar();
+      return nueva;
+    });
+
   // La oferta de activar avisos, que aparece bajo la checada recién hecha (no un modal al entrar).
   const [ofrecerPush, setOfrecerPush] = useState(false);
 
@@ -155,6 +169,15 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
     pedirReto().then((r) => { if (vivo) setReto(r); });
     return () => { vivo = false; };
   }, []);
+
+  // Al arrancar el reto anti-foto, la voz da la orden una vez ("gira despacio la cabeza…"); a
+  // partir de ahí, las correcciones finas ("un poco más", "es el otro lado") las va diciendo la
+  // cámara con sus propias pistas de pose. Se dispara al pasar a `girando`, no en cada render.
+  useEffect(() => {
+    if (girando && reto) {
+      hablar(`Ahora gira despacio la cabeza hacia tu ${reto === "izquierda" ? "izquierda" : "derecha"}.`, { repetir: true });
+    }
+  }, [girando, reto, hablar]);
 
   /** La cámara dispara sola en cuanto ve la pose que se pidió: nadie pulsa un botón de perfil. */
   const onGiroCapturado = useCallback((foto) => {
@@ -229,6 +252,7 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
       // empleado, así que esas nunca bloquean.
       if (foto.resultado === RESULTADO.SIN_CARA || foto.resultado === RESULTADO.VARIAS_CARAS) {
         toast.error(MENSAJE[foto.resultado]);
+        hablar(MENSAJE[foto.resultado], { repetir: true });
         return;
       }
 
@@ -244,6 +268,7 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
 
         if (!girada?.blob) {
           toast.error("No se tomó la foto girada. Inténtalo otra vez.");
+          hablar("No se tomó la foto girada. Inténtalo otra vez.", { repetir: true });
           return;
         }
         retoBlob = girada.blob;
@@ -260,11 +285,20 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
 
       setUltima(checada);
 
+      // ¿La entrada llegó tarde? La tolerancia decide SI es retardo; se compara igual que el
+      // resto de la app (minutosRetardo vs toleranciaMin del horario). La salida nunca es retardo.
+      const hora = horaCorta(checada.marcadaEn);
+      const tolerancia = Number.isFinite(horarioHoy?.toleranciaMin) ? horarioHoy.toleranciaMin : 0;
+      const tarde =
+        checada.tipo === "entrada" && minutosRetardo({ marcadaEn: checada.marcadaEn }, horarioHoy) > tolerancia;
+      const fuera = checada.ubicacionEstado === "fuera";
+
       toast.success(
         checada.tipo === "entrada"
-          ? `Entrada registrada a las ${horaCorta(checada.marcadaEn)}.`
-          : `Salida registrada a las ${horaCorta(checada.marcadaEn)}. ¡Buen día!`
+          ? `Entrada registrada a las ${hora}${tarde ? ", con retardo" : ""}.`
+          : `Salida registrada a las ${hora}. ¡Buen día!`
       );
+      hablar(construirFraseChecada(checada.tipo, hora, { tarde, fuera }), { repetir: true });
 
       // El momento de ofrecer los avisos es JUSTO AHORA, no al abrir la app. Un navegador al que
       // le saltas con "¿permites notificaciones?" nada más entrar recibe un "no" casi reflejo — y
@@ -328,7 +362,20 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
         subtitle={horarioHoy
           ? `Hoy trabajas de ${horarioHoy.horaEntrada.slice(0, 5)} a ${horarioHoy.horaSalida.slice(0, 5)}`
           : "Hoy no tienes turno asignado"}
-      />
+      >
+        {vozDisponible && (
+          <button
+            type="button"
+            className={`checador-voz-btn${voz ? " checador-voz-btn--on" : ""}`}
+            onClick={alternarVoz}
+            aria-pressed={voz}
+            title={voz ? "Silenciar la voz guía" : "Activar la voz guía"}
+          >
+            <Icon name={voz ? "volumen" : "volumenOff"} size={18} />
+            <span>{voz ? "Voz activada" : "Voz silenciada"}</span>
+          </button>
+        )}
+      </PageHeader>
 
       <Card>
         <CapturaSelfie
@@ -337,6 +384,7 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
           onEncuadre={girando ? undefined : onEncuadre}
           poseRequerida={girando ? reto : null}
           onAutoCaptura={girando ? onGiroCapturado : null}
+          hablar={voz ? hablar : null}
         />
 
         {girando && (

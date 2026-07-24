@@ -25,7 +25,7 @@ const FRAMES_ESTABLES = 3;  // cuántas veces seguidas debe estar bien encuadrad
  * Se exige que el encuadre esté bien VARIOS fotogramas seguidos, no uno: si no, dispararía
  * en mitad de un movimiento y saldría movida.
  */
-const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true, onAutoCaptura = null, poseRequerida = null, onEncuadre = null }, ref) {
+const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true, onAutoCaptura = null, poseRequerida = null, onEncuadre = null, hablar = null }, ref) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const establesRef = useRef(0);
@@ -165,7 +165,9 @@ const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true, onAutoC
       const { resultado, box, puntos } = await detectarRostro(lienzo);
       if (!vivo) return;
 
-      const avisar = (g) => { setGuia(g); onEncuadre?.(g); };
+      // La voz dice la MISMA pista que ya se pinta (acércate / gira / no te muevas): no hay
+      // textos aparte que mantener, solo se le pone voz a lo que la guía ya decidió.
+      const avisar = (g) => { setGuia(g); onEncuadre?.(g); if (g.pista) hablar?.(g.pista); };
 
       if (resultado === RESULTADO.VARIAS_CARAS) {
         establesRef.current = 0;
@@ -215,7 +217,7 @@ const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true, onAutoC
     }, INTERVALO_MS);
 
     return () => { vivo = false; clearInterval(id); };
-  }, [estado, onAutoCaptura, onEncuadre, capturar, poseRequerida]);
+  }, [estado, onAutoCaptura, onEncuadre, capturar, poseRequerida, hablar]);
 
   useImperativeHandle(ref, () => ({ capturar, estado }), [capturar, estado]);
 

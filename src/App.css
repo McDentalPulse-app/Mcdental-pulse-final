@@ -8526,6 +8526,25 @@
 .checador-boton--entrada { background: var(--mc-semaforo-verde); }
 .checador-boton--salida { background: var(--mc-semaforo-amarillo); }
 
+/* Interruptor de la voz guía, en las acciones del header del checador. */
+.checador-voz-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border: 1px solid var(--mc-borde-suave);
+  border-radius: 9px;
+  background: var(--mc-superficie);
+  color: var(--mc-texto-secundario);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.checador-voz-btn:hover { background: var(--mc-superficie-sutil); }
+.checador-voz-btn--on { color: var(--mc-aqua); border-color: color-mix(in srgb, var(--mc-aqua) 40%, transparent); }
+
 .checador-cerrado {
   display: flex;
   align-items: center;
