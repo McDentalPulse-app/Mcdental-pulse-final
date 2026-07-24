@@ -17,6 +17,7 @@ import { getAjustes } from "../../services/supabase/ajustesService";
 import { RESULTADO, MENSAJE } from "../../utils/rostro";
 import { emparejarChecadas, diaISO, puedeRegistrarSalida, horaSalidaAutorizada, minutosRetardo, TZ_CLINICA } from "../../utils/asistencia";
 import { useVoz, construirFraseChecada } from "../../utils/voz";
+import { semanaActual } from "../../utils/constants";
 
 const horaCorta = (timestamp) =>
   new Intl.DateTimeFormat("es-MX", {
@@ -33,7 +34,7 @@ const PILL_UBICACION = {
   sin_geocerca: { icono: "mapPin", clase: "checador-pill--aviso" },
 };
 
-export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = [], permisos = [], onChecar }) {
+export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = [], permisos = [], encuestas = [], onChecar }) {
   const camaraRef = useRef(null);
   const { toast } = useNotification();
   const navigate = useNavigate();
@@ -234,6 +235,17 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
 
   const bloqueado = siguiente === "salida" && !ventanaSalida.permitido;
 
+  // Sábado sin encuesta semanal contestada: no se deja marcar salida hasta que la conteste
+  // (la entrada no se toca). El servidor es quien de verdad bloquea (registrar_checada,
+  // migración 082); esto solo evita el trámite de foto/ubicación para enterarse al final.
+  const encuestaPendiente = useMemo(() => {
+    if (siguiente !== "salida") return false;
+    const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: TZ_CLINICA }).format(new Date());
+    const esSabado = diaISO(hoy) === 6;
+    if (!esSabado) return false;
+    return !encuestas.some((e) => e.empleadoId === user?.id && e.semana === semanaActual);
+  }, [siguiente, encuestas, user?.id]);
+
   const handleChecar = async () => {
     if (!siguiente || enviando) return;
     setEnviando(true);
@@ -408,7 +420,7 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
                 type="button"
                 className={`checador-boton checador-boton--${siguiente}`}
                 onClick={() => setCapturando(true)}
-                disabled={bloqueado || fueraDeArea}
+                disabled={bloqueado || fueraDeArea || encuestaPendiente}
               >
                 <Icon name={siguiente === "entrada" ? "check" : "logout"} size={22} />
                 {fueraDeArea
@@ -466,6 +478,18 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
                     ? `Tu salida está autorizada para las ${ventanaSalida.horaAutorizada}. Podrás checar a partir de las ${ventanaSalida.disponibleDesde}.`
                     : `Podrás registrar tu salida a partir de las ${ventanaSalida.disponibleDesde}. Si necesitas irte antes, pide un permiso de salida anticipada a Recursos Humanos.`}
               </p>
+            )}
+
+            {encuestaPendiente && (
+              <>
+                <p className="checador-pill checador-pill--aviso">
+                  <Icon name="clipboardCheck" size={15} />
+                  Antes de marcar tu salida hoy, contesta la encuesta semanal.
+                </p>
+                <button type="button" className="mc-btn-outline" onClick={() => navigate("encuesta")}>
+                  Contestar encuesta
+                </button>
+              </>
             )}
 
             {/* Autorizado y ya dentro de la ventana: se le confirma, para que no dude de si
