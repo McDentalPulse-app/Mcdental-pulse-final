@@ -1,7 +1,7 @@
 import React from 'react';
 import { useGlobal } from "../../contexts/GlobalContext";
 import { Routes, Route, Navigate } from 'react-router-dom';
-import Sidebar from './Sidebar';
+import Navegacion from './Navegacion';
 import PsicologaDashboard from '../dashboards/PsicologaDashboard';
 import AIEngine from '../ia/AIEngine';
 import PsicologaSeguimiento from '../psicologia/PsicologaSeguimiento';
@@ -41,7 +41,7 @@ export default function PsicologaLayout({ user, globals, actions }) {
 
   return (
     <div className="app-shell">
-      <Sidebar />
+      <Navegacion />
       <main className="app-main">
         <div className="app-main-inner">
           {ofrecerPush && <AvisoPush onActivar={activarAvisos} onCerrar={cerrarOfertaPush} />}

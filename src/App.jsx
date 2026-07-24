@@ -7,7 +7,6 @@ import { useAppActions } from "./hooks/useAppActions";
 import LandingPage from "./components/landing/LandingPage";
 import Loader from './components/ui/Loader';
 import AvisoModal from "./components/avisos/AvisoModal";
-import CampanaNotificaciones from "./components/notificaciones/CampanaNotificaciones";
 import ForzarNotificaciones from "./components/notificaciones/ForzarNotificaciones";
 
 const AdminLayout = lazy(() => import("./components/layout/AdminLayout"));
@@ -71,9 +70,7 @@ export default function App() {
         sucursalUsuario={user?.sucursal}
         usuarioId={user?.id}
       />
-      {/* Campana global: fija arriba a la derecha, común a los 4 roles (mismo motivo que
-          AvisoModal). Es la ventana a la bandeja persistente de notificaciones. */}
-      <CampanaNotificaciones user={user} />
+      {/* La campana de notificaciones ahora vive DENTRO del header (HeaderNav), no flotante. */}
       {/* Empujón obligatorio para activar el push: se muestra a sí mismo solo si hace falta
           (permiso sin conceder), común a los 4 roles. */}
       <ForzarNotificaciones />

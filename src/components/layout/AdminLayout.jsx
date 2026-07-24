@@ -1,7 +1,7 @@
 import React from 'react';
 import { useGlobal } from "../../contexts/GlobalContext";
 import { Routes, Route, Navigate } from 'react-router-dom';
-import Sidebar from './Sidebar';
+import Navegacion from './Navegacion';
 import AdminDashboard from '../dashboards/AdminDashboard';
 import AIEngine from '../ia/AIEngine';
 import EmpleadosList from '../empleados/EmpleadosList';
@@ -36,7 +36,7 @@ export default function AdminLayout({ user, globals, actions }) {
 
   return (
     <div className="app-shell">
-      <Sidebar />
+      <Navegacion />
       <main className="app-main">
         <div className="app-main-inner">
           {ofrecerPush && <AvisoPush onActivar={activarAvisos} onCerrar={cerrarOfertaPush} />}

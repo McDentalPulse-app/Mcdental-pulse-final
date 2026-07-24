@@ -1,7 +1,7 @@
 import React from 'react';
 import { useGlobal } from "../../contexts/GlobalContext";
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import Sidebar from './Sidebar';
+import Navegacion from './Navegacion';
 import InicioEmpleado from '../empleados/InicioEmpleado';
 import EncuestaEmpleado from '../empleados/EncuestaEmpleado';
 import HistorialEmpleado from '../empleados/HistorialEmpleado';
@@ -30,7 +30,7 @@ export default function EmpleadoLayout({ user, globals, actions }) {
 
   return (
     <div className="app-shell">
-      <Sidebar />
+      <Navegacion />
       <main className="app-main">
         <div className="app-main-inner">
           <Routes>

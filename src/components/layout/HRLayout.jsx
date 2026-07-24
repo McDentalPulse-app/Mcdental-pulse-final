@@ -1,7 +1,7 @@
 import React from 'react';
 import { useGlobal } from "../../contexts/GlobalContext";
 import { Routes, Route, Navigate } from 'react-router-dom';
-import Sidebar from './Sidebar';
+import Navegacion from './Navegacion';
 import HRDashboard from '../dashboards/HRDashboard';
 import VacacionesRH from '../rh/VacacionesRH';
 import PermisosRH from '../rh/PermisosRH';
@@ -45,7 +45,7 @@ export default function HRLayout({ user, globals, actions }) {
 
   return (
     <div className="app-shell">
-      <Sidebar />
+      <Navegacion />
       <main className="app-main">
         <div className="app-main-inner">
           {ofrecerPush && <AvisoPush onActivar={activarAvisos} onCerrar={cerrarOfertaPush} />}
