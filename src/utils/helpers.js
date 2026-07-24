@@ -160,7 +160,17 @@ export const formatEmpleadoIdForDisplay = (user) => {
   return "Sin ID";
 };
 
+/** Roles que forman la plantilla (los que "son personal"), frente a los de
+ *  gestión (admin/rh/psicologa), que no se cuentan como plantilla. */
+export const ROLES_PLANTILLA = ["empleado", "doctor"];
+
 /** Empleado activo: la plantilla operativa. Los inactivos (baja) se excluyen
  *  de dashboards, KPIs, encuestas, mensajes y selects de acción — pero se
- *  conservan en Expedientes y Gestión de Personal (historial/reactivación). */
-export const esEmpleadoActivo = (u) => u?.role === "empleado" && !u?.inactivo;
+ *  conservan en Expedientes y Gestión de Personal (historial/reactivación).
+ *
+ *  `doctor` cuenta como empleado: es un empleado con extras (comisiones), no
+ *  una categoría aparte. Al crearse el rol se quedó fuera de este filtro y eso
+ *  borraba a 54 de las 99 personas de la plantilla en las 10 pantallas que lo
+ *  usan (listas, dashboards, reportes RH, reconocimientos, descuentos,
+ *  mensajes y AI Engine). */
+export const esEmpleadoActivo = (u) => ROLES_PLANTILLA.includes(u?.role) && !u?.inactivo;

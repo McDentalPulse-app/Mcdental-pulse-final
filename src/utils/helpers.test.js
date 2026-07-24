@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveFechaIngreso, resolveFechaCumpleanos } from "./helpers";
+import { resolveFechaIngreso, resolveFechaCumpleanos, esEmpleadoActivo } from "./helpers";
 import { normalizeEmployeeNameKey } from "./adminEmployeeDates";
 
 // Hasta ahora existía un override por nombre (ADMIN_EMPLOYEE_FECHAS) que pisaba a la
@@ -77,5 +77,37 @@ describe("normalizeEmployeeNameKey", () => {
   it("tolera nulos", () => {
     expect(normalizeEmployeeNameKey(null)).toBe("");
     expect(normalizeEmployeeNameKey(undefined)).toBe("");
+  });
+});
+
+// El rol `doctor` nació después que este filtro y se quedó fuera: `esEmpleadoActivo`
+// pedía role === "empleado" a secas. En producción eso borraba a 54 de las 99 personas
+// de la plantilla en las 10 pantallas que lo usan (listas, dashboards, reportes RH,
+// reconocimientos, descuentos, mensajes y AI Engine): se veían 45 empleados de ~100.
+// Estos tests fijan que el doctor cuenta como plantilla y que gestión no.
+describe("esEmpleadoActivo", () => {
+  it("cuenta al empleado activo", () => {
+    expect(esEmpleadoActivo({ role: "empleado", inactivo: false })).toBe(true);
+  });
+
+  it("cuenta al doctor: es un empleado con extras, no una categoría aparte", () => {
+    expect(esEmpleadoActivo({ role: "doctor", inactivo: false })).toBe(true);
+  });
+
+  it("deja fuera a los roles de gestión, que no son plantilla", () => {
+    expect(esEmpleadoActivo({ role: "admin" })).toBe(false);
+    expect(esEmpleadoActivo({ role: "rh" })).toBe(false);
+    expect(esEmpleadoActivo({ role: "psicologa" })).toBe(false);
+  });
+
+  it("deja fuera a los dados de baja, sea cual sea su rol", () => {
+    expect(esEmpleadoActivo({ role: "empleado", inactivo: true })).toBe(false);
+    expect(esEmpleadoActivo({ role: "doctor", inactivo: true })).toBe(false);
+  });
+
+  it("tolera nulos", () => {
+    expect(esEmpleadoActivo(null)).toBe(false);
+    expect(esEmpleadoActivo(undefined)).toBe(false);
+    expect(esEmpleadoActivo({})).toBe(false);
   });
 });
