@@ -1,5 +1,6 @@
 import React from "react";
 import Card from "../common/Card";
+import EmptyState from "../common/EmptyState";
 import SectionTitle from "../common/SectionTitle";
 import StatCard from "../common/StatCard";
 import PageHeader from "../common/PageHeader";
@@ -48,7 +49,7 @@ const ReportesConfidencialesPanel = ({ reportes }) => {
         <SectionTitle icon="clipboard">Bandeja de reportes</SectionTitle>
         <div className="psico-inbox-list admin-list-scroll admin-list-scroll--tall">
           {reportes.length === 0 ? (
-            <p className="admin-empty">No hay reportes confidenciales registrados.</p>
+            <EmptyState icon="lock" message="No hay reportes confidenciales registrados." />
           ) : reportes.map(r => (
             <div key={r.id} className="psico-inbox-item">
               <div className="psico-inbox-head">

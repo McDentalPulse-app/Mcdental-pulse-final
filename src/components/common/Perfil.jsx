@@ -8,7 +8,6 @@ import { probar as probarPush } from "../../services/pushService";
 import { subirAvatarUsuario, quitarAvatarUsuario } from "../../services/supabase/avatarService";
 import { formatFechaIngreso, formatFechaCumpleanos, formatAntiguedadEmpleado } from "../../utils/helpers";
 import { normalizeSucursal } from "../../utils/constants";
-import PageHeader from "./PageHeader";
 import Card from "./Card";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
@@ -123,45 +122,36 @@ export default function Perfil() {
 
   return (
     <div className="admin-page perfil-page">
-      <PageHeader
-        icon="user"
-        eyebrow="MI ESPACIO"
-        title="Mi perfil"
-        subtitle="Tu información en McDental Pulse. Puedes actualizar tu foto cuando quieras."
-      />
-
-      <Card className="perfil-hero">
-        <div className="perfil-hero-bg" aria-hidden="true" />
-        <div className="perfil-avatar-wrap">
-          <Avatar name={user.name} size={112} color="var(--mc-verde)" photoUrl={user.avatarUrl} />
-          <div className="perfil-foto-actions">
+      <div className="perfil-hero2">
+        <div className="perfil-cover" aria-hidden="true" />
+        <div className="perfil-hero2-row">
+          <div className="perfil-avatar2">
+            <Avatar name={user.name} size={120} color="var(--mc-verde)" photoUrl={user.avatarUrl} />
+            <span className="perfil-verif" aria-hidden="true"><Icon name="check" size={18} /></span>
+          </div>
+          <div className="perfil-hero2-id">
+            <div className="perfil-hero2-nombre-row">
+              <h2 className="perfil-name">{user.name}</h2>
+              <span className="perfil-role-badge">{rolLabel}</span>
+            </div>
+            <p className="perfil-hero2-email">
+              {user.email || user.puesto || normalizeSucursal(user.sucursal) || ""}
+            </p>
+          </div>
+          <div className="perfil-hero2-actions">
             <label className="perfil-foto-btn perfil-foto-btn--primary" aria-disabled={subiendoFoto}>
-              <Icon name={subiendoFoto ? "clock" : "sparkles"} size={15} />
+              <Icon name={subiendoFoto ? "clock" : "camera"} size={15} />
               {subiendoFoto ? "Subiendo..." : (user.avatarUrl ? "Cambiar foto" : "Subir foto")}
               <input type="file" accept="image/*" hidden disabled={subiendoFoto} onChange={handleCambiarFoto} />
             </label>
             {user.avatarUrl && (
-              <button
-                type="button"
-                className="perfil-foto-btn perfil-foto-btn--ghost"
-                disabled={subiendoFoto}
-                onClick={handleQuitarFoto}
-              >
-                <Icon name="minus" size={15} />
-                Quitar foto
+              <button type="button" className="perfil-foto-btn perfil-foto-btn--ghost" disabled={subiendoFoto} onClick={handleQuitarFoto}>
+                <Icon name="minus" size={15} /> Quitar foto
               </button>
             )}
           </div>
         </div>
-
-        <div className="perfil-hero-main">
-          <span className="perfil-role-badge">{rolLabel}</span>
-          <h2 className="perfil-name">{user.name}</h2>
-          <p className="perfil-hero-sub">
-            {user.puesto ? `${user.puesto} · ` : ""}{normalizeSucursal(user.sucursal) || ""}
-          </p>
-        </div>
-      </Card>
+      </div>
 
       <Card className="perfil-info-card">
         <div className="perfil-info-title">

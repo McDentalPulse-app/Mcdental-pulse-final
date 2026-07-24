@@ -10,9 +10,10 @@ import Icon from "../ui/Icon";
 import SectionTitle from "../common/SectionTitle";
 import WeekSelect from "../common/WeekSelect";
 import PageHeader from "../common/PageHeader";
+import EmptyState from "../common/EmptyState";
 import { SUCURSALES, semanaActual, normalizeSucursal, sucursalMatches, formatSemanaDisplay } from "../../utils/constants";
 import { getPulseStatus, tieneScoreValido } from "../../utils/pulseScore";
-import { nivelColor, nivelMeta, colorSerie } from "../../config/theme";
+import { nivelColor, colorSerie } from "../../config/theme";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import "./AdminDashboard.css";
 import { esEmpleadoActivo } from "../../utils/helpers";
@@ -202,15 +203,6 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
 
   const enFocoRojo = empleadosConDatos.filter((e) => e.status.semaforo === "Rojo");
   const participacion = empleados.length ? Math.round((contestaron / empleados.length) * 100) : 0;
-  const pendientes = empleados.length - contestaron;
-
-  // Distribución de semáforo del equipo (igual que Psicóloga)
-  const dist = { verde: 0, amarillo: 0, rojo: 0, "sin-datos": 0 };
-  pulsePorEmpleado.forEach(({ status, sinDatos }) => {
-    const nivel = sinDatos ? "sin-datos" : status.nivel;
-    if (nivel in dist) dist[nivel] += 1;
-  });
-  const conDatos = empleados.length - dist["sin-datos"];
 
   // Tendencia del bienestar por oficina: Pulse Score promedio por sucursal y semana.
   const empSucursal = {};
@@ -275,7 +267,7 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
         <Card className="pulse-hero-card dashboard-pulse-feature">
           <div className="pulse-hero-top">
             <div className="pulse-hero-icon-wrap">
-              <Icon name="activity" size={22} color="var(--mc-blanco)" />
+              <Icon name="activity" size={22} color="var(--mc-verde)" />
             </div>
             <div className="pulse-hero-label">Pulse Score™</div>
           </div>
@@ -291,68 +283,11 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
         </Card>
       </div>
 
-      <div className="admin-grid-2 psico-dash-grid">
-        {/* Distribución del equipo */}
-        <Card>
-          <SectionTitle icon="activity">Distribución del equipo</SectionTitle>
-          {conDatos === 0 ? (
-            <p className="admin-empty">Aún no hay encuestas para evaluar el semáforo.</p>
-          ) : (
-            <>
-              <div className="psico-dist-bar" role="img" aria-label="Distribución de semáforo del equipo">
-                {["verde", "amarillo", "rojo", "sin-datos"].map((k) =>
-                  dist[k] > 0 ? (
-                    <div
-                      key={k}
-                      className="psico-dist-seg"
-                      style={{ flexGrow: dist[k], background: nivelColor(k) }}
-                      title={`${nivelMeta(k).label}: ${dist[k]}`}
-                    />
-                  ) : null
-                )}
-              </div>
-              <div className="psico-dist-legend">
-                {["verde", "amarillo", "rojo", "sin-datos"].map((k) => (
-                  <div key={k} className="psico-dist-item">
-                    <span className="psico-dist-dot" style={{ background: nivelColor(k) }} />
-                    <span className="psico-dist-label">{nivelMeta(k).label}</span>
-                    <span className="psico-dist-count">{dist[k]}</span>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </Card>
-
-        {/* Participación semanal */}
-        <Card>
-          <SectionTitle icon="clipboardCheck">Participación · Semana {weekSel}</SectionTitle>
-          <div className="psico-part">
-            <div className="psico-part-ring" style={{ "--pct": participacion }}>
-              <span className="psico-part-pct">{participacion}%</span>
-            </div>
-            <div className="psico-part-info">
-              <div className="psico-part-row">
-                <Icon name="clipboardCheck" size={15} />
-                <strong>{contestaron}</strong> de {empleados.length} contestaron
-              </div>
-              <div className="psico-part-row psico-part-row--pending">
-                <Icon name="clock" size={15} />
-                <strong>{pendientes}</strong> pendientes esta semana
-              </div>
-              <div className="psico-part-track">
-                <div className="psico-part-fill" style={{ width: `${participacion}%` }} />
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
-
       {/* Tendencia del bienestar por oficina (igual que Psicóloga) */}
       <Card>
         <SectionTitle icon="trending">Tendencia del bienestar por oficina</SectionTitle>
         {!trendPorOficinaHayDatos ? (
-          <p className="admin-empty">Se necesitan al menos 2 semanas con datos para la tendencia.</p>
+          <EmptyState icon="trending" message="Se necesitan al menos 2 semanas con datos para la tendencia." />
         ) : (
           <>
             <GroupedBarChart labels={trendLabels} series={trendSeries} height={200} />
@@ -370,30 +305,77 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
       </Card>
 
       <Card>
-        <SectionTitle icon="alert">Sucursales en riesgo</SectionTitle>
-        {sucursalesRiesgo.length === 0 ? (
-          <p className="admin-empty">Ninguna sucursal con casos en amarillo o rojo esta semana.</p>
-        ) : (
-          <div className="psico-suc-list">
-            {sucursalesRiesgo.map((s) => (
-              <button
-                key={s.suc}
-                type="button"
-                className="psico-suc-row psico-suc-row--clickable"
-                title={`${s.riesgo} en riesgo: ${s.emps.map((e) => e.emp.name.split(" ")[0]).join(", ")}`}
-                onClick={() => setSucRiesgoModal(s)}
-              >
-                <div className="psico-suc-head">
-                  <span className="psico-suc-name">{s.suc}</span>
-                  <span className="psico-suc-count">{s.riesgo}/{s.total} <Icon name="eye" size={13} /></span>
-                </div>
-                <div className="psico-suc-track">
-                  <div className="psico-suc-fill" style={{ width: `${Math.round((s.riesgo / s.total) * 100)}%` }} />
-                </div>
-              </button>
-            ))}
+        <div className="admin-grid-2">
+          <div>
+            <SectionTitle icon="alert">Sucursales en riesgo</SectionTitle>
+            {sucursalesRiesgo.length === 0 ? (
+              <EmptyState icon="check" message="Ninguna sucursal con casos en amarillo o rojo esta semana." />
+            ) : (
+              <div className="psico-suc-list">
+                {sucursalesRiesgo.map((s) => (
+                  <button
+                    key={s.suc}
+                    type="button"
+                    className="psico-suc-row psico-suc-row--clickable"
+                    title={`${s.riesgo} en riesgo: ${s.emps.map((e) => e.emp.name.split(" ")[0]).join(", ")}`}
+                    onClick={() => setSucRiesgoModal(s)}
+                  >
+                    <div className="psico-suc-head">
+                      <span className="psico-suc-name">{s.suc}</span>
+                      <span className="psico-suc-count">{s.riesgo}/{s.total} <Icon name="eye" size={13} /></span>
+                    </div>
+                    <div className="psico-suc-track">
+                      <div className="psico-suc-fill" style={{ width: `${Math.round((s.riesgo / s.total) * 100)}%` }} />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+
+          <div>
+            <div className="dashboard-foco-header">
+              <SectionTitle icon="alert" className="dashboard-foco-title">
+                Empleados en Foco Rojo
+              </SectionTitle>
+              <span className={`dashboard-foco-count${enFocoRojo.length ? " dashboard-foco-count--alert" : ""}`}>
+                {enFocoRojo.length}
+              </span>
+            </div>
+            {enFocoRojo.length === 0 ? (
+              <div className="dashboard-empty dashboard-empty--ok">
+                <Icon name="check" size={18} />
+                Sin empleados en foco rojo esta semana
+              </div>
+            ) : (
+              <div className="dashboard-foco-list">
+                {enFocoRojo.map((e) => {
+                  const emp = e.empleado;
+                  const ps = e.pulse;
+                  return (
+                    <div key={emp.id} className="dashboard-employee-row dashboard-employee-row--alert">
+                      <Avatar name={emp.name} size={40} color={nivelColor("rojo")} photoUrl={emp.avatarUrl} />
+                      <div className="dashboard-employee-info">
+                        <div className="dashboard-employee-name">{emp.name}</div>
+                        <div className="dashboard-employee-meta">
+                          {normalizeSucursal(emp.sucursal)} · {emp.puesto}
+                        </div>
+                      </div>
+                      <Badge tipo="rojo" />
+                      <PulseScoreBadge
+                        score={ps.score}
+                        nivel={ps.nivel}
+                        slug={ps.slug}
+                        tendencia={ps.tendencia}
+                        size="sm"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
       </Card>
 
       <div className="dashboard-grid-2 dashboard-grid-2--single">
@@ -612,49 +594,6 @@ const AdminDashboard = ({ encuestas, mensajes }) => {
         </motion.div>
       )}
       </AnimatePresence>
-
-      <Card className={`dashboard-foco-card${enFocoRojo.length ? " dashboard-foco-card--active" : ""}`}>
-        <div className="dashboard-foco-header">
-          <SectionTitle icon="alert" className="dashboard-foco-title">
-            Empleados en Foco Rojo
-          </SectionTitle>
-          <span className={`dashboard-foco-count${enFocoRojo.length ? " dashboard-foco-count--alert" : ""}`}>
-            {enFocoRojo.length}
-          </span>
-        </div>
-        {enFocoRojo.length === 0 ? (
-          <div className="dashboard-empty dashboard-empty--ok">
-            <Icon name="check" size={18} />
-            Sin empleados en foco rojo esta semana
-          </div>
-        ) : (
-          <div className="dashboard-foco-list">
-            {enFocoRojo.map((e) => {
-              const emp = e.empleado;
-              const ps = e.pulse;
-              return (
-                <div key={emp.id} className="dashboard-employee-row dashboard-employee-row--alert">
-                  <Avatar name={emp.name} size={40} color={nivelColor("rojo")} photoUrl={emp.avatarUrl} />
-                  <div className="dashboard-employee-info">
-                    <div className="dashboard-employee-name">{emp.name}</div>
-                    <div className="dashboard-employee-meta">
-                      {normalizeSucursal(emp.sucursal)} · {emp.puesto}
-                    </div>
-                  </div>
-                  <Badge tipo="rojo" />
-                  <PulseScoreBadge
-                    score={ps.score}
-                    nivel={ps.nivel}
-                    slug={ps.slug}
-                    tendencia={ps.tendencia}
-                    size="sm"
-                  />
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </Card>
     </div>
   );
 };

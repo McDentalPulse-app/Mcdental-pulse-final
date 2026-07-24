@@ -1,11 +1,10 @@
 import React from "react";
 import Icon from "../ui/Icon";
 
-// Header premium compartido por todas las pantallas (patrón nacido en AI Engine):
-// banner con gradiente de marca + aura animada + icono con glow.
+// Header plano compartido por todas las pantallas, estilo Untitled UI
+// (título + subtítulo a la izquierda, acciones a la derecha, borde inferior).
 const PageHeader = ({ icon, eyebrow, title, subtitle, children, className = "" }) => (
   <div className={`premium-page-header ${className}`.trim()}>
-    <div className="premium-header-bg" aria-hidden="true" />
     {icon && (
       <div className="admin-stat-icon-wrap premium-header-icon">
         <Icon name={icon} size={22} />

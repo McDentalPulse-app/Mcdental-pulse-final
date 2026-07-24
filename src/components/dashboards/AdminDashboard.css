@@ -84,25 +84,6 @@
   transform: scaleX(1);
 }
 
-/* ── Pulse hero: glass + glow de marca (eco de la landing) ── */
-.dashboard-page .pulse-hero-card.dashboard-pulse-feature {
-  position: relative;
-  overflow: hidden;
-  background: var(--grad-brand);
-  border: 1px solid rgba(var(--mc-aqua-rgb) / 0.28);
-  box-shadow: 0 24px 60px -28px rgba(4, 35, 31, 0.7),
-              inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-.dashboard-page .pulse-hero-card.dashboard-pulse-feature::before {
-  content: "";
-  position: absolute;
-  width: 220px; height: 220px;
-  top: -90px; right: -70px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(var(--mc-aqua-rgb) / 0.45), transparent 70%);
-  pointer-events: none;
-}
-
 /* ── Cards: sombra/borde más refinados + hover sutil ── */
 .dashboard-page .mc-card {
   transition: box-shadow 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);

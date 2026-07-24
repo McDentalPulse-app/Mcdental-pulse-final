@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Card from "./Card";
 import PageHeader from "./PageHeader";
+import EmptyState from "./EmptyState";
 import SectionTitle from "./SectionTitle";
 import Icon from "../ui/Icon";
 import { supabase } from "../../config/supabase";
@@ -198,7 +199,7 @@ const SoporteTI = ({ user }) => {
         {cargando ? (
           <div className="admin-empty">Consultando tus tickets…</div>
         ) : tickets.length === 0 ? (
-          <div className="admin-empty">Todavía no has abierto ningún ticket de soporte.</div>
+          <EmptyState icon="clipboard" message="Todavía no has abierto ningún ticket de soporte." />
         ) : (
           <div className="empleado-solicitud-list">
             {tickets.map((t) => {

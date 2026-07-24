@@ -5,6 +5,8 @@ import { useNotification } from "../../contexts/NotificationContext";
 import { updateUsuario, crearUsuario, cambiarUsername } from "../../services/supabase/usuariosService";
 import Card from "../common/Card";
 import PageHeader from "../common/PageHeader";
+import Badge from "../common/Badge";
+import FilterBar from "../common/FilterBar";
 import Icon from "../ui/Icon";
 import { SUCURSALES, normalizeSucursal, sucursalMatches } from "../../utils/constants";
 import { resolveFechaCumpleanos, resolveFechaIngreso, normalizeFechaCumpleanosInput } from "../../utils/helpers";
@@ -143,14 +145,10 @@ const GestionUsuarios = () => {
       </PageHeader>
 
       <Card className="gestion-personal-card table-card-body">
-        <div className="list-filters-grid list-filters-grid--2col">
-          <input
-            type="text"
-            className="table-search gestion-personal-search"
-            placeholder="Buscar empleado por nombre..."
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-          />
+        <FilterBar
+          className="list-filters-grid--2col"
+          search={{ value: busqueda, onChange: setBusqueda, placeholder: "Buscar empleado por nombre..." }}
+        >
           <select
             className="list-filter-select"
             value={filtroSucursal}
@@ -161,7 +159,7 @@ const GestionUsuarios = () => {
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
-        </div>
+        </FilterBar>
 
         <div className="table-scroll-wrap gestion-personal-table-wrap gestion-personal-desktop-only">
           <table className={`mc-table gestion-personal-table${esAdmin ? " gestion-personal-table--admin" : ""}`}>
@@ -187,9 +185,9 @@ const GestionUsuarios = () => {
                     </span>
                   </td>
                   <td>
-                    <span className={`mc-status-pill ${emp.inactivo ? "mc-status-pill--inactivo" : "mc-status-pill--activo"}`}>
+                    <Badge variant={emp.inactivo ? "inactivo" : "activo"}>
                       {emp.inactivo ? "Inactivo" : "Activo"}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="gestion-personal-col-actions">
                     <div className="user-actions">
@@ -250,9 +248,9 @@ const GestionUsuarios = () => {
                     <div className="gestion-personal-mobile-name">{emp.name}</div>
                     <div className="gestion-personal-mobile-user">@{emp.user}</div>
                   </div>
-                  <span className={`mc-status-pill ${emp.inactivo ? "mc-status-pill--inactivo" : "mc-status-pill--activo"}`}>
+                  <Badge variant={emp.inactivo ? "inactivo" : "activo"}>
                     {emp.inactivo ? "Inactivo" : "Activo"}
-                  </span>
+                  </Badge>
                 </div>
                 <div className="gestion-personal-mobile-meta">
                   <span className={`mc-tag ${!["empleado", "doctor"].includes(emp.role) ? "mc-tag--role-privileged" : ""}`}>{emp.role}</span>

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
+import FilterBar from "../common/FilterBar";
 import Badge from "../common/Badge";
 import KPI from "../common/KPI";
 import PageHeader from "../common/PageHeader";
@@ -369,14 +370,7 @@ const EmpleadosList = ({
       />
 
       <Card className="list-page-sticky list-card-spaced">
-        <div className="list-filters-grid">
-          <input
-            className="list-filter-input"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar por nombre, puesto o sucursal..."
-          />
-
+        <FilterBar search={{ value: busqueda, onChange: setBusqueda, placeholder: "Buscar por nombre, puesto o sucursal..." }}>
           <select
             className="list-filter-select"
             value={filtroSucursal}
@@ -398,7 +392,7 @@ const EmpleadosList = ({
             <option value="amarillo">Amarillo</option>
             <option value="rojo">Rojo</option>
           </select>
-        </div>
+        </FilterBar>
 
         <div className="list-filter-count">
           Mostrando {filtered.length} de {empleados.length} empleados

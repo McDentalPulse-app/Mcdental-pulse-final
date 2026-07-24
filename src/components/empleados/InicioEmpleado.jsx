@@ -1,5 +1,6 @@
 import React from "react";
 import Card from "../common/Card";
+import EmptyState from "../common/EmptyState";
 import Badge from "../common/Badge";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
@@ -113,7 +114,7 @@ const InicioEmpleado = ({ user, encuestas, mensajes, setActive }) => {
       <Card>
         <SectionTitle icon="calendar">Mi historial reciente</SectionTitle>
         {mis.length === 0 ? (
-          <p className="admin-empty">Aún no tienes encuestas registradas.</p>
+          <EmptyState message="Aún no tienes encuestas registradas." />
         ) : (
           <div className="empleado-history-mini">
             {mis.sort((a, b) => b.semana.localeCompare(a.semana)).slice(0, 5).map(e => (

@@ -10,9 +10,10 @@ import Icon from "../ui/Icon";
 import GroupedBarChart from "../common/GroupedBarChart";
 import WeekSelect from "../common/WeekSelect";
 import PageHeader from "../common/PageHeader";
+import EmptyState from "../common/EmptyState";
 import { semanaActual, normalizeSucursal, formatSemanaDisplay } from "../../utils/constants";
 import { getPulseStatus, tieneScoreValido } from "../../utils/pulseScore";
-import { nivelColor, nivelMeta, colorSerie } from "../../config/theme";
+import { colorSerie } from "../../config/theme";
 import { esEmpleadoActivo } from "../../utils/helpers";
 
 const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }) => {
@@ -64,14 +65,10 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
 
   const contestaron = estados.filter(e => e.score != null).length;
   const pendientes = empleados.length - contestaron;
-  const participacion = empleados.length ? Math.round((contestaron / empleados.length) * 100) : 0;
 
   const dist = { verde: 0, amarillo: 0, rojo: 0, "sin-datos": 0 };
   estados.forEach(e => { dist[e.nivel] += 1; });
   const focoRojo = dist.rojo;
-  const conDatos = empleados.length - dist["sin-datos"];
-
-  const semanaSelLabel = weekSel;
   const reportesNuevos = reportesConfidenciales.filter(r => r.estado === "nuevo").length;
   const mensajesNoLeidos = mensajes.filter(m => m.para === user?.id && !m.leido).length;
 
@@ -175,68 +172,11 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
         ))}
       </div>
 
-      <div className="admin-grid-2 psico-dash-grid">
-        {/* Distribución de semáforo */}
-        <Card>
-          <SectionTitle icon="activity">Distribución del equipo</SectionTitle>
-          {conDatos === 0 ? (
-            <p className="admin-empty">Aún no hay encuestas para evaluar el semáforo.</p>
-          ) : (
-            <>
-              <div className="psico-dist-bar" role="img" aria-label="Distribución de semáforo del equipo">
-                {["verde", "amarillo", "rojo", "sin-datos"].map(k =>
-                  dist[k] > 0 ? (
-                    <div
-                      key={k}
-                      className="psico-dist-seg"
-                      style={{ flexGrow: dist[k], background: nivelColor(k) }}
-                      title={`${nivelMeta(k).label}: ${dist[k]}`}
-                    />
-                  ) : null
-                )}
-              </div>
-              <div className="psico-dist-legend">
-                {["verde", "amarillo", "rojo", "sin-datos"].map(k => (
-                  <div key={k} className="psico-dist-item">
-                    <span className="psico-dist-dot" style={{ background: nivelColor(k) }} />
-                    <span className="psico-dist-label">{nivelMeta(k).label}</span>
-                    <span className="psico-dist-count">{dist[k]}</span>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </Card>
-
-        {/* Participación semanal */}
-        <Card>
-          <SectionTitle icon="clipboardCheck">Participación · Semana {semanaSelLabel}</SectionTitle>
-          <div className="psico-part">
-            <div className="psico-part-ring" style={{ "--pct": participacion }}>
-              <span className="psico-part-pct">{participacion}%</span>
-            </div>
-            <div className="psico-part-info">
-              <div className="psico-part-row">
-                <Icon name="clipboardCheck" size={15} />
-                <strong>{contestaron}</strong> de {empleados.length} contestaron
-              </div>
-              <div className="psico-part-row psico-part-row--pending">
-                <Icon name="clock" size={15} />
-                <strong>{pendientes}</strong> pendientes esta semana
-              </div>
-              <div className="psico-part-track">
-                <div className="psico-part-fill" style={{ width: `${participacion}%` }} />
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
-
       {/* Tendencia del bienestar (ancho completo) */}
       <Card>
           <SectionTitle icon="trending">Tendencia del bienestar por oficina</SectionTitle>
           {!trendHayDatos ? (
-            <p className="admin-empty">Se necesitan al menos 2 semanas con datos para la tendencia.</p>
+            <EmptyState icon="trending" message="Se necesitan al menos 2 semanas con datos para la tendencia." />
           ) : (
             <>
               <GroupedBarChart labels={trendLabels} series={trendSeries} height={200} />
@@ -253,66 +193,70 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
           )}
         </Card>
 
-      {/* Sucursales en riesgo (ancho completo) */}
+      {/* Sucursales en riesgo + Casos prioritarios */}
       <Card>
-          <SectionTitle icon="alert">Sucursales en riesgo</SectionTitle>
-          {sucursalesRiesgo.length === 0 ? (
-            <p className="admin-empty">Ninguna sucursal con casos en amarillo o rojo.</p>
-          ) : (
-            <div className="psico-suc-list">
-              {sucursalesRiesgo.map((s) => (
-                <button
-                  key={s.suc}
-                  type="button"
-                  className="psico-suc-row psico-suc-row--clickable"
-                  title={`${s.riesgo} en riesgo: ${s.emps.map(e => e.emp.name.split(" ")[0]).join(", ")}`}
-                  onClick={() => setSucursalDetalle(s)}
-                >
-                  <div className="psico-suc-head">
-                    <span className="psico-suc-name">{s.suc}</span>
-                    <span className="psico-suc-count">{s.riesgo}/{s.total} <Icon name="eye" size={13} /></span>
-                  </div>
-                  <div className="psico-suc-track">
-                    <div
-                      className="psico-suc-fill"
-                      style={{ width: `${Math.round((s.riesgo / s.total) * 100)}%` }}
-                    />
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-      </Card>
-
-      <Card>
-        <SectionTitle icon="target">Casos prioritarios</SectionTitle>
-        {casosPrioritarios.length === 0 ? (
-          <p className="admin-empty">No hay casos en amarillo o rojo.</p>
-        ) : (
-          <div className="psico-priority-grid">
-            {casosPrioritarios.map(({ emp, score, tendencia, nivel }) => (
-              <div key={emp.id} className={`psico-priority-card psico-priority-card--${nivel}`}>
-                <div className="psico-priority-top">
-                  <div>
-                    <div className="psico-priority-name">{emp.name}</div>
-                    <div className="psico-priority-meta">{normalizeSucursal(emp.sucursal)} · {emp.puesto}</div>
-                  </div>
-                  <Badge tipo={nivel} />
-                </div>
-                <div className="psico-priority-foot">
-                  <span className="psico-priority-stat">
-                    <Icon name="activity" size={14} />
-                    Score {tieneScoreValido(score) ? score : "—"}
-                  </span>
-                  <span className="psico-priority-stat">
-                    <Icon name="trending" size={14} />
-                    Tendencia {tendencia}
-                  </span>
-                </div>
+        <div className="admin-grid-2">
+          <div>
+            <SectionTitle icon="alert">Sucursales en riesgo</SectionTitle>
+            {sucursalesRiesgo.length === 0 ? (
+              <EmptyState icon="check" message="Ninguna sucursal con casos en amarillo o rojo." />
+            ) : (
+              <div className="psico-suc-list">
+                {sucursalesRiesgo.map((s) => (
+                  <button
+                    key={s.suc}
+                    type="button"
+                    className="psico-suc-row psico-suc-row--clickable"
+                    title={`${s.riesgo} en riesgo: ${s.emps.map(e => e.emp.name.split(" ")[0]).join(", ")}`}
+                    onClick={() => setSucursalDetalle(s)}
+                  >
+                    <div className="psico-suc-head">
+                      <span className="psico-suc-name">{s.suc}</span>
+                      <span className="psico-suc-count">{s.riesgo}/{s.total} <Icon name="eye" size={13} /></span>
+                    </div>
+                    <div className="psico-suc-track">
+                      <div
+                        className="psico-suc-fill"
+                        style={{ width: `${Math.round((s.riesgo / s.total) * 100)}%` }}
+                      />
+                    </div>
+                  </button>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        )}
+
+          <div>
+            <SectionTitle icon="target">Casos prioritarios</SectionTitle>
+            {casosPrioritarios.length === 0 ? (
+              <EmptyState icon="check" message="No hay casos en amarillo o rojo." />
+            ) : (
+              <div className="psico-priority-grid">
+                {casosPrioritarios.map(({ emp, score, tendencia, nivel }) => (
+                  <div key={emp.id} className={`psico-priority-card psico-priority-card--${nivel}`}>
+                    <div className="psico-priority-top">
+                      <div>
+                        <div className="psico-priority-name">{emp.name}</div>
+                        <div className="psico-priority-meta">{normalizeSucursal(emp.sucursal)} · {emp.puesto}</div>
+                      </div>
+                      <Badge tipo={nivel} />
+                    </div>
+                    <div className="psico-priority-foot">
+                      <span className="psico-priority-stat">
+                        <Icon name="activity" size={14} />
+                        Score {tieneScoreValido(score) ? score : "—"}
+                      </span>
+                      <span className="psico-priority-stat">
+                        <Icon name="trending" size={14} />
+                        Tendencia {tendencia}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </Card>
 
       {sucursalDetalle && (

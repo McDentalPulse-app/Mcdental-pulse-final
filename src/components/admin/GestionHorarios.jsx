@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../common/PageHeader";
+import EmptyState from "../common/EmptyState";
 import Card from "../common/Card";
 import Icon from "../ui/Icon";
 import WeekSelect from "../common/WeekSelect";
@@ -279,7 +280,7 @@ export default function GestionHorarios({ usuarios = [], horarios = [], setHorar
       </Card>
 
       {empleadosFiltrados.length === 0 ? (
-        <Card><p className="mc-empty">No hay empleados en esta sucursal.</p></Card>
+        <Card><EmptyState message="No hay empleados en esta sucursal." /></Card>
       ) : (
         <div className="rh-data-list">
           {empleadosFiltrados.map((u) => (

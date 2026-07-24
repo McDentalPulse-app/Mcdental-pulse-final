@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import Card from "../common/Card";
+import EmptyState from "../common/EmptyState";
 import SectionTitle from "../common/SectionTitle";
 import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
@@ -362,7 +363,7 @@ export default function PermisosEmpleado({
         <SectionTitle icon="clipboard">Mis solicitudes</SectionTitle>
 
         {solicitudesEmpleado.length === 0 ? (
-          <p className="admin-empty">Aún no has enviado ninguna solicitud.</p>
+          <EmptyState message="Aún no has enviado ninguna solicitud." />
         ) : (
           <div className="empleado-solicitud-list">
             {solicitudesEmpleado.map((p) => (

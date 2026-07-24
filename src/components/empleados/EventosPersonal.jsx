@@ -1,5 +1,6 @@
 import React from "react";
 import Card from "../common/Card";
+import EmptyState from "../common/EmptyState";
 import SectionTitle from "../common/SectionTitle";
 import StatCard from "../common/StatCard";
 import PageHeader from "../common/PageHeader";
@@ -129,7 +130,7 @@ const EventosPersonal = ({ users }) => {
       <Card>
         <SectionTitle icon="gift">Agenda de celebraciones</SectionTitle>
         {eventos.length === 0 ? (
-          <p className="admin-empty">No hay cumpleaños ni aniversarios próximos en los siguientes 30 días.</p>
+          <EmptyState icon="cake" message="No hay cumpleaños ni aniversarios próximos en los siguientes 30 días." />
         ) : (
           <div className="admin-list-scroll admin-list-scroll--tall">
             {eventos.map(e => (

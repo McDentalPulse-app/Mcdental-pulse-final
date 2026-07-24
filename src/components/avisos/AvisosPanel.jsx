@@ -1,5 +1,6 @@
 import { useState, lazy, Suspense } from "react";
 import Card from "../common/Card";
+import EmptyState from "../common/EmptyState";
 import PageHeader from "../common/PageHeader";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
@@ -181,7 +182,7 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
       <SectionTitle icon="history">Historial</SectionTitle>
 
       {avisos.length === 0 ? (
-        <Card><p className="mc-empty">Todavía no se ha publicado ningún aviso.</p></Card>
+        <Card><EmptyState icon="bell" message="Todavía no se ha publicado ningún aviso." /></Card>
       ) : (
         <div className="rh-data-list">
           {avisos.map((a) => (

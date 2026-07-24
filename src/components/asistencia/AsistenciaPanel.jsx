@@ -3,6 +3,8 @@ import PageHeader from "../common/PageHeader";
 import { useEscapeKey } from "../../hooks/useEscapeKey";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
+import Tabs from "../common/Tabs";
+import DateRangePicker from "../common/DateRangePicker";
 import Icon from "../ui/Icon";
 import { useNotification } from "../../contexts/NotificationContext";
 import {
@@ -523,19 +525,12 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
 
           {/* Granularidad: control segmentado siempre a la vista — reconfigura el modo
               entero de la pantalla (calendario vs periodos), no es un filtro de acotar. */}
-          <div className="asistencia-segmented" role="group" aria-label="Agrupar por">
-            {GRANULARIDADES.map((g) => (
-              <button
-                key={g.valor}
-                type="button"
-                className={`asistencia-segmented-btn${granularidad === g.valor ? " asistencia-segmented-btn--activo" : ""}`}
-                aria-pressed={granularidad === g.valor}
-                onClick={() => cambiarGranularidad(g.valor)}
-              >
-                {g.label}
-              </button>
-            ))}
-          </div>
+          <Tabs
+            ariaLabel="Agrupar por"
+            options={GRANULARIDADES.map((g) => ({ value: g.valor, label: g.label }))}
+            value={granularidad}
+            onChange={cambiarGranularidad}
+          />
 
           {/* Navegador de fecha: mes a mes en "día", rango libre en el resto. */}
           {granularidad === "dia" ? (
@@ -545,16 +540,12 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
               <button type="button" className="mc-btn-outline" onClick={() => irMes(1)} disabled={!puedeAvanzarMes} aria-label="Mes siguiente">›</button>
             </div>
           ) : (
-            <div className="asistencia-rango">
-              <label>
-                Desde
-                <input type="date" className="list-filter-input" value={desde} max={hasta} onChange={(e) => setDesde(e.target.value)} />
-              </label>
-              <label>
-                Hasta
-                <input type="date" className="list-filter-input" value={hasta} min={desde} max={hoyClinica()} onChange={(e) => setHasta(e.target.value)} />
-              </label>
-            </div>
+            <DateRangePicker
+              desde={desde}
+              hasta={hasta}
+              max={hoyClinica()}
+              onChange={(nuevoDesde, nuevoHasta) => { setDesde(nuevoDesde); setHasta(nuevoHasta); }}
+            />
           )}
 
           {/* Sucursal + Empleado en un panel bajo el botón; badge con el conteo activo. */}
@@ -615,6 +606,7 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
           { icon: "clock", value: totales.pendientes, label: "Pendientes", clase: "admin-stat-value--orange", estado: "pendientes" },
         ].map((t) => {
           const activo = filtroEstado === t.estado;
+          const variante = t.clase.replace("admin-stat-value--", "");
           return (
             <button
               key={t.label}
@@ -624,9 +616,11 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
               title={activo ? `Quitar filtro: ${t.label}` : `Filtrar por ${t.label}`}
               onClick={() => setFiltroEstado((prev) => (prev === t.estado ? null : t.estado))}
             >
-              <span className="asistencia-stat-tile-icon"><Icon name={t.icon} size={16} /></span>
+              <span className={`asistencia-stat-tile-icon asistencia-stat-tile-icon--${variante}`}>
+                <Icon name={t.icon} size={16} />
+              </span>
               <span className="asistencia-stat-tile-body">
-                <span className={`asistencia-stat-tile-value ${t.clase}`}>{t.value}</span>
+                <span className="asistencia-stat-tile-value">{t.value}</span>
                 <span className="asistencia-stat-tile-label">{t.label}</span>
               </span>
             </button>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
+import EmptyState from "../common/EmptyState";
 import Badge from "../common/Badge";
 import KPI from "../common/KPI";
 import SectionTitle from "../common/SectionTitle";
@@ -71,7 +72,7 @@ const empleado =
   if (!empleado) {
     return (
       <div className="admin-page">
-        <p className="admin-empty">No hay empleados registrados.</p>
+        <EmptyState message="No hay empleados registrados." />
       </div>
     );
   }
@@ -223,8 +224,10 @@ const empleado =
           <div style={{ color: nivelColor(pulseStatus.nivel), fontWeight: 800, fontSize: 13, marginTop: 4 }}>{pulseStatus.label}</div>
         </Card>
         <Card className="admin-stat-card">
-          <div className="admin-stat-icon-wrap"><Icon name="stable" size={20} /></div>
-          <div className="admin-stat-value" style={{ color: semaforoColor, fontSize: 24 }}>{semaforo}</div>
+          <div className="admin-stat-icon-wrap" style={{ background: `color-mix(in srgb, ${semaforoColor} 10%, transparent)`, color: semaforoColor }}>
+            <Icon name="stable" size={20} />
+          </div>
+          <div className="admin-stat-value" style={{ fontSize: 24 }}>{semaforo}</div>
           <div className="admin-stat-label">Semáforo actual</div>
         </Card>
         <Card className="admin-stat-card">

@@ -263,3 +263,52 @@ El proyecto está en **Hobby, tope 12 funciones serverless** (los `_*.js` no cue
 - **Env vars VAPID rotadas** en Vercel (valores nuevos, `sensitive`).
 - Sigue en Hobby (12 funciones, crons ≤1/día). `dist/assets` sigue quedando de root a veces (`sudo rm -rf dist` antes de build local).
 - Verificación: 302 tests ✓ al cierre, build verde en cada commit, migraciones probadas en local (smoke con roles reales) antes de aplicar a prod.
+
+---
+
+## 🎨 Sesión 2026-07-23 — Rediseño UI estilo Untitled UI (dashboards, componentes nuevos, filtros)
+
+**Cómo se trabajó esta sesión**: el proyecto vive en `helminth@100.92.81.83` (Tailscale); Claude operó por **SSH** desde otra máquina (key sin passphrase instalada al inicio de la sesión, login passwordless a partir de ahí). Dev server levantado con `nohup npm run dev -- --host 0.0.0.0 --port 5173` (log en `/tmp/vite-dev.log` en la máquina remota) para poder probar en vivo vía `claude-in-chrome` apuntando a `http://100.92.81.83:5173`. **Verificar si ese proceso sigue corriendo al retomar** — no se dejó como servicio, es un `nohup` de sesión.
+
+**Punto de partida**: al empezar, el working tree ya tenía sin commitear el shell de navegación nuevo (`HeaderNav.jsx`/`Navegacion.jsx`/`BuscadorGlobal.jsx`/`navItems.js`, todos untracked) y una migración de tokens a paleta neutra estilo Untitled UI (`DESIGN.md`, `index.css`, `App.jsx`, los 5 layouts, `EditorTexto.jsx`, `Perfil.jsx` modificados) — trabajo de una sesión anterior no documentado hasta ahora en este archivo. Todo lo de abajo se construyó encima de eso.
+
+### Recorte de contenido (menos tarjetas, menos redundancia)
+Los 3 dashboards (Admin/RH/Psicóloga) apilaban secciones que repetían los mismos conteos que ya estaban arriba en los KPIs:
+- **AdminDashboard.jsx**: 8 secciones → 4. Quitadas "Distribución del equipo" y "Participación" (redundantes con los KPIs Verde/Amarillo/Rojo/Contestaron de arriba — y su cálculo muerto `dist`/`conDatos`/`pendientes`). Fusionadas "Sucursales en riesgo" + "Foco Rojo" en un solo `<Card>` de dos columnas (reusa la clase `admin-grid-2` ya existente).
+- **PsicologaDashboard.jsx**: mismo patrón, 6 → 4 secciones (fusionadas "Sucursales en riesgo" + "Casos prioritarios").
+- **HRDashboard.jsx**: no tenía el patrón redundante (usa `StatCard` simple), no se tocó el contenido — solo heredó el restyle de abajo.
+- KPIs: el usuario decidió explícitamente **mantener las 6 tarjetas** de AdminDashboard (no recortar cantidad, solo el formato).
+
+### Restyle plano (header, KPIs, Pulse Score)
+- **`PageHeader.jsx`** (41 páginas lo usan): banner con gradiente de marca + aura animada → header plano, borde inferior, sin fondo de color — estilo "Simple" de `untitledui.com/react/components/page-headers`. Mismas props, cero cambios en los 41 call sites.
+- **`KPI.jsx` / `StatCard.jsx`**: el número grande ahora **siempre neutro**; el color (semáforo/variante) vive solo en el badge circular del icono — estilo "Icon 01/02" de `untitledui.com/react/components/metrics`. Mismo criterio aplicado a mano donde no pasaba por estos componentes: los stat-tiles de `AsistenciaPanel.jsx` y la card de semáforo de `ExpedienteIntegral.jsx` (tenía un `style={{color: semaforoColor}}` inline directo en el número).
+- **Pulse Score hero** (`AdminDashboard.jsx`/`AdminDashboard.css`): se le quitó el fondo degradado propio — desentonaba solo, ya plano como el resto.
+- Efecto secundario encontrado y arreglado: el badge "X% participación" del header quedó casi invisible al aplanar el fondo (estaba diseñado para texto claro sobre fondo oscuro) — recoloreado a tokens neutros (`--mc-slate-100/200/500`).
+
+### 3 componentes nuevos (huecos reales, de una auditoría del catálogo completo de Untitled UI — quedó publicada como Artifact de la sesión, no vive en el repo)
+- **`EmptyState.jsx`**: reemplaza el `<p className="admin-empty/mc-empty">texto</p>` suelto (repetido en ~19 lugares, de los cuales ~13 eran "no hay datos" reales — los de "Cargando…" no se tocaron) por icono + mensaje + acción opcional.
+- **`Tabs.jsx`**: segmented-control de pills genérico — generaliza el selector Día/Semana/Mes/Año de `AsistenciaPanel.jsx` (antes `.asistencia-segmented*`, ahora `.mc-tabs*` reusable). Otros ~9 patrones parecidos en la app (GestionUsuarios, Mensajes, Reportes, CalendarioRH, AIEngine…) **no se tocaron** — cada uno con lógica propia, pendientes de revisión individual.
+- **`Badge.jsx`** extendido: sigue aceptando `tipo` (semáforo, como siempre) y ahora también `variant` + children, que reusa los ~20 tonos ya existentes de `.mc-status-pill--*` (activo/inactivo, pendiente/aprobada/rechazada, etc.) sin CSS nueva. Migrados los 2 pills Activo/Inactivo de `GestionUsuarios.jsx` como referencia.
+
+### FilterBar + DateRangePicker (estilo "Filter bars" de Untitled UI)
+- **`FilterBar.jsx`**: consolida el bloque búsqueda+selects que `GestionUsuarios.jsx`, `EmpleadosList.jsx` y `PsicologaSeguimiento.jsx` tenían **copy-pasteado idéntico** (el propio comentario en `PsicologaSeguimiento.jsx` decía "mismo patrón que /psicologa/empleados"). Cero CSS nueva, reusa `.list-filters-grid`/`.list-filter-input/select`.
+- **`DateRangePicker.jsx`**: calendario popover propio (mes con nav ‹›, click-click para fijar Desde/Hasta, rango resaltado, respeta `max` para no elegir futuro) reemplazando los 2 `<input type="date">` nativos de `AsistenciaPanel.jsx`. Mismo esqueleto que `WeekSelect.jsx` (trigger + `useEffect` de click-fuera/Escape, sin librería nueva). El resto de los `type="date"` de la app son campos de formulario de una sola fecha (altas, permisos, eventos) — no se tocaron, ya son correctos como están.
+
+### Verificación
+Todo probado en vivo contra el dev server con los 3 roles de prueba locales (`admin`/`rh`/`psico`, contraseña `checador123` — ver sección "Dev apunta a Supabase LOCAL" arriba, mismas cuentas de siempre). Sin errores de consola reales — los únicos que aparecieron fueron hiccups transitorios de HMR de Vite durante la subida de archivos por `scp` (confirmados como transitorios en `/tmp/vite-dev.log`: siempre seguidos de un `hmr update` exitoso). `npx eslint` sobre cada archivo tocado — sin errores nuevos atribuibles a estos cambios (los que aparecen son convención preexistente del repo: `'React' is defined but never used`, y un par de `set-state-in-effect`/unused-vars ya presentes antes de esta sesión).
+
+### Cierre: commiteado en 3 partes y desplegado (2026-07-24)
+Todo lo de arriba se commiteó en tres partes, sobre `6e8475d` (migración de iconos, que tampoco estaba en producción):
+1. `fix(editor)` — solo el arreglo de `EditorTexto.jsx`.
+2. `feat(nav)` — shell de navegación: `navItems.js`, `HeaderNav.jsx`, `Navegacion.jsx`, `BuscadorGlobal.jsx`, `App.jsx`, los 5 layouts y su bloque de CSS.
+3. `feat(ui)` — rediseño Untitled UI: tokens, recorte de dashboards, `EmptyState`/`Tabs`/`FilterBar`/`DateRangePicker` y las páginas que los adoptan.
+
+Verificación antes de subir: 308/308 tests, build verde (a un outDir alterno — en `./dist` sigue fallando por el `dist/assets` de root), eslint sin errores nuevos, paridad de claves de navegación header vs sidebar comprobada rol por rol y todas apuntando a rutas existentes.
+
+**Pendientes conocidos** (no bloquean, quedaron fuera de esta pasada):
+- `Sidebar.jsx` mantiene su propia lista de ítems → dos sitios que tocar al cambiar el menú. Unificar contra `navItems.js`.
+- CSS huérfana tras el recorte: `.psico-dist*`, `.psico-part*`, `.perfil-hero-bg/-main/-sub`, `.gestion-personal-search`.
+- El buscador de `GestionUsuarios` perdió `table-search` al pasar a `FilterBar` (cambia el fondo y el margen inferior respecto a antes).
+- Los desplegables del header no cierran con Escape (sí con clic fuera), sin `aria-haspopup` ni gestión de foco.
+- Los ~9 patrones de Tabs y ~20 usos de `mc-status-pill` que no se migraron.
+- Revisar si el dev server de `nohup` sigue corriendo o hay que relevantarlo.

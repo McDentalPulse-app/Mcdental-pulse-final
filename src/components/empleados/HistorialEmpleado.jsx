@@ -1,5 +1,6 @@
 import React from "react";
 import Card from "../common/Card";
+import EmptyState from "../common/EmptyState";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
 import PageHeader from "../common/PageHeader";
@@ -43,7 +44,7 @@ const HistorialEmpleado = ({ user, encuestas }) => {
         <SectionTitle icon="clipboard">Historial semanal</SectionTitle>
 
         {historial.length === 0 ? (
-          <p className="admin-empty">Aún no tienes encuestas registradas.</p>
+          <EmptyState message="Aún no tienes encuestas registradas." />
         ) : (
           <div className="empleado-timeline">
             {historial.map(e => {

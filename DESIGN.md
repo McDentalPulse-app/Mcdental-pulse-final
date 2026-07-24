@@ -64,14 +64,20 @@ tono de la familia de marca.
 
 | Token | Claro | Oscuro | Uso |
 |---|---|---|---|
-| `fondo` | `#EEF5F4` | `#0A2420` | Fondo de página |
+| `fondo` | `#F8F9FB` | `#0A2420` | Fondo de página (neutro, estilo Untitled UI) |
 | `superficie` | `#FFFFFF` | `#0F332C` | Tarjetas, modales |
 | `superficie-2` | `#F6FAFA` | `#0D2B26` | Cabeceras de tabla, zonas hundidas |
 | `superficie-input` | `#FFFFFF` | `#0A2420` | Campos de formulario |
-| `borde` | `#DCEAE7` | `rgba(255,255,255,.12)` | Bordes y separadores |
-| `texto` | `#123430` | `#E6F2F0` | Texto principal |
-| `texto-2` | `#5B7C78` | `#9DBDB6` | Labels, subtítulos |
-| `titulo` | `#0A3B36` | `#8AE9DD` | Títulos de página y modal |
+| `borde` | `#EAECF0` | `rgba(255,255,255,.12)` | Bordes y separadores (neutro gray-200) |
+| `texto` | `#101828` | `#E6F2F0` | Texto principal (gray-900 casi-negro) |
+| `texto-2` | `#475467` | `#9DBDB6` | Labels, subtítulos (gray-600 neutro) |
+| `titulo` | `#101828` | `#8AE9DD` | Títulos de página y modal (casi-negro en claro) |
+
+> **Neutro por defecto, marca como acento (2026-07, estilo Untitled UI).** En claro las superficies,
+> textos y bordes son **neutros** (grises), no teal-tintados. El teal (`--mc-verde`/`--mc-aqua`)
+> queda solo en **acentos**: botones, barras, checkboxes, estados activos, hover. Así el look es
+> limpio como Untitled UI sin perder la marca. `accentPalette.js` solo reescribe la familia de
+> marca — nunca estos neutros.
 
 > **`texto` y `superficie` eran los que faltaban.** No se redefinían en oscuro, así que el texto
 > seguía siendo verde oscuro y las tarjetas seguían siendo blancas. Los 7 archivos de
@@ -94,10 +100,22 @@ color lo decide el CSS, que sí conoce el tema.
 
 | Token | Valor |
 |---|---|
-| `rounded-mc` / `-mc-lg` / `-mc-xl` | `16px` / `20px` / `28px` |
-| `shadow-mc` / `-mc-suave` / `-mc-card` | Elevación suave, teal (ver `index.css`) |
-| `font-sans` | **Fira Sans** |
+| `rounded-mc` / `-mc-lg` / `-mc-xl` | `12px` / `16px` / `20px` (refinados estilo Untitled UI) |
+| `shadow-mc` / `-mc-suave` / `-mc-card` | Elevación **sutil** estilo Untitled UI, teal (ver `index.css`) |
+| `font-sans` | **Inter** (estilo Untitled UI) |
 | `font-mono` | **Fira Code** |
+
+### Paleta categórica de eventos del calendario
+
+Colores de **identidad de categoría** (como los colores de evento de Google Calendar):
+**fijos a propósito**, iguales en claro y oscuro. Viven en `index.css` (no en `App.css`) para
+respetar la regla nº1.
+
+| Token | Uso |
+|---|---|
+| `--mc-evento-azul/-morado/-rosa/-ambar/-verde/-aqua/-rojo/-gris` | Color de cada evento (chips, bloques, punto). También el punto de presencia "en línea" (`-verde`) |
+| `--mc-cal-acento` / `-fuerte` | Morado del calendario de agenda: día de hoy, botón +, línea de "ahora" |
+| `--mc-perfil-cover` | Degradado decorativo de la portada del hero de **Mi perfil** |
 
 ## Estilos inline: cuándo sí y cuándo no
 

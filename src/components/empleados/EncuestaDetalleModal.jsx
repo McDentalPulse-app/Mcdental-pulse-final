@@ -1,6 +1,7 @@
 import React from "react";
 import Icon from "../ui/Icon";
 import Badge from "../common/Badge";
+import EmptyState from "../common/EmptyState";
 import { getPulseStatus, tieneScoreValido } from "../../utils/pulseScore";
 import { formatSemanaDisplay } from "../../utils/constants";
 import {
@@ -63,7 +64,7 @@ const EncuestaDetalleModal = ({ encuesta, empleado, preguntas, onClose }) => {
         <div className="encuesta-detalle-section">
           <h3 className="encuesta-detalle-section-title">Preguntas y respuestas</h3>
           {items.length === 0 ? (
-            <p className="admin-empty">No hay respuestas detalladas registradas para esta encuesta.</p>
+            <EmptyState message="No hay respuestas detalladas registradas para esta encuesta." />
           ) : (
             <div className="encuesta-detalle-list">
               {items.map((item, idx) => (
