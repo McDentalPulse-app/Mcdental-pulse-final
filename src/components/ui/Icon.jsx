@@ -7,7 +7,7 @@ import {
   SearchLg, RefreshCw01, Bold01, Italic01, Underline01, Strikethrough01, List, Dotpoints02,
   Link01, Heading02, Heading01, Eraser, XCircle, Star01, StickerSquare, MagicWand01,
   FolderSearch, Lightbulb01, Tool01, TrendDown01, Eye, Sun, Moon01, Briefcase01, Camera01,
-  MarkerPin01, ChevronDown, AlertCircle, VolumeMax, VolumeX, Trash01,
+  MarkerPin01, ChevronDown, AlertCircle, VolumeMax, VolumeX, Trash01, Edit05,
 } from "@untitledui/icons";
 
 // Iconos de la app con el set de Untitled UI (@untitledui/icons, MIT). Un único punto: cambiar
@@ -95,6 +95,7 @@ const ICON_MAP = {
   volumen: VolumeMax,
   volumenOff: VolumeX,
   trash: Trash01,
+  edit: Edit05,
 };
 
 const Icon = ({ name, size = 18, className = "", strokeWidth = 1.75, color }) => {

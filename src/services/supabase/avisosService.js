@@ -1,14 +1,20 @@
 import { supabase } from "../../config/supabase";
 import { fetchAll } from "./fetchAll";
 
-const SELECT_CON_AUTOR = "*, usuarios(name)";
+// La firma del autor vive en columnas de `avisos` (autor_nombre/autor_rol, migración 084) y
+// no en un join a `usuarios`: la RLS de esa tabla solo deja a cada quien leer su propia fila,
+// así que al empleado — justo a quien va dirigido el aviso — el join le volvía vacío y la
+// pantalla decía "—". De paso, la firma ahora también llega por realtime: un join no viaja
+// en el payload de un INSERT, las columnas propias sí.
+const SELECT_AVISO = "*";
 
 const mapAviso = (row) => ({
   id: row.id,
   titulo: row.titulo,
   cuerpo: row.cuerpo,
   creadoPor: row.creado_por,
-  autor: row.usuarios?.name,
+  autor: row.autor_nombre,
+  autorRol: row.autor_rol,
   sucursales: row.sucursales || [],
   createdAt: row.created_at,
   updatedAt: row.updated_at,
@@ -24,7 +30,7 @@ const mapLeido = (row) => ({
 export const getAvisos = async () => {
   try {
     const rows = await fetchAll(() =>
-      supabase.from("avisos").select(SELECT_CON_AUTOR).order("created_at", { ascending: false })
+      supabase.from("avisos").select(SELECT_AVISO).order("created_at", { ascending: false })
     );
     return rows.map(mapAviso);
   } catch (error) {
@@ -63,7 +69,7 @@ export const addAviso = async ({ titulo, cuerpo, creadoPor, sucursales }) => {
   const { data, error } = await supabase
     .from("avisos")
     .insert({ titulo, cuerpo, creado_por: creadoPor, sucursales })
-    .select(SELECT_CON_AUTOR)
+    .select(SELECT_AVISO)
     .single();
 
   if (error) {
@@ -78,7 +84,7 @@ export const updateAviso = async ({ id, titulo, cuerpo, sucursales }) => {
     .from("avisos")
     .update({ titulo, cuerpo, sucursales })
     .eq("id", id)
-    .select(SELECT_CON_AUTOR)
+    .select(SELECT_AVISO)
     .single();
 
   if (error) {

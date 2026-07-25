@@ -2891,15 +2891,83 @@
 .aviso-modal-cuerpo { text-align: left; max-height: 40vh; overflow-y: auto; }
 .aviso-modal-autor { margin: 0 0 22px; color: var(--mc-texto-apagado); font-size: 13px; font-style: italic; }
 
-/* Historial de avisos (AvisosPanel.jsx): el cuerpo se recorta a 2 líneas en la lista,
-   igual que otras vistas previas de texto largo en la app. */
-.aviso-row-cuerpo {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  white-space: pre-line;
+/* Historial de avisos (AvisosPanel.jsx): una tarjeta por comunicado, con el texto COMPLETO.
+   Antes se recortaba a 2 líneas y el empleado — a quien va dirigido — no podía leerlo entero
+   más que en el modal bloqueante del momento. */
+.aviso-lista { display: flex; flex-direction: column; gap: 14px; }
+
+.aviso-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
 }
+.aviso-card-encabezado { min-width: 0; }
+.aviso-card-titulo {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--mc-texto-titulo);
+  line-height: 1.3;
+}
+/* La firma: quién lo publicó, con qué rol y cuándo. */
+.aviso-card-firma {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--mc-texto-secundario);
+}
+.aviso-card-autor { font-weight: 700; color: var(--mc-texto-titulo); }
+.aviso-card-rol {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--mc-brand-suave);
+  border: 1px solid rgba(var(--mc-aqua-rgb) / 0.35);
+  color: var(--mc-marca-texto);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.aviso-card-fecha { color: var(--mc-texto-apagado); }
+.aviso-card-acciones { display: flex; gap: 6px; flex-shrink: 0; }
+
+.aviso-card-cuerpo {
+  color: var(--mc-texto-secundario);
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+/* Ajuste de la espera del botón "De acuerdo" (solo admin, migración 084). */
+.aviso-espera-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.aviso-espera-texto { flex: 1 1 320px; min-width: 240px; }
+.aviso-espera-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--mc-texto-titulo);
+  margin-bottom: 4px;
+}
+.aviso-espera-hint { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--mc-texto-secundario); }
+.aviso-espera-control { display: flex; align-items: center; gap: 8px; }
+.aviso-espera-input { width: 92px; text-align: center; }
+.aviso-espera-unidad { font-size: 12.5px; font-weight: 700; color: var(--mc-texto-secundario); }
+
+/* El formulario de publicar vive en el panel deslizante compartido (.mc-slideout-panel);
+   solo hay que impedir que los 25 chips de sucursal se coman el alto del panel. */
+.aviso-form-panel .aviso-suc-chips { max-height: 180px; }
 
 /* ── Avisos por sucursal (migración 068): selector de chips + badges de destino ── */
 .aviso-suc-toolbar {
