@@ -1,0 +1,185 @@
+import { useState, useEffect } from "react";
+import { useAuth } from "./contexts/AuthContext";
+import { useGlobal } from "./contexts/GlobalContext";
+import Login from "./components/auth/Login";
+import ReportesConfidencialesPanel from "./components/psicologia/ReportesConfidencialesPanel";
+import Sidebar from "./components/layout/Sidebar";
+import PermisosEmpleado from "./components/empleados/PermisosEmpleado";
+import { useAppActions } from "./hooks/useAppActions";
+import { USERS, ENCUESTA_PREGUNTAS } from "./data/initialData";
+import Card from './components/common/Card';
+import PermisosRH from "./components/rh/PermisosRH";
+import DescuentosRH from "./components/rh/DescuentosRH";
+import AIEngine from "./components/ia/AIEngine";
+import EncuestaEmpleado from "./components/empleados/EncuestaEmpleado";
+import HistorialEmpleado from "./components/empleados/HistorialEmpleado";
+import ReporteConfidencialEmpleado from "./components/empleados/ReporteConfidencialEmpleado";
+import ReconocimientosEmpleado from "./components/empleados/ReconocimientosEmpleado";
+import EventosPersonal from "./components/empleados/EventosPersonal";
+import InicioEmpleado from "./components/empleados/InicioEmpleado";
+import ReconocimientosGestion from "./components/rh/ReconocimientosGestion";
+import Mensajes from "./components/comunicacion/Mensajes";
+import PsicologaSeguimiento from "./components/psicologia/PsicologaSeguimiento";
+import EmpleadosList from "./components/empleados/EmpleadosList";
+import ExpedienteIntegral from "./components/empleados/ExpedienteIntegral";
+import { semanaActual } from "./utils/constants";
+import HRDashboard from "./components/dashboards/HRDashboard";
+import AdminDashboard from "./components/dashboards/AdminDashboard";
+import ReportesRH from "./components/rh/ReportesRH";
+import Reportes from "./components/rh/Reportes";
+import VacacionesRH from "./components/rh/VacacionesRH";
+import CalendarioRH from "./components/rh/CalendarioRH";
+import Config from './components/settings/Config';
+import CambiarPassword from './components/auth/CambiarPassword';
+
+// ─── LOGO ────────────────────────────────────────────────────────────────────
+
+// ─── DATA ────────────────────────────────────────────────────────────────────
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+export default function App() {
+  const { user, requiereCambioPassword, cambiarPasswordActual, restablecerPasswordUsuario, inicializarUsuariosPassword } = useAuth();
+  const [active, setActive] = useState("dashboard");
+  const {
+    encuestas, mensajes, reportesConfidenciales, reconocimientos,
+    archivosExpediente, vacaciones, permisos, descuentos, notas, calendarioExtra, loadingData 
+  } = useGlobal();
+
+  const {
+    addEncuesta, sendMensaje, addNota, updateVacacionEstado, updatePermisoEstado,
+    addSolicitudEmpleadoRH, updateDescuentoEstado, addDescuento, addReporteConfidencial,
+    addReconocimiento, subirArchivoExpediente
+  } = useAppActions();
+
+  useEffect(() => {
+    if (user) {
+      if (user.accesoFirebase?.debeCambiarPassword) {
+        setActive("cambiarPassword");
+      } else if (active === "" || active === "cambiarPassword") {
+        setActive(user.role === "empleado" ? "inicio" : "dashboard");
+      }
+    }
+  }, [user]);
+
+  if (!user) return <Login />;
+
+  if (requiereCambioPassword) {
+    return (
+      <CambiarPassword
+        user={user}
+        onCambiarPassword={cambiarPasswordActual}
+      />
+    );
+  }
+
+  const userMensajes = mensajes.filter((m) => m.de === user?.id || m.para === user?.id);
+  const psicologaId = USERS.find((u) => u.role === "psicologa")?.id || null;
+
+  const renderView = () => {
+    if (user.role==="admin") {
+      if (active === "mensajes" && !["empleado", "psicologa"].includes(user.role)) {
+  return (
+    <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>
+      <h2 style={{ color: "#004D40" }}>Acceso restringido</h2>
+      <p>Este canal es privado y solo está disponible para empleados y psicóloga.</p>
+    </div>
+  );
+}
+      if (active==="dashboard") return <AdminDashboard encuestas={encuestas} mensajes={mensajes}/>;
+      if (active==="ai") return <AIEngine encuestas={encuestas}mensajes={mensajes}notas={notas}userRole="admin"permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>;
+      if (active==="empleados") return (<EmpleadosList encuestas={encuestas} notas={notas}
+    role="admin"
+    currentUser={user}
+onRestablecerPassword={restablecerPasswordUsuario}
+    vacaciones={vacaciones}
+    permisos={permisos}
+    descuentos={descuentos}
+    reconocimientos={reconocimientos}
+    reportesConfidenciales={reportesConfidenciales}
+  />
+);
+      if (active==="expedientes") return <ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} archivosExpediente={archivosExpediente} onSubirArchivoExpediente={subirArchivoExpediente} />;
+      if (active==="reconocimientos") return <ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />;
+      if (active==="eventospersonal") return <EventosPersonal users={USERS} />;
+      if (active==="reportes") return <Reportes users={USERS} encuestas={encuestas} />;
+      if (active==="confidenciales") return <ReportesConfidencialesPanel reportes={reportesConfidenciales} />;
+      if (active==="config") return <Config inicializarUsuariosPassword={inicializarUsuariosPassword} />;
+      if (active==="encuestas") return (<div><h2 style={{ margin:"0 0 20px",fontSize:22,fontWeight:800,color:"#004D40" }}>📋 Gestión de Encuestas</h2><Card><div style={{ fontWeight:700,fontSize:14,color:"#004D40",marginBottom:12 }}>Encuesta activa: {semanaActual}</div><div style={{ fontSize:13,color:"#6b7280",marginBottom:16 }}>{ENCUESTA_PREGUNTAS.length} preguntas · {new Set(encuestas.filter(e=>e.semana===semanaActual).map(e=>e.empleadoId)).size} respuestas</div>{ENCUESTA_PREGUNTAS.map((p,i)=>(<div key={p.id} style={{ padding:"10px 0",borderBottom:"1px solid #f3f4f6",fontSize:13 }}><span style={{ color:"#006D5B",fontWeight:700,marginRight:8 }}>{i+1}.</span><span style={{ color:"#374151" }}>{p.texto}</span><span style={{ color:"#9ca3af",marginLeft:8,fontSize:11 }}>({p.tipo})</span></div>))}<button style={{ marginTop:16,padding:"10px 20px",background:"#006D5B",color:"#fff",border:"none",borderRadius:10,fontWeight:700,cursor:"pointer" }}>+ Crear encuesta</button></Card></div>);
+    }
+    if (user.role==="psicologa") {
+      if (active==="dashboard") return <AdminDashboard encuestas={encuestas} mensajes={mensajes}/>;
+      if (active==="ai") return <AIEngine encuestas={encuestas} mensajes={mensajes} notas={notas} userRole="psicologa" permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>;
+      if (active==="seguimiento") return <PsicologaSeguimiento encuestas={encuestas} notas={notas} onUpdateNota={addNota}/>;
+      if (active==="confidenciales") return <ReportesConfidencialesPanel reportes={reportesConfidenciales} />;
+      if (active==="empleados") return (
+  <EmpleadosList
+    encuestas={encuestas}
+    notas={notas}
+    role="psicologa"
+    currentUser={user}
+onRestablecerPassword={restablecerPasswordUsuario}
+    vacaciones={vacaciones}
+    permisos={permisos}
+    descuentos={descuentos}
+    reconocimientos={reconocimientos}
+    reportesConfidenciales={reportesConfidenciales}
+  />
+);
+      if (active==="expedientes") return <ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} />;
+      if (active==="mensajes") return <Mensajes user={user} mensajes={mensajes} onSend={sendMensaje}/>;
+    }
+         if (user.role==="rh") {
+      if (active==="dashboard") return <HRDashboard users={USERS} />;
+      if (active==="vacaciones") return <VacacionesRH vacaciones={vacaciones} onUpdateEstado={updateVacacionEstado} />;
+      if (active==="descuentos") return <DescuentosRH descuentos={descuentos} empleados={USERS} user={user} onUpdateEstado={updateDescuentoEstado} onAddDescuento={addDescuento} />;
+      if (active==="calendario") return <CalendarioRH vacaciones={vacaciones} permisos={permisos} eventosExtra={calendarioExtra} />;
+      if (active==="eventospersonal") return <EventosPersonal users={USERS} />;
+      if (active==="reconocimientos") return <ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />;
+      if (active==="reportesrh") return <ReportesRH vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} />;
+    }
+    if (user.role==="empleado") {
+      if (active==="inicio") return <InicioEmpleado user={user} encuestas={encuestas} mensajes={userMensajes} setActive={setActive}/>;
+      if (active==="encuesta") return <EncuestaEmpleado user={user} encuestas={encuestas} onSubmit={addEncuesta}/>;
+      if (active==="historial") return <HistorialEmpleado user={user} encuestas={encuestas} />;
+      if (active==="permisosempleado") return ( <PermisosEmpleado user={user} vacaciones={vacaciones} permisos={permisos} onEnviarSolicitudEmpleado={addSolicitudEmpleadoRH}/>);
+      if (active==="reconocimientos") return <ReconocimientosEmpleado user={user} reconocimientos={reconocimientos} />;
+      if (active==="reporteconfidencial") return <ReporteConfidencialEmpleado user={user} onSubmit={addReporteConfidencial} />;
+      if (active==="mensajes") return <Mensajes user={user} mensajes={userMensajes} onSend={(msg)=>sendMensaje({...msg,para:psicologaId})}/>;
+    }
+    return <div style={{ color:"#9ca3af",padding:40,textAlign:"center" }}>Vista en construcción</div>;
+  };
+  return (
+  <div
+    style={{
+      display: "flex",
+      minHeight: "100vh",
+      fontFamily: "'Inter','Segoe UI',system-ui,sans-serif",
+      background:
+  "linear-gradient(135deg, #f4fbf9 0%, #f8fafc 42%, #ffffff 100%)",
+      color: "#0f172a"
+    }}
+  >
+    <Sidebar active={active} setActive={setActive} />
+
+    <main
+      style={{
+      flex: 1,
+      padding: "34px 38px",
+      overflowY: "auto",
+      overflowX: "hidden",
+      minWidth: 0
+    }}
+>
+      <div
+      style={{
+      width: "100%",
+      maxWidth: 1180,
+      margin: "0 auto",
+      overflowX: "hidden"
+    }}
+>
+        {renderView()}
+      </div>
+    </main>
+  </div>
+);
+}

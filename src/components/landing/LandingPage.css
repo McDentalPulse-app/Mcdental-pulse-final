@@ -1,0 +1,473 @@
+/* ════════════════════════════════════════════════════════════
+   Gateway de acceso — McDental Pulse (glassmorphism, sin gsap)
+   ════════════════════════════════════════════════════════════ */
+
+.gw-wrapper {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 60% 50% at 15% 10%, rgba(var(--mc-aqua-rgb) / 0.18) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 50% at 90% 85%, rgba(var(--mc-brand600-rgb) / 0.28) 0%, transparent 55%),
+    var(--grad-brand);
+  color: var(--mc-blanco);
+}
+
+/* Grid tipo blueprint */
+.gw-grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, #000 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, #000 30%, transparent 80%);
+  pointer-events: none;
+}
+
+/* Halos flotantes */
+.gw-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  pointer-events: none;
+  animation: gwFloat 16s ease-in-out infinite;
+}
+.gw-orb--1 {
+  width: 460px; height: 460px;
+  top: -140px; left: -120px;
+  background: radial-gradient(circle, rgba(var(--mc-aqua-rgb) / 0.5), transparent 70%);
+}
+.gw-orb--2 {
+  width: 520px; height: 520px;
+  bottom: -180px; right: -140px;
+  background: radial-gradient(circle, rgba(var(--mc-brand600-rgb) / 0.5), transparent 70%);
+  animation-delay: -8s;
+}
+
+@keyframes gwFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(36px, -28px) scale(1.1); }
+}
+
+/* Línea de pulso ECG */
+.gw-pulse-svg {
+  position: absolute;
+  left: 0;
+  bottom: 12%;
+  width: 100%;
+  height: 200px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+.gw-pulse-line {
+  stroke: rgba(var(--mc-aqua-rgb) / 0.55);
+  stroke-dasharray: 1600;
+  stroke-dashoffset: 1600;
+  filter: drop-shadow(0 0 6px rgba(var(--mc-aqua-rgb) / 0.7));
+  animation: gwDraw 4s linear infinite;
+}
+@keyframes gwDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* Contenedor de 2 columnas */
+.gw-container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1080px;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  align-items: center;
+  gap: 56px;
+}
+
+/* ── Izquierda ── */
+.gw-left {
+  animation: gwFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.gw-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--mc-verde-claro);
+}
+.gw-badge-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--mc-aqua);
+  box-shadow: 0 0 0 0 rgba(var(--mc-aqua-rgb) / 0.7);
+  animation: gwPulseDot 2s infinite;
+}
+@keyframes gwPulseDot {
+  0% { box-shadow: 0 0 0 0 rgba(var(--mc-aqua-rgb) / 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(var(--mc-aqua-rgb) / 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--mc-aqua-rgb) / 0); }
+}
+
+.gw-title {
+  margin: 0;
+  font-size: clamp(48px, 7vw, 86px);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -2px;
+}
+.gw-title-line {
+  display: block;
+  overflow: hidden;
+}
+.gw-title-accent {
+  background: linear-gradient(120deg, var(--mc-aqua), var(--brand-200));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.gw-subtext {
+  margin: 22px 0 0;
+  max-width: 440px;
+  font-size: 16px;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.gw-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 26px;
+}
+.gw-feature {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--glass-border-soft);
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88);
+}
+.gw-feature svg { color: var(--mc-aqua); flex-shrink: 0; }
+
+/* ── Derecha: tarjeta glass ── */
+.gw-right {
+  display: flex;
+  justify-content: center;
+  animation: gwFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+}
+
+/* ── Escenario: contiene el flip card + el panel de cambio de contraseña ── */
+.gw-stage {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+}
+
+/* ── Flip card: portal (frente) ↔ login (atrás) ── */
+.gw-card-flip {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  perspective: 1200px;           /* menos = más profundidad/volumen en el giro */
+  perspective-origin: center;
+  /* Misma curva que gwFadeUp (ease-out suave): coordinada con el panel que entra encima. */
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* Con el panel de cambio de contraseña encima: ambos usan fondo "glass"
+   semi-transparente, así que si no se apaga el de abajo se ve "a través". */
+.gw-card-flip.is-behind {
+  opacity: 0;
+}
+
+/* ── Panel de cambio de contraseña: desliza de derecha a izquierda sobre el flip card ──
+   Selector compuesto (.gw-card.gw-changepass-panel) a propósito: el elemento lleva
+   ambas clases y .gw-card (más abajo en este archivo) también define position,
+   así que por orden de cascada le ganaría a una regla de una sola clase. */
+.gw-card.gw-changepass-panel {
+  position: absolute;
+  /* top/left/right SIN bottom: alto propio (min-height compensa si es más
+     bajo que el flip card). Con inset:0 el alto quedaba forzado al del stage
+     y overflow:hidden cortaba el botón "Volver" en pantallas chicas. */
+  top: 0;
+  left: 0;
+  right: 0;
+  min-height: 100%;
+  width: 100%;
+  max-width: 380px;
+  transform: translateX(112%);
+  opacity: 0;
+  pointer-events: none;
+  /* Misma curva ease-out en transform y opacity, misma duración: entran como
+     un solo movimiento en vez de sentirse como dos animaciones desincronizadas. */
+  transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 5;
+}
+.gw-card.gw-changepass-panel.is-visible {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.gw-card-inner {
+  display: grid;                 /* ambas caras en la misma celda → altura = cara más alta */
+  transform-style: preserve-3d;
+  transform-origin: center;
+  will-change: transform;        /* compositing en GPU → giro más fluido */
+  /* easeInOutQuart: arranque y cierre suaves, sin tirón */
+  transition: transform 0.8s cubic-bezier(0.76, 0, 0.24, 1);
+}
+.gw-card-inner.is-flipped { transform: rotateY(180deg); }
+
+.gw-card-face {
+  grid-area: 1 / 1;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  /* backdrop-filter aplana el 3D y rompe backface-visibility → ocultamos la cara
+     inactiva con visibility, conmutada en el punto medio del giro (carta de canto). */
+  transition: visibility 0s linear 0.4s;
+}
+.gw-card-face--back { transform: rotateY(180deg); visibility: hidden; }
+.gw-card-inner.is-flipped .gw-card-face--front { visibility: hidden; }
+.gw-card-inner.is-flipped .gw-card-face--back { visibility: visible; }
+
+.gw-login-body { text-align: center; }
+.gw-login-body .auth-field { text-align: left; margin-top: 14px; }
+
+.gw-flip-back {
+  margin-top: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.gw-flip-back:hover { color: var(--mc-aqua); }
+
+.gw-card {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  border-radius: var(--mc-radio-xl);
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(150%);
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(150%);
+  overflow: hidden;
+}
+.gw-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(160deg, var(--glass-highlight), transparent 45%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.gw-card-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--glass-border-soft);
+}
+.gw-clock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.gw-clock svg { color: var(--mc-aqua); }
+.gw-clock-time {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  font-variant-numeric: tabular-nums;
+}
+.gw-clock-date {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.65);
+  text-transform: capitalize;
+}
+
+.gw-card-body {
+  padding: 30px 26px 26px;
+  text-align: center;
+}
+.gw-auth-icon {
+  width: 66px; height: 66px;
+  margin: 0 auto 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--mc-aqua);
+  background: rgba(var(--mc-aqua-rgb) / 0.12);
+  border: 1px solid rgba(var(--mc-aqua-rgb) / 0.3);
+  box-shadow: 0 0 30px -6px rgba(var(--mc-aqua-rgb) / 0.5);
+}
+.gw-card-title {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 700;
+}
+.gw-card-text {
+  margin: 0 0 24px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.gw-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px 12px 20px;
+  border: none;
+  border-radius: 14px;
+  background: var(--grad-accent);
+  color: var(--brand-950);
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 12px 30px -10px rgba(var(--mc-aqua-rgb) / 0.6);
+  transition: filter 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+.gw-btn:hover {
+  filter: brightness(1.06);
+  box-shadow: 0 16px 38px -10px rgba(var(--mc-aqua-rgb) / 0.75);
+}
+.gw-btn:active { transform: scale(0.99); }
+.gw-btn-icon {
+  display: grid;
+  place-items: center;
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  background: rgba(4, 35, 31, 0.16);
+  transition: transform 0.2s;
+}
+.gw-btn:hover .gw-btn-icon { transform: translateX(3px); }
+
+.gw-card-footer {
+  padding: 14px 22px;
+  border-top: 1px solid var(--glass-border-soft);
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+@keyframes gwFadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Responsive ── */
+@media (max-width: 880px) {
+  .gw-container {
+    grid-template-columns: 1fr;
+    gap: 36px;
+    max-width: 420px;
+    text-align: center;
+  }
+  .gw-left { text-align: center; }
+  .gw-subtext { margin-inline: auto; }
+  .gw-features { justify-content: center; }
+  .gw-title { font-size: clamp(44px, 12vw, 64px); }
+}
+
+/* Teléfonos: el objetivo es que la tarjeta de acceso (con su botón) entre en
+   la PRIMERA pantalla incluso en 320×568. Se compacta el hero, se ocultan los
+   chips decorativos y el centrado vertical pasa a flujo normal con scroll. */
+@media (max-width: 560px) {
+  .gw-wrapper {
+    align-items: flex-start;
+    padding: 20px 16px calc(28px + env(safe-area-inset-bottom));
+  }
+  .gw-container { gap: 18px; }
+  .gw-badge { padding: 5px 12px; font-size: 10px; }
+  .gw-title {
+    font-size: clamp(32px, 10.5vw, 42px);
+    letter-spacing: -1px;
+    margin-top: 10px;
+  }
+  .gw-subtext {
+    margin-top: 10px;
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+  /* Decorativos: en pantalla chica el espacio es para el acceso */
+  .gw-features { display: none; }
+  .gw-pulse-svg { display: none; }
+
+  .gw-card { max-width: 100%; }
+  .gw-card-header { padding: 12px 18px; }
+  .gw-card-body { padding: 20px 18px; }
+  .gw-auth-icon { width: 52px; height: 52px; margin-bottom: 12px; }
+  .gw-auth-icon svg { width: 22px; height: 22px; }
+  .gw-card-title { font-size: 18px; }
+  .gw-card-text { margin-bottom: 16px; font-size: 13px; }
+  .gw-btn { min-height: 48px; }
+  .gw-card-footer { padding: 10px 16px; font-size: 10px; }
+  .gw-flip-back { min-height: 44px; margin-top: 10px; }
+
+  /* Formulario (login / cambio de contraseña): más compacto para que el
+     botón principal entre completo incluso en 320×568. */
+  .gw-login-body .gw-auth-icon { width: 44px; height: 44px; margin-bottom: 8px; }
+  .gw-login-body .auth-field { margin-top: 10px; }
+  .gw-login-body .auth-btn { margin-top: 16px; }
+}
+
+/* Respeta accesibilidad: sin animaciones de movimiento */
+@media (prefers-reduced-motion: reduce) {
+  .gw-orb, .gw-pulse-line, .gw-badge-dot,
+  .gw-left, .gw-right { animation: none; }
+  .gw-pulse-line { stroke-dashoffset: 0; }
+  .gw-card-inner, .gw-card-face { transition: none; }   /* flip y swap instantáneos */
+  .gw-changepass-panel { transition: none; }             /* deslizamiento instantáneo */
+}
+
+/* Ojo para ver/ocultar la contraseña en el login. */
+.auth-input-wrap { position: relative; }
+.auth-input--con-ojo { padding-right: 42px; }
+.auth-ojo {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.5);
+  transition: color 0.2s;
+}
+.auth-ojo:hover { color: var(--mc-aqua); }

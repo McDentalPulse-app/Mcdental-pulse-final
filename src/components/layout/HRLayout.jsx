@@ -1,0 +1,87 @@
+import React from 'react';
+import { useGlobal } from "../../contexts/GlobalContext";
+import { Routes, Route, Navigate } from 'react-router-dom';
+import Navegacion from './Navegacion';
+import HRDashboard from '../dashboards/HRDashboard';
+import VacacionesRH from '../rh/VacacionesRH';
+import PermisosRH from '../rh/PermisosRH';
+import PermisosEmpleado from '../empleados/PermisosEmpleado';
+import DescuentosRH from '../rh/DescuentosRH';
+import ComisionesRH from '../comisiones/ComisionesRH';
+import AsistenciaPanel from '../asistencia/AsistenciaPanel';
+import ChecadorEmpleado from '../asistencia/ChecadorEmpleado';
+import EnrolarRostros from '../asistencia/EnrolarRostros';
+import GestionHorarios from '../admin/GestionHorarios';
+import Calibracion from '../admin/Calibracion';
+import CalendarioRH from '../rh/CalendarioRH';
+import IntercambiosRH from '../calendario/IntercambiosRH';
+import EventosPersonal from '../empleados/EventosPersonal';
+import ReconocimientosGestion from '../rh/ReconocimientosGestion';
+import ReportesRH from '../rh/ReportesRH';
+import GestionUsuarios from '../admin/GestionUsuarios';
+import GestionSucursales from '../admin/GestionSucursales';
+import GestionEncuestas from '../admin/GestionEncuestas';
+import EmpleadosList from '../empleados/EmpleadosList';
+import ExpedienteIntegral from '../empleados/ExpedienteIntegral';
+import Reportes from '../rh/Reportes';
+import AIEngine from '../ia/AIEngine';
+import Config from '../settings/Config';
+import BolsaTrabajo from '../rh/BolsaTrabajo';
+import Perfil from '../common/Perfil';
+import IdeasMejora from '../common/IdeasMejora';
+import AvisoPush from '../asistencia/AvisoPush';
+import { useAvisoPush } from '../../hooks/useAvisoPush';
+import AvisosPanel from '../avisos/AvisosPanel';
+
+export default function HRLayout({ user, globals, actions }) {
+  const { usuarios: USERS, encuestaPreguntas } = useGlobal();
+
+  const { vacaciones, permisos, descuentos, comisiones, intercambios, festivos, eventosCalendario, reconocimientos, encuestas, mensajes, notas, reportesConfidenciales, archivosExpediente, horarios, setHorarios, avisos, checadasHoy } = globals;
+  const { updateVacacionEstado, updatePermisoEstado, updateDescuentoEstado, addDescuento, revisarComision, resolverIntercambio, addFestivo, deleteFestivo, addEvento, updateEvento, deleteEvento, agendarPropio, addReconocimiento, subirArchivoExpediente, eliminarArchivoExpediente, addAviso, updateAviso, deleteAviso, justificarFalta, registrarChecada } = actions;
+
+  // Un solo handler para el calendario: sin id = crear, con id = actualizar.
+  const guardarEvento = (id, form) => (id ? updateEvento(id, form) : addEvento(form));
+  const { ofrecerPush, activarAvisos, cerrarOfertaPush } = useAvisoPush();
+
+  return (
+    <div className="app-shell">
+      <Navegacion />
+      <main className="app-main">
+        <div className="app-main-inner">
+          {ofrecerPush && <AvisoPush onActivar={activarAvisos} onCerrar={cerrarOfertaPush} />}
+          <Routes>
+            <Route path="dashboard" element={<HRDashboard users={USERS} />} />
+            <Route path="ai" element={<AIEngine encuestas={encuestas} mensajes={mensajes} notas={notas} userRole="rh" permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>} />
+            <Route path="empleados" element={<EmpleadosList encuestas={encuestas} notas={notas} role="rh" currentUser={user} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} />} />
+            <Route path="usuarios" element={<GestionUsuarios />} />
+            <Route path="asistencia" element={<AsistenciaPanel usuarios={USERS} horarios={horarios} permisos={permisos} vacaciones={vacaciones} puedeAnular puedeJustificar onJustificarFalta={justificarFalta} />} />
+            <Route path="checador" element={<ChecadorEmpleado user={user} checadasHoy={checadasHoy} horarios={horarios} permisos={permisos} onChecar={registrarChecada} />} />
+            <Route path="horarios" element={<GestionHorarios usuarios={USERS} horarios={horarios} setHorarios={setHorarios} />} />
+            <Route path="calibracion" element={<Calibracion usuarios={USERS} />} />
+            <Route path="rostros" element={<EnrolarRostros usuarios={USERS} />} />
+            <Route path="vacaciones" element={<VacacionesRH vacaciones={vacaciones} onUpdateEstado={updateVacacionEstado} />} />
+            <Route path="permisos" element={<PermisosRH permisos={permisos} onUpdateEstado={updatePermisoEstado} horarios={horarios} />} />
+            <Route path="mispermisos" element={<PermisosEmpleado user={user} vacaciones={vacaciones} permisos={permisos} horarios={horarios} onEnviarSolicitudEmpleado={agendarPropio} autoAprobar />} />
+            <Route path="descuentos" element={<DescuentosRH descuentos={descuentos} empleados={USERS} user={user} onUpdateEstado={updateDescuentoEstado} onAddDescuento={addDescuento} />} />
+            <Route path="comisiones" element={<ComisionesRH comisiones={comisiones} onRevisar={revisarComision} />} />
+            <Route path="calendario" element={<CalendarioRH vacaciones={vacaciones} permisos={permisos} festivos={festivos} intercambios={intercambios} eventosCalendario={eventosCalendario} onGuardarEvento={guardarEvento} onEliminarEvento={deleteEvento} />} />
+            <Route path="intercambios" element={<IntercambiosRH intercambios={intercambios} festivos={festivos} onResolver={resolverIntercambio} onAddFestivo={addFestivo} onDeleteFestivo={deleteFestivo} />} />
+            <Route path="eventospersonal" element={<EventosPersonal users={USERS} />} />
+            <Route path="reconocimientos" element={<ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />} />
+            <Route path="reportesrh" element={<ReportesRH vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} />} />
+            <Route path="bolsa" element={<BolsaTrabajo />} />
+            <Route path="sucursales" element={<GestionSucursales />} />
+            <Route path="expedientes" element={<ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} archivosExpediente={archivosExpediente} onSubirArchivoExpediente={subirArchivoExpediente} onEliminarArchivoExpediente={eliminarArchivoExpediente} />} />
+            <Route path="encuestas" element={<GestionEncuestas encuestas={encuestas} />} />
+            <Route path="reportes" element={<Reportes users={USERS} encuestas={encuestas} preguntas={encuestaPreguntas} />} />
+            <Route path="config" element={<Config />} />
+            <Route path="soporte" element={<IdeasMejora />} />
+            <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} />} />
+            <Route path="perfil" element={<Perfil />} />
+            <Route path="*" element={<Navigate to="dashboard" replace />} />
+          </Routes>
+        </div>
+      </main>
+    </div>
+  );
+}

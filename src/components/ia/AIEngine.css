@@ -1,0 +1,212 @@
+/* ============================================================
+   AI Engine — dark-glass dramático + motion (piloto UI)
+   Scoped bajo .ai-engine-page. Reusa tokens de marca.
+   ============================================================ */
+
+/* Header: ver .premium-page-header en App.css (patrón nacido acá, ahora compartido
+   por <PageHeader> en todas las pantallas). Solo queda el badge de estado, propio
+   de esta página. */
+.ai-engine-page .ai-engine-status-badge {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--mc-aqua-rgb) / 0.4);
+  color: var(--mc-verde-claro);
+}
+.ai-status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--mc-aqua);
+  box-shadow: 0 0 0 0 rgba(var(--mc-aqua-rgb) / 0.6);
+  animation: aiPulseDot 2s ease-out infinite;
+}
+@keyframes aiPulseDot {
+  0% { box-shadow: 0 0 0 0 rgba(var(--mc-aqua-rgb) / 0.55); }
+  70% { box-shadow: 0 0 0 8px rgba(var(--mc-aqua-rgb) / 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--mc-aqua-rgb) / 0); }
+}
+
+/* ── Stat cards + pulse chips: entrada + hover ── */
+@keyframes aiUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; } }
+.ai-engine-page .admin-stat-grid > * { animation: aiUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.ai-engine-page .admin-stat-grid > *:nth-child(1) { animation-delay: 0.06s; }
+.ai-engine-page .admin-stat-grid > *:nth-child(2) { animation-delay: 0.12s; }
+.ai-engine-page .admin-stat-grid > *:nth-child(3) { animation-delay: 0.18s; }
+.ai-engine-page .admin-stat-grid > *:nth-child(4) { animation-delay: 0.24s; }
+.ai-engine-page .admin-stat-grid > * {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease;
+}
+.ai-engine-page .admin-stat-grid > *:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 34px -20px rgba(4, 35, 31, 0.4);
+}
+
+.ai-engine-page .ai-engine-pulse-chip {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.ai-engine-page .ai-engine-pulse-chip:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px -18px rgba(4, 35, 31, 0.45);
+}
+
+/* ── Tabs: segmented control con pill deslizante ── */
+.ai-engine-page .ai-engine-tab { position: relative; }
+
+.ai-engine-page .ai-tab-pill {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: var(--grad-accent);
+  box-shadow: 0 8px 22px -10px rgba(var(--mc-aqua-rgb) / 0.7);
+}
+
+/* El icono y el texto van POR ENCIMA de la pill. El :not() es lo que hace que esto funcione:
+   antes la regla era `> *`, que también alcanzaba a la propia pill y —con más especificidad
+   (0,2,0) que .ai-tab-pill (0,1,0)— le quitaba el `position: absolute`. Sin absolute, el
+   `inset: 0` no hace nada y un <span> vacío en flujo normal mide 0×0: la pill jamás se pintó,
+   en ningún tema. Solo se notaba en oscuro porque ahí el texto activo (oscuro, pensado para ir
+   sobre el teal) quedaba sobre el fondo oscuro de la página. */
+.ai-engine-page .ai-engine-tab > *:not(.ai-tab-pill) {
+  position: relative;
+  z-index: 1;
+}
+
+/* El fondo activo lo pinta la pill, no la clase base. */
+.ai-engine-page .ai-engine-tab--active {
+  color: var(--brand-950);
+  background: transparent;
+  border-color: transparent;
+}
+
+/* Sin esto sale el aro de foco por defecto del navegador — blanco y grueso sobre fondo
+   oscuro, que es el contorno raro que se veía al hacer clic. */
+.ai-engine-page .ai-engine-tab:focus-visible {
+  outline: 2px solid var(--mc-aqua);
+  outline-offset: 2px;
+}
+
+/* ── Botón Generar con IA: gradiente accent ── */
+.ai-engine-page .ai-gen-btn {
+  background: var(--grad-accent);
+  color: var(--brand-950);
+  border: none;
+  box-shadow: 0 12px 28px -12px rgba(var(--mc-aqua-rgb) / 0.6);
+  transition: filter 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+.ai-engine-page .ai-gen-btn:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); }
+.ai-engine-page .ai-gen-btn:active:not(:disabled) { transform: translateY(0) scale(0.99); }
+.ai-engine-page .ai-gen-btn:disabled { opacity: 0.7; }
+
+/* ── Panel de salida IA: loading shimmer + reveal ── */
+.ai-output-reveal { animation: aiUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+.ai-skeleton { display: grid; gap: 10px; padding: 4px 0; }
+.ai-skeleton-line {
+  height: 12px;
+  border-radius: 7px;
+  background: linear-gradient(100deg, var(--mc-borde-suave) 30%, var(--mc-gris-suave) 0, var(--mc-slate-200) 40%, var(--mc-borde-suave) 50%);
+  background-size: 200% 100%;
+  animation: aiShimmer 1.3s linear infinite;
+}
+.ai-skeleton-line:nth-child(1) { width: 92%; }
+.ai-skeleton-line:nth-child(2) { width: 78%; }
+.ai-skeleton-line:nth-child(3) { width: 85%; }
+.ai-skeleton-line:nth-child(4) { width: 64%; }
+@keyframes aiShimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+.ai-loading-head {
+  display: inline-flex; align-items: center; gap: 8px;
+  color: var(--mc-marca-texto); font-weight: 600; margin-bottom: 12px;
+}
+.ai-loading-head .ai-spark { animation: aiSparkSpin 1.4s ease-in-out infinite; }
+@keyframes aiSparkSpin {
+  0%, 100% { transform: rotate(0) scale(1); opacity: 0.8; }
+  50% { transform: rotate(180deg) scale(1.2); opacity: 1; }
+}
+
+/* ============================================================
+   Refactor de cards inline (alertas / predicciones / expedientes)
+   ============================================================ */
+.ai-section-hint { color: var(--mc-slate-500); margin-top: 0; }
+.ai-case-empty { color: var(--mc-slate-500); text-align: center; padding: 30px; }
+
+.ai-case-grid { display: grid; gap: 12px; }
+
+.ai-case-card {
+  position: relative;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--mc-slate-200);
+  background: var(--mc-slate-50);
+  border-left: 4px solid var(--mc-slate-400);
+  animation: aiUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition: box-shadow 0.22s ease, transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ai-case-card:hover { box-shadow: 0 16px 36px -24px rgba(15, 23, 42, 0.4); transform: translateY(-2px); }
+.ai-case-card--critica { background: var(--mc-error-bg); border-left-color: var(--mc-semaforo-rojo); }
+.ai-case-card--alta    { background: var(--mc-aviso-bg-suave); border-left-color: var(--mc-semaforo-amarillo); }
+.ai-case-card--media   { background: var(--mc-aviso-bg); border-left-color: var(--mc-semaforo-amarillo); }
+.ai-case-card--baja    { background: var(--mc-slate-50); border-left-color: var(--mc-slate-400); }
+
+.ai-case-head {
+  display: flex; justify-content: space-between; gap: 12px;
+  align-items: flex-start; margin-bottom: 12px;
+}
+.ai-case-name { font-weight: 800; color: var(--mc-slate-900); font-size: 17px; }
+.ai-case-sub { color: var(--mc-slate-500); font-size: 13px; }
+.ai-case-score { margin-bottom: 10px; color: var(--mc-slate-700); }
+
+.ai-risk-list { display: grid; gap: 8px; }
+.ai-risk-item { padding: 10px; border-radius: 10px; background: var(--mc-superficie); border: 1px solid var(--mc-slate-200); }
+.ai-risk-title { font-weight: 800; color: var(--mc-slate-900); display: inline-flex; align-items: center; gap: 4px; }
+.ai-risk-nivel { color: var(--mc-slate-500); font-size: 13px; }
+.ai-risk-detalle { color: var(--mc-slate-700); margin-top: 4px; }
+
+.ai-action-banner {
+  margin-top: 12px; padding: 12px; border-radius: 12px;
+  background: var(--mc-brand-suave); color: var(--mc-texto-titulo); font-weight: 700;
+}
+
+/* Predicciones */
+.ai-pred-grid {
+  display: grid; gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.ai-pred-item { padding: 12px; border-radius: 12px; background: var(--mc-superficie); border: 1px solid var(--mc-slate-200); }
+.ai-pred-name { font-weight: 800; color: var(--mc-texto-titulo); margin-bottom: 4px; }
+.ai-pred-val { font-weight: 800; color: var(--mc-slate-900); margin-bottom: 6px; }
+.ai-pred-detalle { color: var(--mc-slate-500); font-size: 13px; line-height: 1.5; }
+
+/* Expedientes IA */
+.ai-exp-metrics {
+  display: grid; gap: 10px; margin-bottom: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+.ai-exp-metric {
+  padding: 12px; border-radius: 12px; background: var(--mc-superficie);
+  border: 1px solid var(--mc-slate-200); text-align: center;
+}
+.ai-exp-metric-label { color: var(--mc-slate-500); font-size: 12px; font-weight: 800; }
+.ai-exp-metric-value { font-size: 26px; font-weight: 800; }
+.ai-exp-metric-value--sm { font-size: 22px; }
+.ai-exp-metric-sub { color: var(--mc-slate-700); font-size: 13px; }
+.ai-exp-block {
+  padding: 12px; border-radius: 12px; background: var(--mc-superficie);
+  border: 1px solid var(--mc-slate-200); margin-bottom: 12px;
+}
+.ai-exp-block--soft { background: var(--mc-slate-50); }
+.ai-exp-block-title {
+  font-weight: 800; color: var(--mc-texto-titulo); margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.ai-exp-text { color: var(--mc-slate-700); line-height: 1.7; }
+.ai-exp-risk-line { color: var(--mc-slate-600); font-size: 13px; }
+
+/* ── Accesibilidad ── */
+@media (prefers-reduced-motion: reduce) {
+  .ai-status-dot, .ai-loading-head .ai-spark { animation: none; }
+  .ai-engine-page .admin-stat-grid > *,
+  .ai-output-reveal, .ai-case-card { animation: none; }
+  .ai-engine-page .admin-stat-grid > *:hover,
+  .ai-engine-page .ai-engine-pulse-chip:hover,
+  .ai-case-card:hover { transform: none; }
+}

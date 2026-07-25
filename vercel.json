@@ -1,0 +1,54 @@
+{
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; img-src 'self' data: blob: https://*.supabase.co; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com" }
+      ]
+    }
+  ],
+  "functions": {
+    "api/aprobar-rostro.js": {
+      "includeFiles": "api/models/**",
+      "excludeFiles": "node_modules/onnxruntime-node/bin/napi-v6/{darwin,win32}/**",
+      "maxDuration": 30,
+      "memory": 2048
+    },
+    "api/enrolar-rostro.js": {
+      "includeFiles": "api/models/**",
+      "excludeFiles": "node_modules/onnxruntime-node/bin/napi-v6/{darwin,win32}/**",
+      "maxDuration": 30,
+      "memory": 2048
+    },
+    "api/checar.js": {
+      "includeFiles": "api/models/**",
+      "excludeFiles": "node_modules/onnxruntime-node/bin/napi-v6/{darwin,win32}/**",
+      "maxDuration": 30,
+      "memory": 2048
+    },
+    "api/limpiar-fotos.js": {
+      "maxDuration": 60
+    },
+    "api/tareas-programadas.js": {
+      "maxDuration": 30
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/limpiar-fotos",
+      "schedule": "17 4 * * *"
+    },
+    {
+      "path": "/api/tareas-programadas",
+      "schedule": "0 13 * * *"
+    }
+  ]
+}

@@ -1,0 +1,171 @@
+/* ============================================================
+   Pulido móvil PWA — sensación de app nativa premium
+   Aditivo: no toca App.css; solo refina touch targets, tipografía
+   y comportamiento táctil en pantallas chicas. Importado después
+   de App.css en main.jsx para ganar en cascada a igual
+   especificidad.
+   ============================================================ */
+
+/* Táctil: sin flash gris de WebKit al tocar, y sin la espera de
+   double-tap-zoom en controles (mantiene el pinch-zoom del documento). */
+button,
+a,
+.sidebar-nav-btn,
+.mobile-tab,
+.mobile-sheet-item,
+.empleado-scale-btn,
+.empleado-option-btn {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+@media (max-width: 768px) {
+  html {
+    /* iOS Safari: no inflar tipografías al rotar */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Área segura superior: con viewport-fit=cover (PWA/notch) el contenido va
+     edge-to-edge y el header de cada página quedaba bajo la barra de estado.
+     En navegador sin notch, inset-top=0 → sin cambio. */
+  .app-main {
+    padding-top: calc(14px + env(safe-area-inset-top));
+  }
+
+  body {
+    /* Sin rebote de scroll encadenado al body (sensación de web, no de app) */
+    overscroll-behavior-y: contain;
+  }
+
+  .app-main {
+    overscroll-behavior: contain;
+  }
+
+  /* iOS hace zoom automático al enfocar inputs con font-size < 16px;
+     16px lo evita y de paso mejora la legibilidad táctil. */
+  .mc-form-input,
+  .mc-form-select,
+  .mc-form-textarea {
+    font-size: 16px;
+    min-height: 44px;
+  }
+
+  /* Touch targets ≥ 44px (guía iOS HIG / Android 48dp) */
+  .mc-btn-primary,
+  .mc-btn-secondary,
+  .empleado-option-btn {
+    min-height: 44px;
+  }
+
+  .mobile-sheet-item,
+  .mobile-sheet-logout {
+    min-height: 48px;
+  }
+
+  .empleado-submit-btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 50px;
+    font-size: 15px;
+  }
+
+  /* Feedback táctil inmediato (reemplaza el hover que no existe en touch) */
+  .mc-btn-primary:active,
+  .mc-btn-secondary:active,
+  .empleado-option-btn:active,
+  .empleado-scale-btn:active {
+    transform: scale(0.97);
+  }
+  .mobile-tab:active svg {
+    transform: scale(0.9);
+  }
+
+  /* Jerarquía tipográfica más compacta en móvil */
+  .admin-page-title {
+    font-size: 22px;
+    letter-spacing: -0.4px;
+  }
+  .admin-page-subtitle {
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Escala 1-10 de la encuesta: dedo cómodo sin desbordar (flex-wrap) */
+  .empleado-scale-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 15px;
+  }
+
+  /* Densidad: las tarjetas del Inicio del empleado se apilan 1×fila en teléfono
+     y el min-height:168 + meta flex:1 dejaba mucho espacio muerto → más scroll.
+     Se compacta el alto (mismo diseño y elementos) para ver más de un vistazo. */
+  .empleado-quick-card {
+    min-height: 132px;
+  }
+}
+
+/* Tap targets ≥44px en controles que no pasan por .mc-form-* ni .mc-btn-*
+   (detectados en auditoría móvil): selector de semana, pestañas del AI Engine,
+   botón generar, filtros de listas/búsqueda y el composer de mensajes. En claro
+   y oscuro. No cambia el ancho ni el diseño, solo asegura el alto cómodo. */
+@media (max-width: 768px) {
+  .week-select-trigger,
+  .ai-engine-tab,
+  .ai-gen-btn,
+  .list-filter-input,
+  .list-filter-select,
+  .table-search,
+  .mensajes-composer-input,
+  .mensajes-composer .mc-btn-primary {
+    min-height: 44px;
+  }
+}
+
+/* Modales en móvil: el tabbar inferior (position:fixed) tapaba los botones de
+   acción del modal (Guardar/Cancelar) — el overlay queda atrapado en el
+   stacking-context de .app-main, por debajo del tabbar. Con un modal abierto se
+   oculta el tabbar (patrón estándar: el modal toma el foco). :has() cubre TODOS
+   los modales de una vez vía la clase compartida .mc-modal-overlay; reaparece al
+   cerrar. Además, el modal y sus botones respetan el área segura inferior. */
+@media (max-width: 768px) {
+  body:has(.mc-modal-overlay) .mobile-tabbar {
+    display: none;
+  }
+  .mc-modal-overlay,
+  .mc-notify-overlay {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+  .mc-modal,
+  .mc-notify-modal {
+    max-height: calc(100dvh - 24px - env(safe-area-inset-bottom));
+  }
+}
+
+/* El toggle de tema del bottom-sheet reutiliza .mobile-sheet-logout (rojo);
+   con clase propia recupera un color neutro de acción en ambos temas. */
+.mobile-sheet-theme {
+  color: var(--mc-marca-texto) !important;
+  border-color: var(--mc-borde-suave) !important;
+}
+
+/* Secciones de la hoja "Más": con la paridad admin, rh/psicologa/admin pasaron a tener
+   15-21 ítems fuera de la tabbar. Sin agrupar era una lista plana del mismo peso visual
+   de arriba a abajo — imposible de escanear de un vistazo en el celular. Un título de
+   sección por categoría (Asistencia y rostros, Equipo, RH, etc.) le da al ojo un punto
+   de referencia antes de buscar el ítem exacto. */
+.mobile-sheet-group + .mobile-sheet-group {
+  margin-top: 10px;
+  padding-top: 6px;
+  border-top: 1px solid var(--mc-gris-suave);
+}
+.mobile-sheet-group-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--mc-texto-secundario);
+  padding: 4px 10px 6px;
+}

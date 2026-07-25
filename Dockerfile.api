@@ -1,0 +1,14 @@
+# Wrapper Express de las funciones api/*.js (antes serverless de Vercel). Debian
+# (no alpine): onnxruntime-node y sharp traen binarios nativos prebuilt para glibc.
+FROM node:20-bookworm-slim
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+COPY api ./api
+COPY server.js ./
+
+EXPOSE 3001
+CMD ["node", "server.js"]
