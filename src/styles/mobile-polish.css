@@ -118,8 +118,8 @@ a,
   .list-filter-input,
   .list-filter-select,
   .table-search,
-  .mensajes-composer-input,
-  .mensajes-composer .mc-btn-primary {
+  .chat-composer-campo,
+  .chat-composer-enviar {
     min-height: 44px;
   }
 }

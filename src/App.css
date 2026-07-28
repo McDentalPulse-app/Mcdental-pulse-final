@@ -2267,7 +2267,7 @@
   .mc-form-input,
   .mc-form-select,
   .mc-form-textarea,
-  .mensajes-composer-input {
+  .chat-composer-campo {
     min-height: 44px;
   background: var(--mc-superficie-sutil);
   color: var(--mc-texto-fuerte);
@@ -5177,66 +5177,542 @@
   padding: 40px 20px;
 }
 
-.mensajes-bubble-row {
+/* ── Chat empleado ↔ psicóloga ──────────────────────────────────────────────
+   Sustituye a .chat-burbuja-* y .chat-composer-*. El cambio de prefijo
+   (mensajes- → chat-) es deliberado: la pantalla sigue siendo "Mensajes", pero
+   estas piezas son la conversación en sí y se reutilizan en las fases de
+   adjuntos, reacciones y audio.
+
+   Las burbujas se distinguen por LADO y por el rótulo del autor, como en el
+   patrón de Untitled UI, no por un color fuerte. Las propias conservan un tinte
+   de marca muy leve: sin él, en un hilo largo cuesta un segundo de más saber
+   quién dijo qué, y este canal se lee a menudo con prisa.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.chat-fila {
   display: flex;
-  justify-content: flex-start;
-}
-
-.mensajes-bubble-row--mine { justify-content: flex-end; }
-
-.mensajes-bubble {
-  max-width: 72%;
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: var(--mc-superficie);
-  color: var(--mc-texto-fuerte);
-  border: 1px solid var(--mc-gris-suave);
-}
-
-.mensajes-bubble--mine {
-  background: var(--mc-verde-medio);
-  color: var(--mc-blanco);
-  border: none;
-}
-
-.mensajes-bubble-author {
-  font-size: 11px;
-  font-weight: 800;
-  opacity: 0.85;
-  margin-bottom: 4px;
-}
-
-.mensajes-bubble-text { line-height: 1.5; font-size: 14px; }
-
-.mensajes-bubble-time {
-  font-size: 11px;
-  opacity: 0.75;
-  margin-top: 6px;
-  text-align: right;
-}
-
-.mensajes-composer {
-  padding: 14px 16px;
-  border-top: 1px solid var(--mc-gris-suave);
-  display: flex;
+  align-items: flex-start;
   gap: 10px;
-  align-items: center;
 }
 
-.mensajes-composer-input {
-  flex: 1;
-  padding: 12px 14px;
-  border-radius: 12px;
+/* Los mensajes de un mismo bloque se pegan; el aire va entre bloques. */
+.chat-fila + .chat-fila { margin-top: 2px; }
+.chat-fila--primera { margin-top: 14px; }
+.chat-fila:first-child { margin-top: 0; }
+
+/* Alineación, no row-reverse: MensajeItem ya no pinta el hueco del avatar en los
+   mensajes propios, y row-reverse chocaría con el `justify-content: flex-end` que
+   las reglas de móvil ya aplican (el contenido acabaría en el lado contrario). */
+.chat-fila--mia { justify-content: flex-end; }
+
+/* Hueco fijo del avatar: se reserva también cuando no se pinta, para que todas
+   las burbujas del bloque queden a la misma altura de sangrado. */
+.chat-fila-avatar {
+  flex: 0 0 36px;
+  width: 36px;
+}
+
+.chat-fila-cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: min(72%, 560px);
+  min-width: 0;
+}
+
+.chat-fila--mia .chat-fila-cuerpo { align-items: flex-end; }
+
+.chat-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 2px;
+}
+
+.chat-meta-nombre {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mc-texto-fuerte);
+}
+
+.chat-meta-hora {
+  font-size: 12px;
+  color: var(--mc-texto-secundario);
+  white-space: nowrap;
+}
+
+.chat-acuse { color: var(--mc-texto-secundario); }
+.chat-acuse--leido { color: var(--mc-aqua); }
+
+.chat-burbuja {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--mc-superficie-sutil);
   border: 1px solid var(--mc-gris-suave);
+  color: var(--mc-texto-fuerte);
+  /* La esquina pegada al avatar se cuadra: es lo que hace que la burbuja
+     "salga" de quien habla en vez de flotar suelta. */
+  border-top-left-radius: 2px;
+}
+
+.chat-fila--mia .chat-burbuja {
+  background: color-mix(in srgb, var(--mc-aqua) 8%, var(--mc-superficie));
+  border-color: color-mix(in srgb, var(--mc-aqua) 22%, var(--mc-gris-suave));
+  border-top-left-radius: 8px;
+  border-top-right-radius: 2px;
+}
+
+/* Solo la primera del bloque lleva la esquina cuadrada; las siguientes son
+   continuación y se redondean enteras. */
+.chat-fila:not(.chat-fila--primera) .chat-burbuja {
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.chat-burbuja-texto {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;      /* respeta los saltos de Shift+Enter */
+  overflow-wrap: anywhere;    /* una URL larga no rompe el ancho del panel */
+}
+
+.chat-separador-dia {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0 6px;
+  color: var(--mc-texto-secundario);
+  font-size: 12px;
+}
+
+.chat-separador-dia::before,
+.chat-separador-dia::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--mc-gris-suave);
+}
+
+.chat-separador-dia span {
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+/* ── Caja de escritura ── */
+
+.chat-composer {
+  margin: 0 16px 16px;
+  border: 1px solid var(--mc-gris-suave);
+  border-radius: 12px;
+  background: var(--mc-superficie);
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-composer:focus-within {
+  border-color: var(--mc-aqua);
+  box-shadow: 0 0 0 3px rgb(var(--mc-aqua-rgb) / 0.12);
+}
+
+.chat-composer-campo {
+  width: 100%;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: var(--mc-texto-fuerte);
   font-family: inherit;
   font-size: 14px;
-  outline: none;
+  line-height: 1.5;
+  padding: 12px 14px;
 }
 
-.mensajes-composer-input:focus {
-  border-color: var(--mc-aqua);
-  box-shadow: 0 0 0 3px rgba(var(--mc-aqua-rgb) / 0.12);
+.chat-composer-acciones {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px 8px 14px;
+  /* Pie con fondo propio y una línea que lo separa del texto, como en el patrón de Untitled
+     UI: sin él los botones flotan sobre el mismo blanco del textarea y no se lee dónde
+     termina lo que escribes y dónde empiezan las acciones. */
+  background: var(--mc-superficie-sutil);
+  border-top: 1px solid var(--mc-borde-suave);
+  border-radius: 0 0 11px 11px;
 }
+
+.chat-composer-ayuda {
+  font-size: 11px;
+  color: var(--mc-texto-secundario);
+}
+
+.chat-composer-ayuda kbd {
+  font-family: inherit;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--mc-gris-suave);
+  background: var(--mc-superficie-sutil);
+}
+
+.chat-composer-enviar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  background: var(--mc-verde-medio);
+  color: var(--mc-blanco);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chat-composer-enviar:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Presencia y "escribiendo…" (fase 2) ── */
+
+.mc-avatar-wrap {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+.mc-avatar-presente {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  border-radius: 50%;
+  background: var(--mc-verde);
+  /* El borde del color del fondo recorta el punto contra el avatar: sin él se lee como una
+     mancha pegada al borde en vez de como una pegatina encima. */
+  border: 2px solid var(--mc-superficie);
+  box-sizing: content-box;
+}
+
+.chat-escribiendo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding-left: 8px;
+}
+
+.chat-escribiendo-puntos {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border-top-left-radius: 2px;
+  background: var(--mc-superficie-sutil);
+  border: 1px solid var(--mc-gris-suave);
+}
+
+.chat-escribiendo-puntos i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mc-texto-secundario);
+  animation: chat-latido 1.2s infinite ease-in-out;
+}
+
+.chat-escribiendo-puntos i:nth-child(2) { animation-delay: 0.15s; }
+.chat-escribiendo-puntos i:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes chat-latido {
+  0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+  30%           { opacity: 1;   transform: translateY(-3px); }
+}
+
+/* El indicador tiene que seguir siendo legible sin movimiento: quien pide menos animación
+   necesita ver que el otro escribe, no que los puntos boten. */
+@media (prefers-reduced-motion: reduce) {
+  .chat-escribiendo-puntos i { animation: none; opacity: 0.6; }
+}
+
+/* ── Adjuntos del chat (fase 3) ── */
+
+.chat-adjunto {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--mc-gris-suave);
+  background: var(--mc-superficie);
+  color: inherit;
+  text-decoration: none;
+  min-width: 0;
+}
+
+.chat-burbuja .chat-adjunto + .chat-burbuja-texto { margin-top: 8px; }
+
+.chat-adjunto--fallo {
+  color: var(--mc-texto-secundario);
+  font-size: 13px;
+  border-style: dashed;
+}
+
+.chat-adjunto-icono {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 40px;
+  border-radius: 6px;
+  background: var(--mc-superficie-sutil);
+  border: 1px solid var(--mc-gris-suave);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--mc-texto-secundario);
+}
+
+.chat-adjunto-datos {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;   /* sin esto el nombre largo estira la burbuja en vez de recortarse */
+}
+
+.chat-adjunto-nombre {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--mc-texto-fuerte);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-adjunto-peso {
+  font-size: 12px;
+  color: var(--mc-texto-secundario);
+}
+
+.chat-adjunto-bajar {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--mc-texto-secundario);
+}
+
+.chat-adjunto-imagen {
+  display: block;
+  max-width: 320px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--mc-gris-suave);
+  background: var(--mc-superficie-sutil);
+}
+
+.chat-adjunto-imagen img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Marcador mientras se firma la URL. Ocupa el hueco que ya reservó el aspect-ratio, así que
+   la conversación no se mueve cuando por fin carga la imagen. */
+.chat-adjunto-cargando {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  background: var(--mc-superficie-sutil);
+}
+
+/* ── Archivo elegido, antes de enviarlo ── */
+
+.chat-composer-adjunto {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 10px 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--mc-superficie-sutil);
+  border: 1px solid var(--mc-gris-suave);
+  font-size: 13px;
+  color: var(--mc-texto-fuerte);
+}
+
+.chat-composer-adjunto-nombre {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-composer-adjunto-peso {
+  color: var(--mc-texto-secundario);
+  white-space: nowrap;
+}
+
+.chat-composer-adjunto-quitar {
+  margin-left: auto;
+  display: inline-flex;
+  padding: 4px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--mc-texto-secundario);
+  cursor: pointer;
+}
+
+.chat-composer-adjunto-quitar:hover { background: var(--mc-gris-suave); }
+
+/* El input nativo no se usa nunca directamente: su aspecto no se puede peinar y cambia en
+   cada navegador. Se dispara desde el botón del clip. */
+.chat-composer-file { display: none; }
+
+.chat-composer-icono {
+  display: inline-flex;
+  padding: 6px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--mc-texto-secundario);
+  cursor: pointer;
+}
+
+.chat-composer-icono:hover:not(:disabled) {
+  background: var(--mc-superficie-sutil);
+  color: var(--mc-texto-fuerte);
+}
+
+.chat-composer-icono:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Barra de acciones del composer y menú del clip (fase 3, revisión) ── */
+
+.chat-composer-botones {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.chat-composer-menu-wrap { position: relative; }
+
+/* Mismos valores que .topnav-menu, para que el desplegable del chat se lea como el resto de
+   los de la app y no como una pieza suelta. */
+.chat-composer-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  min-width: 232px;
+  padding: 6px;
+  background: var(--mc-superficie);
+  border: 1px solid var(--mc-borde-suave);
+  border-radius: 11px;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.14);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chat-composer-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--mc-texto);
+  font-family: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chat-composer-menu-item:hover { background: var(--mc-superficie-sutil); }
+
+.chat-composer-menu-item span {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.chat-composer-menu-item small {
+  font-size: 11px;
+  color: var(--mc-texto-secundario);
+}
+
+.chat-composer-menu-pie {
+  padding: 6px 10px 2px;
+  font-size: 11px;
+  color: var(--mc-texto-secundario);
+  border-top: 1px solid var(--mc-borde-suave);
+  margin-top: 4px;
+}
+
+.chat-composer-icono--activo {
+  background: var(--mc-superficie-sutil);
+  color: var(--mc-texto-fuerte);
+}
+
+/* ── Ficha del archivo elegido ── */
+
+.chat-composer-adjunto-mini {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid var(--mc-gris-suave);
+}
+
+.chat-composer-adjunto-icono {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  background: var(--mc-superficie);
+  border: 1px solid var(--mc-gris-suave);
+  color: var(--mc-texto-secundario);
+}
+
+.chat-composer-adjunto-datos {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;   /* deja que el nombre largo se recorte en vez de estirar la caja */
+  line-height: 1.3;
+}
+
+/* ── Indicador de subida en el botón de enviar ── */
+
+.chat-composer-girando {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgb(255 255 255 / 0.35);
+  border-top-color: var(--mc-blanco);
+  animation: chat-girar 0.7s linear infinite;
+}
+
+@keyframes chat-girar { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-composer-girando { animation-duration: 2.4s; }
+}
+
+/* En pantallas estrechas el recordatorio del teclado sobra: no hay teclado físico y le está
+   quitando el sitio al nombre del archivo. */
+@media (max-width: 768px) {
+  .chat-composer-ayuda { display: none; }
+  .chat-adjunto-imagen { max-width: 100%; }
+}
+
 
 .ai-engine-page { gap: 16px; }
 
@@ -5987,20 +6463,9 @@
     max-height: min(460px, calc(100dvh - 280px));
   }
 
-  .mensajes-composer {
-    flex-wrap: wrap;
-    padding: 12px;
-  }
-
-  .mensajes-composer .mc-btn-primary {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .mensajes-composer-input {
-    width: 100%;
-    flex: 1 1 100%;
-  }
+  /* El composer ya es una columna con su propio pie: no necesita padding (se lo comeria el
+     fondo del pie) ni un boton a todo lo ancho (dejaria fuera al clip). */
+  .chat-composer { margin: 0 12px 12px; }
 
   .sidebar-logout span,
   .sidebar-logout {
@@ -6417,9 +6882,8 @@
     padding: 12px;
   }
 
-  .mensajes-composer {
+  .chat-composer {
     flex-shrink: 0;
-    padding: 10px 12px;
     position: sticky;
     bottom: 0;
     background: var(--mc-superficie);
@@ -6433,7 +6897,7 @@
     max-width: 42%;
   }
 
-  .mensajes-bubble {
+  .chat-burbuja {
     max-width: 85%;
   }
 
@@ -7104,38 +7568,32 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  .mensajes-bubble-row {
+  .chat-fila {
     width: 100%;
   }
 
-  .mensajes-bubble-row--mine {
+  .chat-fila--mia {
     justify-content: flex-end;
     padding-left: 14%;
   }
 
-  .mensajes-bubble-row:not(.mensajes-bubble-row--mine) {
+  .chat-fila:not(.chat-fila--mia) {
     justify-content: flex-start;
     padding-right: 14%;
   }
 
-  .mensajes-bubble {
+  .chat-burbuja {
     max-width: 78%;
     padding: 10px 12px;
   }
 
-  .mensajes-bubble-text {
+  .chat-burbuja-texto {
     font-size: 14px;
     line-height: 1.45;
     overflow-wrap: anywhere;
   }
 
-  .mensajes-composer {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 12px;
-    padding-bottom: max(10px, env(safe-area-inset-bottom));
-    border-top: 1px solid var(--mc-gris-suave);
+  .chat-composer {
     background: var(--mc-superficie);
     flex-shrink: 0;
     position: sticky;
@@ -7143,7 +7601,12 @@
     z-index: 2;
   }
 
-  .mensajes-composer-input {
+  /* El area segura del movil va en el PIE, que es lo ultimo que toca el borde inferior. */
+  .chat-composer-acciones {
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
+  .chat-composer-campo {
     flex: 1;
     min-width: 0;
     min-height: 42px;
@@ -7151,7 +7614,7 @@
     border-radius: 12px;
   }
 
-  .mensajes-composer .mc-btn-primary {
+  .chat-composer-enviar {
     width: auto;
     flex-shrink: 0;
     min-height: 42px;
@@ -7312,7 +7775,7 @@
     min-height: min(340px, calc(100dvh - 248px)) !important;
   }
 
-  .mensajes-bubble {
+  .chat-burbuja {
     max-width: 82%;
   }
 
@@ -10869,3 +11332,385 @@
   font-size: 13px;
 }
 .mc-form-grid .admin-section-title:first-child { margin-top: 0; }
+
+/* ── Reacciones, respuestas y borrado (fase 4) ── */
+
+.chat-mensaje-envoltorio {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.chat-fila--mia .chat-mensaje-envoltorio { flex-direction: row-reverse; }
+
+/* Acciones al pasar por encima. Ocupan sitio siempre (visibility, no display) para que la
+   burbuja no se mueva al aparecer: un mensaje que salta bajo el cursor es difícil de pulsar. */
+.chat-acciones {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  align-self: center;
+}
+
+.chat-mensaje-envoltorio:hover .chat-acciones,
+.chat-mensaje-envoltorio:focus-within .chat-acciones {
+  visibility: visible;
+  opacity: 1;
+}
+
+.chat-accion {
+  display: inline-flex;
+  padding: 5px;
+  border: 1px solid var(--mc-borde-suave);
+  border-radius: 7px;
+  background: var(--mc-superficie);
+  color: var(--mc-texto-secundario);
+  cursor: pointer;
+}
+
+.chat-accion:hover { background: var(--mc-superficie-sutil); color: var(--mc-texto-fuerte); }
+.chat-accion--peligro:hover { color: var(--mc-badge-rojo-texto); }
+
+.chat-reaccionar { position: relative; }
+
+.chat-emojis {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  background: var(--mc-superficie);
+  border: 1px solid var(--mc-borde-suave);
+  border-radius: 999px;
+  box-shadow: 0 8px 22px rgb(0 0 0 / 0.14);
+  z-index: 60;
+}
+
+.chat-emoji {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px 5px;
+  border-radius: 999px;
+}
+
+.chat-emoji:hover { background: var(--mc-superficie-sutil); transform: scale(1.15); }
+
+/* ── Reacciones puestas ── */
+
+.chat-reacciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.chat-reaccion {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border: 1px solid var(--mc-borde-suave);
+  border-radius: 999px;
+  background: var(--mc-superficie);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* La mía se distingue con el color de marca: sin esa señal no hay forma de saber cuál
+   retirarías al volver a pulsar. */
+.chat-reaccion--mia {
+  border-color: var(--mc-aqua);
+  background: color-mix(in srgb, var(--mc-aqua) 10%, var(--mc-superficie));
+}
+
+.chat-reaccion small { font-size: 11px; color: var(--mc-texto-secundario); }
+
+/* ── Cita del mensaje respondido ── */
+
+.chat-cita {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-bottom: 6px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--mc-aqua);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--mc-aqua) 6%, transparent);
+}
+
+.chat-cita-autor {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mc-aqua);
+}
+
+.chat-cita-texto {
+  font-size: 12px;
+  color: var(--mc-texto-secundario);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Mensaje eliminado ── */
+
+.chat-burbuja--eliminada {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--mc-texto-secundario);
+  font-size: 13px;
+  font-style: italic;
+  background: transparent;
+  border-style: dashed;
+}
+
+/* ── Aviso de "respondiendo a" en el composer ── */
+
+.chat-composer-respuesta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 10px 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border-left: 3px solid var(--mc-aqua);
+  background: color-mix(in srgb, var(--mc-aqua) 7%, var(--mc-superficie-sutil));
+  color: var(--mc-texto-secundario);
+}
+
+.chat-composer-respuesta-datos {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.chat-composer-respuesta-autor {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mc-aqua);
+}
+
+.chat-composer-respuesta-texto {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* En táctil no existe el hover: sin esto, las acciones de un mensaje serían inalcanzables
+   desde el teléfono, que es donde más se usa este chat. */
+@media (max-width: 900px), (hover: none) {
+  .chat-acciones { visibility: visible; opacity: 1; }
+}
+
+/* ── Notas de voz (fase 5) ── */
+
+.chat-audio {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 220px;
+}
+
+.chat-audio-play {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: var(--mc-verde-medio);
+  color: var(--mc-blanco);
+  cursor: pointer;
+}
+
+.chat-audio-play:disabled { opacity: 0.5; cursor: progress; }
+
+.chat-audio-onda {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 30px;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.chat-audio-barra {
+  flex: 1;
+  min-width: 2px;
+  border-radius: 2px;
+  background: var(--mc-gris-suave);
+  transition: background 0.1s linear;
+}
+
+/* Lo ya escuchado, en color de marca: es la única señal de por dónde va la reproducción
+   cuando la onda sustituye a la barra de progreso. */
+.chat-audio-barra--oida { background: var(--mc-aqua); }
+
+/* Sin picos (el análisis falló en ese navegador) se cae a una barra normal. Antes que
+   dibujar una onda inventada que no corresponde al audio. */
+.chat-audio-barra-simple {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--mc-gris-suave);
+  overflow: hidden;
+}
+
+.chat-audio-barra-simple span {
+  display: block;
+  height: 100%;
+  background: var(--mc-aqua);
+}
+
+.chat-audio-tiempo {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--mc-texto-secundario);
+  font-variant-numeric: tabular-nums;   /* que el ancho no baile al pasar los segundos */
+}
+
+/* ── Mientras se graba ── */
+
+.chat-composer--grabando { border-color: var(--mc-aqua); }
+
+.chat-grabando {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+}
+
+.chat-grabando-punto {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--mc-badge-rojo-texto, #d92d20);
+  animation: chat-pulso 1.4s ease-in-out infinite;
+}
+
+@keyframes chat-pulso {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.25; }
+}
+
+/* El punto rojo es la señal de que el micrófono está abierto: tiene que verse aunque no se
+   anime, o quien pide menos movimiento se queda sin saber que se le está grabando. */
+@media (prefers-reduced-motion: reduce) {
+  .chat-grabando-punto { animation: none; }
+}
+
+.chat-grabando-texto {
+  font-size: 14px;
+  color: var(--mc-texto-fuerte);
+}
+
+.chat-grabando-tiempo {
+  font-size: 13px;
+  color: var(--mc-texto-secundario);
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+
+.chat-grabando-cancelar {
+  border: 1px solid var(--mc-borde-suave);
+  border-radius: 8px;
+  background: var(--mc-superficie);
+  color: var(--mc-texto-secundario);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+
+.chat-grabando-cancelar:hover {
+  color: var(--mc-badge-rojo-texto);
+  background: var(--mc-superficie-sutil);
+}
+
+@media (max-width: 768px) {
+  /* En el móvil el texto largo y el contador no caben juntos con los dos botones. */
+  .chat-grabando-texto { font-size: 13px; }
+  .chat-grabando-tiempo small { display: none; }
+  .chat-audio { min-width: 0; }
+}
+
+/* ── Tarjeta de vista previa de enlaces (fase 6) ── */
+
+.chat-enlace {
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+  border: 1px solid var(--mc-gris-suave);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--mc-superficie);
+  color: inherit;
+  text-decoration: none;
+  max-width: 340px;
+}
+
+.chat-enlace:hover { border-color: var(--mc-aqua); }
+
+.chat-enlace-imagen {
+  width: 100%;
+  max-height: 168px;
+  object-fit: cover;
+  display: block;
+  background: var(--mc-superficie-sutil);
+}
+
+.chat-enlace-datos {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 9px 11px;
+  min-width: 0;
+}
+
+.chat-enlace-host {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--mc-texto-secundario);
+}
+
+.chat-enlace-titulo {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mc-texto-fuerte);
+  /* Dos líneas y corta: un título kilométrico convertiría la burbuja en una columna. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.chat-enlace-desc {
+  font-size: 12px;
+  color: var(--mc-texto-secundario);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .chat-enlace { max-width: 100%; }
+}
