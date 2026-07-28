@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { notify } from "../../utils/notify";
-import { NAV_ITEMS, agruparPorCampo } from "../../config/navItems";
+import { NAV_ITEMS, GROUP_ICONS, agruparPorCampo } from "../../config/navItems";
 import logoSmall from "../../assets/logos/logo-small.png";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
@@ -28,6 +28,9 @@ export default function HeaderNav() {
   const sueltos = items.filter((i) => !i.group);
   const gruposBarra = agruparPorCampo(items.filter((i) => i.group && i.group !== "Cuenta"));
   const cuenta = items.filter((i) => i.group === "Cuenta");
+  // El menu del usuario tambien ofrece soporte: el rotulo sale del item, no fijo, porque
+  // segun el rol es "Soporte TI" (empleado/doctor) o "Ideas de mejora" (gestion).
+  const soporte = items.find((i) => i.key === "soporte");
   const gruposMovil = agruparPorCampo(items.filter((i) => i.group !== "Cuenta"));
 
   // Cerrar dropdown al hacer clic fuera.
@@ -82,7 +85,7 @@ export default function HeaderNav() {
                 onClick={() => setAbierto((a) => (a === g.nombre ? null : g.nombre))}
                 aria-expanded={abierto === g.nombre}
               >
-                <span>{g.nombre}</span> <Icon name="chevronDown" size={15} className="topnav-caret" />
+                <Icon name={GROUP_ICONS[g.nombre]} size={16} /> <span>{g.nombre}</span> <Icon name="chevronDown" size={15} className="topnav-caret" />
               </button>
               {abierto === g.nombre && (
                 <div className="topnav-menu">
@@ -143,9 +146,9 @@ export default function HeaderNav() {
                 </button>
 
                 <div className="cuenta-sep" />
-                {items.some((i) => i.key === "soporte") && (
+                {soporte && (
                   <button type="button" className="topnav-menu-item" onClick={() => ir("soporte")}>
-                    <Icon name="lightbulb" size={16} /> Ideas de mejora
+                    <Icon name={soporte.icon} size={16} /> {soporte.label}
                   </button>
                 )}
                 {items.some((i) => i.key === "avisos") && (

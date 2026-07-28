@@ -93,7 +93,7 @@ export const NAV_ITEMS = {
     { key: "reporteconfidencial", icon: "lock", label: "Reporte Confidencial", group: "Mi trabajo" },
     { key: "mensajes", icon: "message", label: "Mensajes", group: "Herramientas" },
     { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
-    { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
+    { key: "soporte", icon: "wrench", label: "Soporte TI", group: "Herramientas" },
     { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
   ],
   doctor: [
@@ -109,9 +109,25 @@ export const NAV_ITEMS = {
     { key: "reporteconfidencial", icon: "lock", label: "Reporte Confidencial", group: "Mi trabajo" },
     { key: "mensajes", icon: "message", label: "Mensajes", group: "Herramientas" },
     { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
-    { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
+    { key: "soporte", icon: "wrench", label: "Soporte TI", group: "Herramientas" },
     { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
   ],
+};
+
+// Icono de cada categoría, para el desplegable del header. Vive aquí y no en cada ítem porque
+// el grupo es solo una cadena repetida en los ítems: sin este mapa, la barra tendría que
+// adivinar un icono a partir del texto.
+export const GROUP_ICONS = {
+  "Equipo": "users",
+  "Personal": "users",
+  "Mi trabajo": "briefcase",
+  "RH": "briefcase",
+  "Seguimiento": "target",
+  "Vacaciones y permisos": "vacation",
+  "Asistencia y rostros": "clock",
+  "Encuestas y reportes": "clipboard",
+  "Herramientas": "wrench",
+  "Cuenta": "user",
 };
 
 // Agrupa una lista de ítems por su campo `group`, preservando el orden de aparición del grupo.
