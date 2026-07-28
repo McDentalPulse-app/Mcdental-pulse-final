@@ -11,8 +11,6 @@ import EventosPersonal from '../empleados/EventosPersonal';
 import Reportes from '../rh/Reportes';
 import ReportesConfidencialesPanel from '../psicologia/ReportesConfidencialesPanel';
 import Config from '../settings/Config';
-import Card from '../common/Card';
-import Icon from '../ui/Icon';
 import GestionUsuarios from '../admin/GestionUsuarios';
 import GestionEncuestas from '../admin/GestionEncuestas';
 import GestionSucursales from '../admin/GestionSucursales';
@@ -23,6 +21,7 @@ import AsistenciaPanel from '../asistencia/AsistenciaPanel';
 import EnrolarRostros from '../asistencia/EnrolarRostros';
 import Perfil from '../common/Perfil';
 import IdeasMejora from '../common/IdeasMejora';
+import Mensajes from '../comunicacion/Mensajes';
 import AvisoPush from '../asistencia/AvisoPush';
 import { useAvisoPush } from '../../hooks/useAvisoPush';
 import AvisosPanel from '../avisos/AvisosPanel';
@@ -61,13 +60,7 @@ export default function AdminLayout({ user, globals, actions }) {
             <Route path="confidenciales" element={<ReportesConfidencialesPanel reportes={reportesConfidenciales} />} />
             <Route path="config" element={<Config />} />
             <Route path="encuestas" element={<GestionEncuestas encuestas={encuestas} />} />
-            <Route path="mensajes" element={
-              <Card className="admin-restricted">
-                <div className="admin-restricted-icon"><Icon name="lock" size={32} /></div>
-                <h2 className="admin-restricted-title">Acceso restringido</h2>
-                <p className="admin-restricted-text">Este canal es privado y solo está disponible para empleados y psicóloga.</p>
-              </Card>
-            } />
+            <Route path="mensajes" element={<Mensajes user={user} mensajes={[]} onSend={() => false} />} />
             <Route path="soporte" element={<IdeasMejora />} />
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} />} />
             <Route path="perfil" element={<Perfil />} />

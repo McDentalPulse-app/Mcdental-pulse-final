@@ -11714,3 +11714,283 @@
 @media (max-width: 768px) {
   .chat-enlace { max-width: 100%; }
 }
+
+/* ── Reuniones por vídeo ── */
+
+.mensajes-pestanas {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--mc-borde-suave);
+}
+
+.mensajes-pestana {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border: none;
+  background: none;
+  color: var(--mc-texto-secundario);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  /* El subrayado se reserva siempre en transparente: si solo existiera en la activa, al
+     cambiar de pestaña el contenido daría un salto de 2px. */
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.mensajes-pestana:hover { color: var(--mc-texto-fuerte); }
+
+.mensajes-pestana--activa {
+  color: var(--mc-aqua);
+  border-bottom-color: var(--mc-aqua);
+}
+
+.reuniones { display: flex; flex-direction: column; gap: 12px; }
+
+.reuniones-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.reuniones-titulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--mc-texto-fuerte);
+}
+
+.reuniones-lista { display: flex; flex-direction: column; gap: 10px; }
+
+.reunion-item { display: flex; flex-direction: column; gap: 10px; }
+
+/* Una reunión que está pasando ahora tiene que distinguirse de un vistazo entre diez. */
+.reunion-item--activa {
+  border-color: var(--mc-aqua);
+  box-shadow: 0 0 0 3px rgb(var(--mc-aqua-rgb) / 0.10);
+}
+
+.reunion-item-cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.reunion-item-titulo {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--mc-texto-fuerte);
+}
+
+.reunion-item-cuando {
+  font-size: 13px;
+  color: var(--mc-texto-secundario);
+  text-transform: capitalize;
+}
+
+.reunion-item-anfitrion { text-transform: none; }
+
+.reunion-item-desc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--mc-texto-secundario);
+}
+
+.reunion-item-gente { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+
+.reunion-item-mas {
+  font-size: 12px;
+  color: var(--mc-texto-secundario);
+  padding-left: 2px;
+}
+
+.reunion-etiqueta {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--mc-superficie-sutil);
+  border: 1px solid var(--mc-borde-suave);
+  font-size: 12px;
+  color: var(--mc-texto-secundario);
+  white-space: nowrap;
+}
+
+.reunion-etiqueta--cancelada {
+  color: var(--mc-badge-rojo-texto);
+  border-color: currentColor;
+}
+
+.reunion-item-respuesta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--mc-borde-suave);
+  font-size: 13px;
+  color: var(--mc-texto-secundario);
+}
+
+.reunion-item-respuesta span { margin-right: auto; }
+
+/* ── Formulario de convocatoria ── */
+
+.reunion-form { display: flex; flex-direction: column; gap: 14px; }
+
+.reunion-form-campos {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+}
+
+.reunion-campo { display: flex; flex-direction: column; gap: 5px; }
+
+.reunion-campo > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--mc-texto-fuerte);
+}
+
+.reunion-campo small { font-weight: 400; color: var(--mc-texto-secundario); }
+
+.reunion-contador {
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--mc-aqua);
+}
+
+.reunion-personal {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* Con 100 personas en plantilla, la lista tiene que caber en la pantalla. */
+  max-height: 260px;
+  overflow-y: auto;
+  margin-top: 6px;
+  padding: 4px;
+  border: 1px solid var(--mc-borde-suave);
+  border-radius: 10px;
+}
+
+.reunion-personal-vacio {
+  padding: 18px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--mc-texto-secundario);
+}
+
+.reunion-persona {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 9px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  width: 100%;
+}
+
+.reunion-persona:hover { background: var(--mc-superficie-sutil); }
+
+.reunion-persona--elegida {
+  background: color-mix(in srgb, var(--mc-aqua) 10%, var(--mc-superficie));
+}
+
+.reunion-persona-datos { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+
+.reunion-persona-nombre {
+  font-size: 13px;
+  color: var(--mc-texto-fuerte);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reunion-persona-puesto { font-size: 11px; color: var(--mc-texto-secundario); }
+
+.reunion-persona-check { margin-left: auto; color: var(--mc-aqua); }
+
+.reunion-form-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* ── La sala ── */
+
+.reunion-sala {
+  display: flex;
+  flex-direction: column;
+  /* Pantalla completa dentro de la app: compartir pantalla en un recuadro pequeño no se lee. */
+  height: calc(100dvh - var(--mc-alto-header, 64px));
+  background: #1f2937;
+}
+
+.reunion-sala-barra {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--mc-superficie);
+  border-bottom: 1px solid var(--mc-borde-suave);
+  flex-shrink: 0;
+}
+
+.reunion-sala-volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--mc-borde-suave);
+  border-radius: 8px;
+  background: var(--mc-superficie);
+  color: var(--mc-texto-secundario);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.reunion-sala-volver:hover { background: var(--mc-superficie-sutil); color: var(--mc-texto-fuerte); }
+.reunion-sala-volver-icono { transform: rotate(90deg); }
+
+.reunion-sala-titulo {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mc-texto-fuerte);
+}
+
+.reunion-sala-marco { flex: 1; min-height: 0; }
+.reunion-sala-marco iframe { width: 100%; height: 100%; border: 0; }
+
+.reunion-sala-cargando,
+.reunion-sala-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px;
+  color: var(--mc-blanco);
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .reunion-form-campos { grid-template-columns: 1fr; }
+  .reunion-item-cabecera { flex-direction: column; align-items: stretch; }
+  .reunion-item-respuesta { flex-wrap: wrap; }
+}

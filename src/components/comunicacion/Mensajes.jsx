@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Fragment } from "react";
+import { useState, useEffect, useRef, useCallback, Fragment } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import PageHeader from "../common/PageHeader";
@@ -6,6 +6,8 @@ import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
 import MensajeItem from "./MensajeItem";
 import Composer from "./Composer";
+import Reuniones from "./Reuniones";
+import SalaJitsi from "./SalaJitsi";
 import { getPsicologaPrincipal, formatUsuarioMensajesMeta } from "../../utils/psicologa";
 import { esEmpleadoActivo } from "../../utils/helpers";
 import { horaCorta, claveDia, etiquetaDia, continuaGrupo } from "../../utils/fechaChat";
@@ -35,6 +37,17 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
   const [respondiendo, setRespondiendo] = useState(null);
   const [reacciones, setReacciones] = useState({});
   const [otro, setOtro] = useState({ presente: false, escribiendo: false });
+  // Admin y RH NO ven las conversaciones. No es un olvido: AdminLayout ya mostraba ahí un
+  // "Acceso restringido — este canal es privado y solo está disponible para empleados y
+  // psicóloga". Las reuniones son otra cosa y sí les tocan, así que entran por la misma
+  // pantalla pero solo con esa pestaña.
+  const veChat = ["psicologa", "empleado", "doctor"].includes(user?.role);
+  const [pestana, setPestana] = useState(veChat ? "chat" : "reuniones");
+  // La sala ocupa la pantalla entera: una videollamada en un recuadro de la esquina no la
+  // usa nadie, y compartir pantalla dentro de un panel pequeño no se lee.
+  const [enSala, setEnSala] = useState(null);
+  // Estable entre renders: pasarla como arrow inline la recreaba en cada repintado.
+  const salirDeLaSala = useCallback(() => setEnSala(null), []);
   const bodyRef = useRef(null);
   const canalRef = useRef(null);
   const pausaRef = useRef(null);
@@ -240,16 +253,41 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
 
   const sinConversacionesActivas = conversacionesActivas.length === 0;
 
+  if (enSala) return <SalaJitsi reunion={enSala} onSalir={salirDeLaSala} />;
+
   return (
     <div className="admin-page mensajes-page">
       <PageHeader
         className="mensajes-page-header"
         icon="message"
         title="Mensajes"
-        subtitle="Canal privado de comunicación entre empleado y psicóloga."
+        subtitle={veChat
+          ? "Canal privado de comunicación entre empleado y psicóloga."
+          : "Convoca reuniones por vídeo con el personal."}
       />
 
-      {sinConversacionesActivas ? (
+      <div className="mensajes-pestanas" role="tablist">
+        {veChat && (
+          <button
+            type="button" role="tab" aria-selected={pestana === "chat"}
+            className={`mensajes-pestana${pestana === "chat" ? " mensajes-pestana--activa" : ""}`}
+            onClick={() => setPestana("chat")}
+          >
+            <Icon name="message" size={16} /> Conversaciones
+          </button>
+        )}
+        <button
+          type="button" role="tab" aria-selected={pestana === "reuniones"}
+          className={`mensajes-pestana${pestana === "reuniones" ? " mensajes-pestana--activa" : ""}`}
+          onClick={() => setPestana("reuniones")}
+        >
+          <Icon name="camera" size={16} /> Reuniones
+        </button>
+      </div>
+
+      {pestana === "reuniones" || !veChat ? (
+        <Reuniones user={user} onEntrar={setEnSala} />
+      ) : sinConversacionesActivas ? (
         <Card className="mensajes-inbox-empty-card">
           <div className="mensajes-inbox-empty-icon">
             <Icon name="message" size={28} />

@@ -32,6 +32,7 @@ import IdeasMejora from '../common/IdeasMejora';
 import AvisoPush from '../asistencia/AvisoPush';
 import { useAvisoPush } from '../../hooks/useAvisoPush';
 import AvisosPanel from '../avisos/AvisosPanel';
+import Mensajes from '../comunicacion/Mensajes';
 
 export default function HRLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
@@ -77,6 +78,7 @@ export default function HRLayout({ user, globals, actions }) {
             <Route path="config" element={<Config />} />
             <Route path="soporte" element={<IdeasMejora />} />
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} />} />
+            <Route path="mensajes" element={<Mensajes user={user} mensajes={[]} onSend={() => false} />} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Routes>
