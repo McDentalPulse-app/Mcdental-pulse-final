@@ -3,8 +3,8 @@
 #
 # ALCANCE: escribe en el MISMO disco del VPS. Eso cubre el error humano
 # (alguien borra una tabla, una migracion sale mal) que es lo que mas pasa.
-# NO cubre perder el disco ni el servidor. Falta la copia fuera del VPS —
-# cuando haya destino, se agrega el envio donde dice COPIA FUERA DEL VPS.
+# La copia FUERA del VPS ya existe, pero no se hace desde aqui: la tira la
+# maquina de la oficina (ver el bloque del final).
 #
 # Desde el corte del 2026-07-28 esta base es la UNICA copia de la verdad de
 # Pulse: ya no hay un Supabase Cloud detras del que rescatar nada. Por eso la
@@ -39,12 +39,27 @@ docker exec pulse-db rm -f "$TMP"
 # con cara de respaldo bueno.
 mv "$OUT.tmp" "$OUT"
 
+# Huella, para que la copia de la oficina pueda verificarse SOLA.
+#
+# La clave con la que entra la oficina lleva comando forzado: solo puede copiar
+# ficheros, no ejecutar sha256sum aqui. Asi que la huella tiene que VIAJAR
+# DENTRO de la copia. Se escribe despues del mv, sobre el fichero definitivo.
+sha256sum "$OUT" | awk '{print $1}' > "$OUT.sha256"
+
 find "$DIR" -name 'pulse-*.dump' -mtime +$KEEP_DAYS -delete
+find "$DIR" -name 'pulse-*.dump.sha256' -mtime +$KEEP_DAYS -delete
 find "$DIR" -name '*.tmp' -mtime +1 -delete
 
-# --- COPIA FUERA DEL VPS (pendiente de destino) ---------------------------
-# Aqui va el envio al almacenamiento externo. Mientras este vacio, este
-# respaldo NO protege contra perder el servidor.
+# --- COPIA FUERA DEL VPS ---------------------------------------------------
+# NO se envia desde aqui, y es a proposito: este servidor esta expuesto a
+# internet y la maquina de la oficina no. Si un dia comprometen el VPS, un
+# respaldo "de empuje" le regalaria al atacante una credencial hacia la red
+# interna de la clinica.
+#
+# Por eso la oficina TIRA: entra como el usuario `respaldo` con una clave de
+# comando forzado (solo rsync de solo lectura sobre este directorio), copia,
+# verifica con el .sha256 de arriba, y avisa a /api/respaldo-latido.
+# El silencio de esos avisos lo vigila /api/revisar-respaldos.
 # --------------------------------------------------------------------------
 
 echo "$(date '+%F %T')  ok  $(basename "$OUT")  $(du -h "$OUT" | cut -f1)"

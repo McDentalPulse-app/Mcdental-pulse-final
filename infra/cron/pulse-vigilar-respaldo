@@ -1,0 +1,13 @@
+# Vigilancia del respaldo EXTERNO: comprueba que la maquina de la oficina siga
+# mandando su parte diario. Si lleva mas de 36 h callada, avisa a gestion.
+#
+# 15:23 UTC = 09:23 en Tampico, con las clinicas ya abiertas (abren 10:00) y la
+# gente de gestion delante del telefono. Aqui la hora NO se elige por carga del
+# servidor sino por CUANDO SIRVE EL AVISO: una alarma a las 3 de la manana la ve
+# alguien al mediodia, y para entonces ya se perdio otro dia sin respaldo.
+#
+# Va despues del tiron de la oficina (03:20 Tampico) para no confundir un
+# respaldo que aun no ha corrido hoy con uno que fallo.
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+23 15 * * * root curl -sS -X POST -H "Authorization: Bearer __NO_SE_VERSIONA__" http://127.0.0.1:3001/api/revisar-respaldos >> /var/log/pulse-respaldo.log 2>&1

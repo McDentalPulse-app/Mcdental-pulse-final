@@ -1,0 +1,6 @@
+# Respaldo diario de Pulse. El servidor va en UTC: 08:43 UTC = 02:43 en Tampico,
+# con las clinicas cerradas (abren 10:00). A hora distinta del respaldo de dentra
+# (09:17) para no competir por I/O, y fuera de los cron de la app (04:17 y 13:00).
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+43 8 * * * root /opt/pulse/backup.sh >> /var/log/pulse-backup.log 2>&1
