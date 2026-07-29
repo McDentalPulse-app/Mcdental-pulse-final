@@ -34,7 +34,10 @@ Deno.serve(async (req) => {
       .eq("auth_user_id", callerAuthUser.id)
       .single();
 
-    if (callerPerfilError || !["admin", "rh"].includes(callerPerfil?.role)) {
+    // psicologa entra aquí por la decisión de la migración 050 (rh y psicologa con paridad
+    // de admin). La guarda de más abajo sigue intacta: solo un admin puede asignar un rol
+    // distinto de empleado, así que esto no abre una vía de escalada de privilegios.
+    if (callerPerfilError || !["admin", "rh", "psicologa"].includes(callerPerfil?.role)) {
       return new Response(JSON.stringify({ error: "No tienes permiso para crear usuarios." }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
