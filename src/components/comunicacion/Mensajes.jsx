@@ -27,6 +27,23 @@ const PAUSA_ESCRIBIENDO_MS = 2500;
 // Orden cronológico: los ids son uuid (no ordenables), se ordena por fecha (ISO, sortable como string).
 const porTiempo = (a, b) => String(a.fecha || "").localeCompare(String(b.fecha || ""));
 
+/**
+ * Una línea que resuma el último mensaje, para la lista de conversaciones.
+ *
+ * `texto` puede venir vacío desde la migración 086: un mensaje puede ser SOLO una foto, un audio
+ * o un documento. Sin esto, la lista interpolaba el null y pintaba la palabra "null" debajo del
+ * nombre — visto en producción el 2026-07-29.
+ */
+const resumenDe = (m) => {
+  if (!m) return "";
+  if (m.eliminado) return "Mensaje eliminado";
+  if (m.texto) return m.texto;
+  const mime = m.adjunto?.mime || "";
+  if (mime.startsWith("image/")) return "Imagen";
+  if (mime.startsWith("audio/")) return "Nota de voz";
+  return m.adjunto?.nombre || "Adjunto";
+};
+
 // Interlocutor del canal de Soporte TI visto por el empleado. Para él, Soporte TI es un CANAL y no
 // una persona (detrás hay dos), pero la lista y la cabecera esperan un usuario: dándole esta forma
 // no hacen falta dos caminos distintos para pintar lo mismo. El id no existe en la base a
@@ -400,7 +417,7 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
                 const activo = selected?.usuario.id === c.usuario.id;
                 const badgeCount = activo ? 0 : c.noLeidos;
                 const preview = c.ultimo
-                  ? `${c.ultimo.de === user.id ? "Tú: " : ""}${c.ultimo.texto}`
+                  ? `${c.ultimo.de === user.id ? "Tú: " : ""}${resumenDe(c.ultimo)}`
                   : "";
 
                 return (
