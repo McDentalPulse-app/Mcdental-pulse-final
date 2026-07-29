@@ -12058,3 +12058,33 @@
   font-size: 13px;
   cursor: default;
 }
+
+/* Formulario de intercambio de día (<CalendarioIntercambio>): el <WeekSelect> de festivos y
+   el <DateRangePicker> en modo único sustituyen a un <select> y un <input type="date">
+   nativos, así que ocupan el ancho del campo igual que hacían aquéllos.
+   Las etiquetas de festivo son largas ("16 sep 2026 · Independencia de México"), a diferencia
+   de las de semana o sucursal, y su menú necesita más ancho y salto de línea para no cortarlas. */
+.intercambio-festivo,
+.intercambio-dia { width: 100%; }
+
+.intercambio-festivo .week-select-trigger,
+.intercambio-dia .mc-daterange-trigger { width: 100%; }
+
+.intercambio-festivo .week-select-menu {
+  left: 0;
+  max-width: min(340px, calc(100vw - 32px));
+}
+.intercambio-festivo .week-select-option { white-space: normal; }
+
+/* Día aún sin elegir: el trigger hace de placeholder, en gris como los de los campos vacíos. */
+.mc-daterange-trigger--vacio { color: var(--mc-texto-secundario); }
+
+/* .mc-card recorta con overflow:hidden (esquinas redondeadas), lo que cortaba a media altura
+   los desplegables de esta tarjeta: se renderizan en la página, no en un portal. Aquí el
+   contenido es un formulario, así que dejar salir el popover no descuadra nada; el z-index
+   lo mantiene por encima de la tarjeta "Mis solicitudes" que va debajo. */
+.intercambio-card {
+  overflow: visible;
+  position: relative;
+  z-index: 2;
+}

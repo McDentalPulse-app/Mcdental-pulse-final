@@ -15,23 +15,31 @@ const formatCorto = (s) => {
   const d = parseISO(s);
   return `${d.getDate()} ${MESES_ABREV[d.getMonth()]}`;
 };
+// En modo `unico` el día elegido puede caer en el año siguiente (un festivo de enero que
+// se pide desde diciembre), así que ahí el año no se puede omitir.
+const formatCortoAnio = (s) => `${formatCorto(s)} ${parseISO(s).getFullYear()}`;
 
-// Calendario popover para elegir un rango de fechas (Desde/Hasta), mismo esqueleto que
-// <WeekSelect> (botón-trigger + click-fuera/Escape cierran) pero con una rejilla de mes
-// en vez de una lista. Primer click fija el inicio, segundo click fija el fin (se
-// intercambian solos si el segundo cae antes del primero) y aplica de inmediato — igual
-// de directo que los <input type="date"> que reemplaza.
-const DateRangePicker = ({ desde, hasta, onChange, max }) => {
+// Calendario popover para elegir fechas, mismo esqueleto que <WeekSelect> (botón-trigger +
+// click-fuera/Escape cierran) pero con una rejilla de mes en vez de una lista.
+//
+// Dos modos:
+//   - rango (por defecto): primer click fija el inicio, segundo el fin (se intercambian
+//     solos si el segundo cae antes) y aplica de inmediato. Llama onChange(desde, hasta).
+//   - unico: un solo click elige el día y cierra. Llama onChange(iso). `hasta` se ignora
+//     y `desde` puede venir vacío, en cuyo caso el trigger muestra `placeholder`.
+//
+// `min`/`max` acotan los días elegibles (ISO YYYY-MM-DD); fuera del rango salen deshabilitados.
+const DateRangePicker = ({ desde, hasta, onChange, max, min, unico = false, placeholder = "Elige un día", className = "" }) => {
   const [open, setOpen] = useState(false);
   const [inicioTemp, setInicioTemp] = useState(desde);
   const [finTemp, setFinTemp] = useState(hasta);
-  const [ancla, setAncla] = useState(() => parseISO(desde));
+  const [ancla, setAncla] = useState(() => (desde ? parseISO(desde) : new Date()));
   const ref = useRef(null);
 
   const abrir = () => {
     setInicioTemp(desde);
     setFinTemp(hasta);
-    setAncla(parseISO(desde));
+    setAncla(desde ? parseISO(desde) : new Date());
     setOpen(true);
   };
 
@@ -47,8 +55,15 @@ const DateRangePicker = ({ desde, hasta, onChange, max }) => {
     };
   }, [open]);
 
+  const fueraDeRango = (iso) => (!!max && iso > max) || (!!min && iso < min);
+
   const clickDia = (iso) => {
-    if (max && iso > max) return;
+    if (fueraDeRango(iso)) return;
+    if (unico) {
+      onChange(iso);
+      setOpen(false);
+      return;
+    }
     if (finTemp === null) {
       const nuevoInicio = iso < inicioTemp ? iso : inicioTemp;
       const nuevoFin = iso < inicioTemp ? inicioTemp : iso;
@@ -67,24 +82,29 @@ const DateRangePicker = ({ desde, hasta, onChange, max }) => {
   const totalDias = new Date(y, m + 1, 0).getDate();
   const celdas = [...Array(offset).fill(null), ...Array.from({ length: totalDias }, (_, i) => i + 1)];
   const mesSiguienteBloqueado = !!max && new Date(y, m + 1, 1) > parseISO(max);
+  const mesAnteriorBloqueado = !!min && new Date(y, m, 0) < parseISO(min);
+
+  const etiquetaTrigger = unico
+    ? (desde ? formatCortoAnio(desde) : placeholder)
+    : (desde === hasta ? formatCorto(desde) : `${formatCorto(desde)} – ${formatCorto(hasta)}`);
 
   return (
-    <div className="mc-daterange" ref={ref}>
+    <div className={`mc-daterange${className ? ` ${className}` : ""}`} ref={ref}>
       <button
         type="button"
-        className="mc-daterange-trigger"
+        className={`mc-daterange-trigger${unico && !desde ? " mc-daterange-trigger--vacio" : ""}`}
         onClick={() => (open ? setOpen(false) : abrir())}
         aria-haspopup="dialog"
         aria-expanded={open}
       >
         <Icon name="calendar" size={14} />
-        <span>{desde === hasta ? formatCorto(desde) : `${formatCorto(desde)} – ${formatCorto(hasta)}`}</span>
+        <span>{etiquetaTrigger}</span>
       </button>
 
       {open && (
-        <div className="mc-daterange-pop" role="dialog" aria-label="Elegir rango de fechas">
+        <div className="mc-daterange-pop" role="dialog" aria-label={unico ? "Elegir un día" : "Elegir rango de fechas"}>
           <div className="mc-daterange-nav">
-            <button type="button" className="mc-daterange-nav-btn" onClick={() => setAncla(new Date(y, m - 1, 1))} aria-label="Mes anterior">‹</button>
+            <button type="button" className="mc-daterange-nav-btn" onClick={() => setAncla(new Date(y, m - 1, 1))} disabled={mesAnteriorBloqueado} aria-label="Mes anterior">‹</button>
             <strong>{MESES[m]} {y}</strong>
             <button type="button" className="mc-daterange-nav-btn" onClick={() => setAncla(new Date(y, m + 1, 1))} disabled={mesSiguienteBloqueado} aria-label="Mes siguiente">›</button>
           </div>
@@ -97,16 +117,14 @@ const DateRangePicker = ({ desde, hasta, onChange, max }) => {
             {celdas.map((d, i) => {
               if (d === null) return <span key={`v${i}`} />;
               const k = isoYMD(y, m, d);
-              const enRango = k >= inicioTemp && k <= (finTemp ?? inicioTemp);
-              const esInicio = k === inicioTemp;
-              const esFin = finTemp !== null && k === finTemp;
-              const deshabilitado = !!max && k > max;
+              const enRango = unico ? k === desde : (k >= inicioTemp && k <= (finTemp ?? inicioTemp));
+              const esExtremo = unico ? k === desde : (k === inicioTemp || (finTemp !== null && k === finTemp));
               return (
                 <button
                   type="button"
                   key={k}
-                  disabled={deshabilitado}
-                  className={`mc-daterange-day${enRango ? " mc-daterange-day--rango" : ""}${esInicio || esFin ? " mc-daterange-day--extremo" : ""}`}
+                  disabled={fueraDeRango(k)}
+                  className={`mc-daterange-day${enRango ? " mc-daterange-day--rango" : ""}${esExtremo ? " mc-daterange-day--extremo" : ""}`}
                   onClick={() => clickDia(k)}
                 >
                   {d}

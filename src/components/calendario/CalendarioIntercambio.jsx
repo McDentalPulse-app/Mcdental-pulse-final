@@ -5,10 +5,16 @@ import SectionTitle from "../common/SectionTitle";
 import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import CalendarioMensual from "../common/CalendarioMensual";
+import WeekSelect from "../common/WeekSelect";
+import DateRangePicker from "../common/DateRangePicker";
 
 const hoyIso = () => new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD local
 const legible = (f) =>
   new Date(`${f}T12:00:00`).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
+// El desplegable de festivos vive en una columna estrecha en móvil, así que ahí la fecha va
+// abreviada ("16 sep 2026") en vez del formato largo que se usa en los textos corridos.
+const legibleCorto = (f) =>
+  new Date(`${f}T12:00:00`).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" });
 
 const ESTADO_LABEL = { pendiente: "Pendiente", aprobado: "Aprobado", rechazado: "Rechazado" };
 const colorEstado = { pendiente: "azul", aprobado: "verde", rechazado: "rojo" };
@@ -29,6 +35,15 @@ const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados,
   const festivosFuturos = useMemo(
     () => festivos.filter((f) => f.fecha >= hoy && esNoLaborable(f)).sort((a, b) => a.fecha.localeCompare(b.fecha)),
     [festivos, hoy],
+  );
+
+  // <WeekSelect> no tiene opción vacía propia, así que el "sin elegir" va como primera opción.
+  const opcionesFestivo = useMemo(
+    () => [
+      { value: "", label: "Selecciona un festivo…" },
+      ...festivosFuturos.map((f) => ({ value: f.fecha, label: `${legibleCorto(f.fecha)} · ${f.nombre}` })),
+    ],
+    [festivosFuturos],
   );
 
   const [festivoSel, setFestivoSel] = useState("");
@@ -93,40 +108,42 @@ const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados,
         <CalendarioMensual eventos={eventos} />
       </Card>
 
-      <Card>
+      <Card className="intercambio-card">
         <SectionTitle icon="calendar">Intercambiar un día</SectionTitle>
         <p className="intercambio-hint">
           Elige el día festivo que quieres trabajar y a cambio pide el día que prefieras libre.
           Cada día destino lo puede tomar una sola persona.
         </p>
 
-        <div className="mc-form-group">
-          <label className="mc-form-label" htmlFor="ic-festivo">Festivo que cedo (trabajo ese día)</label>
-          <select id="ic-festivo" className="mc-form-select" value={festivoSel} onChange={(e) => setFestivoSel(e.target.value)}>
-            <option value="">Selecciona un festivo…</option>
-            {festivosFuturos.map((f) => (
-              <option key={f.id} value={f.fecha}>{legible(f.fecha)} — {f.nombre}</option>
-            ))}
-          </select>
-        </div>
+        <div className="mc-form-grid">
+          <div className="mc-form-group">
+            <label className="mc-form-label">Festivo que cedo (trabajo ese día)</label>
+            <WeekSelect
+              className="intercambio-festivo"
+              value={festivoSel}
+              options={opcionesFestivo}
+              onChange={setFestivoSel}
+            />
+          </div>
 
-        <div className="mc-form-group">
-          <label className="mc-form-label" htmlFor="ic-destino">Día que quiero a cambio</label>
-          <input
-            id="ic-destino"
-            type="date"
-            className="mc-form-input"
-            min={hoy}
-            value={destino}
-            onChange={(e) => setDestino(e.target.value)}
-          />
-          {ocupado && <span className="intercambio-error">Ese día ya está apartado por otra persona.</span>}
-          {destinoEsFestivo && <span className="intercambio-error">No puedes pedir un día que ya es festivo.</span>}
-        </div>
+          <div className="mc-form-group">
+            <label className="mc-form-label">Día que quiero a cambio</label>
+            <DateRangePicker
+              unico
+              className="intercambio-dia"
+              desde={destino}
+              min={hoy}
+              placeholder="Elige un día"
+              onChange={setDestino}
+            />
+            {ocupado && <span className="intercambio-error">Ese día ya está apartado por otra persona.</span>}
+            {destinoEsFestivo && <span className="intercambio-error">No puedes pedir un día que ya es festivo.</span>}
+          </div>
 
-        <button type="button" className="mc-btn-primary" onClick={enviar} disabled={!puedeEnviar}>
-          <Icon name="check" size={15} /> {enviando ? "Enviando…" : "Solicitar intercambio"}
-        </button>
+          <button type="button" className="mc-btn-primary" onClick={enviar} disabled={!puedeEnviar}>
+            <Icon name="check" size={15} /> {enviando ? "Enviando…" : "Solicitar intercambio"}
+          </button>
+        </div>
       </Card>
 
       <Card>
