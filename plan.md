@@ -1,6 +1,11 @@
 # Plan — Navegación, Mensajes visible, aviso de actualización y canal de Soporte TI
 
-STATUS: PENDIENTE DE APROBACION
+STATUS: FASES 0-4 EN PRODUCCION (2026-07-29) · FASE 5 PENDIENTE
+
+Desplegado el 2026-07-29: Fase 0 (commit 59e4d36), Fases 1-4 (commit ac28d19), migración 094
+aplicada, API y frontend reconstruidos. Verificación de la RLS del buzón hecha con sesiones
+simuladas en la base (solo lectura). Queda la Fase 5 (revisión móvil): la extensión de Chrome
+no respondía, y se desplegó por decisión del dueño del producto sin ese paso.
 Fecha: 2026-07-29
 Alcance: `/opt/pulse/app` en la VPS (producción)
 
