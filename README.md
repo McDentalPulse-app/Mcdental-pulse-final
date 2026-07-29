@@ -63,6 +63,232 @@ src/
 
 ## Changelog
 
+### 2026-07-28 · Chat rehecho, videollamadas propias, retención y respaldo externo
+
+> El día siguiente al corte. Primero salieron a la luz tres cosas que el corte había
+> roto en silencio, y después se construyó encima: mensajería nueva, servidor de vídeo
+> propio, borrado automático de adjuntos y la copia fuera del servidor.
+
+- **🔴 Todos los endpoints estaban caídos y no se veía.** `@supabase/supabase-js` exige
+  Node 22+ para tener WebSocket nativo; el contenedor corría Node 20, así que
+  `createClient()` reventaba dentro de `admin()` y con él los 12 endpoints: checar,
+  enrolar-rostro, enviar-mensaje, resolver y los dos cron. Desde fuera no se notaba —
+  solo aparecía en los logs.
+- **🔴 Realtime llevaba desde el corte sin funcionar.** La publicación
+  `supabase_realtime` tenía 7 tablas en Cloud y **ninguna** en la VPS. La campana de
+  notificaciones, asistencias, encuestas, avisos, comisiones y calendario habían dejado
+  de actualizarse solos. Una publicación es un objeto **de clúster**, no vive en ningún
+  esquema: por eso no apareció al comparar `public`. Reparada en la migración 085.
+- **🔴 Soporte TI había desaparecido para empleados y doctores.** Ideas de mejora debía
+  sustituirlo **solo** para gestión; se aplicó a los cinco roles, así que la plantilla
+  perdió un módulo que funciona a cambio de un marcador "en desarrollo". Había además una
+  tercera copia del rótulo escrita a mano en el menú de usuario, que habría seguido
+  desincronizada. Las categorías del header tampoco tenían icono: nuevo mapa
+  `GROUP_ICONS` con los 10 grupos en uso.
+- **🆕 El canal empleado ↔ psicóloga, rehecho en 6 fases (migraciones 085-089).**
+  Aspecto inspirado en los componentes Messaging de Untitled UI, reconstruidos a mano:
+  los originales son Pro, TypeScript sobre react-aria-components, y aquí el preflight de
+  Tailwind está desactivado a propósito.
+  1. Burbujas agrupadas por autor y tramo, separadores de día, doble check de leído y un
+     composer de verdad. De paso arregla un bug previo: la hora se sacaba partiendo la
+     cadena por un espacio, pero PostgREST devuelve ISO con `T`, así que se pintaba el
+     timestamp entero donde iba la hora.
+  2. Realtime, "escribiendo…" y presencia. La presencia va por canal **de pareja**: el
+     punto verde significa "tiene esta conversación abierta", no "está en la app".
+  3. Adjuntos (086): bucket privado y dos políticas. La de lectura necesita las dos
+     mitades porque el archivo se sube **antes** de que exista el mensaje. Verificado con
+     tres identidades reales: quien envía siempre lo ve, la destinataria solo después de
+     que exista el mensaje, y un tercero nunca.
+  4. Reacciones, respuestas y borrado para ambos lados (087-088). El borrado pasa por
+     endpoint y no por una política de UPDATE porque **la RLS no distingue columnas**:
+     permitir borrar permitiría también reescribir el texto sin dejar rastro.
+  5. Notas de voz. La onda se calcula de verdad con `AudioContext` al grabar; una onda
+     inventada sería mentir sobre el contenido. El micrófono se suelta siempre.
+  6. Vista previa de enlaces (089) con endurecimiento SSRF. La comprobación va **dentro
+     del lookup de la conexión**, no antes de llamar: validar primero y conectar después
+     deja la rendija del DNS rebinding. Verificado que quedan fuera `pulse-kong`,
+     `pulse-db`, `127.0.0.1`, `169.254.169.254`, los rangos privados, `::1`, `file://` y
+     `gopher://`, y que Wikipedia y GitHub sí funcionan.
+- **🆕 Videollamadas con servidor propio (migraciones 090-091).** Gestión convoca
+  reuniones eligiendo a quién invita; el personal las ve y responde. **Jitsi en la VPS**:
+  el vídeo de una sesión con la psicóloga no sale de la máquina, que es coherente con
+  haber salido de la nube. Quién puede entrar se decide en `api/reunion-token.js` y en
+  ningún otro sitio: Prosody exige JWT (`allow_empty_token=false`).
+  - **Las llamadas se cortaban cada 30-60 segundos.** La causa no era la red. El padre
+    pasaba `onSalir={() => …}` — una función nueva en cada render — y estaba en las
+    dependencias del efecto, así que **cualquier repintado destruía la videollamada** y
+    la volvía a montar. Los timeouts de ICE y el "reason: gone" de jicofo eran la
+    consecuencia, no la causa. Dos intentos de arreglo por la vía de los timeouts fueron
+    descartados antes de dar con esto. Confirmado con una llamada de 1 h 20 min sin caídas.
+  - **TURN configurado** (coturn) para las redes que bloquean UDP directo, con los ocho
+    rangos privados denegados: sin eso, el TURN se puede usar para alcanzar Postgres o
+    Kong desde fuera.
+- **🆕 Retención de adjuntos a 90 días (migración 092).** El canal con la psicóloga
+  acumulaba imágenes, documentos y notas de voz indefinidamente. Se va el **archivo**, no
+  el mensaje: el texto, las reacciones y las respuestas se quedan. Aviso a los 83 días a
+  **ambas partes** para que puedan descargarlo. La burbuja distingue "se eliminó por
+  antigüedad" de "mensaje eliminado" — sin esa marca, toda conversación vieja parecería
+  censurada. La purga **no puede tocar el texto**: sin esa condición en el trigger sería
+  una vía para reescribir lo que alguien dijo. Probado con mensajes fechados hacia atrás,
+  sin esperar 90 días.
+- **🆕 Respaldo fuera de la VPS (migración 093).** Hasta ahora el respaldo vivía en el
+  **mismo disco** que protege: cubría el error humano, no perder la máquina — y esa
+  máquina es el único sitio donde existe la clínica desde el corte. La oficina **tira**,
+  la VPS no empuja: si comprometieran el servidor, un respaldo de empuje regalaría una
+  credencial hacia la red interna de la clínica. Clave con comando forzado
+  (`rrsync -ro`), verificada: sin shell, sin pty, sin escritura, sin leer los `.env`, sin
+  salir del directorio con `..`. Verificación en tres capas y alarma por **silencio** —
+  el modo de fallo peligroso es la oficina apagada en vacaciones, que no genera ningún
+  error. *(Pendiente de instalar en la máquina de la oficina.)*
+  - **Hallazgo:** `pg_restore -l` **no detecta** un byte cambiado en mitad de los datos —
+    solo lee la tabla de contenidos de la cabecera. Lo caza el `sha256`. La comprobación
+    que se venía usando en `backup.sh` desde el principio verificaba menos de lo que
+    parecía.
+- **Cabeceras de seguridad recuperadas.** `vercel.json` mandaba `X-Frame-Options`,
+  `nosniff` y CSP; nginx no las replica y nadie las copió en el corte. Restauradas, con
+  la CSP en **Report-Only** hasta comprobar que no rompe nada.
+- **Infraestructura versionada** (`infra/`). El servidor de vídeo, los server blocks de
+  nginx, los cron y los scripts de respaldo vivían **solo** en la máquina. Los secretos no
+  entran: salen como `__NO_SE_VERSIONA__`, y el README documenta las **dos parejas que
+  tienen que coincidir** (`JWT_APP_SECRET`↔`JITSI_APP_SECRET`, `TURN_CREDENTIALS`↔
+  `static-auth-secret`); si se separan, el fallo aparece solo en las redes que usan TURN.
+
+### 2026-07-27 · Corte de producción: de Vercel + Supabase Cloud a la VPS
+
+> Estaba previsto para el martes y se adelantó a petición de la clínica. Se migraron los
+> datos del día para que el personal administrativo pudiera **marcar salida** esa misma
+> tarde en la versión nueva.
+
+- **Pulse dejó de depender de la nube.** Frontend, API y base de datos pasaron a
+  `mcdentalpulse.duckdns.org` sobre Docker en la VPS. Supabase autoalojado completo
+  (Kong, GoTrue, PostgREST, Realtime, Storage). Desde aquí, **esta base es la única copia
+  de la verdad**: ya no hay un Supabase Cloud detrás del que rescatar nada.
+- **Migrados**: 102 usuarios (con los 102 hashes de contraseña intactos, verificado por
+  comparación md5 — nadie tuvo que volver a registrarse), 1.636 filas en total y 234
+  archivos de storage, sin referencias rotas. Congelación por **redirección a la VPS**.
+- **Tres correcciones que el ensayo previo destapó**, cada una encontrada antes de tocar
+  producción: las columnas GENERATED no se pueden insertar; había que insertar **solo las
+  columnas presentes en Cloud** para que los `NOT NULL DEFAULT` se aplicaran; y los
+  nombres de archivo con espacios necesitaban `quote(ruta, safe="/")`.
+- **Las políticas RLS de Storage no se migraron con el esquema.** Cloud tenía 21 y la VPS
+  1, así que el checador fallaba al subir la selfie. La lección: comparar solo `public`
+  deja fuera `storage` y los objetos de clúster.
+- **`build-frontend.sh`, y por qué existe.** Una reconstrucción manual metió en el bundle
+  la URL **interna de Docker** (`http://pulse-kong:8000`) en vez de la pública, y el login
+  dejó de funcionar. Revertido en 726 ms. El script nuevo comprueba que el bundle apunte a
+  la URL pública y **aborta y revierte** si no. El frontend no se vuelve a construir a
+  mano.
+- **`migrar_de_cloud.py` no se puede volver a ejecutar.** Vacía 30 tablas y recarga desde
+  Cloud: correrlo ahora destruiría todo lo posterior al corte.
+
+### 2026-07-25 · Firma del autor en los avisos y control de versiones del árbol de la VPS
+
+- **🆕 Los avisos van firmados (migración 084).** El nombre del autor ya no sale de un
+  join a `usuarios`: la RLS de esa tabla solo deja a cada quien leer **su propia fila**,
+  así que al empleado le llegaba vacío y veía un guion. Ahora se copia en el propio aviso
+  con un trigger. El historial muestra el comunicado **completo** (antes recortado a 2
+  líneas) y firmado con nombre y rol. La espera del botón "De acuerdo" pasa a ser
+  configurable por admin (0-300 s) desde la propia pantalla.
+- **Primer control de versiones del código que corre en la VPS** (rama `vps-docker`).
+  Hasta entonces vivía como archivos sueltos, sin historial ni marcha atrás. Incluye
+  trabajo que no existía en el repo de producción: tabla estilo Untitled UI en
+  `/empleados` y `/usuarios`, slideout de detalle, `SortableTh`, `useBajaUsuario`,
+  `validacionUsuario` con tests, modal de alta/edición reescrito y archivar-en-vez-de-
+  borrar (migración 083).
+
+### 2026-07-24 · Rediseño Untitled UI, navegación en header y voz en el checador
+
+- **🔴 Faltaban 54 de 99 personas en diez pantallas.** `esEmpleadoActivo` pedía
+  `role === "empleado"` a secas; el rol `doctor` nació después y nunca se añadió, así que
+  los doctores desaparecían de Empleados, los tres dashboards, Reportes RH,
+  Reconocimientos, Descuentos, Mensajes, AI Engine y Seguimiento. En producción son 45
+  empleados + 54 doctores = **99 personas, y solo se veían 45**. Los datos y los permisos
+  estaban bien: era el filtro del cliente. Una línea (`ROLES_PLANTILLA`) arregla los 24
+  sitios que lo usan.
+- **🆕 Rediseño estilo Untitled UI.** En claro, superficies, textos y bordes pasan a ser
+  **neutros** en vez de teal-tintados; la marca queda solo como acento. Radios y sombras
+  más contenidos, cards planas. `PageHeader` (41 páginas) pierde el banner con gradiente y
+  aura animada. AdminDashboard baja de 8 a 4 secciones y PsicologaDashboard de 6 a 4:
+  fuera dos bloques que repetían los KPIs de arriba. Cuatro componentes nuevos que cubren
+  repetición real: `EmptyState`, `Tabs`, `FilterBar`, `DateRangePicker`. 308/308 tests.
+- **🆕 Navegación en header horizontal para escritorio.** El sidebar vertical se sustituye
+  en >768px por un header con las páginas agrupadas por categoría; en móvil sigue
+  exactamente igual. Buscador global de páginas por nombre (ignora mayúsculas y acentos).
+  Paridad verificada ítem a ítem: admin 20, psicóloga 27, RH 28, empleado 13, doctor 14.
+  *(Deuda conocida: `Sidebar.jsx` conserva su propia lista, así que hay dos sitios que
+  tocar al cambiar el menú.)*
+- **🆕 El checador habla (TTS).** Narra en voz alta lo que ya mostraba en pantalla, para
+  quien no está mirando el móvil mientras se encuadra: "acércate", "centra tu cara", "gira
+  despacio la cabeza hacia tu izquierda", y confirma: *"Entrada registrada a las 9:15, con
+  retardo"*. Web Speech API nativa — sin librerías, sin red, sin coste. Una sola autoridad
+  de voz para que no haya dos motores cancelándose. Botón 🔊/🔇, recordado. 318/318 tests.
+- **🆕 Bloqueo de salida el sábado sin encuesta (migración 082).** Regla decidida **en el
+  servidor** (`registrar_checada`): el sábado, si no hay fila de encuesta para la semana
+  ISO actual, no se puede marcar salida hasta contestarla. La entrada no se toca.
+- **🆕 Sucursales dinámicas** (se acabó el array fijo), **medallas de reconocimientos**
+  (SVG en línea, sin CDN), **eliminar archivo de expediente** (migración 081) y rediseño
+  de Vacaciones y Permisos manteniendo intacta la lógica de negocio.
+- **Fix:** el editor de avisos crasheaba al reconectarse (`Cannot read properties of null`)
+  porque el efecto de sincronización llamaba a `editor.getHTML()` con el editor a medio
+  destruir.
+
+### 2026-07-23 · Rol doctor, Comisiones, calendario de la clínica y avisos con formato
+
+- **🆕 Rol `doctor` (migraciones 072-073).** Enum nuevo y backfill de 54 dentistas; hereda
+  todo lo de empleado y suma menús propios. Se corrigieron seis filtros que los excluían.
+- **🆕 Comisiones (074).** Los doctores fotografían el recibo con la cámara —escáner
+  OpenCV que detecta bordes, recorta y endereza— y RH valida o rechaza con mensaje y
+  notificación. Tabla + bucket privado.
+- **🆕 Calendario de festivos e intercambio de días (075-077).** Festivos oficiales de
+  México 2026/2027, distinguiendo **no laborables** (rojo) de **conmemorativos que se
+  trabajan** (verde), y solicitud de intercambio de días con índice único por fecha destino
+  y aprobación de RH. Corregido el Día del Trabajo 2027: es el 1 de mayo por LFT, la fuente
+  lo tenía en el 30 de abril.
+- **🆕 Agenda de la clínica (078).** Módulo de eventos por hora con tres vistas (Mes,
+  Semana, Día), rejilla de horas, banda de "todo el día" y línea de "ahora". Festivos,
+  vacaciones, permisos e intercambios se superponen como eventos de todo el día.
+- **🆕 Avisos con texto enriquecido (080).** Negrita, cursiva, listas, títulos y enlaces
+  con TipTap. El cuerpo se guarda como HTML y se muestra **sanitizado** (DOMPurify). El
+  chunk del editor se carga aparte: no pesa a empleados ni doctores. El trigger de
+  notificaciones limpia el HTML a texto plano para la campana.
+- **🆕 RH y la psicóloga pueden auto-agendarse** sus vacaciones y permisos, ya aprobados
+  (079). Antes no tenían forma de registrar sus propios días de descanso.
+- **Migración de todos los iconos a Untitled UI** (`@untitledui/icons`, MIT). El
+  componente central `Icon` cambia la app entera desde un archivo.
+- **Consolidación de 4 endpoints en `/api/resolver`.** Vercel Hobby permite 12 funciones y
+  la feature nueva subió el total a 15. *(Restricción que dejó de aplicar con el corte a la
+  VPS cuatro días después.)*
+
+### 2026-07-22 · Color de marca personalizable
+
+- **🆕 Paleta generada en OKLCH** en vez de HSL: preserva la luminosidad perceptual al
+  rotar el tono, así el contraste AA se mantiene en todo el espectro — con HSL, el texto
+  sobre superficies de marca se volvía ilegible con amarillos y azules. El color se cachea
+  por dispositivo, así que **el login ya se pinta con el último color usado**, sin
+  parpadeo y sin depender de la sesión (migración 070).
+- **Fix (071): el empleado veía "no se puede aplicar el color".** `guardar_mi_color` hace
+  UPDATE de `color_acento`, pero el trigger anti-escalación de privilegios (migración 027)
+  restringe el self-update de un no-admin a solo `avatar_url` y lo abortaba. Se resolvió
+  con el mismo patrón que `mark_password_changed`: una señal local a la transacción que el
+  trigger exime, **sin reabrir el hueco** — el empleado no puede activar la señal por su
+  cuenta.
+
+### 2026-07-21 · Auto-cierre de jornada, filtros por estado y blindaje del push
+
+- **🆕 Auto-cierre de jornada (migración 069).** El cron diario cierra las entradas sin
+  salida de días pasados con la hora de **fin de turno**, no la del cron, marcadas con
+  origen `sistema` y una nota. El panel se cortó a partir del 21/07 para arrancar limpio
+  (se borraron 14 checadas y 306 permisos de prueba en producción).
+- **Las 6 tarjetas de estado ahora filtran** el detalle por empleado, con chip de filtro
+  activo.
+- **Checador disponible para RH y psicóloga**, que antes no podían marcar.
+- **Push, tres causas de raíz atacadas**: se auto-sincroniza la suscripción al cargar y en
+  cada despliegue (antes solo con un botón manual), se maneja `pushsubscriptionchange` en
+  el service worker (rotación del navegador) y se auto-sana por huella de la clave VAPID.
+  Modal obligatorio de activación, con salida solo para iPhone sin instalar.
+- **Fix:** el modal bloqueante de avisos no se cerraba (`duplicate key`) y bloqueaba
+  también al propio autor del aviso.
+
 ### 2026-07-18 · Avisos por sucursal · rediseño de Asistencia y Horarios · auditoría a11y
 
 > Sesión larga de UI + una feature de datos. Todo se probó contra el Supabase **local**
