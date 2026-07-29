@@ -63,7 +63,7 @@ export const addPermiso = async ({ empleadoId, fecha, fechaFin, hora, causa, mot
 };
 
 /**
- * Aprobar/rechazar pasa por el SERVIDOR (api/aprobar-permiso.js), no por un update directo.
+ * Aprobar/rechazar pasa por el SERVIDOR (api/resolver.js, rama `permiso`), no por un update directo.
  *
  * El motivo es el push: avisar al empleado exige la clave privada de VAPID, que vive solo en el
  * servidor. La actualización de la fila y el envío del aviso ocurren juntos, del lado seguro.

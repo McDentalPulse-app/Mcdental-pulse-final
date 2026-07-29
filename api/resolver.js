@@ -9,8 +9,19 @@ import { notificar } from "./_notificaciones.js";
  * que solo vive en el servidor). Despacha por `recurso`. Cada rama conserva su lógica original.
  */
 
-const GESTION = ["admin", "rh"];
-const GESTION_AMPLIA = ["admin", "rh", "psicologa"];
+// Quién puede resolver cualquiera de las cuatro solicitudes.
+//
+// La psicóloga entra el 2026-07-29. No es una ampliación de permisos: es la jefa de RH y el
+// frontend YA la trataba como quien aprueba (PsicologaLayout monta las mismas pantallas de RH
+// con los mismos manejadores, ver su comentario), pero aquí se había quedado fuera de dos de
+// las cuatro ramas. El resultado era absurdo: podía CREAR una vacación (la RLS de insert la
+// incluye desde la migración 079) y resolver comisiones e intercambios, pero al aprobar la
+// vacación de otra persona recibía un 403.
+//
+// Antes había DOS listas, idénticas salvo la psicóloga (GESTION y GESTION_AMPLIA), y era justo
+// la diferencia entre ellas la que causaba el fallo. Se unifican en una: con dos, cada rama
+// nueva obliga a acertar cuál toca, y acertar es opcional.
+const GESTION = ["admin", "rh", "psicologa"];
 
 const fmt = (f) =>
   new Date(`${f}T12:00:00`).toLocaleDateString("es-MX", { day: "numeric", month: "long" });
@@ -42,7 +53,7 @@ export default async function handler(req, res) {
 
 async function resolverVacacion(res, quien, supabase, id, estado, comentario) {
   if (!GESTION.includes(quien.role)) {
-    return res.status(403).json({ error: "Solo Recursos Humanos puede resolver una solicitud de vacaciones." });
+    return res.status(403).json({ error: "Solo gestión (RH, admin o psicóloga) puede resolver una solicitud de vacaciones." });
   }
   if (!id || !["aprobado", "rechazado"].includes(estado)) {
     return res.status(400).json({ error: "Faltan datos o el estado no es válido." });
@@ -75,7 +86,7 @@ async function resolverVacacion(res, quien, supabase, id, estado, comentario) {
 
 async function resolverPermiso(res, quien, supabase, id, estado, comentario) {
   if (!GESTION.includes(quien.role)) {
-    return res.status(403).json({ error: "Solo Recursos Humanos puede resolver un permiso." });
+    return res.status(403).json({ error: "Solo gestión (RH, admin o psicóloga) puede resolver un permiso." });
   }
   if (!id || !["aprobado", "rechazado"].includes(estado)) {
     return res.status(400).json({ error: "Faltan datos o el estado no es válido." });
@@ -107,8 +118,8 @@ async function resolverPermiso(res, quien, supabase, id, estado, comentario) {
 }
 
 async function resolverComision(res, quien, supabase, id, estado, comentario) {
-  if (!GESTION_AMPLIA.includes(quien.role)) {
-    return res.status(403).json({ error: "Solo Recursos Humanos puede revisar una comisión." });
+  if (!GESTION.includes(quien.role)) {
+    return res.status(403).json({ error: "Solo gestión (RH, admin o psicóloga) puede revisar una comisión." });
   }
   if (!id || !["valida", "invalida"].includes(estado)) {
     return res.status(400).json({ error: "Faltan datos o el estado no es válido." });
@@ -147,8 +158,8 @@ async function resolverComision(res, quien, supabase, id, estado, comentario) {
 }
 
 async function resolverIntercambio(res, quien, supabase, id, estado, comentario) {
-  if (!GESTION_AMPLIA.includes(quien.role)) {
-    return res.status(403).json({ error: "Solo Recursos Humanos puede resolver un intercambio." });
+  if (!GESTION.includes(quien.role)) {
+    return res.status(403).json({ error: "Solo gestión (RH, admin o psicóloga) puede resolver un intercambio." });
   }
   if (!id || !["aprobado", "rechazado"].includes(estado)) {
     return res.status(400).json({ error: "Faltan datos o el estado no es válido." });

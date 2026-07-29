@@ -55,8 +55,8 @@ export const addVacacion = async ({ empleadoId, fechaInicio, fechaFin, dias, mot
 };
 
 /**
- * Pasa por el SERVIDOR (api/aprobar-vacacion.js), no por un update directo: es lo que permite
- * avisar por push al empleado, con la clave privada de VAPID que solo vive ahí.
+ * Pasa por el SERVIDOR (api/resolver.js, rama `vacacion`), no por un update directo: es lo que
+ * permite avisar por push al empleado, con la clave privada de VAPID que solo vive ahí.
  */
 export const updateEstadoVacacion = async (id, estado, comentarioRH = "") => {
   const { data: sesion } = await supabase.auth.getSession();
