@@ -8,6 +8,7 @@ import LandingPage from "./components/landing/LandingPage";
 import Loader from './components/ui/Loader';
 import AvisoModal from "./components/avisos/AvisoModal";
 import ForzarNotificaciones from "./components/notificaciones/ForzarNotificaciones";
+import ModalActualizacion from "./components/actualizacion/ModalActualizacion";
 
 const AdminLayout = lazy(() => import("./components/layout/AdminLayout"));
 const PsicologaLayout = lazy(() => import("./components/layout/PsicologaLayout"));
@@ -74,6 +75,9 @@ export default function App() {
       {/* Empujón obligatorio para activar el push: se muestra a sí mismo solo si hace falta
           (permiso sin conceder), común a los 4 roles. */}
       <ForzarNotificaciones />
+      {/* Aviso obligatorio de versión nueva. Va aquí por lo mismo que AvisoModal: es el único
+          punto que comparten todos los roles, y se muestra o no según su propio estado. */}
+      <ModalActualizacion />
       <Suspense fallback={<Loader />}>
         <Routes>
           {user.role === 'admin' && (

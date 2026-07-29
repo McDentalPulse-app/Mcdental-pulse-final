@@ -72,8 +72,12 @@ export default async function handler(req, res) {
   if (errorAviso) {
     console.error("Error buscando adjuntos por caducar:", errorAviso);
   } else if (porCaducar?.length) {
+    // En el canal de Soporte TI (mig. 094) `para_id` es nulo: el destinatario es un buzón, no una
+    // persona. Sin este filtro se llamaría a notificar(null) por cada adjunto de soporte.
+    const partesDe = (m) => [m.de_id, m.para_id].filter(Boolean);
+
     // Los roles hacen falta para saber a qué ruta mandar a cada quien.
-    const ids = [...new Set(porCaducar.flatMap((m) => [m.de_id, m.para_id]))];
+    const ids = [...new Set(porCaducar.flatMap(partesDe))];
     const { data: personas } = await supabase.from("usuarios").select("id, role").in("id", ids);
     const rolDe = Object.fromEntries((personas || []).map((p) => [p.id, p.role]));
 
@@ -85,7 +89,7 @@ export default async function handler(req, res) {
           : `El archivo "${m.adjunto_nombre}"`;
 
       await Promise.all(
-        [m.de_id, m.para_id].map((quien) =>
+        partesDe(m).map((quien) =>
           notificar(quien, {
             tipo: "retencion",
             titulo: "Un archivo del chat se va a eliminar",

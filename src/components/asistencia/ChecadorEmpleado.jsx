@@ -9,6 +9,7 @@ import { useNotification } from "../../contexts/NotificationContext";
 import { obtenerUbicacion, textoUbicacion, evaluarUbicacion, textoCandado } from "../../utils/geo";
 import { useNavigate } from "react-router-dom";
 import { getDeviceId } from "../../utils/dispositivo";
+import { marcarChecadaEnCurso } from "../../utils/actualizacion";
 import { getMiRostro } from "../../services/supabase/rostrosService";
 import { getSucursales } from "../../services/supabase/sucursalesService";
 import { pedirReto } from "../../services/supabase/asistenciasService";
@@ -141,6 +142,15 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
   // La cámara NO se abre al entrar a la pantalla: solo cuando la persona pulsa "Registrar
   // entrada/salida". Así no hay una cámara encendida "por si acaso" mientras nadie va a checar.
   const [capturando, setCapturando] = useState(false);
+
+  // Mientras se está checando, el aviso obligatorio de versión nueva espera su turno: un overlay
+  // encima de la cámara dejaría a la persona sin poder marcar. Se libera al cerrar la cámara y
+  // también al salir de la pantalla, que es lo que hace el cleanup — si no, un aviso pendiente
+  // se quedaría bloqueado para siempre por una checada que ya no existe.
+  useEffect(() => {
+    marcarChecadaEnCurso(capturando || enviando);
+    return () => marcarChecadaEnCurso(false);
+  }, [capturando, enviando]);
 
   // Narración por voz: guía a quien no mira la pantalla mientras se encuadra, y confirma la
   // checada en voz alta. Encendida por defecto; la preferencia se recuerda. El checador es el

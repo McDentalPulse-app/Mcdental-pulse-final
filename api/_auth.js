@@ -46,7 +46,9 @@ export const quienLlama = async (req) => {
 
   const { data: perfil } = await admin()
     .from("usuarios")
-    .select("id, name, role, inactivo")
+    // `soporte_ti` (mig. 094) viaja aquí porque es un permiso, igual que el rol: quien atiende el
+    // canal de Soporte TI puede contestarle a un empleado, algo que su rol (`empleado`) no permite.
+    .select("id, name, role, inactivo, soporte_ti")
     .eq("auth_user_id", user.id)
     .single();
 

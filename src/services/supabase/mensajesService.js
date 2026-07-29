@@ -15,6 +15,9 @@ const mapMensaje = (row) => ({
   id: row.id,
   de: row.de_id,
   para: row.para_id,
+  // 'psicologa' | 'soporte' (mig. 094). Las filas anteriores a esa migración quedaron con el
+  // default 'psicologa', así que aquí nunca llega vacío; el ?? es por si el select no lo trae.
+  canal: row.canal ?? "psicologa",
   texto: row.texto,
   leido: row.leido,
   fecha: row.fecha,
@@ -139,7 +142,7 @@ export const getMensajes = async () => {
  * Pasa por el SERVIDOR (api/enviar-mensaje.js), no por un insert directo: es lo que permite
  * avisar por push a quien recibe el mensaje, con la clave privada de VAPID que solo vive ahí.
  */
-export const sendMensaje = async ({ para, texto, fecha, adjunto, respondeA }) => {
+export const sendMensaje = async ({ para, texto, fecha, adjunto, respondeA, canal }) => {
   const { data: sesion } = await supabase.auth.getSession();
   const token = sesion?.session?.access_token;
   if (!token) throw new Error("Tu sesión expiró. Vuelve a entrar.");
@@ -149,7 +152,9 @@ export const sendMensaje = async ({ para, texto, fecha, adjunto, respondeA }) =>
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     // El archivo ya está en el storage cuando esto se llama: aquí solo viaja su ruta y su
     // metadata, nunca los bytes. El servidor comprueba que la ruta sea de quien la manda.
-    body: JSON.stringify({ paraId: para, texto, fecha, adjunto, respondeA }),
+    // `paraId` va nulo cuando el empleado escribe al buzón de Soporte TI: ahí el destinatario no
+    // es una persona. El servidor lo admite solo en ese canal.
+    body: JSON.stringify({ paraId: para || null, texto, fecha, adjunto, respondeA, canal }),
   });
 
   const cuerpo = await r.json().catch(() => ({}));

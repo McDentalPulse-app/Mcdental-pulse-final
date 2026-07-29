@@ -10846,6 +10846,17 @@
 .topnav-user-name { font-size: 13px; font-weight: 600; color: var(--mc-texto-titulo); }
 .topnav-user-role { font-size: 11px; color: var(--mc-texto-secundario); text-transform: capitalize; }
 
+/* Botón permanente de Mensajes. Vive en la zona derecha del header, NO en la barra de enlaces:
+   esa se oculta entera por debajo de 1100 px, y Mensajes tiene que verse justo ahí, en el
+   celular, que es donde la plantilla lo usa. Mismo tamaño que la hamburguesa y que
+   .topnav-icon-btn para que los tres se alineen. */
+.topnav-mensajes { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: none; width: 38px; height: 38px; border: 1px solid var(--mc-borde-suave); border-radius: 9px; background: var(--mc-superficie); color: var(--mc-texto-secundario); cursor: pointer; }
+.topnav-mensajes:hover { background: var(--mc-superficie-sutil); color: var(--mc-texto-titulo); }
+.topnav-mensajes--activo { color: var(--mc-aqua); background: var(--mc-brand-suave); }
+/* Mismos valores que .campana-badge: los dos contadores viven pegados y cualquier diferencia
+   de tamaño o color se nota como un descuido. */
+.topnav-mensajes-badge { position: absolute; top: -4px; right: -4px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--mc-rojo-apagado); color: var(--mc-blanco); font-size: 10px; font-weight: 800; line-height: 17px; text-align: center; }
+
 .topnav-hamburguesa { display: none; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 38px; height: 38px; border: 1px solid var(--mc-borde-suave); border-radius: 9px; background: var(--mc-superficie); cursor: pointer; }
 .topnav-hamburguesa span { width: 18px; height: 2px; background: var(--mc-texto-titulo); border-radius: 2px; }
 

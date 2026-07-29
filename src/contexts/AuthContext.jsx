@@ -25,6 +25,9 @@ const mapUsuarioRow = (row) =>
     fechaCumpleanos: row.fecha_cumpleanos,
     fechaNacimiento: row.fecha_nacimiento,
     inactivo: row.inactivo,
+    // Atiende el buzón de Soporte TI (mig. 094). Es un permiso aparte del rol: quienes lo tienen
+    // son rol `empleado`, así que sin este campo la app no podría distinguirlos.
+    soporteTi: !!row.soporte_ti,
     debeCambiarPassword: row.debe_cambiar_password,
     avatarUrl: row.avatar_url,
     colorAcento: row.color_acento,

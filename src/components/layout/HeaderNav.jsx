@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { useGlobal } from "../../contexts/GlobalContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { notify } from "../../utils/notify";
 import { NAV_ITEMS, GROUP_ICONS, agruparPorCampo } from "../../config/navItems";
@@ -15,6 +16,7 @@ import CampanaNotificaciones from "../notificaciones/CampanaNotificaciones";
 // usuario (derecha). En móvil, un botón hamburguesa abre el panel con todo agrupado.
 export default function HeaderNav() {
   const { user, logout } = useAuth();
+  const { mensajes } = useGlobal();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -25,13 +27,26 @@ export default function HeaderNav() {
   const navRef = useRef(null);
 
   const items = NAV_ITEMS[user?.role] || [];
-  const sueltos = items.filter((i) => !i.group);
+  // Mensajes se saca de la barra y del panel móvil: lo representa SOLO el botón permanente de
+  // la derecha (junto a la campana). Pintarlo también como enlace daría dos entradas para lo
+  // mismo en escritorio, y el icono con badge se reconoce mejor que un enlace de texto —
+  // además de ser lo único que sigue visible por debajo de 1100 px, donde la barra se oculta.
+  const esMensajes = (i) => i.key === "mensajes";
+  const sueltos = items.filter((i) => !i.group && !esMensajes(i));
   const gruposBarra = agruparPorCampo(items.filter((i) => i.group && i.group !== "Cuenta"));
   const cuenta = items.filter((i) => i.group === "Cuenta");
+  const tieneMensajes = items.some(esMensajes);
+
+  // Admin y RH no ven el chat: Mensajes.jsx les abre directamente Reuniones. Contarles "no
+  // leídos" ahí sería señalar una conversación que no pueden atender.
+  const veChat = ["psicologa", "empleado", "doctor"].includes(user?.role);
+  const noLeidos = veChat
+    ? (mensajes || []).filter((m) => m.para === user?.id && !m.leido && !m.eliminado).length
+    : 0;
   // El menu del usuario tambien ofrece soporte: el rotulo sale del item, no fijo, porque
   // segun el rol es "Soporte TI" (empleado/doctor) o "Ideas de mejora" (gestion).
   const soporte = items.find((i) => i.key === "soporte");
-  const gruposMovil = agruparPorCampo(items.filter((i) => i.group !== "Cuenta"));
+  const gruposMovil = agruparPorCampo(items.filter((i) => i.group !== "Cuenta" && !esMensajes(i)));
 
   // Cerrar dropdown al hacer clic fuera.
   useEffect(() => {
@@ -107,6 +122,21 @@ export default function HeaderNav() {
 
         <div className="topnav-right">
           <BuscadorGlobal />
+
+          {tieneMensajes && (
+            <button
+              type="button"
+              className={`topnav-mensajes${active === "mensajes" ? " topnav-mensajes--activo" : ""}`}
+              onClick={() => ir("mensajes")}
+              title="Mensajes"
+              aria-label={noLeidos ? `Mensajes, ${noLeidos} sin leer` : "Mensajes"}
+            >
+              <Icon name="message" size={19} />
+              {noLeidos > 0 && (
+                <span className="topnav-mensajes-badge">{noLeidos > 9 ? "9+" : noLeidos}</span>
+              )}
+            </button>
+          )}
 
           <CampanaNotificaciones user={user} />
 

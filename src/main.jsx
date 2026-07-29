@@ -2,8 +2,7 @@ import React, { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { registerSW } from 'virtual:pwa-register'
-import { notify } from './utils/notify'
-import { buscarActualizacion } from './utils/appUpdate'
+import { marcarVersionNueva } from './utils/actualizacion'
 import { sincronizarSuscripcion } from './services/pushService'
 import './index.css'
 import './App.css'
@@ -82,20 +81,17 @@ if ('serviceWorker' in navigator) {
 
   // sw.js ya se activa solo (skipWaiting + clientsClaim): el navegador pasa el control al SW
   // nuevo sin pedir permiso. Pero el JS que la pestaña ya tiene cargado en memoria sigue siendo
-  // el viejo hasta que se recarga. 'controllerchange' es exactamente el momento del relevo —
-  // ahí se avisa con un toast, en vez de recargar solo y cortarle a alguien una foto a medias.
-  let avisado = false
+  // el viejo hasta que se recarga. 'controllerchange' es exactamente el momento del relevo.
+  //
+  // Aquí solo se MARCA que hay versión nueva; quien decide cuándo se ve es ModalActualizacion,
+  // porque tiene que esperar si hay una checada en curso. Hasta el 2026-07-29 esto lanzaba un
+  // toast descartable, y descartable significa que medio mundo se quedaba en la versión vieja.
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     // Un SW nuevo tomó el control: casi siempre es un deploy, el momento donde la clave VAPID
     // pudo cambiar. Se re-sincroniza la suscripción SOLA (silenciosa, no pide permiso), que es
     // justo lo que antes solo pasaba si alguien pulsaba "Buscar actualización" a mano.
     sincronizarSuscripcion().catch(() => {})
-    if (avisado) return
-    avisado = true
-    notify.toast.update('Hay una versión nueva de la app.', {
-      label: 'Actualizar',
-      onClick: () => buscarActualizacion(),
-    })
+    marcarVersionNueva()
   })
 
   // Un PWA en el celular casi nunca navega ni se cierra del todo, así que el navegador no

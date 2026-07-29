@@ -1,5 +1,4 @@
 import React from 'react';
-import { useGlobal } from "../../contexts/GlobalContext";
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Navegacion from './Navegacion';
 import InicioEmpleado from '../empleados/InicioEmpleado';
@@ -16,17 +15,18 @@ import Perfil from '../common/Perfil';
 import AvisosPanel from '../avisos/AvisosPanel';
 import CalendarioIntercambio from '../calendario/CalendarioIntercambio';
 
-import { getPsicologaPrincipal } from '../../utils/psicologa';
 
 export default function EmpleadoLayout({ user, globals, actions }) {
-  const { usuarios: USERS } = useGlobal();
-
   const { encuestas, mensajes, vacaciones, permisos, reconocimientos, checadasHoy, horarios, avisos, festivos, intercambios, destinosOcupados } = globals;
   const { addEncuesta, sendMensaje, addSolicitudEmpleadoRH, addReporteConfidencial, marcarMensajesLeidos, registrarChecada, solicitarIntercambio } = actions;
   const navigate = useNavigate();
 
-  const userMensajes = mensajes.filter((m) => m.de === user?.id || m.para === user?.id);
-  const psicologaId = getPsicologaPrincipal(USERS)?.id || null;
+  // Quien atiende Soporte TI necesita TODO el canal de soporte, incluido lo que otros empleados
+  // mandaron al buzón: esos mensajes no van dirigidos a él (`para` es nulo), así que sin esta
+  // tercera condición la RLS se los entregaría y este filtro los tiraría justo después.
+  const userMensajes = mensajes.filter(
+    (m) => m.de === user?.id || m.para === user?.id || (user?.soporteTi && m.canal === "soporte"),
+  );
 
   return (
     <div className="app-shell">
@@ -44,7 +44,10 @@ export default function EmpleadoLayout({ user, globals, actions }) {
             <Route path="reconocimientos" element={<ReconocimientosEmpleado user={user} reconocimientos={reconocimientos} />} />
             <Route path="reporteconfidencial" element={<ReporteConfidencialEmpleado user={user} onSubmit={addReporteConfidencial} />} />
             <Route path="soporte" element={<SoporteTI />} />
-            <Route path="mensajes" element={<Mensajes user={user} mensajes={userMensajes} onSend={(msg)=>sendMensaje({...msg,para:psicologaId})} onMarkRead={marcarMensajesLeidos}/>} />
+            {/* El destinatario ya NO se fuerza aquí: desde el canal de Soporte TI (mig. 094) hay
+                dos conversaciones y solo Mensajes sabe cuál está abierta — en la de soporte va
+                sin destinatario, porque el buzón no es una persona. */}
+            <Route path="mensajes" element={<Mensajes user={user} mensajes={userMensajes} onSend={sendMensaje} onMarkRead={marcarMensajesLeidos}/>} />
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} />} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="inicio" replace />} />
