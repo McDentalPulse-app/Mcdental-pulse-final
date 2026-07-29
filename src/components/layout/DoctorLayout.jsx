@@ -54,7 +54,7 @@ export default function DoctorLayout({ user, globals, actions }) {
             <Route path="mensajes" element={<Mensajes user={user} mensajes={userMensajes} onSend={sendMensaje} onMarkRead={marcarMensajesLeidos}/>} />
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} />} />
             <Route path="perfil" element={<Perfil />} />
-            <Route path="*" element={<Navigate to="inicio" replace />} />
+            <Route path="*" element={<Navigate to="/doctor/inicio" replace />} />
           </Routes>
         </div>
       </main>

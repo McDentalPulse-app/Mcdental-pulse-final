@@ -74,7 +74,7 @@ export default function PsicologaLayout({ user, globals, actions }) {
             <Route path="soporte" element={<IdeasMejora />} />
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} />} />
             <Route path="perfil" element={<Perfil />} />
-            <Route path="*" element={<Navigate to="dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/psicologa/dashboard" replace />} />
           </Routes>
         </div>
       </main>

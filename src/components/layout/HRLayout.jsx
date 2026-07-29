@@ -80,7 +80,7 @@ export default function HRLayout({ user, globals, actions }) {
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} />} />
             <Route path="mensajes" element={<Mensajes user={user} mensajes={[]} onSend={() => false} />} />
             <Route path="perfil" element={<Perfil />} />
-            <Route path="*" element={<Navigate to="dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/rh/dashboard" replace />} />
           </Routes>
         </div>
       </main>
