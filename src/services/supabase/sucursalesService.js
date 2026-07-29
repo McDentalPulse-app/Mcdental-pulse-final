@@ -79,3 +79,56 @@ export const updateGeocercaSucursal = async ({ id, lat, lng, radioM }) => {
   }
   return mapSucursal(data);
 };
+
+/**
+ * Borra una sucursal, pero solo si no queda nada colgando de ella.
+ *
+ * Hacen falta dos comprobaciones distintas porque las dos referencias son distintas:
+ *  · `asistencias.sucursal_id` es una FK de verdad, así que Postgres frena el borrado él
+ *    solo y devuelve 23503. Se traduce a un mensaje entendible.
+ *  · `usuarios.sucursal` es TEXTO con el nombre, sin FK. Nadie frena nada: borrar dejaría
+ *    a esos empleados apuntando a una sucursal que ya no existe, y sin aviso. Por eso se
+ *    cuenta antes y se aborta.
+ */
+export const eliminarSucursal = async ({ id, nombre }) => {
+  const { count: empleados, error: errorConteo } = await supabase
+    .from("usuarios")
+    .select("id", { count: "exact", head: true })
+    .eq("sucursal", nombre);
+
+  if (errorConteo) {
+    console.error("Error comprobando empleados de la sucursal:", errorConteo);
+    throw new Error("No se pudo comprobar si la sucursal tiene empleados.");
+  }
+
+  if (empleados > 0) {
+    throw new Error(
+      empleados === 1
+        ? "Hay 1 empleado asignado a esta sucursal. Muévelo a otra antes de eliminarla."
+        : `Hay ${empleados} empleados asignados a esta sucursal. Muévelos a otra antes de eliminarla.`,
+    );
+  }
+
+  // El .select() no es decorativo: sin él, un delete que RLS deja en cero filas vuelve
+  // SIN error, y la app cantaría "eliminada" sin haber borrado nada. Con él se puede
+  // distinguir "borrada" de "no me dejaron".
+  const { data: borradas, error } = await supabase
+    .from("sucursales")
+    .delete()
+    .eq("id", id)
+    .select("id");
+
+  if (error) {
+    // 23503 = FK violada: hay checadas registradas en esta sucursal. No se pueden perder,
+    // son el respaldo de la asistencia, así que la sucursal se queda.
+    if (error.code === "23503") {
+      throw new Error("Esta sucursal ya tiene checadas registradas y no se puede eliminar.");
+    }
+    console.error("Error eliminando la sucursal:", error);
+    throw new Error("No se pudo eliminar la sucursal.");
+  }
+
+  if (!borradas?.length) {
+    throw new Error("No tienes permiso para eliminar sucursales.");
+  }
+};

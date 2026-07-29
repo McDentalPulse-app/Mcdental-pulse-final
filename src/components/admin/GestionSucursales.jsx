@@ -3,7 +3,7 @@ import PageHeader from "../common/PageHeader";
 import Card from "../common/Card";
 import Icon from "../ui/Icon";
 import { useNotification } from "../../contexts/NotificationContext";
-import { getSucursales, updateGeocercaSucursal, crearSucursal } from "../../services/supabase/sucursalesService";
+import { getSucursales, updateGeocercaSucursal, crearSucursal, eliminarSucursal } from "../../services/supabase/sucursalesService";
 import { obtenerUbicacion } from "../../utils/geo";
 import { useGlobal } from "../../contexts/GlobalContext";
 
@@ -20,7 +20,7 @@ import { useGlobal } from "../../contexts/GlobalContext";
  * clínica por clínica.
  */
 export default function GestionSucursales() {
-  const { toast } = useNotification();
+  const { toast, confirm } = useNotification();
   // El estado global también guarda las sucursales (alimenta los desplegables de toda la app):
   // al crear una nueva hay que refrescar AMBAS listas para que aparezca al instante en los selects.
   const { setSucursales: setSucursalesGlobal } = useGlobal();
@@ -29,6 +29,7 @@ export default function GestionSucursales() {
   const [guardando, setGuardando] = useState(null); // id de la sucursal en curso
   const [nuevoNombre, setNuevoNombre] = useState("");
   const [creando, setCreando] = useState(false);
+  const [borrando, setBorrando] = useState(null); // id de la sucursal que se está eliminando
 
   const agregar = async () => {
     const nombre = nuevoNombre.trim();
@@ -56,6 +57,31 @@ export default function GestionSucursales() {
       .finally(() => { if (activo) setCargando(false); });
     return () => { activo = false; };
   }, [toast]);
+
+  // El borrado es de verdad (no un archivado), así que la confirmación nombra la clínica y
+  // el servicio aborta si quedan empleados o checadas colgando de ella.
+  const eliminar = async (sucursal) => {
+    const confirmar = await confirm({
+      title: "Eliminar sucursal",
+      description: `¿Deseas eliminar "${sucursal.nombre}"? Esta acción no se puede deshacer.`,
+      variant: "danger",
+      confirmText: "Eliminar",
+    });
+    if (!confirmar) return;
+
+    setBorrando(sucursal.id);
+    try {
+      await eliminarSucursal({ id: sucursal.id, nombre: sucursal.nombre });
+      const sinElla = (lista) => lista.filter((s) => s.id !== sucursal.id);
+      setSucursales(sinElla);
+      setSucursalesGlobal(sinElla);
+      toast.success(`Sucursal "${sucursal.nombre}" eliminada.`);
+    } catch (e) {
+      toast.error(e?.message || "No se pudo eliminar la sucursal.");
+    } finally {
+      setBorrando(null);
+    }
+  };
 
   const usarMiUbicacion = async (sucursal) => {
     setGuardando(sucursal.id);
@@ -188,6 +214,14 @@ export default function GestionSucursales() {
                 >
                   <Icon name="mapPin" size={15} />
                   {guardando === s.id ? "Obteniendo…" : "Usar mi ubicación actual"}
+                </button>
+                <button
+                  type="button"
+                  className="mc-btn-outline mc-btn-outline--danger"
+                  onClick={() => eliminar(s)}
+                  disabled={borrando === s.id}
+                >
+                  {borrando === s.id ? "Eliminando…" : "Eliminar"}
                 </button>
               </div>
             </div>
