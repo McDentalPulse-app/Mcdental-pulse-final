@@ -1,0 +1,9 @@
+# Retencion de los adjuntos del chat empleado <-> psicologa: 90 dias, con aviso a
+# los 83. El servidor va en UTC: 09:51 UTC = 03:51 en Tampico, con las clinicas
+# cerradas.
+#
+# Minuto 51 y hora propia para no empatar con lo demas que ya corre: respaldo de
+# Pulse (08:43), respaldo de dentra (09:17) y los dos cron de la app (04:17, 13:00).
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+51 9 * * * root curl -sS -X POST -H "Authorization: Bearer __NO_SE_VERSIONA__" http://127.0.0.1:3001/api/limpiar-adjuntos >> /var/log/pulse-retencion.log 2>&1

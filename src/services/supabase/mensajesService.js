@@ -21,6 +21,7 @@ const mapMensaje = (row) => ({
   respondeA: row.responde_a || null,
   enlace: row.enlace || null,
   eliminado: !!row.eliminado_en,
+  adjuntoPurgado: !!row.adjunto_purgado,
   adjunto: row.adjunto_path
     ? {
         path: row.adjunto_path,

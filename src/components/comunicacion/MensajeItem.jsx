@@ -87,6 +87,15 @@ const MensajeItem = ({
                     <span className="chat-cita-texto">{citado.extracto}</span>
                   </div>
                 )}
+                {/* Purgado por retención: NO es lo mismo que eliminado por alguien, y la
+                    diferencia importa. Sin este aviso, un mensaje al que le falta el archivo
+                    parecería que alguien lo borró a propósito. */}
+                {mensaje.adjuntoPurgado && (
+                  <div className="chat-adjunto chat-adjunto--purgado">
+                    <Icon name="clock" size={15} />
+                    <span>El archivo se eliminó por antigüedad (90 días).</span>
+                  </div>
+                )}
                 {mensaje.adjunto && (
                   (mensaje.adjunto.mime || "").startsWith("audio/")
                     ? <AudioMensaje adjunto={mensaje.adjunto} />

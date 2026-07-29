@@ -11994,3 +11994,12 @@
   .reunion-item-cabecera { flex-direction: column; align-items: stretch; }
   .reunion-item-respuesta { flex-wrap: wrap; }
 }
+
+/* Adjunto que caducó por retención. Se distingue del resto: no es un archivo que
+   se pueda abrir, es la constancia de que hubo uno. */
+.chat-adjunto--purgado {
+  border-style: dashed;
+  color: var(--mc-texto-secundario);
+  font-size: 13px;
+  cursor: default;
+}
