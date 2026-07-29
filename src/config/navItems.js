@@ -127,6 +127,28 @@ export const NAV_ITEMS = {
   ],
 };
 
+/**
+ * Los 4 ítems que van en la barra inferior del teléfono; el resto cae en la hoja "Más".
+ *
+ * Se declara APARTE del orden de NAV_ITEMS porque las dos cosas responden a preguntas distintas:
+ * NAV_ITEMS ordena y agrupa un menú que se lee, y esto elige los cuatro accesos que se usan sin
+ * mirar. Antes esta información era "los 4 primeros del arreglo", y estaba en una copia entera de
+ * los menús escrita a mano dentro de Sidebar.jsx: por eso el 2026-07-29 los grupos nuevos y
+ * Mensajes llegaron al escritorio y NO al teléfono. Con una sola fuente, eso no puede repetirse.
+ *
+ * `mensajes` no está en ninguna: en el teléfono es el botón flotante junto a la campana, y en
+ * escritorio el botón del header. Está siempre a la vista, así que no gasta un hueco aquí.
+ */
+export const TABS_MOVIL = {
+  admin: ["dashboard", "ai", "empleados", "usuarios"],
+  psicologa: ["dashboard", "checador", "ai", "seguimiento"],
+  rh: ["dashboard", "checador", "usuarios", "empleados"],
+  // El checador va en la posición 2 a propósito: es lo único de la lista que se usa todos los
+  // días, dos veces.
+  empleado: ["inicio", "checador", "encuesta", "historial"],
+  doctor: ["inicio", "checador", "comisiones", "encuesta"],
+};
+
 // Icono de cada categoría, para el desplegable del header. Vive aquí y no en cada ítem porque
 // el grupo es solo una cadena repetida en los ítems: sin este mapa, la barra tendría que
 // adivinar un icono a partir del texto.

@@ -7,6 +7,7 @@ import { notify } from "../../utils/notify";
 import logoSmall from "../../assets/logos/logo-small.png";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
+import { NAV_ITEMS, TABS_MOVIL, agruparPorCampo } from "../../config/navItems";
 import "./Sidebar.css";
 
 const RAIL_KEY = "mcdental_sidebar_rail";
@@ -53,163 +54,28 @@ const Sidebar = () => {
     document.querySelector(".app-main")?.scrollTo({ top: 0 });
   }, [location.pathname]);
 
-  // `group` solo se usa en móvil (la hoja "Más"): agrupa los ítems que no caben en la
-  // tabbar de 4 para que no sea una lista plana de 15-20 botones. El desktop lo ignora.
-  const navItems = {
-    admin: [
-      { key: "dashboard", icon: "dashboard", label: "Dashboard" },
-      { key: "ai", icon: "ai", label: "AI Engine", group: "Herramientas" },
-      { key: "empleados", icon: "users", label: "Empleados" },
-      { key: "usuarios", icon: "userCog", label: "Gestión de Personal" },
-      { key: "asistencia", icon: "clock", label: "Asistencia", group: "Asistencia y rostros" },
-      { key: "sucursales", icon: "mapPin", label: "Sucursales", group: "Asistencia y rostros" },
-      { key: "horarios", icon: "calendarDays", label: "Horarios", group: "Asistencia y rostros" },
-      { key: "rostros", icon: "camera", label: "Rostros", group: "Asistencia y rostros" },
-      { key: "expedientes", icon: "folder", label: "Expedientes", group: "Equipo" },
-      { key: "reconocimientos", icon: "award", label: "Reconocimientos", group: "Equipo" },
-      { key: "eventospersonal", icon: "cake", label: "Cumpleaños y Aniversarios", group: "Equipo" },
-      { key: "encuestas", icon: "clipboard", label: "Encuestas", group: "Encuestas y reportes" },
-      { key: "reportes", icon: "trending", label: "Reportes", group: "Encuestas y reportes" },
-      { key: "confidenciales", icon: "lock", label: "Reportes Confidenciales", group: "Encuestas y reportes" },
-      { key: "config", icon: "settings", label: "Config", group: "Herramientas" },
-      { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
-      { key: "mensajes", icon: "message", label: "Mensajes", group: "Herramientas" },
-      { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
-      { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
-    ],
-    // psicologa tiene paridad admin: conserva Seguimiento y Mensajes (lo suyo) y suma
-    // el resto de opciones del admin.
-    psicologa: [
-      { key: "dashboard", icon: "dashboard", label: "Dashboard" },
-      // La psicóloga también marca su asistencia: el checador va arriba, a la vista.
-      { key: "checador", icon: "clock", label: "Checador" },
-      { key: "ai", icon: "ai", label: "AI Engine" },
-      { key: "seguimiento", icon: "target", label: "Seguimiento" },
-      { key: "confidenciales", icon: "lock", label: "Reportes Confidenciales" },
-      // La psicóloga es jefa de RH: tiene también los paneles de RH (aprobar permisos/vacaciones).
-      { key: "vacaciones", icon: "vacation", label: "Vacaciones", group: "Vacaciones y permisos" },
-      { key: "permisos", icon: "clipboardCheck", label: "Permisos", group: "Vacaciones y permisos" },
-      { key: "mispermisos", icon: "vacation", label: "Mis vacaciones/permisos", group: "Vacaciones y permisos" },
-      { key: "comisiones", icon: "dollar", label: "Comisiones", group: "Vacaciones y permisos" },
-      { key: "empleados", icon: "users", label: "Empleados", group: "Equipo" },
-      { key: "usuarios", icon: "userCog", label: "Gestión de Personal", group: "Equipo" },
-      { key: "asistencia", icon: "clock", label: "Asistencia", group: "Asistencia y rostros" },
-      { key: "sucursales", icon: "mapPin", label: "Sucursales", group: "Asistencia y rostros" },
-      { key: "horarios", icon: "calendarDays", label: "Horarios", group: "Asistencia y rostros" },
-      { key: "importar-horarios", icon: "file", label: "Importar horarios", group: "Asistencia y rostros" },
-      { key: "calibracion", icon: "shield", label: "Calibración del cotejo", group: "Asistencia y rostros" },
-      { key: "rostros", icon: "camera", label: "Rostros", group: "Asistencia y rostros" },
-      { key: "expedientes", icon: "folder", label: "Expedientes", group: "Equipo" },
-      { key: "reconocimientos", icon: "award", label: "Reconocimientos", group: "Equipo" },
-      { key: "eventospersonal", icon: "cake", label: "Cumpleaños y Aniversarios", group: "Equipo" },
-      { key: "encuestas", icon: "clipboard", label: "Encuestas", group: "Encuestas y reportes" },
-      { key: "reportes", icon: "trending", label: "Reportes", group: "Encuestas y reportes" },
-      { key: "config", icon: "settings", label: "Config", group: "Herramientas" },
-      { key: "mensajes", icon: "message", label: "Mensajes", group: "Herramientas" },
-      { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
-      { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
-      { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
-    ],
-    // rh tiene paridad admin: conserva sus vistas propias (Vacaciones, Permisos,
-    // Descuentos, Calendario, Reportes RH, Bolsa) y suma las opciones del admin.
-    rh: [
-      { key: "dashboard", icon: "dashboard", label: "Dashboard RH" },
-      // RH también marca su asistencia: el checador va arriba, a la vista.
-      { key: "checador", icon: "clock", label: "Checador" },
-      { key: "usuarios", icon: "userCog", label: "Gestión de Personal" },
-      { key: "empleados", icon: "users", label: "Empleados" },
-      { key: "ai", icon: "ai", label: "AI Engine", group: "Herramientas" },
-      { key: "vacaciones", icon: "vacation", label: "Vacaciones", group: "Vacaciones y permisos" },
-      { key: "permisos", icon: "clipboardCheck", label: "Permisos", group: "Vacaciones y permisos" },
-      { key: "mispermisos", icon: "vacation", label: "Mis vacaciones/permisos", group: "Vacaciones y permisos" },
-      { key: "asistencia", icon: "clock", label: "Asistencia", group: "Asistencia y rostros" },
-      { key: "horarios", icon: "calendarDays", label: "Horarios", group: "Asistencia y rostros" },
-      { key: "calibracion", icon: "shield", label: "Calibración del cotejo", group: "Asistencia y rostros" },
-      { key: "rostros", icon: "camera", label: "Rostros", group: "Asistencia y rostros" },
-      { key: "sucursales", icon: "mapPin", label: "Sucursales", group: "Asistencia y rostros" },
-      { key: "descuentos", icon: "dollar", label: "Descuentos", group: "RH" },
-      { key: "comisiones", icon: "dollar", label: "Comisiones", group: "RH" },
-      { key: "calendario", icon: "calendar", label: "Calendario", group: "RH" },
-      { key: "intercambios", icon: "calendarDays", label: "Intercambios de día", group: "RH" },
-      { key: "eventospersonal", icon: "cake", label: "Cumpleaños y Aniversarios", group: "Equipo" },
-      { key: "reconocimientos", icon: "award", label: "Reconocimientos", group: "Equipo" },
-      { key: "expedientes", icon: "folder", label: "Expedientes", group: "Equipo" },
-      { key: "encuestas", icon: "clipboard", label: "Encuestas", group: "Encuestas y reportes" },
-      { key: "reportes", icon: "trending", label: "Reportes", group: "Encuestas y reportes" },
-      { key: "reportesrh", icon: "trending", label: "Reportes RH", group: "RH" },
-      { key: "bolsa", icon: "briefcase", label: "Bolsa de trabajo", group: "Equipo" },
-      { key: "config", icon: "settings", label: "Config", group: "Herramientas" },
-      { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
-      { key: "mensajes", icon: "message", label: "Mensajes", group: "Herramientas" },
-      { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
-      { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
-    ],
-    empleado: [
-      { key: "inicio", icon: "home", label: "Inicio" },
-      // En posición 2 a propósito: los 4 primeros items son la tabbar del móvil, y el
-      // checador es lo único de esta lista que se usa TODOS los días, dos veces.
-      { key: "checador", icon: "clock", label: "Checador" },
-      { key: "encuesta", icon: "clipboardCheck", label: "Mi Encuesta" },
-      { key: "historial", icon: "history", label: "Historial" },
-      { key: "rostro", icon: "camera", label: "Mi rostro", group: "Mi trabajo" },
-      { key: "permisosempleado", icon: "vacation", label: "Vacaciones", group: "Mi trabajo" },
-      { key: "calendario", icon: "calendar", label: "Calendario", group: "Mi trabajo" },
-      { key: "reconocimientos", icon: "award", label: "Reconocimientos", group: "Mi trabajo" },
-      { key: "reporteconfidencial", icon: "lock", label: "Reporte Confidencial", group: "Mi trabajo" },
-      { key: "soporte", icon: "wrench", label: "Soporte TI", group: "Herramientas" },
-      { key: "mensajes", icon: "message", label: "Mensajes", group: "Herramientas" },
-      { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
-      { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
-    ],
-    // El doctor hereda el menú del empleado y suma lo suyo (Comisiones; Calendario se agrega
-    // en la Parte C). Comisiones va arriba: es el motivo por el que el doctor tiene su rol.
-    doctor: [
-      { key: "inicio", icon: "home", label: "Inicio" },
-      { key: "checador", icon: "clock", label: "Checador" },
-      { key: "comisiones", icon: "dollar", label: "Comisiones" },
-      { key: "encuesta", icon: "clipboardCheck", label: "Mi Encuesta" },
-      { key: "historial", icon: "history", label: "Historial", group: "Mi trabajo" },
-      { key: "rostro", icon: "camera", label: "Mi rostro", group: "Mi trabajo" },
-      { key: "permisosempleado", icon: "vacation", label: "Vacaciones", group: "Mi trabajo" },
-      { key: "calendario", icon: "calendar", label: "Calendario", group: "Mi trabajo" },
-      { key: "reconocimientos", icon: "award", label: "Reconocimientos", group: "Mi trabajo" },
-      { key: "reporteconfidencial", icon: "lock", label: "Reporte Confidencial", group: "Mi trabajo" },
-      { key: "soporte", icon: "wrench", label: "Soporte TI", group: "Herramientas" },
-      { key: "mensajes", icon: "message", label: "Mensajes", group: "Herramientas" },
-      { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
-      { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
-    ],
-  };
-
-  const items = navItems[user?.role] || [];
+  // Los menús salen de config/navItems.js, la MISMA fuente que usa el header de escritorio.
+  // Hasta el 2026-07-29 este archivo tenía su propia copia escrita a mano, y por eso los grupos
+  // nuevos y Mensajes se quedaron sin llegar al teléfono: se cambió una lista y había dos.
+  const items = NAV_ITEMS[user?.role] || [];
 
   const [masOpen, setMasOpen] = useState(false);
-  const PRIMARIOS = 4;
-  const tabsPrincipales = items.slice(0, PRIMARIOS);
-  const tabsExtra = items.slice(PRIMARIOS);
+  // La barra inferior se declara por clave y ya no depende del orden del arreglo: así reordenar el
+  // menú para que se lea mejor no mueve los accesos que la gente usa sin mirar.
+  const clavesTab = TABS_MOVIL[user?.role] || [];
+  const tabsPrincipales = clavesTab
+    .map((k) => items.find((i) => i.key === k))
+    .filter(Boolean);
+  // Mensajes queda fuera de la hoja "Más": en el teléfono es el botón flotante junto a la campana.
+  const tabsExtra = items.filter(
+    (i) => !clavesTab.includes(i.key) && i.key !== "mensajes",
+  );
   const irA = (key) => { setMasOpen(false); navigate(`/${user.role}/${key}`); };
   const extraActivo = tabsExtra.some((i) => i.key === active);
 
-  // Agrupa una lista de ítems por su campo `group`: las secciones salen en el orden en que
-  // aparece su primer ítem, y cada ítem cae en su sección aunque estén repartidos en el
-  // arreglo (p. ej. RH tiene Vacaciones/Permisos separados de Descuentos/Calendario). Los
-  // ítems sin `group` van a un grupo sin nombre (sin encabezado al pintarlo).
-  const agruparPorCampo = (lista) => {
-    const grupos = [];
-    const indice = new Map();
-    for (const item of lista) {
-      const grupo = item.group || null;
-      if (!indice.has(grupo)) {
-        indice.set(grupo, grupos.length);
-        grupos.push({ nombre: grupo, items: [] });
-      }
-      grupos[indice.get(grupo)].items.push(item);
-    }
-    return grupos;
-  };
-
-  // Hoja "Más" del móvil: acá sí todo grupo sin nombre cae en "Otros" (no hay ítems sueltos
-  // en esa hoja, los primeros 4 son la tabbar y nunca llegan a tabsExtra).
+  // Hoja "Más" del móvil: un ítem sin `group` que no esté en la tabbar cae en "Otros". Hoy no
+  // ocurre en ningún rol —los sueltos de NAV_ITEMS son el inicio y Mensajes, y los dos salen por
+  // otro lado— pero el encabezado existe para que un ítem nuevo no aparezca sin sección.
   const gruposExtra = agruparPorCampo(tabsExtra).map((g) => ({ ...g, nombre: g.nombre || "Otros" }));
 
   // Desktop: la lista completa, agrupada igual. Los ítems sin `group` (Dashboard y los 2-3

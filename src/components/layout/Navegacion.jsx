@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import HeaderNav from "./HeaderNav";
 import Sidebar from "./Sidebar";
+import BotonMensajes from "./BotonMensajes";
 import CampanaNotificaciones from "../notificaciones/CampanaNotificaciones";
 
 // Elige la navegación según el ancho: en ESCRITORIO (>768px) el header nuevo con categorías; en
@@ -24,6 +25,10 @@ export default function Navegacion() {
     return (
       <>
         <Sidebar />
+        {/* Mensajes flotante, al lado de la campana. En el teléfono no hay header donde ponerlo y
+            la barra inferior solo tiene 4 huecos, todos de uso diario; flotante queda a la vista
+            sin quitarle el sitio al checador. */}
+        <BotonMensajes variante="flotante" />
         <CampanaNotificaciones user={user} />
       </>
     );

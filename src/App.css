@@ -10857,6 +10857,50 @@
    de tamaño o color se nota como un descuido. */
 .topnav-mensajes-badge { position: absolute; top: -4px; right: -4px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--mc-rojo-apagado); color: var(--mc-blanco); font-size: 10px; font-weight: 800; line-height: 17px; text-align: center; }
 
+/* Mensajes flotante del TELÉFONO. En móvil no se pinta el header (Navegacion monta Sidebar), así
+   que el botón de arriba no existe ahí: este ocupa su lugar, a la izquierda de la campana y con
+   su mismo aspecto — los dos flotan juntos y cualquier diferencia se leería como un descuido.
+   Solo se muestra hasta 768px, el mismo punto donde Navegacion cambia de navegación; por encima
+   manda el botón del header y tener los dos sería duplicar el acceso. */
+.mensajes-flotante { display: none; }
+
+@media (max-width: 768px) {
+  .mensajes-flotante {
+    position: fixed;
+    /* Misma altura que .campana; a su izquierda: 24px de margen + 42px de la campana + 10 de aire. */
+    top: calc(env(safe-area-inset-top, 0px) + 12px);
+    right: 76px;
+    z-index: 300;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid var(--mc-borde-suave);
+    background: var(--mc-superficie);
+    color: var(--mc-texto-titulo);
+    box-shadow: var(--mc-sombra-card);
+    cursor: pointer;
+  }
+  .mensajes-flotante:active { transform: scale(0.94); }
+  .mensajes-flotante-badge {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: var(--mc-rojo-apagado);
+    color: var(--mc-blanco);
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 18px;
+    text-align: center;
+  }
+}
+
 .topnav-hamburguesa { display: none; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 38px; height: 38px; border: 1px solid var(--mc-borde-suave); border-radius: 9px; background: var(--mc-superficie); cursor: pointer; }
 .topnav-hamburguesa span { width: 18px; height: 2px; background: var(--mc-texto-titulo); border-radius: 2px; }
 
