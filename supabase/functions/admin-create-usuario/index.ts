@@ -69,22 +69,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    // El insert de abajo usa service_role, que bypassa RLS, y el trigger
-    // prevent_usuario_privilege_escalation (mig 023/025) solo cubre UPDATE — así que sin
-    // esta guarda un 'rh' podía crear una cuenta 'admin' y entrar con la temporal,
-    // saltándose la restricción de rol que esas migraciones cierran para el UPDATE.
+    // Aquí vivía la guarda que reservaba a 'admin' la creación de cuentas privilegiadas
+    // (admin/rh/psicologa). RETIRADA a petición del dueño (2026-07-30; ver migración 099).
     //
-    // La guarda mira si el rol NUEVO es privilegiado, no si es distinto de 'empleado'.
-    // Antes decía `role !== "empleado"`, y eso metía a 'doctor' en el mismo saco que a un
-    // administrador: RH y psicología no podían dar de alta a una doctora, aunque 'doctor' es
-    // un empleado con comisiones y no ve datos de nadie más. Lo que hay que impedir es que
-    // alguien que no es admin fabrique una cuenta con acceso a datos ajenos.
-    if (callerPerfil?.role !== "admin" && ROLES_PRIVILEGIADOS.includes(role)) {
-      return new Response(JSON.stringify({ error: "Solo un administrador puede crear cuentas de administración, recursos humanos o psicología." }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // Por qué existía, que sigue siendo cierto: el insert de abajo usa service_role, que
+    // bypassa RLS, y el trigger prevent_usuario_privilege_escalation solo cubre UPDATE.
+    // Sin la guarda, un 'rh' puede crear una cuenta 'admin' y entrar con la contraseña
+    // temporal. Es la vía más corta de escalada que queda en el sistema.
+    //
+    // ROLES_PRIVILEGIADOS se conserva: ROLES_VALIDOS se construye a partir de él.
 
     const syntheticEmail = usernameToSyntheticEmail(username);
 

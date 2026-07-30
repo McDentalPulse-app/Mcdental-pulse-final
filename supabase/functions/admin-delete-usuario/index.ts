@@ -38,8 +38,11 @@ Deno.serve(async (req) => {
       .eq("auth_user_id", callerAuthUser.id)
       .single();
 
-    if (callerPerfilError || callerPerfil?.role !== "admin") {
-      return new Response(JSON.stringify({ error: "Solo un administrador puede eliminar usuarios." }), {
+    // Paridad rh/psicologa = admin (decisión del dueño, 2026-07-30; ver migración 099).
+    // Ojo: esto borra de forma DEFINITIVA. "Dar de baja" desde la interfaz archiva y es
+    // reversible; esta función no.
+    if (callerPerfilError || !["admin", "rh", "psicologa"].includes(callerPerfil?.role)) {
+      return new Response(JSON.stringify({ error: "No tienes permiso para eliminar usuarios." }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

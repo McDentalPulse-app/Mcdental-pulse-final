@@ -33,7 +33,10 @@ const GestionUsuarios = () => {
   const { user, restablecerPasswordUsuario } = useAuth();
   const { toast } = useNotification();
   const { pedirBaja, restaurar, activar } = useBajaUsuario();
-  const esAdmin = user?.role === "admin";
+  // Antes era `esAdmin` y valía solo para 'admin'. Con la paridad rh/psicologa = admin
+  // (decisión del dueño, 2026-07-30; ver migración 099) los tres roles de gestión pueden
+  // lo mismo, así que el nombre pasa a decir lo que de verdad comprueba.
+  const esGestion = ["admin", "rh", "psicologa"].includes(user?.role);
 
   const [busqueda, setBusqueda] = useState("");
   const [filtroSucursal, setFiltroSucursal] = useState("Todas");
@@ -67,14 +70,14 @@ const GestionUsuarios = () => {
     fechaCumpleanos: "",
   });
 
-  // Sólo un admin puede asignar un rol distinto de "empleado" (lo exige la edge
-  // function admin-create-usuario, que si no respondía 403 recién al guardar). Al
-  // editar se conserva el rol actual como opción, para que un RH no degrade sin
-  // querer a un doctor por no tener ese valor en la lista.
-  const rolesDisponibles = esAdmin
+  // Gestión (admin/rh/psicologa) puede asignar cualquier rol; el resto solo "empleado".
+  // Antes esto era exclusivo de admin y lo respaldaba la edge function admin-create-usuario
+  // con un 403; esa guarda se retiró en la migración 099. Al editar se conserva el rol
+  // actual como opción, para no degradar a un doctor por no tener ese valor en la lista.
+  const rolesDisponibles = esGestion
     ? ROLES
     : ROLES.filter((r) => r.valor === "empleado" || r.valor === formData.role);
-  const rolBloqueado = !esAdmin && formData.role !== "empleado";
+  const rolBloqueado = !esGestion && formData.role !== "empleado";
 
   const hoyISO = new Date().toISOString().slice(0, 10);
   const loginPrevisto = emailDeLogin(formData.user);
@@ -194,8 +197,17 @@ const GestionUsuarios = () => {
       if (usuarioEditando) {
         // El username es la credencial de login (email sintético en Auth):
         // si cambió, va primero por la edge function que sincroniza Auth + BD.
-        const usernameNuevo = (payload.user || "").trim().toLowerCase();
-        const usernameCambio = usernameNuevo && usernameNuevo !== (usuarioEditando.user || "").trim().toLowerCase();
+        // Las dos mitades de la comparación tienen que estar normalizadas. `payload.user`
+        // ya pasó por normalizarUsername() (espacios -> puntos, sin acentos), pero el
+        // username GUARDADO no: la migración de Firestore dejó 101 de 106 con espacio
+        // ("maria treto"), y su correo de acceso ya era el normalizado
+        // ("maria.treto@mcdental.internal"). Comparar uno contra otro daba SIEMPRE
+        // "cambió" al abrir y guardar cualquiera de esos 101, sin tocar el campo:
+        //   - psicologa -> 403 "No tienes permiso para cambiar nombres de usuario"
+        //   - rh/admin  -> pasaba, y RENOMBRABA la credencial en silencio
+        // Normalizando ambos lados, un cambio real se sigue detectando y uno inventado no.
+        const usernameNuevo = normalizarUsername(payload.user || "");
+        const usernameCambio = usernameNuevo && usernameNuevo !== normalizarUsername(usuarioEditando.user || "");
         if (usernameCambio) {
           await cambiarUsername(usuarioEditando.id, usernameNuevo);
         }
@@ -309,7 +321,7 @@ const GestionUsuarios = () => {
                       >
                         <Icon name="userCog" size={15} />
                       </button>
-                      {esAdmin && (
+                      {esGestion && (
                         <button
                           type="button"
                           className="emp-table-icon-btn emp-table-icon-btn--amber"
@@ -394,7 +406,7 @@ const GestionUsuarios = () => {
                   >
                     Editar
                   </button>
-                  {esAdmin && (
+                  {esGestion && (
                     <button
                       type="button"
                       className="mc-btn-outline mc-btn-outline--amber"

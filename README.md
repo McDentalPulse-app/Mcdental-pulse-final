@@ -96,9 +96,27 @@ src/
   de Personal ya tenía resuelto (`.gestion-personal-desktop-only` / `-mobile-list`), así
   que ambas pantallas se ven igual y seguirán viéndose igual si alguien las retoca.
 
+- **🔴 Editar cualquier empleado disparaba un cambio de nombre de usuario que nadie pidió.**
+  `GestionUsuarios` comparaba el username **normalizado** (`normalizarUsername`: espacios a
+  puntos, sin acentos) contra el **guardado sin normalizar**. La migración de Firestore dejó
+  **101 de 106** con espacio (`maria treto`) y su correo de acceso ya normalizado
+  (`maria.treto@mcdental.internal`), así que abrir a cualquiera de esos 101 y pulsar Guardar
+  — sin tocar el campo — daba siempre "cambió": psicóloga veía *"No tienes permiso para
+  cambiar nombres de usuario"* y **rh y admin pasaban, renombrando la credencial en
+  silencio**. Ahora se comparan los dos lados normalizados: un cambio real se sigue
+  detectando, uno inventado no.
+- **⚠️ rh y psicóloga pasan a tener las mismas capacidades que admin (migración 099).**
+  Decisión del dueño, tomada con las consecuencias explicadas. Se retiran: la reserva a
+  admin de cambiar `role` y `auth_user_id` (trigger), la de borrar usuarios en definitiva,
+  la de crear cuentas privilegiadas, y las dos guardas que impedían a un rh restablecer la
+  contraseña o cambiar el username **de un admin**. Consecuencia directa, anotada aquí a
+  propósito: **una cuenta de rh o psicóloga comprometida equivale al sistema comprometido**,
+  porque puede promoverse a admin sin que nada lo impida. Se revierte volviendo a poner
+  `'admin'` en las comparaciones de la migración 099.
+
 **Desplegado hoy: solo el API** (`build-api.sh`), que es donde vive el arreglo de la IA.
-Los tres cambios de frontend están commiteados pero **no salen hasta el próximo
-`build-frontend.sh`**.
+El resto — frontend, edge functions y la migración 099 — está commiteado pero **no sale
+hasta aplicar la migración, copiar las funciones y correr `build-frontend.sh`**.
 
 ### 2026-07-28 · Chat rehecho, videollamadas propias, retención y respaldo externo
 

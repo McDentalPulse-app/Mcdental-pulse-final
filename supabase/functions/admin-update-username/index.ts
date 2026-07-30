@@ -42,7 +42,8 @@ Deno.serve(async (req) => {
       .eq("auth_user_id", callerAuthUser.id)
       .single();
 
-    if (callerPerfilError || !["admin", "rh"].includes(callerPerfil?.role)) {
+    // Paridad rh/psicologa = admin (decisión del dueño, 2026-07-30; ver migración 099).
+    if (callerPerfilError || !["admin", "rh", "psicologa"].includes(callerPerfil?.role)) {
       return json({ error: "No tienes permiso para cambiar nombres de usuario." }, 403);
     }
 
@@ -69,11 +70,10 @@ Deno.serve(async (req) => {
       return json({ error: "Usuario no encontrado." }, 404);
     }
 
-    // Esta función reescribe auth.users.email, que es la credencial real de login: sin esta
-    // guarda un 'rh' podía cambiar el username de un 'admin' y dejarlo sin poder entrar.
-    if (callerPerfil.role !== "admin" && objetivo.role === "admin") {
-      return json({ error: "Solo un administrador puede cambiar el nombre de usuario de otro administrador." }, 403);
-    }
+    // RETIRADA a petición del dueño (2026-07-30; ver migración 099). Esta función reescribe
+    // auth.users.email, que es la credencial real de login: la guarda impedía que un 'rh'
+    // cambiara el username de un 'admin' y lo dejara fuera de su propia app. Ahora rh y
+    // psicologa pueden hacerlo.
 
     // Disponibilidad: nadie más puede tener ese email sintético.
     const { data: ocupado } = await adminClient

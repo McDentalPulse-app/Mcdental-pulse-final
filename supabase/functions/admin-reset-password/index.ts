@@ -33,7 +33,8 @@ Deno.serve(async (req) => {
       .eq("auth_user_id", callerAuthUser.id)
       .single();
 
-    if (callerPerfilError || !["admin", "rh"].includes(callerPerfil?.role)) {
+    // Paridad rh/psicologa = admin (decisión del dueño, 2026-07-30; ver migración 099).
+    if (callerPerfilError || !["admin", "rh", "psicologa"].includes(callerPerfil?.role)) {
       return new Response(JSON.stringify({ error: "No tienes permiso para restablecer contraseñas." }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -63,15 +64,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Sin esta guarda, un 'rh' podía restablecer la contraseña de un 'admin' a la temporal
-    // y entrar como él — una escalada equivalente a cambiarse el rol, que las migraciones
-    // 023/025 sí bloquean. RH conserva el reset del resto de usuarios.
-    if (callerPerfil.role !== "admin" && usuarioObjetivo.role === "admin") {
-      return new Response(JSON.stringify({ error: "Solo un administrador puede restablecer la contraseña de otro administrador." }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // RETIRADA a petición del dueño (2026-07-30; ver migración 099). Esta guarda impedía
+    // que un 'rh' restableciera la contraseña de un 'admin' a la temporal y entrara como
+    // él. Al quitarla, rh y psicologa pueden hacerlo: es una escalada a admin en dos pasos
+    // y sin registro. Queda anotado porque el motivo original sigue siendo válido; lo que
+    // cambió es la decisión, no el riesgo.
 
     const { error: updateAuthError } = await adminClient.auth.admin.updateUserById(
       usuarioObjetivo.auth_user_id,
