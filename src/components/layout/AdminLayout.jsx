@@ -30,7 +30,7 @@ export default function AdminLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
   const { encuestas, mensajes, notas, permisos, descuentos, reconocimientos, reportesConfidenciales, vacaciones, archivosExpediente, horarios, setHorarios, avisos } = globals;
-  const { restablecerPasswordUsuario, subirArchivoExpediente, eliminarArchivoExpediente, addReconocimiento, addAviso, updateAviso, deleteAviso, justificarFalta } = actions;
+  const { restablecerPasswordUsuario, sendMensaje, marcarMensajesLeidos, subirArchivoExpediente, eliminarArchivoExpediente, addReconocimiento, addAviso, updateAviso, deleteAviso, justificarFalta } = actions;
   const { ofrecerPush, activarAvisos, cerrarOfertaPush } = useAvisoPush();
 
   return (
@@ -60,7 +60,7 @@ export default function AdminLayout({ user, globals, actions }) {
             <Route path="confidenciales" element={<ReportesConfidencialesPanel reportes={reportesConfidenciales} />} />
             <Route path="config" element={<Config />} />
             <Route path="encuestas" element={<GestionEncuestas encuestas={encuestas} />} />
-            <Route path="mensajes" element={<Mensajes user={user} mensajes={[]} onSend={() => false} />} />
+            <Route path="mensajes" element={<Mensajes user={user} mensajes={mensajes} onSend={sendMensaje} onMarkRead={marcarMensajesLeidos} />} />
             <Route path="soporte" element={<IdeasMejora />} />
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} />} />
             <Route path="perfil" element={<Perfil />} />

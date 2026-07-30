@@ -138,6 +138,16 @@ src/
   componente no dependía del rol y `api/soporte-ticket` tampoco filtra, así que solo hacía
   falta la entrada de menú y la ruta.
 
+- **🆕 Admin y RH ya pueden escribirle a Soporte TI por Mensajes (migración 100).** El canal
+  existía desde la 094 —lo atienden Erick y Alfredo por bandera `soporte_ti`, no por rol—
+  pero solo alcanzaba a psicóloga, empleado y doctor. Admin y RH eran los únicos del
+  organigrama sin forma de reportar una falla de TI por ahí. Estaban fuera porque la única
+  conversación que existía era la confidencial con la psicóloga, y **eso no cambia**: ven la
+  pantalla con *una* conversación, la de Soporte TI, nunca la de la psicóloga. La garantía
+  real no es esa pantalla sino `mensajes_select_participant`, que no deja leer un mensaje a
+  quien no lo escribió ni lo recibió. La migración añade `rh` a las policies, que lo tenían
+  todo menos ese rol — sin eso RH vería el canal y el envío moriría en RLS.
+
 **Desplegado hoy: solo el API** (`build-api.sh`), que es donde vive el arreglo de la IA.
 El resto — frontend, edge functions y la migración 099 — está commiteado pero **no sale
 hasta aplicar la migración, copiar las funciones y correr `build-frontend.sh`**.

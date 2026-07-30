@@ -65,11 +65,16 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
   const [respondiendo, setRespondiendo] = useState(null);
   const [reacciones, setReacciones] = useState({});
   const [otro, setOtro] = useState({ presente: false, escribiendo: false });
-  // Admin y RH NO ven las conversaciones. No es un olvido: AdminLayout ya mostraba ahí un
-  // "Acceso restringido — este canal es privado y solo está disponible para empleados y
-  // psicóloga". Las reuniones son otra cosa y sí les tocan, así que entran por la misma
-  // pantalla pero solo con esa pestaña.
-  const veChat = ["psicologa", "empleado", "doctor"].includes(user?.role);
+  // Todos los roles ven el chat. Admin y RH estaban fuera porque la única conversación que
+  // había era la confidencial con la psicóloga; con el canal de Soporte TI (mig. 094) ya hay
+  // algo que sí les toca, y eran los únicos del organigrama que no podían reportar una falla
+  // de TI por aquí. Lo que ven está acotado abajo, en `soloSoporte`.
+  const veChat = true;
+  // Admin y RH: SOLO el buzón de Soporte TI. La conversación con la psicóloga sigue siendo
+  // del empleado y de ella. Esto es la mitad de la garantía; la otra mitad — la que de verdad
+  // cuenta — vive en la policy mensajes_select_participant, que no deja leer un mensaje a
+  // quien no lo escribió ni lo recibió.
+  const soloSoporte = ["admin", "rh"].includes(user?.role);
   const [pestana, setPestana] = useState(veChat ? "chat" : "reuniones");
   // La sala ocupa la pantalla entera: una videollamada en un recuadro de la esquina no la
   // usa nadie, y compartir pantalla dentro de un panel pequeño no se lee.
@@ -147,7 +152,9 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
   const conversaciones = user.role === "psicologa"
     ? empleados.map(conversacionCon)
     : [
-        ...(psicologa ? [conversacionCon(psicologa)] : []),
+        // Admin y RH no llevan la conversación de la psicóloga: para ellos esta pantalla es
+        // solo el buzón de Soporte TI.
+        ...(psicologa && !soloSoporte ? [conversacionCon(psicologa)] : []),
         // Debajo del chat de la psicóloga, el canal de Soporte TI. Quien lo atiende no se escribe
         // a sí mismo: en su lugar ve los hilos de la plantilla.
         ...(atiendeSoporte
