@@ -142,9 +142,11 @@ export default function GestionSucursales() {
       <Card>
         <p className="mc-hint">
           <Icon name="alert" size={15} />
-          Pulsa <strong>Usar mi ubicación actual</strong> estando dentro de la clínica. Las que no
-          tengan ubicación siguen funcionando: sus checadas se registran, pero sin comprobar dónde
-          se hicieron.
+          <span>
+            Pulsa <strong>Usar mi ubicación actual</strong> estando dentro de la clínica. Las que
+            no tengan ubicación siguen funcionando: sus checadas se registran, pero sin comprobar
+            dónde se hicieron.
+          </span>
         </p>
       </Card>
 
