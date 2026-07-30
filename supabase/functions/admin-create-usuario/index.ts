@@ -57,13 +57,30 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Roles que dan acceso a datos de otras personas. Crear uno de estos es lo que abre la
+    // puerta a una escalada de privilegios, no crear una cuenta cualquiera.
+    const ROLES_PRIVILEGIADOS = ["admin", "rh", "psicologa"];
+    const ROLES_VALIDOS = [...ROLES_PRIVILEGIADOS, "empleado", "doctor"];
+
+    if (!ROLES_VALIDOS.includes(role)) {
+      return new Response(JSON.stringify({ error: `El rol "${role}" no existe.` }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // El insert de abajo usa service_role, que bypassa RLS, y el trigger
     // prevent_usuario_privilege_escalation (mig 023/025) solo cubre UPDATE — así que sin
     // esta guarda un 'rh' podía crear una cuenta 'admin' y entrar con la temporal,
     // saltándose la restricción de rol que esas migraciones cierran para el UPDATE.
-    // Solo un admin puede asignar un rol privilegiado al crear.
-    if (callerPerfil?.role !== "admin" && role !== "empleado") {
-      return new Response(JSON.stringify({ error: "Solo un administrador puede crear usuarios con un rol distinto de empleado." }), {
+    //
+    // La guarda mira si el rol NUEVO es privilegiado, no si es distinto de 'empleado'.
+    // Antes decía `role !== "empleado"`, y eso metía a 'doctor' en el mismo saco que a un
+    // administrador: RH y psicología no podían dar de alta a una doctora, aunque 'doctor' es
+    // un empleado con comisiones y no ve datos de nadie más. Lo que hay que impedir es que
+    // alguien que no es admin fabrique una cuenta con acceso a datos ajenos.
+    if (callerPerfil?.role !== "admin" && ROLES_PRIVILEGIADOS.includes(role)) {
+      return new Response(JSON.stringify({ error: "Solo un administrador puede crear cuentas de administración, recursos humanos o psicología." }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
