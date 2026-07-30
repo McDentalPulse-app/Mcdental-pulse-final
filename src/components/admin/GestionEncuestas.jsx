@@ -10,6 +10,7 @@ import Icon from "../ui/Icon";
 import { semanaDisplay, isSemanaActual, getISOWeek } from "../../utils/constants";
 import {
   bloqueDeLaSemana,
+  preguntasDeLaSemana,
   esAreaReservada,
   preguntaTieneRespuestas,
   AREAS_RESERVADAS,
@@ -72,6 +73,11 @@ const GestionEncuestas = ({ encuestas = [] }) => {
   // respondió "8" a una pregunta que ya no existe. Para reformularla, se desactiva y se crea
   // otra. El orden, el área y el estado sí se pueden seguir cambiando.
   const congelada = preguntaTieneRespuestas(form?.id, encuestas);
+
+  // Lo que el empleado va a ver esta semana: el núcleo más el bloque que toca. NO es lo
+  // mismo que el catálogo completo, y confundirlos hacía que la tarjeta dijera "22
+  // preguntas" cuando el empleado iba a contestar 10.
+  const preguntasDeEstaSemana = preguntasDeLaSemana(preguntasOrdenadas, bloqueActivo);
 
   const hayCambiosReales =
     modalAbierto &&
@@ -227,21 +233,47 @@ const GestionEncuestas = ({ encuestas = [] }) => {
             <Icon name="calendar" size={14} /> Semana {semanaDisplay}
           </span>
           <span className="encuesta-meta-item">
-            <Icon name="clipboard" size={14} /> {preguntasOrdenadas.length} preguntas
+            <Icon name="clipboard" size={14} /> {preguntasDeEstaSemana.length} preguntas esta semana
           </span>
+          {preguntasOrdenadas.length !== preguntasDeEstaSemana.length && (
+            <span className="encuesta-meta-item">
+              <Icon name="folder" size={14} /> {preguntasOrdenadas.length} en el catálogo
+            </span>
+          )}
           <span className="encuesta-meta-item">
             <Icon name="users" size={14} /> {respuestasSemana} respuestas
           </span>
         </div>
 
         <div className="encuesta-list">
-          {preguntasOrdenadas.map((p, i) => (
-            <div key={p.id} className={`encuesta-item${p.activa === false ? " encuesta-item--inactive" : ""}`}>
-              <span className="encuesta-num">{String(i + 1).padStart(2, "0")}</span>
-              <span className="encuesta-text">{p.texto}</span>
-              <span className="encuesta-tipo">{p.tipo}</span>
-            </div>
-          ))}
+          {preguntasOrdenadas.map((p, i) => {
+            // Esta lista es el catálogo completo (hay que poder editar las preguntas de
+            // cualquier bloque), pero solo algunas se preguntan esta semana. Sin decirlo, el
+            // listado parece la encuesta y no lo es.
+            const suBloque = p.bloqueId
+              ? encuestaBloques.find((b) => b.id === p.bloqueId)
+              : null;
+            const seHaceHoy = !p.bloqueId || p.bloqueId === bloqueActivo?.id;
+
+            return (
+              <div
+                key={p.id}
+                className={`encuesta-item${p.activa === false || !seHaceHoy ? " encuesta-item--inactive" : ""}`}
+              >
+                <span className="encuesta-num">{String(i + 1).padStart(2, "0")}</span>
+                <span className="encuesta-text">{p.texto}</span>
+                <span className="encuesta-item-meta">
+                  {suBloque && (
+                    <span className="encuesta-bloque-tag">
+                      {suBloque.nombre}
+                      {!seHaceHoy && " · no esta quincena"}
+                    </span>
+                  )}
+                  <span className="encuesta-tipo">{p.tipo}</span>
+                </span>
+              </div>
+            );
+          })}
         </div>
 
         <div className="encuesta-edit-warning" role="note">

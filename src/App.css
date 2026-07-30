@@ -12154,3 +12154,29 @@
   .perfil-hero2-actions { justify-content: center; width: 100%; }
   .perfil-hero2-actions .perfil-foto-btn { flex: 1; justify-content: center; min-width: 0; }
 }
+
+/* Etiqueta de bloque en el catálogo de preguntas. No reusa .mc-tag porque esa lleva
+   text-transform: capitalize, y aquí el texto es una frase ("Crecimiento y aprendizaje · no
+   esta quincena"): capitalizada se lee mal y pierde el sentido de la conjunción.
+   La etiqueta y el tipo van juntos en .encuesta-item-meta para que .encuesta-item siga
+   teniendo tres hijos — es un grid de tres columnas y un cuarto hijo se caía de fila. */
+.encuesta-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.encuesta-bloque-tag {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--mc-superficie-2);
+  border: 1px solid var(--mc-borde-suave);
+  color: var(--mc-texto-secundario);
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: none;
+  white-space: nowrap;
+}
