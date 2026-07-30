@@ -5,11 +5,12 @@ import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { useNotification } from "../../contexts/NotificationContext";
 import { getPreguntasActivas, DEFAULT_OPCIONES_RIESGO } from "../../utils/encuestaPreguntas";
+import { bloqueDeLaSemana, preguntasDeLaSemana, repartirPreguntas } from "../../utils/encuestaBloques";
 import { getISOWeek, semanaDisplay, isSemanaActual } from "../../utils/constants";
 import { calcularScoreEncuesta } from "../../utils/pulseScore";
 
 const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
-  const { encuestaPreguntas: ENCUESTA_PREGUNTAS } = useGlobal();
+  const { encuestaPreguntas: ENCUESTA_PREGUNTAS, encuestaBloques } = useGlobal();
   const { toast, confirm } = useNotification();
 
   const yaContesto = encuestas.some(
@@ -19,7 +20,17 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
   const [respuestas, setRespuestas] = useState({});
   const [enviada, setEnviada] = useState(false);
 
-  const preguntas = getPreguntasActivas(ENCUESTA_PREGUNTAS);
+  // La encuesta son dos cosas distintas y conviene no confundirlas:
+  //   · `preguntas`  → lo que el empleado ve y contesta: núcleo + el bloque de esta quincena.
+  //   · `paraElScore` → SOLO el núcleo. Es lo único que entra al Pulse Score.
+  //
+  // Si las escalas de un bloque entraran al cálculo, el score dejaría de ser comparable con
+  // el de las quincenas anteriores, y de esa comparación viven el historial, la flecha de
+  // tendencia y el foco rojo por sucursal.
+  const activas = getPreguntasActivas(ENCUESTA_PREGUNTAS);
+  const bloqueActivo = bloqueDeLaSemana(getISOWeek(), encuestaBloques);
+  const preguntas = preguntasDeLaSemana(activas, bloqueActivo);
+  const paraElScore = repartirPreguntas(activas, bloqueActivo).nucleo;
 
   const setR = (id, val) => {
     setRespuestas((prev) => ({
@@ -41,7 +52,7 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
     : 0;
 
   const handleSubmit = async () => {
-    const resultado = calcularScoreEncuesta(preguntas, respuestas);
+    const resultado = calcularScoreEncuesta(paraElScore, respuestas);
 
     if (!resultado.ok) {
       if (resultado.motivo === "sin-preguntas-escala") {
@@ -94,7 +105,11 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
       <PageHeader
         icon="clipboard"
         title="Mi encuesta"
-        subtitle={`Semana ${semanaDisplay} · Tus respuestas son confidenciales.`}
+        subtitle={
+          bloqueActivo
+            ? `Semana ${semanaDisplay} · Esta quincena: ${bloqueActivo.nombre} · Tus respuestas son confidenciales.`
+            : `Semana ${semanaDisplay} · Tus respuestas son confidenciales.`
+        }
       />
 
       <Card className="empleado-progress-card">

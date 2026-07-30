@@ -9,6 +9,8 @@ import {
   getEncuestaSemaforo,
   readRiesgoRenuncia,
   readProblemaPersonal,
+  getPreguntaRiesgoRenuncia,
+  getPreguntaAbierta,
   resumenEscalas,
 } from "./encuestaDetail";
 
@@ -259,5 +261,51 @@ describe("getEncuestaSemaforo", () => {
 
   it("sin semáforo ni score válido cae a verde (comportamiento actual)", () => {
     expect(getEncuestaSemaforo({})).toBe("verde");
+  });
+});
+
+describe("el detector no se deja robar la pregunta por un bloque rotatorio", () => {
+  // Antes, ambas se localizaban como "la única de su tipo en la encuesta". Con bloques
+  // rotatorios eso deja de ser cierto: el primer bloque con una pregunta de opción se
+  // quedaba con el riesgo de renuncia, que es la respuesta más importante de la encuesta.
+  const riesgoNucleo = { id: "n-riesgo", tipo: "opcion", area: "Riesgo", bloqueId: null };
+  const abiertaNucleo = { id: "n-abierta", tipo: "abierta", area: "Comentarios", bloqueId: null };
+  const opcionDeBloque = { id: "b-opcion", tipo: "opcion", area: "Turnos", bloqueId: "bloque-1" };
+  const abiertaDeBloque = { id: "b-abierta", tipo: "abierta", area: "Ideas", bloqueId: "bloque-1" };
+
+  it("elige la de riesgo del núcleo aunque el bloque vaya primero en la lista", () => {
+    expect(getPreguntaRiesgoRenuncia([opcionDeBloque, riesgoNucleo]).id).toBe("n-riesgo");
+  });
+
+  it("elige la abierta del núcleo aunque el bloque tenga otra abierta antes", () => {
+    expect(getPreguntaAbierta([abiertaDeBloque, abiertaNucleo]).id).toBe("n-abierta");
+  });
+
+  it("nunca elige una pregunta de bloque, ni siendo la única de su tipo", () => {
+    expect(getPreguntaRiesgoRenuncia([opcionDeBloque])).toBeNull();
+    expect(getPreguntaAbierta([abiertaDeBloque])).toBeNull();
+  });
+
+  it("si el área viene vacía, el respaldo por tipo sigue funcionando dentro del núcleo", () => {
+    // Filas viejas pueden no tener área. El respaldo evita que el riesgo desaparezca.
+    const sinArea = { id: "n-sin-area", tipo: "opcion", area: null, bloqueId: null };
+    expect(getPreguntaRiesgoRenuncia([opcionDeBloque, sinArea]).id).toBe("n-sin-area");
+  });
+
+  it("lee la respuesta de la pregunta correcta cuando el bloque tiene otra de opción", () => {
+    const encuesta = {
+      respuestas: { "n-riesgo": "Sí, seriamente", "b-opcion": "Turno de mañana" },
+    };
+    expect(readRiesgoRenuncia(encuesta, [opcionDeBloque, riesgoNucleo])).toBe("Sí, seriamente");
+  });
+
+  it("sigue funcionando con preguntas que no traen el campo bloqueId", () => {
+    // Todo el código que ya existía pasa preguntas sin ese campo.
+    const viejas = [
+      { id: "v1", tipo: "opcion", area: "Riesgo" },
+      { id: "v2", tipo: "abierta", area: "Comentarios" },
+    ];
+    expect(getPreguntaRiesgoRenuncia(viejas).id).toBe("v1");
+    expect(getPreguntaAbierta(viejas).id).toBe("v2");
   });
 });

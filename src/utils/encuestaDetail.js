@@ -107,14 +107,26 @@ export const hasSensitiveContent = (text) => {
 };
 
 export const getPreguntaAbierta = (preguntas = []) =>
-  preguntas.find((p) => p.tipo === "abierta") || null;
+  preguntas.find((p) => !p.bloqueId && /comentario/i.test(p.area || "")) ||
+  preguntas.find((p) => !p.bloqueId && p.tipo === "abierta") ||
+  null;
 
 /**
- * La pregunta de riesgo de renuncia ("¿Has pensado en renunciar?"). Se localiza por tipo,
- * igual que getPreguntaAbierta: es la única de tipo "opcion" de la encuesta.
+ * La pregunta de riesgo de renuncia ("¿Has pensado en renunciar?").
+ *
+ * Se localiza por su ÁREA y acotada al NÚCLEO, no por su tipo. Antes era "la única de tipo
+ * opcion de la encuesta", y eso deja de ser cierto en cuanto un bloque rotatorio añade otra
+ * pregunta de opción: se la robaría, y el riesgo de renuncia pasaría a leerse de una pregunta
+ * que no tiene nada que ver. El respaldo por tipo se conserva para filas viejas donde el
+ * área pudiera venir vacía, pero también acotado al núcleo.
+ *
+ * `!p.bloqueId` cubre null, undefined y ausencia de la propiedad, así que sigue funcionando
+ * con preguntas que vengan sin ese campo.
  */
 export const getPreguntaRiesgoRenuncia = (preguntas = []) =>
-  preguntas.find((p) => p.tipo === "opcion") || null;
+  preguntas.find((p) => !p.bloqueId && /riesgo/i.test(p.area || "")) ||
+  preguntas.find((p) => !p.bloqueId && p.tipo === "opcion") ||
+  null;
 
 /**
  * Lee la respuesta a la pregunta de riesgo de renuncia.
@@ -150,10 +162,19 @@ export const readRiesgoRenuncia = (encuesta, preguntas = []) => {
  * `respuestas.estres` y `respuestas.motivacion` — claves del dataset legacy que NO existen
  * en un jsonb indexado por el id de la pregunta. El prompt salía literalmente con
  * "emocional=undefined, estres=undefined, mot=undefined".
+ *
+ * Solo el NÚCLEO entra aquí (decisión del 2026-07-29). El AI Engine compara semanas para
+ * detectar "cambio de comportamiento" y "tendencia negativa", y un área que aparece durante
+ * una quincena y desaparece en la siguiente es justo la clase de señal que dispararía una
+ * alerta sin fundamento: no bajó nada, solo cambió el cuestionario. Por el mismo motivo por
+ * el que un bloque no puntúa en el Pulse Score, tampoco entra en la serie que la IA compara.
+ *
+ * Las respuestas del bloque NO se pierden: siguen en el detalle de la encuesta y en el
+ * expediente, que es donde la psicóloga las lee. Para incluirlas aquí, quitar `!p.bloqueId`.
  */
 export const resumenEscalas = (encuesta, preguntas = []) =>
   preguntas
-    .filter((p) => p.tipo === "escala")
+    .filter((p) => p.tipo === "escala" && !p.bloqueId)
     .map((p) => {
       const valor = readRespuesta(encuesta?.respuestas, p.id);
       if (isEmpty(valor)) return null;

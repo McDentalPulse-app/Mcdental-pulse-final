@@ -5,8 +5,15 @@ import { useEscapeKey } from "../../hooks/useEscapeKey";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
 import PageHeader from "../common/PageHeader";
+import GestionBloques from "./GestionBloques";
 import Icon from "../ui/Icon";
-import { semanaDisplay, isSemanaActual } from "../../utils/constants";
+import { semanaDisplay, isSemanaActual, getISOWeek } from "../../utils/constants";
+import {
+  bloqueDeLaSemana,
+  esAreaReservada,
+  preguntaTieneRespuestas,
+  AREAS_RESERVADAS,
+} from "../../utils/encuestaBloques";
 import {
   normalizePreguntasList,
   normalizePregunta,
@@ -33,12 +40,13 @@ const serializarPreguntas = (list) =>
       area: p.area,
       orden: p.orden,
       activa: p.activa !== false,
+      bloqueId: p.bloqueId ?? null,
       ...(p.tipo === "opcion" ? { opciones: p.opciones || [] } : {}),
     }))
   );
 
 const GestionEncuestas = ({ encuestas = [] }) => {
-  const { encuestaPreguntas, setEncuestaPreguntas } = useGlobal();
+  const { encuestaPreguntas, setEncuestaPreguntas, encuestaBloques } = useGlobal();
   const { toast, confirm } = useNotification();
 
   const preguntasOrdenadas = useMemo(
@@ -55,6 +63,15 @@ const GestionEncuestas = ({ encuestas = [] }) => {
   const [editandoId, setEditandoId] = useState(null);
   const [form, setForm] = useState(null);
   const [guardando, setGuardando] = useState(false);
+
+  // El bloque de esta quincena se DERIVA de la semana, no se guarda en ningún sitio.
+  const bloqueActivo = bloqueDeLaSemana(getISOWeek(), encuestaBloques);
+
+  // Una pregunta ya contestada tiene el texto y las opciones congelados: las respuestas se
+  // guardan por ID, así que cambiar la frase reescribe el pasado en silencio — alguien
+  // respondió "8" a una pregunta que ya no existe. Para reformularla, se desactiva y se crea
+  // otra. El orden, el área y el estado sí se pueden seguir cambiando.
+  const congelada = preguntaTieneRespuestas(form?.id, encuestas);
 
   const hayCambiosReales =
     modalAbierto &&
@@ -141,6 +158,19 @@ const GestionEncuestas = ({ encuestas = [] }) => {
   };
 
   const guardarCambios = async () => {
+    // Las áreas del núcleo están reservadas: el motor de riesgo localiza sus preguntas por
+    // área, así que un bloque que usara "Riesgo" le robaría la fuente al riesgo de renuncia.
+    const conflicto = draftPreguntas.find(
+      (p) => p.bloqueId && esAreaReservada(p.area),
+    );
+    if (conflicto) {
+      toast.error(
+        `El área "${conflicto.area}" es del núcleo y no puede usarse en un bloque. ` +
+          `Ponle otro nombre. Reservadas: ${AREAS_RESERVADAS.join(", ")}.`,
+      );
+      return;
+    }
+
     setGuardando(true);
     try {
       const ordenadas = normalizePreguntasList(draftPreguntas);
@@ -179,8 +209,16 @@ const GestionEncuestas = ({ encuestas = [] }) => {
       <PageHeader
         icon="clipboard"
         title="Gestión de Encuestas"
-        subtitle="Encuesta activa y preguntas del periodo actual."
+        subtitle={
+          bloqueActivo
+            ? `Esta quincena, además del núcleo se pregunta el bloque "${bloqueActivo.nombre}".`
+            : encuestaBloques.length
+              ? "Esta quincena solo se pregunta el núcleo: no hay ningún bloque activo."
+              : "Encuesta activa y preguntas del periodo actual."
+        }
       />
+
+      <GestionBloques />
 
       <Card className="encuesta-page-card">
         <SectionTitle icon="clipboard">Encuesta semanal activa</SectionTitle>
@@ -285,8 +323,36 @@ const GestionEncuestas = ({ encuestas = [] }) => {
                     className="mc-form-textarea"
                     rows={3}
                     value={form?.texto || ""}
+                    disabled={congelada}
                     onChange={(e) => setForm((prev) => ({ ...prev, texto: e.target.value }))}
                   />
+                  {congelada && (
+                    <span className="mc-hint">
+                      <Icon name="alert" size={14} />
+                      Alguien ya contestó esta pregunta, así que su texto no se puede cambiar:
+                      las respuestas quedarían atribuidas a una frase distinta. Para
+                      reformularla, desactívala y crea una nueva.
+                    </span>
+                  )}
+                </div>
+
+                <div className="mc-form-group">
+                  <label className="mc-form-label" htmlFor="ge-bloque">Cuándo se pregunta</label>
+                  <select
+                    id="ge-bloque"
+                    className="mc-form-select"
+                    value={form?.bloqueId || ""}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, bloqueId: e.target.value || null }))
+                    }
+                  >
+                    <option value="">Núcleo · todas las semanas (cuenta para el Pulse Score)</option>
+                    {encuestaBloques.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.nombre} · solo su quincena (no cuenta para el score)
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="mc-form-row-2">
@@ -355,6 +421,7 @@ const GestionEncuestas = ({ encuestas = [] }) => {
                       className="mc-form-textarea"
                       rows={4}
                       value={form.opcionesTexto || ""}
+                      disabled={congelada}
                       onChange={(e) =>
                         setForm((prev) => ({ ...prev, opcionesTexto: e.target.value }))
                       }

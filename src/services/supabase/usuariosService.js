@@ -145,6 +145,33 @@ export const crearUsuario = async (payload) => {
   return mapUsuario(data.usuario);
 };
 
+/**
+ * Banco de bloques rotatorios. Qué bloque toca cada quincena NO se guarda: se deriva de la
+ * semana en bloqueDeLaSemana() (utils/encuestaBloques.js), así que aquí solo se lee el banco.
+ *
+ * Se traen también los inactivos: el detalle histórico necesita el nombre de un bloque que
+ * quizá ya se apagó, o las respuestas viejas aparecerían sin contexto.
+ */
+export const getEncuestaBloques = async () => {
+  const { data, error } = await supabase
+    .from("encuesta_bloques")
+    .select("*")
+    .order("orden", { ascending: true });
+
+  if (error) {
+    console.error("Error al obtener los bloques de encuesta:", error);
+    throw new Error("No se pudieron cargar los bloques de la encuesta.");
+  }
+
+  return data.map((row) => ({
+    id: row.id,
+    nombre: row.nombre,
+    descripcion: row.descripcion,
+    orden: row.orden,
+    activo: row.activo,
+  }));
+};
+
 export const getEncuestaPreguntas = async () => {
   const { data, error } = await supabase
     .from("encuesta_preguntas")
@@ -162,5 +189,7 @@ export const getEncuestaPreguntas = async () => {
     opciones: row.opciones,
     orden: row.orden,
     activa: row.activa,
+    // null = pregunta del núcleo (cuenta para el Pulse Score).
+    bloqueId: row.bloque_id ?? null,
   }));
 };

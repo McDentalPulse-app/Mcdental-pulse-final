@@ -25,7 +25,7 @@ import { getEventosCalendario } from "../services/supabase/eventosCalendarioServ
 import { getIntercambios, getDestinosOcupados } from "../services/supabase/intercambiosService";
 import { getArchivosExpediente } from "../services/supabase/archivosExpedienteService";
 import { getNotasPsicologicas } from "../services/supabase/notasService";
-import { getUsuarios, getUsuariosDirectorio, getEncuestaPreguntas } from "../services/supabase/usuariosService";
+import { getUsuarios, getUsuariosDirectorio, getEncuestaPreguntas, getEncuestaBloques } from "../services/supabase/usuariosService";
 import { getSucursales } from "../services/supabase/sucursalesService";
 import { getAsistencias } from "../services/supabase/asistenciasService";
 import { getHorarios } from "../services/supabase/horariosService";
@@ -42,6 +42,9 @@ export const GlobalProvider = ({ children }) => {
   const [encuestaPreguntas, setEncuestaPreguntas] = useState(() =>
     normalizePreguntasList(ENCUESTA_PREGUNTAS)
   );
+  // Banco de bloques rotatorios. Arranca vacío a propósito: sin bloques la encuesta es
+  // solo el núcleo, que es la encuesta de siempre — es un estado válido, no un error.
+  const [encuestaBloques, setEncuestaBloques] = useState([]);
   const [encuestas, setEncuestas] = useState([]);
   // Avisos: para los 4 roles, sin importar quién es (el modal bloqueante y la pantalla
   // de historial los necesitan todos, a diferencia del resto de recursos que sí están
@@ -103,6 +106,7 @@ export const GlobalProvider = ({ children }) => {
         let dbUsuarios = null;
         let dbSucursales = null;
         let dbPreguntas = null;
+        let dbBloques = null;
         let dbEncuestas = null;
         let dbMensajes = null;
         let dbReportes = null;
@@ -135,6 +139,9 @@ export const GlobalProvider = ({ children }) => {
         // toda la app). Es la fuente única desde la BD; el array fijo de constants queda de fallback.
         promises.push(getSucursales().then(res => dbSucursales = res).catch(() => { huboError = true; }));
         promises.push(getEncuestaPreguntas().then(res => dbPreguntas = res).catch(() => { huboError = true; }));
+        // Los bloques los lee cualquier autenticado: el empleado necesita el nombre para ver
+        // de qué va su encuesta esta quincena.
+        promises.push(getEncuestaBloques().then(res => dbBloques = res).catch(() => { huboError = true; }));
 
         // Avisos: para TODOS los roles, sin condición — el modal bloqueante y la
         // pantalla de historial son de la app entera, no de un rol en particular.
@@ -214,6 +221,7 @@ export const GlobalProvider = ({ children }) => {
         // pisarlo con datos vacíos que parecerían "sin registros".
         if (dbUsuarios) setUsuarios(dbUsuarios);
         if (dbSucursales) setSucursales(dbSucursales);
+        if (dbBloques) setEncuestaBloques(dbBloques);
         if (dbPreguntas && dbPreguntas.length > 0) {
           setEncuestaPreguntas(normalizePreguntasList(dbPreguntas));
         } else if (dbPreguntas) {
@@ -344,6 +352,7 @@ export const GlobalProvider = ({ children }) => {
         sucursales, setSucursales,
         nombresSucursales,
         encuestaPreguntas, setEncuestaPreguntas,
+        encuestaBloques, setEncuestaBloques,
         encuestas, setEncuestas,
         avisos, setAvisos,
         avisosLeidos, setAvisosLeidos,
