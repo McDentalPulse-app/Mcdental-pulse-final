@@ -459,6 +459,18 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
                   </button>
                 );
               })}
+
+              {/* Quien atiende soporte solo ve un hilo cuando alguien ya escribió, así que
+                  con el buzón vacío la lista se quedaba con la conversación de la psicóloga
+                  y nada más — justo debajo de una cabecera que promete "el buzón de Soporte
+                  TI que atiendes". Parecía roto sin estarlo. Este renglón dice que el buzón
+                  está ahí y que simplemente no hay nada. */}
+              {atiendeSoporte && !conversacionesActivas.some(c => c.canal === "soporte") && (
+                <p className="mensajes-conv-vacio">
+                  <Icon name="wrench" size={14} />
+                  Buzón de Soporte TI · nadie ha escrito todavía
+                </p>
+              )}
             </div>
           </Card>
 

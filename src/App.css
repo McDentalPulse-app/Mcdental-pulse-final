@@ -5076,6 +5076,22 @@
   border-radius: 999px;
 }
 
+/* Renglón informativo del buzón vacío para quien atiende soporte. No es un botón: no hay
+   conversación que abrir todavía, y fingir que la hay sería peor que decirlo. El borde
+   discontinuo es la señal de "aquí va algo cuando lo haya". */
+.mensajes-conv-vacio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px dashed var(--mc-borde-suave);
+  border-radius: 12px;
+  color: var(--mc-texto-secundario);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
 .mensajes-conv-item {
   border: none;
   text-align: left;
