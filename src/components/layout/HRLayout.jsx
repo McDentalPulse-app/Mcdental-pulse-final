@@ -29,6 +29,7 @@ import Config from '../settings/Config';
 import BolsaTrabajo from '../rh/BolsaTrabajo';
 import Perfil from '../common/Perfil';
 import IdeasMejora from '../common/IdeasMejora';
+import SoporteTI from '../common/SoporteTI';
 import AvisoPush from '../asistencia/AvisoPush';
 import { useAvisoPush } from '../../hooks/useAvisoPush';
 import AvisosPanel from '../avisos/AvisosPanel';
@@ -77,6 +78,7 @@ export default function HRLayout({ user, globals, actions }) {
             <Route path="reportes" element={<Reportes users={USERS} encuestas={encuestas} preguntas={encuestaPreguntas} />} />
             <Route path="config" element={<Config />} />
             <Route path="soporte" element={<IdeasMejora />} />
+            <Route path="soporteti" element={<SoporteTI />} />
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} />} />
             <Route path="mensajes" element={<Mensajes user={user} mensajes={[]} onSend={() => false} />} />
             <Route path="perfil" element={<Perfil />} />

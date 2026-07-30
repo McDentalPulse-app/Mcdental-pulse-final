@@ -131,6 +131,13 @@ src/
   `ETIQUETA_CAUSA`: en la base se guarda acotada al catálogo (`tramite_oficial`) y sin
   traducir era eso lo que se leía en pantalla.
 
+- **🆕 Soporte TI para RH y psicóloga.** Lo tenían empleados y doctores, pero no gestión:
+  si a la psicóloga se le rompía la computadora, no tenía dónde levantar el ticket. Va con
+  clave propia (`soporteti`) y no reemplazando a `soporte`, porque en gestión esa clave ya
+  es Ideas de mejora — son dos módulos que conviven, no uno que sustituye al otro. El
+  componente no dependía del rol y `api/soporte-ticket` tampoco filtra, así que solo hacía
+  falta la entrada de menú y la ruta.
+
 **Desplegado hoy: solo el API** (`build-api.sh`), que es donde vive el arreglo de la IA.
 El resto — frontend, edge functions y la migración 099 — está commiteado pero **no sale
 hasta aplicar la migración, copiar las funciones y correr `build-frontend.sh`**.

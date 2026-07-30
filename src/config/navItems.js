@@ -55,6 +55,10 @@ export const NAV_ITEMS = {
     { key: "mensajes", icon: "message", label: "Mensajes" },
     { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
     { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
+    // Clave distinta de "soporte" a propósito: en gestión esa clave ya está tomada por
+    // Ideas de mejora, y la plantilla la usa para Soporte TI. Son dos módulos distintos
+    // que conviven, no uno que sustituye al otro.
+    { key: "soporteti", icon: "wrench", label: "Soporte TI", group: "Herramientas" },
     { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
   ],
   rh: [
@@ -86,6 +90,7 @@ export const NAV_ITEMS = {
     { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
     { key: "mensajes", icon: "message", label: "Mensajes" },
     { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
+    { key: "soporteti", icon: "wrench", label: "Soporte TI", group: "Herramientas" },
     { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
   ],
   // Empleado y doctor: hasta el 2026-07-29 tenían TODO en dos menús — "Mi trabajo" con 9 ítems
