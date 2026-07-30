@@ -30,6 +30,7 @@ const mapUsuarioRow = (row) =>
     soporteTi: !!row.soporte_ti,
     debeCambiarPassword: row.debe_cambiar_password,
     avatarUrl: row.avatar_url,
+    bannerUrl: row.banner_url,
     colorAcento: row.color_acento,
   };
 

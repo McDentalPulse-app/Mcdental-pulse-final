@@ -6,6 +6,7 @@ import { notify } from "../../utils/notify";
 import { buscarActualizacion } from "../../utils/appUpdate";
 import { probar as probarPush } from "../../services/pushService";
 import { subirAvatarUsuario, quitarAvatarUsuario } from "../../services/supabase/avatarService";
+import { subirBannerUsuario, quitarBannerUsuario } from "../../services/supabase/bannerService";
 import { formatFechaIngreso, formatFechaCumpleanos, formatAntiguedadEmpleado } from "../../utils/helpers";
 import { normalizeSucursal } from "../../utils/constants";
 import Card from "./Card";
@@ -29,6 +30,7 @@ export default function Perfil() {
   const { setUsuarios } = useGlobal();
   const { toast } = useNotification();
   const [subiendoFoto, setSubiendoFoto] = useState(false);
+  const [subiendoBanner, setSubiendoBanner] = useState(false);
   const [buscandoUpdate, setBuscandoUpdate] = useState(false);
   const [probando, setProbando] = useState(false);
 
@@ -108,6 +110,47 @@ export default function Perfil() {
     }
   };
 
+  const propagarBanner = (bannerUrl) => {
+    setUser((prev) => (prev ? { ...prev, bannerUrl } : prev));
+    setUsuarios((prev) => prev.map((u) => (u.id === user.id ? { ...u, bannerUrl } : u)));
+  };
+
+  const handleCambiarBanner = async (e) => {
+    const archivo = e.target.files?.[0];
+    e.target.value = "";
+    if (!archivo) return;
+    setSubiendoBanner(true);
+    try {
+      const nuevaUrl = await subirBannerUsuario(user.id, archivo);
+      propagarBanner(nuevaUrl);
+      toast.success("Portada actualizada.");
+    } catch (error) {
+      toast.error(error.message || "No se pudo subir la portada.");
+    } finally {
+      setSubiendoBanner(false);
+    }
+  };
+
+  const handleQuitarBanner = async () => {
+    const ok = await notify.confirm({
+      title: "Quitar portada",
+      description: "¿Seguro que quieres volver a la portada de color?",
+      variant: "warning",
+      confirmText: "Quitar portada",
+    });
+    if (!ok) return;
+    setSubiendoBanner(true);
+    try {
+      await quitarBannerUsuario(user.id);
+      propagarBanner(null);
+      toast.success("Portada eliminada.");
+    } catch (error) {
+      toast.error(error.message || "No se pudo quitar la portada.");
+    } finally {
+      setSubiendoBanner(false);
+    }
+  };
+
   const rolLabel = ROLE_LABEL[user.role] || user.role;
   const info = [
     { icon: "user", label: "Usuario", value: user.user },
@@ -123,7 +166,30 @@ export default function Perfil() {
   return (
     <div className="admin-page perfil-page">
       <div className="perfil-hero2">
-        <div className="perfil-cover" aria-hidden="true" />
+        {/* La capa de la portada queda decorativa; los controles van en un hermano para
+            que sí los lea un lector de pantalla. */}
+        <div
+          className={`perfil-cover${user.bannerUrl ? " perfil-cover--imagen" : ""}`}
+          style={user.bannerUrl ? { backgroundImage: `url("${user.bannerUrl}")` } : undefined}
+          aria-hidden="true"
+        />
+        <div className="perfil-cover-actions">
+          <label className="perfil-cover-btn" aria-disabled={subiendoBanner}>
+            <Icon name={subiendoBanner ? "clock" : "camera"} size={14} />
+            {subiendoBanner ? "Subiendo…" : (user.bannerUrl ? "Cambiar portada" : "Subir portada")}
+            <input type="file" accept="image/*" hidden disabled={subiendoBanner} onChange={handleCambiarBanner} />
+          </label>
+          {user.bannerUrl && (
+            <button
+              type="button"
+              className="perfil-cover-btn"
+              disabled={subiendoBanner}
+              onClick={handleQuitarBanner}
+            >
+              <Icon name="minus" size={14} /> Quitar
+            </button>
+          )}
+        </div>
         <div className="perfil-hero2-row">
           <div className="perfil-avatar2">
             <Avatar name={user.name} size={120} color="var(--mc-verde)" photoUrl={user.avatarUrl} />

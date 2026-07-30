@@ -12088,3 +12088,69 @@
   position: relative;
   z-index: 2;
 }
+
+/* ── Portada de Mi perfil con imagen propia ─────────────────────────────────────
+   .perfil-cover sigue siendo el degradado --mc-perfil-cover cuando no hay imagen;
+   con --imagen la sustituye la foto del usuario. Los controles van en un hermano
+   absoluto (la capa de la portada es aria-hidden y no debe contener botones). */
+.perfil-hero2 { position: relative; }
+
+.perfil-cover--imagen {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.perfil-cover-actions {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  max-width: calc(100% - 24px);
+}
+
+/* Fondo translúcido oscuro y texto blanco: la portada puede ser cualquier imagen,
+   así que el botón no puede fiarse de los tokens de superficie para contrastar. */
+.perfil-cover-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid rgba(255, 255, 255, .35);
+  border-radius: 999px;
+  background: rgba(16, 24, 40, .55);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .16s;
+}
+.perfil-cover-btn:hover { background: rgba(16, 24, 40, .72); }
+.perfil-cover-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.perfil-cover-btn[aria-disabled="true"],
+.perfil-cover-btn:disabled { opacity: .6; pointer-events: none; }
+
+/* ── Cabecera del perfil en teléfono ───────────────────────────────────────────
+   En fila, el avatar de 120px y el gap dejaban ~220px para el nombre, que se
+   partía en dos líneas pegado a la foto. Apilado y centrado aprovecha el ancho
+   completo y es el patrón de perfil que se espera en móvil. */
+@media (max-width: 640px) {
+  .perfil-hero2-row {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+    margin-top: -60px;
+    padding: 0 18px 20px;
+  }
+  .perfil-hero2-id { flex: none; align-items: center; width: 100%; }
+  .perfil-hero2-nombre-row { justify-content: center; }
+  .perfil-hero2-actions { justify-content: center; width: 100%; }
+  .perfil-hero2-actions .perfil-foto-btn { flex: 1; justify-content: center; min-width: 0; }
+}

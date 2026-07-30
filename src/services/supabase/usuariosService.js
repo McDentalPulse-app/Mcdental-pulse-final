@@ -18,6 +18,7 @@ const mapUsuario = (row) =>
     archivado: row.archivado,
     debeCambiarPassword: row.debe_cambiar_password,
     avatarUrl: row.avatar_url,
+    bannerUrl: row.banner_url,
   };
 
 // Fila completa, con PII (teléfono, email, fechas). El RLS de la migración 030 solo
