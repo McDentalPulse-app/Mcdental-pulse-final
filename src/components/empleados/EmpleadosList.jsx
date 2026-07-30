@@ -471,7 +471,11 @@ const EmpleadosList = ({
       </Card>
 
       <Card className="emp-table-card">
-        <div className="emp-table-scroll">
+        {/* Escritorio: la tabla ordenable. En teléfono se esconde y en su lugar va la
+            lista de tarjetas de abajo — la tabla necesitaba 672px de ancho y en una
+            pantalla de 390 dejaba fuera el 45% (Puesto, Antigüedad y el botón de baja),
+            visibles solo arrastrando de lado y sin ninguna pista de que hubiera más. */}
+        <div className="emp-table-scroll gestion-personal-desktop-only">
           <table className="emp-table">
             <thead>
               <tr>
@@ -526,6 +530,61 @@ const EmpleadosList = ({
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Teléfono: la misma información en tarjetas. Reusa el chrome de
+            .gestion-personal-mobile-* a propósito, para que Empleados y Gestión de
+            Personal se vean igual en móvil (es el reflejo de que Gestión de Personal
+            ya reusa la tabla .emp-table* de aquí). Tocar la tarjeta abre el detalle,
+            igual que tocar la fila en escritorio. */}
+        <div className="gestion-personal-mobile-list">
+          {paginados.length === 0 ? (
+            <p className="gestion-personal-mobile-empty">
+              No hay empleados que coincidan con la búsqueda.
+            </p>
+          ) : (
+            paginados.map((emp) => {
+              const sem = getUltimoSemaforo(emp.id);
+              return (
+                <div
+                  key={emp.id}
+                  className="gestion-personal-mobile-card mc-row-hover"
+                  onClick={() => setSelected(emp)}
+                >
+                  <div className="gestion-personal-mobile-head">
+                    <div className="emp-mobile-ident">
+                      <Avatar name={emp.name} size={32} color={nivelColor(sem)} photoUrl={emp.avatarUrl} />
+                      <div className="gestion-personal-mobile-name">{emp.name}</div>
+                    </div>
+                    {role !== "rh" && <Badge tipo={sem} />}
+                  </div>
+
+                  <div className="gestion-personal-mobile-meta">
+                    {emp.puesto && <span className="mc-tag">{emp.puesto}</span>}
+                    <span className="gestion-personal-mobile-sucursal">
+                      {normalizeSucursal(emp.sucursal)}
+                      {resolveFechaIngreso(emp) ? ` · ${formatAntiguedadEmpleado(emp)}` : ""}
+                    </span>
+                  </div>
+
+                  {puedeEliminar && (
+                    <div
+                      className="gestion-personal-mobile-actions"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        className="mc-btn-outline mc-btn-outline--danger"
+                        onClick={() => pedirBaja(emp)}
+                      >
+                        Dar de baja
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
 
         {totalPaginas > 1 && (

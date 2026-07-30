@@ -25,6 +25,20 @@ import "./AIEngine.css";
 import { esEmpleadoActivo } from "../../utils/helpers";
 
 
+// /api/gemini contesta SIEMPRE con el motivo exacto del fallo (llave sin configurar,
+// cuota agotada, sesión inválida, rol sin permiso…) y callAI lo propaga tal cual en
+// error.message. Antes se descartaba y se decía "revisa la conexión" pasara lo que
+// pasara, lo que mandaba a buscar el problema justo donde no estaba. Ahora se muestra
+// el motivo; solo el fallo de red de verdad (fetch rechazado, sin respuesta del
+// servidor) cae al mensaje genérico, que ahí sí es el correcto.
+const motivoFallo = (error) => {
+  const msg = error?.message?.trim();
+  if (!msg || /failed to fetch|networkerror|load failed/i.test(msg)) {
+    return "Revisa la conexión e inténtalo de nuevo.";
+  }
+  return msg;
+};
+
 const AIOutput = ({ text, loading, placeholder }) => {
   if (loading) {
     return (
@@ -179,7 +193,7 @@ const RESUMEN_LIMITE = 8;
       setOutput(result);
     } catch (error) {
       console.error("Error generando resumen IA:", error);
-      toast.error("No se pudo generar el resumen. Revisa la conexión e inténtalo de nuevo.");
+      toast.error(`No se pudo generar el resumen. ${motivoFallo(error)}`);
     } finally {
       setLoading(false);
     }
@@ -194,7 +208,7 @@ const RESUMEN_LIMITE = 8;
       setOutput(result);
     } catch (error) {
       console.error("Error analizando empleado con IA:", error);
-      toast.error("No se pudo analizar el expediente. Revisa la conexión e inténtalo de nuevo.");
+      toast.error(`No se pudo analizar el expediente. ${motivoFallo(error)}`);
     } finally {
       setLoading(false);
     }
@@ -209,7 +223,7 @@ const RESUMEN_LIMITE = 8;
       setOutput(result);
     } catch (error) {
       console.error("Error generando alertas IA:", error);
-      toast.error("No se pudieron generar las alertas. Revisa la conexión e inténtalo de nuevo.");
+      toast.error(`No se pudieron generar las alertas. ${motivoFallo(error)}`);
     } finally {
       setLoading(false);
     }
@@ -224,7 +238,7 @@ const RESUMEN_LIMITE = 8;
       setOutput(result);
     } catch (error) {
       console.error("Error generando predicción IA:", error);
-      toast.error("No se pudo generar la predicción. Revisa la conexión e inténtalo de nuevo.");
+      toast.error(`No se pudo generar la predicción. ${motivoFallo(error)}`);
     } finally {
       setLoading(false);
     }
@@ -244,7 +258,7 @@ const RESUMEN_LIMITE = 8;
       setChatHistory(h => [...h, { role: "ai", text: result }]);
     } catch (error) {
       console.error("Error en chat IA:", error);
-      setChatHistory(h => [...h, { role: "ai", text: "⚠️ No pude responder ahora. Revisa la conexión e inténtalo de nuevo." }]);
+      setChatHistory(h => [...h, { role: "ai", text: `⚠️ No pude responder ahora. ${motivoFallo(error)}` }]);
     } finally {
       setChatLoading(false);
     }

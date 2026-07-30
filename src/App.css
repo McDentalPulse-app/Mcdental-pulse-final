@@ -11196,6 +11196,28 @@
   .emp-table-th, .emp-table-row td { padding: 9px 10px; }
 }
 
+/* Empleados en teléfono: tarjetas en vez de tabla. El alternado lo resuelve el CSS
+   que ya existe (.gestion-personal-desktop-only / .gestion-personal-mobile-list), y
+   las tarjetas reusan ese mismo chrome; acá solo va lo propio de Empleados: el
+   avatar con el color del semáforo junto al nombre, y que la tarjeta se sienta
+   tocable porque abre el detalle. */
+.emp-mobile-ident {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.emp-table-card .gestion-personal-mobile-card {
+  cursor: pointer;
+}
+
+/* Sin botón de baja, la meta es el último bloque y su margen inferior sobraba. */
+.gestion-personal-mobile-meta:last-child {
+  margin-bottom: 0;
+}
+
 /* ============================================================================
    Panel de detalle de empleado: se desliza desde la derecha por encima de la
    tabla (que sigue montada atrás), en vez de reemplazar toda la pantalla.

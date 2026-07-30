@@ -74,7 +74,14 @@ export default async function handler(req, res) {
   if (typeof prompt !== "string" || !prompt.trim()) {
     return res.status(400).json({ error: "Falta 'prompt'." });
   }
-  if (prompt.length > 8000) {
+  // El tope existe como guardarraíl de abuso, no como límite del modelo: gemini-2.5-flash
+  // admite del orden de un millón de tokens. Los 8000 de antes eran arbitrarios y dejaban
+  // la pantalla de IA INUTILIZABLE en producción — buildContexto() emite una línea por
+  // empleado (~180 caracteres) y con 98 activos el prompt ronda los 18.200, así que TODA
+  // llamada moría con un 413 silencioso (es un return temprano, no deja rastro en el log).
+  // En desarrollo, con 3 empleados de prueba, el contexto son ~600 caracteres y nunca se
+  // vio. 64.000 deja margen para triplicar la plantilla antes de volver a tocarlo.
+  if (prompt.length > 64000) {
     return res.status(413).json({ error: "El prompt es demasiado largo." });
   }
 
