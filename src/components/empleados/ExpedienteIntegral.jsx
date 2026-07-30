@@ -23,9 +23,11 @@ import {
   formatAntiguedadEmpleado,
   formatFechaCumpleanos,
   formatFechaIngreso,
+  formatFechaSolicitud,
   resolveFechaCumpleanos,
   resolveFechaIngreso,
 } from "../../utils/helpers";
+import { ETIQUETA_CAUSA } from "../../utils/permisos";
 import { useNotification } from "../../contexts/NotificationContext";
 import { nivelColor } from "../../config/theme";
 
@@ -80,7 +82,11 @@ const empleado =
   }
 
   const encuestasEmpleado = getEncuestasEmpleado(encuestas, empleado.id);
-  const vacacionesEmpleado = vacaciones.filter(v => v.empleadoId === empleado.id);
+  // Historial de solicitudes, lo más reciente primero por fecha de PETICIÓN (no por la
+  // fecha que se pidió librar): así el expediente se lee en el orden en que ocurrió.
+  const porSolicitudDesc = (a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+  const vacacionesEmpleado = vacaciones.filter(v => v.empleadoId === empleado.id).sort(porSolicitudDesc);
+  const permisosEmpleado = permisos.filter(p => p.empleadoId === empleado.id).sort(porSolicitudDesc);
   const descuentosEmpleado = descuentos.filter(d => d.empleadoId === empleado.id);
   const reconocimientosEmpleado = reconocimientos.filter(r => r.empleadoId === empleado.id);
   const reportesEmpleado = reportesConfidenciales.filter(r => r.empleadoId === empleado.id);
@@ -402,8 +408,51 @@ const empleado =
               <p className="admin-list-item-meta">Sin vacaciones registradas.</p>
             ) : vacacionesEmpleado.map(v => (
               <div key={v.id} className="expediente-list-row">
-                <b>{v.inicio} al {v.fin}</b>
-                <div className="admin-list-item-meta">{v.dias} días · {v.estado}</div>
+                {/* Aquí decía {v.inicio} al {v.fin}, y esos campos NO existen: el servicio
+                    mapea fechaInicio/fechaFin. La fila salía como " al " — el expediente
+                    llevaba tiempo mostrando vacaciones sin fecha. */}
+                <b>{v.fechaInicio || v.inicio || v.desde} al {v.fechaFin || v.fin || v.hasta}</b>
+                <div className="admin-list-item-meta">
+                  {v.dias} días · {v.estado}
+                  {v.motivo ? ` · ${v.motivo}` : ""}
+                </div>
+                {v.createdAt && (
+                  <div className="detail-solicitud-fecha">
+                    Solicitado el {formatFechaSolicitud(v.createdAt)}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Permisos: el expediente tenía Vacaciones pero no Permisos, así que la mitad del
+            historial de ausencias de una persona no estaba aquí. Mismo trato que en la ficha
+            de Empleados, para que las dos pantallas cuenten lo mismo. */}
+        <Card>
+          <SectionTitle icon="clipboardCheck">Permisos</SectionTitle>
+          <div className="expediente-list-scroll">
+            {permisosEmpleado.length === 0 ? (
+              <p className="admin-list-item-meta">Sin permisos registrados.</p>
+            ) : permisosEmpleado.map(p => (
+              <div key={p.id} className="expediente-list-row">
+                <b>
+                  {p.fecha}
+                  {p.fechaFin && p.fechaFin !== p.fecha ? ` al ${p.fechaFin}` : ""}
+                  {p.hora ? ` · ${p.hora}` : ""}
+                </b>
+                <div className="admin-list-item-meta">
+                  {p.estado}
+                  {/* ETIQUETA_CAUSA: en la base la causa va acotada al catálogo
+                      ('tramite_oficial') y sin traducir era eso lo que se leería. */}
+                  {p.causa ? ` · ${ETIQUETA_CAUSA[p.causa] || p.causa}` : ""}
+                  {p.motivo ? ` · ${p.motivo}` : ""}
+                </div>
+                {p.createdAt && (
+                  <div className="detail-solicitud-fecha">
+                    Solicitado el {formatFechaSolicitud(p.createdAt)}
+                  </div>
+                )}
               </div>
             ))}
           </div>

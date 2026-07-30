@@ -148,6 +148,13 @@ src/
   quien no lo escribió ni lo recibió. La migración añade `rh` a las policies, que lo tenían
   todo menos ese rol — sin eso RH vería el canal y el envío moriría en RLS.
 
+- **🆕 El mismo historial, ahora también en Expedientes** — y **🔴 las vacaciones llevaban
+  tiempo sin mostrar fecha ahí**. La fila pintaba `{v.inicio} al {v.fin}` y esos campos no
+  existen: el servicio mapea `fechaInicio`/`fechaFin`, así que salía literalmente " al ".
+  Corregido, añadida la sección Permisos que faltaba, y las dos con *"Solicitado el ..."*
+  ordenadas por fecha de petición. Los tres layouts ya pasaban `permisos`; solo faltaba
+  usarlo. Lo ven admin, RH y psicóloga.
+
 **Desplegado hoy: solo el API** (`build-api.sh`), que es donde vive el arreglo de la IA.
 El resto — frontend, edge functions y la migración 099 — está commiteado pero **no sale
 hasta aplicar la migración, copiar las funciones y correr `build-frontend.sh`**.
