@@ -309,3 +309,57 @@ describe("el detector no se deja robar la pregunta por un bloque rotatorio", () 
     expect(getPreguntaAbierta(viejas).id).toBe("v2");
   });
 });
+
+describe("fase 5: las respuestas de un bloque se leen en el detalle", () => {
+  // El bloque no puntúa, pero eso NO significa que se pierda: la psicóloga tiene que poder
+  // leerlo en el expediente. Y las de bloques ya apagados también, o el histórico se queda
+  // con "Pregunta registrada" sin texto.
+  const nucleoEscala = { id: "n-esc", tipo: "escala", area: "Estrés", bloqueId: null };
+  const nucleoRiesgo = { id: "n-rie", tipo: "opcion", area: "Riesgo", bloqueId: null,
+                         opciones: ["No", "Algo", "Sí, seriamente"] };
+  const deBloque = { id: "b-esc", tipo: "escala", area: "Volumen quincenal", bloqueId: "b-1" };
+  const deBloqueViejo = { id: "b-old", tipo: "escala", area: "Turnos", bloqueId: "b-0" };
+
+  const encuesta = {
+    id: "e1",
+    semana: "2026-W05",
+    respuestas: { "n-esc": 8, "n-rie": "No", "b-esc": 3, "b-old": 6 },
+  };
+
+  it("la respuesta del bloque aparece con su texto y su área", () => {
+    const items = buildEncuestaDetalleItems(encuesta, [nucleoEscala, nucleoRiesgo, deBloque]);
+    const delBloque = items.find((i) => i.area === "Volumen quincenal");
+    expect(delBloque).toBeDefined();
+    expect(delBloque.valor).toBe(3);
+  });
+
+  it("el núcleo y el bloque conviven en el mismo detalle", () => {
+    const items = buildEncuestaDetalleItems(encuesta, [nucleoEscala, nucleoRiesgo, deBloque]);
+    expect(items.map((i) => i.area)).toContain("Estrés");
+    expect(items.map((i) => i.area)).toContain("Volumen quincenal");
+  });
+
+  it("una respuesta de un bloque ya apagado sigue teniendo texto, no queda huérfana", () => {
+    // Este es el motivo de que getEncuestaPreguntas traiga también las inactivas: si al
+    // detalle solo llegaran las preguntas del periodo actual, las de quincenas pasadas
+    // caerían al respaldo genérico y saldrían sin su enunciado.
+    const items = buildEncuestaDetalleItems(encuesta, [nucleoEscala, deBloque, deBloqueViejo]);
+    const vieja = items.find((i) => i.area === "Turnos");
+    expect(vieja).toBeDefined();
+    expect(vieja.pregunta).not.toBe("Pregunta registrada");
+    expect(vieja.valor).toBe(6);
+  });
+
+  it("el riesgo de renuncia se sigue leyendo con un bloque en medio", () => {
+    expect(readRiesgoRenuncia(encuesta, [deBloque, nucleoRiesgo, nucleoEscala])).toBe("No");
+  });
+
+  it("el resumen que va a la IA deja fuera las escalas del bloque", () => {
+    // Decisión del 2026-07-29: un área que aparece una quincena y desaparece la siguiente
+    // haría que la IA leyera un cambio donde solo hubo un cambio de cuestionario.
+    const resumen = resumenEscalas(encuesta, [nucleoEscala, deBloque, deBloqueViejo]);
+    expect(resumen).toContain("Estrés");
+    expect(resumen).not.toContain("Volumen quincenal");
+    expect(resumen).not.toContain("Turnos");
+  });
+});

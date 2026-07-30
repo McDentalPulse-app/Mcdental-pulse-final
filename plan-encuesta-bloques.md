@@ -1,6 +1,8 @@
 # plan.md — Bloques rotatorios en la encuesta
 
-**STATUS:** FASES 0-4 EN PRODUCCIÓN (2026-07-29) · QUEDA FASE 5 (verificación con datos reales)
+**STATUS:** FASES 0-5 COMPLETAS Y EN PRODUCCIÓN (2026-07-29)
+**Único punto abierto:** falta que una persona conteste una encuesta con un bloque activo. Todo
+lo verificable sin eso está verificado (ver Fase 5 al final).
 **Fecha:** 2026-07-29
 **Origen:** sesión de grilling. Las cinco decisiones de diseño ya están cerradas (ver más abajo).
 **Alcance:** `/opt/pulse/app` en la VPS (producción).
@@ -227,7 +229,33 @@ bloque.
 **Aceptación:** el campo de texto de una pregunta contestada está deshabilitado y explica por
 qué; se puede desactivarla y duplicarla; intentar usar el área "Riesgo" en un bloque avisa.
 
-## Fase 5 — Verificación
+## Fase 5 — Verificación · COMPLETADA (2026-07-29)
+
+**Hecho:**
+- **RLS de `encuesta_bloques` con los cinco roles**, cada uno con su JWT completo: admin, rh y
+  psicóloga pueden escribir; el empleado es rechazado por la policy **pero sí puede leer**, que
+  es lo que necesita para ver el tema de su encuesta. Todo con `rollback`; la base quedó en 0
+  bloques y las 61 encuestas intactas.
+- **Riesgos de las 61 encuestas reales:** agregado idéntico antes y después del cambio del
+  detector (Fase 2).
+- **El score no se mueve:** probado con el cálculo real, más el test que demuestra que sin el
+  filtro sí se movería.
+- **Las respuestas del bloque se leen en el detalle** (5 tests nuevos): aparecen con su texto y
+  su área, conviven con el núcleo, y una respuesta de un **bloque ya apagado** sigue teniendo
+  enunciado en vez de quedar como "Pregunta registrada" — que es el motivo de que
+  `getEncuestaPreguntas` traiga también las inactivas.
+- **El riesgo de renuncia se sigue leyendo** con un bloque de por medio.
+- **El resumen que va a la IA deja fuera** las escalas de bloque.
+- **El banco, probado desde la interfaz** como lo haría RH: crear, ver la etiqueta "Esta
+  quincena (Qn)", y eliminar. Sin dejar material de prueba.
+
+**Lo que NO se puede verificar sin una persona:** que alguien conteste de verdad una encuesta
+con un bloque activo. Requiere una sesión de empleado o doctor —las de admin y psicóloga no
+tienen la pantalla de encuesta— y contestar crea una fila real en `encuestas`, así que no se
+simula. Cuando se haga, comprobar dos cosas: que el score sale igual que sin bloque, y que las
+respuestas del bloque aparecen en el expediente.
+
+## Fase 5 — Criterios originales
 
 - Migración aplicada y RLS comprobada con `rollback` para los tres roles de gestión.
 - Riesgos de las 61 encuestas: idénticos antes y después (Fase 2).
