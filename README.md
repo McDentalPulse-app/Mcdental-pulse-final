@@ -63,6 +63,43 @@ src/
 
 ## Changelog
 
+### 2026-07-30 · La IA llevaba días muerta por un tope de caracteres, y la pantalla mentía sobre ello
+
+> Reportado como "la IA no funciona". No era la llave de Gemini, ni el modelo, ni la cuota,
+> ni el SDK: era un límite de longitud puesto a ojo que la plantilla real desbordaba. Lo
+> difícil no fue el fallo, sino que las tres fuentes que uno consulta primero — la pantalla,
+> el log del contenedor y el propio código — apuntaban a sitios equivocados.
+
+- **🔴 Toda llamada a la IA moría con un 413.** `api/gemini.js` rechazaba cualquier prompt
+  de más de 8000 caracteres. `buildContexto()` emite una línea por empleado (~180
+  caracteres), así que con los **98 activos** el prompt ronda los **18.200**: lo pasaba por
+  2,3 veces. Ese tope no era un límite del modelo — `gemini-2.5-flash` admite del orden de
+  un millón de tokens — sino un número puesto a ojo por debajo del uso real. Subido a
+  64.000, que deja margen para triplicar la plantilla. En desarrollo no se veía nunca: con
+  3 empleados de prueba el contexto son ~600 caracteres.
+- **🔴 El 413 no dejaba rastro en ningún log.** Es un `return` temprano y no pasa por
+  `console.error`, así que `docker logs pulse-api-server` llevaba 7 días sin un solo error
+  de Gemini mientras la pantalla no funcionaba. Apareció en el **access log de nginx**:
+  cinco `POST /api/gemini` con código 413, todos con referer `/admin/ai`. El log del
+  contenedor solo cuenta lo que el código decide contar; el del proxy cuenta todo.
+- **🔴 La pantalla decía "revisa la conexión" pasara lo que pasara.** El proxy devuelve
+  siempre el motivo exacto — llave sin configurar, cuota agotada, sesión inválida, prompt
+  largo — y `callAI` lo propaga en `error.message`, pero `AIEngine` lo descartaba en los
+  cinco sitios donde captura (los cuatro botones y el chat) y ponía un texto fijo sobre la
+  conexión. Eso mandó a buscar el problema en la red, en la llave y en el SDK antes que en
+  el propio mensaje. Ahora se muestra el motivo real; solo el fallo de red de verdad (fetch
+  rechazado) cae al genérico.
+- **🔴 La tabla de Empleados escondía la mitad en el teléfono.** A 390px necesitaba 672px:
+  Nombre y Estado llenaban la pantalla, y Puesto, Antigüedad y el botón de dar de baja
+  quedaban fuera — alcanzables solo arrastrando de lado, y sin ninguna pista de que
+  existieran. A 360px se ocultaba el 50%. Pasa a tarjetas reusando el mecanismo que Gestión
+  de Personal ya tenía resuelto (`.gestion-personal-desktop-only` / `-mobile-list`), así
+  que ambas pantallas se ven igual y seguirán viéndose igual si alguien las retoca.
+
+**Desplegado hoy: solo el API** (`build-api.sh`), que es donde vive el arreglo de la IA.
+Los tres cambios de frontend están commiteados pero **no salen hasta el próximo
+`build-frontend.sh`**.
+
 ### 2026-07-28 · Chat rehecho, videollamadas propias, retención y respaldo externo
 
 > El día siguiente al corte. Primero salieron a la luz tres cosas que el corte había
