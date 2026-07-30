@@ -2186,6 +2186,13 @@
   font-size: 13px;
 }
 
+/* "Solicitado el ..." en el expediente. Va un punto más apagado que el motivo: es el
+   dato que se busca cuando hace falta, no el que se lee de entrada. */
+.detail-solicitud-fecha {
+  color: var(--mc-texto-apagado);
+  font-size: 12px;
+}
+
 @media (max-width: 900px) {
   .list-filters-grid {
     grid-template-columns: 1fr;
@@ -4834,8 +4841,39 @@
   margin-bottom: 6px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 6px;
   font-size: 12px;
+}
+
+.psico-note-title-texto {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* Papelera de la nota: discreta hasta que se apunta, para que no compita con el texto
+   clínico. 32px de alto y sin encogerse — es un objetivo táctil, no un adorno. */
+.psico-note-borrar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--mc-texto-secundario);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.psico-note-borrar:hover,
+.psico-note-borrar:focus-visible {
+  background: var(--mc-badge-rojo-bg);
+  color: var(--mc-badge-rojo-texto);
 }
 
 .psico-confidential-banner {

@@ -17,9 +17,10 @@ import { calcPulseScore, getPulseStatus, calcRiesgos, getEmployeeAverageScore } 
 import { nivelColor } from "../../config/theme";
 import LineChart from "../common/LineChart";
 import RiskBar from "../common/RiskBar";
-import { formatAntiguedadEmpleado, resolveFechaIngreso, formatEmpleadoIdForDisplay } from "../../utils/helpers";
+import { formatAntiguedadEmpleado, resolveFechaIngreso, formatEmpleadoIdForDisplay, formatFechaSolicitud } from "../../utils/helpers";
 import Icon from "../ui/Icon";
 import { esEmpleadoActivo } from "../../utils/helpers";
+import { ETIQUETA_CAUSA } from "../../utils/permisos";
 import { useBajaUsuario } from "../../hooks/useBajaUsuario";
 
 const RANGO_SEMAFORO = { rojo: 0, amarillo: 1, verde: 2, "sin-datos": 3 };
@@ -122,7 +123,12 @@ const EmpleadosList = ({
       .sort((a, b) => a.semana.localeCompare(b.semana));
 
     const notasEmp = notas.filter(n => n.empleadoId === selected.id);
-    const vacacionesEmp = vacaciones.filter(v => v.empleadoId === selected.id);
+    // Historial de solicitudes: lo más reciente primero, por fecha de PETICIÓN. Ordenar
+    // por la fecha del permiso mezclaría lo que se pidió ayer para dentro de un mes con
+    // lo que se pidió hace un mes para mañana, y el expediente se lee al revés.
+    const porSolicitudDesc = (a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+    const vacacionesEmp = vacaciones.filter(v => v.empleadoId === selected.id).sort(porSolicitudDesc);
+    const permisosEmp = permisos.filter(p => p.empleadoId === selected.id).sort(porSolicitudDesc);
     const descuentosEmp = descuentos.filter(d => d.empleadoId === selected.id);
     const reconocimientosEmp = reconocimientos.filter(r =>
   r.empleadoId === selected.id ||
@@ -334,11 +340,62 @@ const EmpleadosList = ({
                   <span style={{ color: "var(--mc-texto-secundario)" }}>
                     {v.dias} días · {v.motivo}
                   </span>
+                  {v.createdAt && (
+                    <>
+                      <br />
+                      <span className="detail-solicitud-fecha">
+                        Solicitado el {formatFechaSolicitud(v.createdAt)}
+                      </span>
+                    </>
+                  )}
                   {v.comentarioRH && (
                     <>
                       <br />
                       <span style={{ color: "var(--mc-texto-secundario)" }}>
                         Comentario RH: {v.comentarioRH}
+                      </span>
+                    </>
+                  )}
+                </div>
+              ))
+            )}
+            </div>
+          </Card>
+
+          {/* Permisos: faltaba en el expediente — solo estaban las vacaciones, así que
+              gestión no tenía dónde consultar el historial de permisos de una persona
+              sin irse a la pantalla de Permisos y filtrar. */}
+          <Card>
+            <SectionTitle icon="clipboardCheck">Permisos</SectionTitle>
+            <div className="detail-list-scroll">
+            {permisosEmp.length === 0 ? (
+              <div className="detail-vacio">Sin permisos registrados</div>
+            ) : (
+              permisosEmp.map(p => (
+                <div key={p.id} className="detail-list-item-block">
+                  <strong>{p.estado}</strong> · {p.fecha}
+                  {p.fechaFin && p.fechaFin !== p.fecha ? ` al ${p.fechaFin}` : ""}
+                  {p.hora ? ` · ${p.hora}` : ""}
+                  <br />
+                  <span style={{ color: "var(--mc-texto-secundario)" }}>
+                    {/* ETIQUETA_CAUSA y no p.causa a secas: en la base la causa se guarda
+                        acotada al catálogo ('tramite_oficial'), y eso es lo que se leería
+                        en pantalla si no se traduce. */}
+                    {[ETIQUETA_CAUSA[p.causa] || p.causa, p.motivo].filter(Boolean).join(" · ") || "Sin motivo"}
+                  </span>
+                  {p.createdAt && (
+                    <>
+                      <br />
+                      <span className="detail-solicitud-fecha">
+                        Solicitado el {formatFechaSolicitud(p.createdAt)}
+                      </span>
+                    </>
+                  )}
+                  {p.comentarioRH && (
+                    <>
+                      <br />
+                      <span style={{ color: "var(--mc-texto-secundario)" }}>
+                        Comentario RH: {p.comentarioRH}
                       </span>
                     </>
                   )}

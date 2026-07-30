@@ -62,6 +62,23 @@ export const formatAntiguedadEmpleado = (user) => {
   return calcularAntiguedad(fecha);
 };
 
+/**
+ * Fecha en que se PIDIÓ una solicitud (permiso o vacaciones), para el expediente.
+ *
+ * Ojo con la diferencia: `fecha`/`fechaInicio` es el día que la persona quiere librar, y
+ * `createdAt` el día que lo solicitó. En el historial hacen falta las dos — "pidió el 3
+ * un permiso para el 20" no es lo mismo que "lo pidió el 19".
+ *
+ * A diferencia de formatFechaIngreso, aquí NO se ancla a mediodía: `created_at` ya es un
+ * timestamp con zona horaria, no una fecha suelta que el navegador pueda correr un día.
+ */
+export const formatFechaSolicitud = (createdAt) => {
+  if (!createdAt) return "";
+  const date = new Date(createdAt);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" });
+};
+
 export const formatFechaIngreso = (fechaIngreso) => {
   if (!fechaIngreso) return "No registrada";
   const date = new Date(`${fechaIngreso}T12:00:00`);

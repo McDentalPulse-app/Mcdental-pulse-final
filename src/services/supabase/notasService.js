@@ -21,6 +21,21 @@ export const getNotasPsicologicas = async () => {
   }
 };
 
+// Borrado definitivo: la nota desaparece, no se archiva. La policy
+// notas_psicologicas_all_gestion ya cubre DELETE para admin/rh/psicologa, así que no
+// hace falta nada en la base — pero por eso mismo la interfaz pide confirmación antes.
+export const deleteNota = async (id) => {
+  const { error } = await supabase
+    .from("notas_psicologicas")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("Error eliminando nota psicológica:", error);
+    throw new Error("No se pudo eliminar la nota.");
+  }
+};
+
 export const addNota = async ({ empleadoId, autorId, autor, texto }) => {
   const { data, error } = await supabase
     .from("notas_psicologicas")

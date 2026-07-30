@@ -114,6 +114,23 @@ src/
   porque puede promoverse a admin sin que nada lo impida. Se revierte volviendo a poner
   `'admin'` en las comparaciones de la migración 099.
 
+- **🆕 Eliminar notas psicológicas.** El seguimiento dejaba agregar notas pero no quitarlas,
+  así que una nota escrita por error se quedaba para siempre. La policy
+  `notas_psicologicas_all_gestion` ya era `ALL`, o sea que el borrado estaba permitido en la
+  base desde el principio y solo faltaba el camino en la interfaz. Pide confirmación —
+  reusando el mismo `confirm` que las bajas de personal, para no tener dos formas distintas
+  de confirmar en la misma app — y no es optimista: la lista solo cambia cuando la base lo
+  confirma, porque una nota clínica borrada no se recupera.
+- **🆕 Historial de permisos y vacaciones en el expediente, con la fecha de solicitud.**
+  El expediente tenía Vacaciones pero **no Permisos**, así que para saber qué había pedido
+  una persona había que irse a la pantalla de Permisos y filtrar. Ahora salen los dos, con
+  *"Solicitado el ..."* en cada renglón: `fecha` es el día que quiere librar y `createdAt`
+  el día que lo pidió, y en un expediente hacen falta las dos — "pidió el 3 un permiso para
+  el 20" no es lo mismo que "lo pidió el 19". Ordenado por fecha de petición, lo más
+  reciente arriba. Visible para admin, RH y psicóloga. La causa se pinta con
+  `ETIQUETA_CAUSA`: en la base se guarda acotada al catálogo (`tramite_oficial`) y sin
+  traducir era eso lo que se leía en pantalla.
+
 **Desplegado hoy: solo el API** (`build-api.sh`), que es donde vive el arreglo de la IA.
 El resto — frontend, edge functions y la migración 099 — está commiteado pero **no sale
 hasta aplicar la migración, copiar las funciones y correr `build-frontend.sh`**.

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
+import { useNotification } from "../../contexts/NotificationContext";
 import Card from "../common/Card";
 import FilterBar from "../common/FilterBar";
 import { useEscapeKey } from "../../hooks/useEscapeKey";
@@ -15,8 +16,22 @@ import { semanaActual, normalizeSucursal, sucursalMatches, isSemanaActual, forma
 import { calcPulseScore, getPulseStatus, tieneScoreValido } from "../../utils/pulseScore";
 import { esEmpleadoActivo } from "../../utils/helpers";
 
-const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
+const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota, onDeleteNota }) => {
   const { usuarios: USERS } = useGlobal();
+  const { confirm } = useNotification();
+
+  // Borrar una nota clínica no se deshace, así que se pregunta antes. Mismo `confirm`
+  // que usan las bajas de personal, para que la app no tenga dos formas de confirmar.
+  const eliminarNota = async (nota) => {
+    const seguro = await confirm({
+      title: "¿Eliminar esta nota?",
+      description: "La nota se borra definitivamente y no se puede recuperar.",
+      variant: "danger",
+      confirmText: "Eliminar",
+      cancelText: "Cancelar",
+    });
+    if (seguro) await onDeleteNota(nota.id);
+  };
 
   const empleados = USERS.filter(esEmpleadoActivo);
   const semanaEnc = encuestas.filter(e => isSemanaActual(e.semana));
@@ -263,7 +278,20 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota }) => {
                       {notasEmpleado.map(n => (
                         <div key={n.id} className="psico-note-item">
                           <div className="psico-note-title">
-                            <Icon name="lock" size={12} /> Nota de seguimiento
+                            <span className="psico-note-title-texto">
+                              <Icon name="lock" size={12} /> Nota de seguimiento
+                            </span>
+                            {onDeleteNota && (
+                              <button
+                                type="button"
+                                className="psico-note-borrar"
+                                title="Eliminar nota"
+                                aria-label="Eliminar nota"
+                                onClick={() => eliminarNota(n)}
+                              >
+                                <Icon name="trash" size={14} />
+                              </button>
+                            )}
                           </div>
                           <div>{n.texto}</div>
                         </div>

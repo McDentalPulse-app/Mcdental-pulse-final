@@ -5,7 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 
 import { addEncuesta as addEncuestaDb } from "../services/supabase/encuestasService";
 import { sendMensaje as sendMensajeDb, marcarMensajeLeido } from "../services/supabase/mensajesService";
-import { addNota as addNotaDb } from "../services/supabase/notasService";
+import { addNota as addNotaDb, deleteNota as deleteNotaDb } from "../services/supabase/notasService";
 import { addVacacion, updateEstadoVacacion as updateEstadoVacacionDb } from "../services/supabase/vacacionesService";
 import { addPermiso, updateEstadoPermiso as updateEstadoPermisoDb } from "../services/supabase/permisosService";
 import { addDescuento as addDescuentoDb, updateDescuentoEstado as updateDescuentoEstadoDb } from "../services/supabase/descuentosService";
@@ -114,6 +114,22 @@ export const useAppActions = () => {
     } catch (error) {
       console.error("Error guardando nota psicológica:", error);
       notify.toast.error("No se pudo guardar la nota.");
+    }
+  };
+
+  // No es optimista a propósito: borrar una nota clínica no tiene vuelta atrás, así que
+  // la lista solo cambia cuando la base confirma. Si falla, lo que se ve sigue siendo
+  // lo que hay guardado.
+  const deleteNota = async (id) => {
+    try {
+      await deleteNotaDb(id);
+      setNotas(prev => prev.filter(n => n.id !== id));
+      notify.toast.success("Nota eliminada.");
+      return true;
+    } catch (error) {
+      console.error("Error eliminando nota psicológica:", error);
+      notify.toast.error(error?.message || "No se pudo eliminar la nota.");
+      return false;
     }
   };
 
@@ -564,6 +580,7 @@ export const useAppActions = () => {
     sendMensaje,
     marcarMensajesLeidos,
     addNota,
+    deleteNota,
     updateVacacionEstado,
     updatePermisoEstado,
     addSolicitudEmpleadoRH,
