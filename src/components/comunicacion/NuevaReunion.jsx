@@ -92,7 +92,7 @@ const NuevaReunion = ({ usuarios, miId, onCrear, onCancelar, creando }) => {
                 onClick={() => alternar(u.id)}
                 aria-pressed={puesto}
               >
-                <Avatar name={u.name} size={30} photoUrl={u.avatarUrl} color="var(--mc-texto-secundario)" />
+                <Avatar name={u.name} size={30} photoUrl={u.avatarUrl} color="var(--mc-texto-secundario)" zoom={false} />
                 <span className="reunion-persona-datos">
                   <span className="reunion-persona-nombre">{u.name}</span>
                   <span className="reunion-persona-puesto">{u.puesto || u.sucursal || ""}</span>

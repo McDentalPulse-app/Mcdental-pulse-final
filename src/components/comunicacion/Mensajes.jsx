@@ -439,6 +439,7 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
                       size={36}
                       color={activo ? "var(--mc-verde)" : "var(--mc-texto-secundario)"}
                       photoUrl={c.usuario.avatarUrl}
+                      zoom={false}
                     />
 
                     <div className="mensajes-conv-main">

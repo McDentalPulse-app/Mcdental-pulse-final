@@ -1605,6 +1605,122 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
+/* ── Foto de perfil ampliable ──
+   El botón envuelve al avatar sin cambiarle una pizca el aspecto: sin fondo, sin borde y sin
+   padding, para que las 22 pantallas que ya usan <Avatar> se vean igual que antes. Lo único
+   que aporta es el cursor, el foco visible y el realce al pasar por encima. */
+.mc-avatar-zoom {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  line-height: 0;
+  border-radius: 50%;
+  cursor: zoom-in;
+  flex-shrink: 0;
+  display: block;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mc-avatar-zoom:hover {
+  transform: scale(1.06);
+}
+
+.mc-avatar-zoom:focus-visible {
+  outline: 2px solid var(--mc-verde);
+  outline-offset: 2px;
+}
+
+.mc-foto-overlay {
+  /* Más oscuro que el overlay de los modales normales: aquí lo que importa es la foto, y un
+     velo claro contra una foto clara deja los bordes indistinguibles. */
+  background: rgba(0, 0, 0, 0.78);
+  padding: 24px;
+}
+
+.mc-foto-modal {
+  position: relative;
+  max-width: min(720px, 92vw);
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.mc-foto-img {
+  display: block;
+  max-width: 100%;
+  /* Con dvh en vez de vh la barra del navegador móvil no corta la foto por abajo. */
+  max-height: min(78vh, calc(100dvh - 140px));
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: var(--mc-radio-lg, 20px);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+}
+
+.mc-foto-pie {
+  color: var(--mc-blanco);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.mc-foto-cerrar {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--mc-borde);
+  background: var(--mc-superficie);
+  color: var(--mc-texto);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.mc-foto-cerrar:hover {
+  background: var(--mc-superficie-2);
+}
+
+.mc-foto-cerrar:focus-visible {
+  outline: 2px solid var(--mc-verde);
+  outline-offset: 2px;
+}
+
+@media (max-width: 560px) {
+  .mc-foto-overlay {
+    padding: 16px;
+  }
+
+  /* En un teléfono la esquina negativa se sale de la pantalla y el botón queda medio cortado. */
+  .mc-foto-cerrar {
+    top: -8px;
+    right: -8px;
+    width: 36px;
+    height: 36px;
+    font-size: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mc-avatar-zoom {
+    transition: none;
+  }
+
+  .mc-avatar-zoom:hover {
+    transform: none;
+  }
+}
+
 /* ── List / table pages (Empleados, Gestión) ── */
 /* Expedientes y Gestión de Usuarios. Es una pantalla de lista con scroll interno, y por eso
    nació con su propio contenedor — pero se le quedaron dos cosas fuera: gap:0 (la cabecera
@@ -3853,10 +3969,6 @@
 }
 
 /* Expediente */
-.expediente-files-card {
-  margin-top: 0;
-}
-
 .expediente-upload-panel {
   display: flex;
   flex-direction: column;
@@ -3895,11 +4007,6 @@
 }
 
 /* Tarjeta de foto de perfil (Expediente Integral) */
-.expediente-foto-card {
-  align-items: center;
-  text-align: center;
-}
-
 .expediente-foto-actions {
   display: flex;
   gap: 6px;
@@ -3979,33 +4086,267 @@
 
 .expediente-filters {
   display: grid;
-  grid-template-columns: 0.9fr 1.1fr;
+  grid-template-columns: 1.2fr 1fr 1.4fr;
   gap: 14px;
   align-items: end;
 }
 
-.expediente-data-grid {
+/* ── Expediente Integral: cabecera + pestañas ──
+   Antes eran nueve tarjetas a la vez en una rejilla auto-fit, con cada lista metida en una
+   caja de scroll de 220px. En escritorio no se sabía dónde mirar y en un teléfono era un
+   scroll interminable con listas cortadas. Ahora la ficha de la persona queda fija arriba y
+   el resto se reparte en pestañas: una sección a la vista, entera y sin scroll interno. */
+
+.expediente-buscador {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.expediente-buscador-icono {
+  position: absolute;
+  left: 12px;
+  color: var(--mc-texto-secundario);
+  pointer-events: none;
+}
+
+.expediente-buscador-input {
+  width: 100%;
+  padding-left: 36px;
+}
+
+.expediente-ficha {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 16px;
+  grid-template-columns: auto 1fr auto;
+  gap: 20px;
+  align-items: center;
 }
 
-.expediente-data-row {
-  color: var(--mc-texto-fuerte);
-  line-height: 1.85;
+.expediente-ficha-foto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.expediente-ficha-datos {
+  min-width: 0;
+}
+
+.expediente-ficha-nombre {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--mc-texto-titulo);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.expediente-ficha-puesto {
+  margin: 4px 0 0;
   font-size: 14px;
+  color: var(--mc-texto-secundario);
 }
 
-.expediente-list-scroll {
-  max-height: 220px;
-  overflow-y: auto;
-  padding-right: 4px;
+.expediente-ficha-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
 }
 
-.expediente-list-row {
-  padding: 10px 0;
+.expediente-ficha-medallas {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--mc-texto-secundario);
+}
+
+.expediente-ficha-score {
+  text-align: center;
+  padding-left: 20px;
+  border-left: 1px solid var(--mc-borde-suave);
+}
+
+.expediente-ficha-score-num {
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--mc-aqua);
+}
+
+.expediente-ficha-score-label {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mc-texto-secundario);
+}
+
+/* Con ocho pestañas no caben en el ancho de un teléfono: se deslizan en horizontal en vez de
+   partirse en tres renglones. `mc-tabs` es inline-flex, así que basta con darle el carril. */
+.expediente-tabs-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.expediente-tabs-wrap::-webkit-scrollbar {
+  display: none;
+}
+
+.expediente-tabs-wrap .mc-tabs {
+  flex-wrap: nowrap;
+}
+
+.expediente-tabs-wrap .mc-tabs-btn {
+  white-space: nowrap;
+}
+
+.expediente-panel {
+  min-height: 220px;
+}
+
+/* Dos columnas de etiqueta+valor. Antes era una lista de <div><b>Nombre:</b> valor</div> con
+   line-height 1.85, que en pantalla ancha dejaba una columna de texto larguísima. */
+.expediente-datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px 24px;
+  margin: 0;
+}
+
+.expediente-dato {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.expediente-dato dt {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--mc-texto-secundario);
+}
+
+.expediente-dato dd {
+  margin: 0;
+  font-size: 14px;
+  color: var(--mc-texto-fuerte);
+  overflow-wrap: anywhere;
+}
+
+/* Sin max-height a propósito: la pestaña ya acota cuánto se ve de una vez, así que la lista
+   no necesita su propia ventanita de scroll dentro del scroll de la página. */
+.expediente-lista {
+  display: flex;
+  flex-direction: column;
+  margin-top: 12px;
+}
+
+.expediente-fila {
+  padding: 12px 0;
   border-bottom: 1px solid var(--mc-slate-100);
   font-size: 13px;
+}
+
+.expediente-fila:last-child {
+  border-bottom: none;
+}
+
+.expediente-fila--archivo,
+.expediente-fila--medalla {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.expediente-fila--medalla {
+  align-items: flex-start;
+}
+
+.expediente-fila-main {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.expediente-fila-acciones {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.expediente-archivo-abrir {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  color: var(--mc-aqua);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.expediente-archivo-abrir:hover {
+  text-decoration: underline;
+}
+
+.expediente-archivo-borrar {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--mc-evento-rojo);
+  display: inline-flex;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .expediente-ficha {
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+  }
+
+  .expediente-ficha-nombre {
+    font-size: 18px;
+  }
+
+  /* El score baja a la fila de abajo y pierde la línea divisoria: en vertical esa línea
+     cortaba la tarjeta por la mitad. */
+  .expediente-ficha-score {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-start;
+    gap: 8px;
+    padding-left: 0;
+    padding-top: 12px;
+    border-left: none;
+    border-top: 1px solid var(--mc-borde-suave);
+    text-align: left;
+  }
+
+  .expediente-ficha-score-num {
+    font-size: 26px;
+  }
+
+  .expediente-datos {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .expediente-panel {
+    min-height: 0;
+  }
 }
 
 /* ── Gestión de Personal (Admin + RH) ── */
@@ -7021,32 +7362,6 @@
     line-height: 1.25;
   }
 
-  .expediente-page .admin-stat-card.mc-card {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 12px;
-  }
-
-  .expediente-page .admin-stat-icon-wrap {
-    width: 28px;
-    height: 28px;
-    margin-bottom: 6px;
-    grid-row: auto;
-    grid-column: auto;
-  }
-
-  .expediente-page .admin-stat-value {
-    font-size: 15px !important;
-    align-self: auto;
-    line-height: 1.25;
-    word-break: break-word;
-  }
-
-  .expediente-page .admin-stat-label {
-    font-size: 10px;
-  }
-
   .ai-engine-page {
     gap: 12px;
   }
@@ -7144,25 +7459,6 @@
 
   .expediente-filters .mc-form-select {
     width: 100%;
-  }
-
-  .expediente-data-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .expediente-data-row {
-    font-size: 13px;
-    line-height: 1.55;
-  }
-
-  .expediente-list-scroll {
-    max-height: 180px;
-  }
-
-  .expediente-list-row {
-    padding: 8px 0;
-    font-size: 12px;
   }
 
   .eventos-list-item {

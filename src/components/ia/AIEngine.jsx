@@ -299,7 +299,7 @@ const RESUMEN_LIMITE = 8;
               style={{ borderColor: nivelTinte(ps.slug, 25) }}
               onClick={() => { setTab("expedientes"); analizarEmpleado(emp); }}
             >
-              <Avatar name={emp.name} size={32} slug={ps.slug} photoUrl={emp.avatarUrl} />
+              <Avatar name={emp.name} size={32} slug={ps.slug} photoUrl={emp.avatarUrl} zoom={false} />
               <div className="ai-engine-pulse-chip-text">
                 <div className="ai-engine-pulse-chip-name">{emp.name.split(" ")[0]}</div>
                 <PulseScoreBadge score={ps.score} nivel={ps.nivel} slug={ps.slug} tendencia={ps.tendencia} size="sm" />

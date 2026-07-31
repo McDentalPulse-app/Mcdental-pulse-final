@@ -120,7 +120,7 @@ export default function HeaderNav() {
 
           <div className="topnav-drop">
             <button type="button" className="topnav-user" onClick={() => setAbierto((a) => (a === "usuario" ? null : "usuario"))} aria-expanded={abierto === "usuario"}>
-              <Avatar name={user?.name || ""} size={32} color="var(--mc-stat-teal-2)" photoUrl={user?.avatarUrl} />
+              <Avatar name={user?.name || ""} size={32} color="var(--mc-stat-teal-2)" photoUrl={user?.avatarUrl} zoom={false} />
               <span className="topnav-user-info">
                 <span className="topnav-user-name">{user?.name?.split(" ")[0] || ""}</span>
                 <span className="topnav-user-role">{user?.role || ""}</span>

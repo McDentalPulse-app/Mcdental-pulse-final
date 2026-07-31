@@ -1,8 +1,44 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { nivelColor, colorMarca } from "../../config/theme";
 
 const getInitials = (name) =>
   name ? name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "";
+
+/**
+ * La foto ampliada va en un portal a <body> a propósito. El avatar vive dentro de tablas, de
+ * listas con `overflow-y: auto` y de tarjetas con `overflow: hidden`; un overlay `position:
+ * fixed` dentro de un ancestro con `transform` u `overflow` se recorta y saldría a medias.
+ * Además así el overlay nunca queda anidado dentro de la fila que lo abrió.
+ */
+const FotoAmpliada = ({ photoUrl, name, onClose }) => {
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return createPortal(
+    <div className="mc-modal-overlay mc-foto-overlay" onClick={onClose} role="presentation">
+      <div
+        className="mc-foto-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label={name ? `Foto de ${name}` : "Foto de perfil"}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button type="button" className="mc-foto-cerrar" onClick={onClose} aria-label="Cerrar la foto">
+          &times;
+        </button>
+        <img className="mc-foto-img" src={photoUrl} alt={name ? `Foto de ${name}` : "Foto de perfil"} />
+        {name && <div className="mc-foto-pie">{name}</div>}
+      </div>
+    </div>,
+    document.body
+  );
+};
 
 /**
  * Acepta `slug` (un nivel de semáforo) igual que el resto de componentes, para que todos
@@ -19,8 +55,25 @@ const getInitials = (name) =>
  * cualquier otro criterio le diría al empleado que la psicóloga está disponible cuando puede
  * no estarlo.
  */
-const Avatar = ({ name, size = 36, slug, color, photoUrl, presente }) => {
+/**
+ * `zoom` (activo por defecto): si hay foto, se puede picar el avatar para verla en grande.
+ * Se apaga con `zoom={false}` donde el avatar ya vive DENTRO de un botón — un botón dentro de
+ * otro es HTML inválido y le robaría el clic al control que lo contiene (el menú de usuario,
+ * elegir conversación en Mensajes, los chips de la IA). Sin foto no hay nada que ampliar: las
+ * iniciales nunca son pulsables.
+ */
+const Avatar = ({ name, size = 36, slug, color, photoUrl, presente, zoom = true }) => {
   const fondo = slug ? nivelColor(slug) : (color || colorMarca);
+  const [ampliada, setAmpliada] = useState(false);
+  const disparadorRef = useRef(null);
+  const ampliable = zoom && Boolean(photoUrl);
+
+  const cerrar = () => {
+    setAmpliada(false);
+    // Devolver el foco a la foto que se picó: si no, el teclado vuelve al principio del
+    // documento y quien navega sin ratón pierde el sitio en una lista de 100 empleados.
+    disparadorRef.current?.focus();
+  };
 
   const cara = (
     <div
@@ -40,11 +93,25 @@ const Avatar = ({ name, size = 36, slug, color, photoUrl, presente }) => {
     </div>
   );
 
-  if (presente === undefined) return cara;
-
-  return (
-    <span className="mc-avatar-wrap" style={{ width: size, height: size }}>
+  const nucleo = ampliable ? (
+    <button
+      type="button"
+      ref={disparadorRef}
+      className="mc-avatar-zoom"
+      style={{ width: size, height: size }}
+      // La fila de la tabla y la tarjeta del empleado también responden al clic. Sin frenarlo
+      // aquí, picar la foto abriría la ficha en lugar de la foto.
+      onClick={(e) => { e.stopPropagation(); setAmpliada(true); }}
+      title="Ver la foto en grande"
+      aria-label={name ? `Ver la foto de ${name} en grande` : "Ver la foto en grande"}
+    >
       {cara}
+    </button>
+  ) : cara;
+
+  const visible = presente === undefined ? nucleo : (
+    <span className="mc-avatar-wrap" style={{ width: size, height: size }}>
+      {nucleo}
       {presente && (
         // El punto escala con el avatar: a 10px fijos se come el de 24 y se pierde en el de 56.
         <span
@@ -54,6 +121,15 @@ const Avatar = ({ name, size = 36, slug, color, photoUrl, presente }) => {
         />
       )}
     </span>
+  );
+
+  if (!ampliable) return visible;
+
+  return (
+    <>
+      {visible}
+      {ampliada && <FotoAmpliada photoUrl={photoUrl} name={name} onClose={cerrar} />}
+    </>
   );
 };
 
