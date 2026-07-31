@@ -1,6 +1,6 @@
 import { admin, configOk } from "./_auth.js";
 import { pushDisponible } from "./_push.js";
-import { notificar } from "./_notificaciones.js";
+import { notificar, notificarGestion } from "./_notificaciones.js";
 
 /**
  * Dos tareas de fondo en un solo endpoint, un solo cron diario.
@@ -305,6 +305,66 @@ const cerrarJornadasAbiertas = async (supabase) => {
   return { cerradas: filas.length };
 };
 
+/**
+ * Vigila que ninguna geocerca esté dejando a una clínica sin poder fichar.
+ *
+ * Desde la migración 103 son las recepcionistas quienes fijan la ubicación de su clínica. Es
+ * mucho mejor que viajar a 25 clínicas, pero abre un fallo nuevo: alguien la captura desde su
+ * casa y al día siguiente su clínica entera rebota, porque estar 'fuera' BLOQUEA la checada.
+ *
+ * El síntoma NO es "muchas checadas fuera": una checada bloqueada responde 403 y no deja fila
+ * en ninguna tabla. El síntoma es el silencio. Eso lo detecta `revisar_geocercas` (mig. 104);
+ * aquí solo se avisa.
+ *
+ * Sin esto, el aviso llega por teléfono a las ocho de la mañana y de la peor manera.
+ */
+const revisarGeocercas = async (supabase) => {
+  const { data, error } = await supabase.rpc("revisar_geocercas");
+  if (error) {
+    console.error("Error revisando geocercas:", error);
+    return { error: "No se pudieron revisar las geocercas." };
+  }
+
+  const hallazgos = data || [];
+  const alarmas = hallazgos.filter((h) => h.motivo === "muda" || h.motivo === "lejos");
+  // Las propuestas no se notifican: son clínicas SIN geocerca, o sea que nadie está bloqueado.
+  // Avisar a diario de algo que no urge es la forma más rápida de que se ignoren las que sí.
+  const propuestas = hallazgos.filter((h) => h.motivo === "propuesta");
+
+  // Una clínica muda sigue muda mañana. Sin este freno, la misma alarma llegaría cada día hasta
+  // que alguien la arregle, y a la tercera ya nadie la lee.
+  const hace48h = new Date(Date.now() - 48 * 3_600_000).toISOString();
+  const { data: recientes } = await supabase
+    .from("notificaciones")
+    .select("titulo")
+    .eq("tipo", "geocerca")
+    .gte("creada_en", hace48h);
+  const yaAvisado = new Set((recientes || []).map((n) => n.titulo));
+
+  const urlSucursales = {
+    admin: "/admin/sucursales",
+    rh: "/rh/sucursales",
+    psicologa: "/psicologa/sucursales",
+  };
+
+  let avisadas = 0;
+  for (const a of alarmas) {
+    const titulo =
+      a.motivo === "muda"
+        ? `Nadie puede fichar en ${a.nombre}`
+        : `Revisa la ubicación de ${a.nombre}`;
+    if (yaAvisado.has(titulo)) continue;
+    await notificarGestion({ tipo: "geocerca", titulo, cuerpo: a.detalle, url: urlSucursales });
+    avisadas += 1;
+  }
+
+  return {
+    alarmas: alarmas.length,
+    avisadas,
+    propuestas: propuestas.map((p) => p.nombre),
+  };
+};
+
 export default async function handler(req, res) {
   if (!configOk()) {
     return res.status(500).json({ error: "Supabase no está configurado en el servidor." });
@@ -326,6 +386,10 @@ export default async function handler(req, res) {
   // Cierre de jornadas abiertas: corre SIEMPRE, no depende del push — es higiene de datos, no
   // un aviso. Sin esto, las entradas sin salida se acumulan como días "incompletos".
   resultado.jornadasCerradas = await cerrarJornadasAbiertas(supabase);
+
+  // Corre SIEMPRE y no depende del push: aunque el push esté caído, la fila queda en la campana
+  // y el resultado del cron. Una clínica bloqueada no puede esperar a que se arregle otra cosa.
+  resultado.geocercas = await revisarGeocercas(supabase);
 
   if (pushDisponible()) {
     if (DIAS_RECORDATORIO_ENCUESTA.includes(diaISOEnMexico())) {
