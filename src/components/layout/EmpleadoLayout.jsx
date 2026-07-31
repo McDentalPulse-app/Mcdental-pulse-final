@@ -19,6 +19,8 @@ import CalendarioIntercambio from '../calendario/CalendarioIntercambio';
 
 import AvisoUbicacion from '../asistencia/AvisoUbicacion';
 import { useAvisoUbicacion } from '../../hooks/useAvisoUbicacion';
+import AvisoGeocerca from '../asistencia/AvisoGeocerca';
+import { useAvisoGeocerca } from '../../hooks/useAvisoGeocerca';
 export default function EmpleadoLayout({ user, globals, actions }) {
   const { encuestas, mensajes, vacaciones, permisos, reconocimientos, checadasHoy, horarios, avisos, festivos, intercambios, destinosOcupados } = globals;
   const { addEncuesta, sendMensaje, addSolicitudEmpleadoRH, addReporteConfidencial, marcarMensajesLeidos, registrarChecada, solicitarIntercambio } = actions;
@@ -32,6 +34,7 @@ export default function EmpleadoLayout({ user, globals, actions }) {
   );
 
   const { ofrecerUbicacion, estadoUbicacion, activarUbicacion, cerrarAviso } = useAvisoUbicacion();
+  const { faltaGeocerca, nombreClinica } = useAvisoGeocerca(user);
 
 
   return (
@@ -39,6 +42,7 @@ export default function EmpleadoLayout({ user, globals, actions }) {
       <Navegacion />
       <main className="app-main">
         <div className="app-main-inner">
+          {faltaGeocerca && <AvisoGeocerca nombreClinica={nombreClinica} />}
           {ofrecerUbicacion && (
             <AvisoUbicacion estado={estadoUbicacion} onActivar={activarUbicacion} onCerrar={cerrarAviso} />
           )}

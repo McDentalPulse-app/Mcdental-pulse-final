@@ -12795,6 +12795,16 @@
   border-color: var(--mc-btn-amber-borde);
 }
 
+/* Más fuerte que el de ubicación: aquel afecta a quien lo lee, este a toda su clínica. */
+.avisogeocerca {
+  border-color: var(--mc-btn-danger-borde);
+}
+
+/* Sin botón de cerrar, así que el título se queda con todo el ancho. */
+.avisogeocerca .avisopush-head strong {
+  flex: 1;
+}
+
 .avisoubicacion-ayuda {
   display: flex;
   align-items: flex-start;
