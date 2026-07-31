@@ -48,6 +48,9 @@ export const AuthProvider = ({ children }) => {
   // state) porque cargarPerfil también corre desde onAuthStateChange y debe
   // leer el valor vigente sin esperar un re-render.
   const loginConTemporalRef = useRef(false);
+  // true mientras cambiarPasswordActual está en vuelo. Existe por una carrera que dejó
+  // gente fuera de la app: ver el comentario de cargarPerfil.
+  const cambiandoPasswordRef = useRef(false);
 
   const cargarPerfil = async (authUserId) => {
     const { data, error } = await supabase
@@ -72,6 +75,15 @@ export const AuthProvider = ({ children }) => {
     }
 
     setUser(mapUsuarioRow(data));
+
+    // Este SELECT puede haber salido ANTES de que mark_password_changed apagara el flag y
+    // llegar DESPUÉS. Si en ese caso volviéramos a levantar requiereCambioPassword, el panel
+    // de "cambia tu contraseña" reaparecería con la contraseña YA cambiada: la persona cree
+    // que falló, reescribe la misma, y Auth contesta 422 "New password should be different".
+    // Ahí se rinde y vuelve a entrar con emp123 —que ya no existe— y se queda fuera.
+    // Eso es exactamente lo que les pasó a los usuarios nuevos del 2026-07-30.
+    if (cambiandoPasswordRef.current) return { inactivo: false };
+
     setRequiereCambioPassword(!!data.debe_cambiar_password || loginConTemporalRef.current);
     return { inactivo: false };
   };
@@ -88,7 +100,12 @@ export const AuthProvider = ({ children }) => {
       }
     });
 
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: subscription } = supabase.auth.onAuthStateChange((evento, session) => {
+      // USER_UPDATED lo emite auth.updateUser(), o sea el propio cambio de contraseña. Ahí
+      // no cambió nada de la fila de `usuarios`, así que recargar el perfil no aporta y sí
+      // arrastra la carrera descrita en cargarPerfil. Se ignora a propósito.
+      if (evento === "USER_UPDATED") return;
+
       if (session?.user) {
         cargarPerfil(session.user.id);
       } else {
@@ -140,24 +157,44 @@ export const AuthProvider = ({ children }) => {
   };
 
   const cambiarPasswordActual = async (nuevaPassword) => {
+    cambiandoPasswordRef.current = true;
     try {
       const { error: authError } = await supabase.auth.updateUser({ password: nuevaPassword });
-      if (authError) throw authError;
+
+      // `same_password` NO es un fallo: significa que esa contraseña ya está puesta, o sea
+      // que un intento anterior sí funcionó aunque la pantalla dijera lo contrario. Tratarlo
+      // como error es lo que dejaba a la gente dándole a Guardar contra un muro. Se sigue
+      // adelante como si acabara de cambiarla, que para el caso es lo mismo.
+      const yaEraSuPassword =
+        authError && (authError.code === "same_password" || authError.status === 422);
+      if (authError && !yaEraSuPassword) throw authError;
 
       // usuarios solo tiene UPDATE policy para admin/rh; un usuario normal marca
       // su propia fila vía RPC security definer acotado (ver migración 00000000000020).
       const { error: dbError } = await supabase.rpc("mark_password_changed");
-      if (dbError) throw dbError;
+
+      // Si esto falla, la contraseña YA cambió en Auth. Decirle "error al cambiar la
+      // contraseña" sería mentirle y mandarlo a intentar con la vieja, que ya no sirve. Se
+      // deja pasar y solo se avisa de la consecuencia real: que se lo vuelvan a pedir.
+      if (dbError) {
+        console.error("La contraseña cambió pero no se pudo apagar debe_cambiar_password:", dbError);
+        notify.toast.info(
+          "Tu contraseña ya quedó cambiada. Puede que te la volvamos a pedir la próxima vez que entres."
+        );
+      } else {
+        notify.toast.success("Contraseña actualizada correctamente.");
+      }
 
       loginConTemporalRef.current = false;
       setUser((prev) => ({ ...prev, debeCambiarPassword: false }));
       setRequiereCambioPassword(false);
-      notify.toast.success("Contraseña actualizada correctamente.");
       return true;
     } catch (error) {
       console.error("Error cambiando contraseña:", error);
-      notify.toast.error("Error al cambiar la contraseña: " + (error?.message || error));
+      notify.toast.error(mensajeDeFallo("No se pudo cambiar la contraseña.", error));
       return false;
+    } finally {
+      cambiandoPasswordRef.current = false;
     }
   };
 
