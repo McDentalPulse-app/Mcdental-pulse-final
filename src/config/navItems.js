@@ -123,6 +123,9 @@ export const NAV_ITEMS = {
     { key: "checador", icon: "clock", label: "Checador", group: "Asistencia" },
     { key: "historial", icon: "history", label: "Historial", group: "Asistencia" },
     { key: "rostro", icon: "camera", label: "Mi rostro", group: "Asistencia" },
+    // También aquí: en una clínica sin recepcionista, quien fija la ubicación es la doctora.
+    // El `requiere` lo mantiene oculto para el resto (el permiso se da persona a persona).
+    { key: "miclinica", icon: "mapPin", label: "Ubicación de mi clínica", group: "Asistencia", requiere: "puedeUbicarSucursal" },
     { key: "permisosempleado", icon: "vacation", label: "Vacaciones", group: "Tiempo libre" },
     { key: "calendario", icon: "calendar", label: "Calendario", group: "Tiempo libre" },
     { key: "encuesta", icon: "clipboardCheck", label: "Mi Encuesta", group: "Bienestar" },

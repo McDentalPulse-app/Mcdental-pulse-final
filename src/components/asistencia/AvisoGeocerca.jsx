@@ -14,7 +14,9 @@ import Icon from "../ui/Icon";
  * El texto repite DÓNDE hay que estar al pulsarlo porque es el error caro: una ubicación
  * capturada desde casa deja a la clínica entera sin poder fichar al día siguiente.
  */
-export default function AvisoGeocerca({ nombreClinica }) {
+// `ruta` viene del layout y no se deduce aquí: la misma pantalla vive en /empleado/miclinica y
+// en /doctor/miclinica, y adivinarla mandaría a la doctora a una ruta que no existe para ella.
+export default function AvisoGeocerca({ nombreClinica, ruta }) {
   const navigate = useNavigate();
 
   return (
@@ -33,7 +35,7 @@ export default function AvisoGeocerca({ nombreClinica }) {
       <button
         type="button"
         className="checador-boton checador-boton--entrada"
-        onClick={() => navigate("/empleado/miclinica")}
+        onClick={() => navigate(ruta)}
       >
         <Icon name="mapPin" size={18} /> Registrar la ubicación
       </button>

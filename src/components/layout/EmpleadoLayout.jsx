@@ -42,7 +42,7 @@ export default function EmpleadoLayout({ user, globals, actions }) {
       <Navegacion />
       <main className="app-main">
         <div className="app-main-inner">
-          {faltaGeocerca && <AvisoGeocerca nombreClinica={nombreClinica} />}
+          {faltaGeocerca && <AvisoGeocerca nombreClinica={nombreClinica} ruta="/empleado/miclinica" />}
           {ofrecerUbicacion && (
             <AvisoUbicacion estado={estadoUbicacion} onActivar={activarUbicacion} onCerrar={cerrarAviso} />
           )}
