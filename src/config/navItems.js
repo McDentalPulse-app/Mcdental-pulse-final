@@ -103,6 +103,8 @@ export const NAV_ITEMS = {
     { key: "checador", icon: "clock", label: "Checador", group: "Asistencia" },
     { key: "historial", icon: "history", label: "Historial", group: "Asistencia" },
     { key: "rostro", icon: "camera", label: "Mi rostro", group: "Asistencia" },
+    // Solo para quien tenga el permiso (recepción). Ver `requiere` y navItemsPara() abajo.
+    { key: "miclinica", icon: "mapPin", label: "Ubicación de mi clínica", group: "Asistencia", requiere: "puedeUbicarSucursal" },
     { key: "permisosempleado", icon: "vacation", label: "Vacaciones", group: "Tiempo libre" },
     { key: "calendario", icon: "calendar", label: "Calendario", group: "Tiempo libre" },
     { key: "encuesta", icon: "clipboardCheck", label: "Mi Encuesta", group: "Bienestar" },
@@ -131,6 +133,21 @@ export const NAV_ITEMS = {
     { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
   ],
 };
+
+/**
+ * Los ítems que ESTA persona debe ver.
+ *
+ * Hasta ahora el menú dependía solo del rol, y con eso bastaba. "Ubicación de mi clínica" rompe
+ * esa regla: es para recepción, que son rol `empleado` igual que todos los demás — el mismo caso
+ * que `soporte_ti`. En vez de partir el rol en dos, el ítem declara de qué campo del usuario
+ * depende (`requiere`) y esto lo filtra.
+ *
+ * Va aquí y no en cada pantalla porque NAV_ITEMS se lee desde cuatro sitios (header, sidebar,
+ * buscador y botón de mensajes): repetir el filtro cuatro veces es garantizar que algún día uno
+ * se quede sin él y el ítem se cuele donde no toca.
+ */
+export const navItemsPara = (user) =>
+  (NAV_ITEMS[user?.role] || []).filter((i) => !i.requiere || !!user?.[i.requiere]);
 
 /**
  * Los 4 ítems que van en la barra inferior del teléfono; el resto cae en la hoja "Más".

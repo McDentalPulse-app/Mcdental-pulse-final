@@ -7,6 +7,7 @@ import HistorialEmpleado from '../empleados/HistorialEmpleado';
 import PermisosEmpleado from '../empleados/PermisosEmpleado';
 import ChecadorEmpleado from '../asistencia/ChecadorEmpleado';
 import MiRostro from '../asistencia/MiRostro';
+import MiClinica from '../asistencia/MiClinica';
 import ReconocimientosEmpleado from '../empleados/ReconocimientosEmpleado';
 import ReporteConfidencialEmpleado from '../empleados/ReporteConfidencialEmpleado';
 import SoporteTI from '../common/SoporteTI';
@@ -37,6 +38,9 @@ export default function EmpleadoLayout({ user, globals, actions }) {
             <Route path="inicio" element={<InicioEmpleado user={user} encuestas={encuestas} mensajes={userMensajes} setActive={(view) => navigate(`/empleado/${view}`)} />} />
             <Route path="checador" element={<ChecadorEmpleado user={user} checadasHoy={checadasHoy} horarios={horarios} permisos={permisos} encuestas={encuestas} onChecar={registrarChecada} />} />
             <Route path="rostro" element={<MiRostro user={user} />} />
+            {/* Solo recepción. La ruta se monta igual para todos, pero el menú solo la ofrece
+                a quien tenga el permiso y el servidor la rechaza a quien no (mig. 103). */}
+            <Route path="miclinica" element={<MiClinica user={user} />} />
             <Route path="encuesta" element={<EncuestaEmpleado user={user} encuestas={encuestas} onSubmit={addEncuesta}/>} />
             <Route path="historial" element={<HistorialEmpleado user={user} encuestas={encuestas} />} />
             <Route path="permisosempleado" element={<PermisosEmpleado user={user} vacaciones={vacaciones} permisos={permisos} horarios={horarios} onEnviarSolicitudEmpleado={addSolicitudEmpleadoRH}/>} />

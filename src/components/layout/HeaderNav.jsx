@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { notify } from "../../utils/notify";
-import { NAV_ITEMS, GROUP_ICONS, agruparPorCampo } from "../../config/navItems";
+import { navItemsPara, GROUP_ICONS, agruparPorCampo } from "../../config/navItems";
 import logoSmall from "../../assets/logos/logo-small.png";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
@@ -25,7 +25,7 @@ export default function HeaderNav() {
   const [movilOpen, setMovilOpen] = useState(false);
   const navRef = useRef(null);
 
-  const items = NAV_ITEMS[user?.role] || [];
+  const items = navItemsPara(user);
   // Mensajes se saca de la barra y del panel móvil: lo representa SOLO el botón permanente de
   // la derecha (junto a la campana). Pintarlo también como enlace daría dos entradas para lo
   // mismo en escritorio, y el icono con badge se reconoce mejor que un enlace de texto —

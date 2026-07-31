@@ -10,6 +10,11 @@ const mapSucursal = (row) => ({
   activa: row.activa,
   // Derivado, para que la UI no tenga que repetir la condición en cada sitio.
   tieneGeocerca: row.lat !== null && row.lng !== null,
+  // Quién fijó la ubicación, cuándo y con qué precisión. Lo rellena solo el trigger
+  // `sellar_geocerca` (migración 103), venga del admin o de recepción.
+  fijadaPor: row.geocerca_fijada_por ?? null,
+  fijadaEn: row.geocerca_fijada_en ?? null,
+  precisionM: row.geocerca_precision_m ?? null,
 });
 
 export const getSucursales = async () => {
@@ -61,13 +66,16 @@ export const crearSucursal = async ({ nombre }) => {
  * marcadas como 'sin_geocerca'. Es una salida de emergencia legítima si una clínica se
  * muda y sus coordenadas dejan de valer.
  */
-export const updateGeocercaSucursal = async ({ id, lat, lng, radioM }) => {
+export const updateGeocercaSucursal = async ({ id, lat, lng, radioM, precisionM }) => {
   const { data, error } = await supabase
     .from("sucursales")
     .update({
       lat: lat ?? null,
       lng: lng ?? null,
       radio_m: radioM ?? 150,
+      // Quién y cuándo NO se mandan desde aquí: los pone el trigger `sellar_geocerca` con la
+      // sesión real. Si los escribiera el cliente, el historial diría lo que el cliente quiera.
+      ...(precisionM === undefined ? {} : { geocerca_precision_m: precisionM }),
     })
     .eq("id", id)
     .select()
@@ -78,6 +86,39 @@ export const updateGeocercaSucursal = async ({ id, lat, lng, radioM }) => {
     throw new Error("No se pudo guardar la ubicación de la sucursal.");
   }
   return mapSucursal(data);
+};
+
+/**
+ * La propia recepcionista fija la geocerca de SU clínica, estando dentro.
+ *
+ * Existe para no tener que viajar a 25 clínicas a capturar un punto que quien trabaja ahí puede
+ * capturar en diez segundos.
+ *
+ * No recibe id de sucursal, y no es un olvido: la RPC resuelve la clínica desde la fila del
+ * propio usuario. Así no hay nada que comprobar —no existe forma de nombrar una clínica ajena—
+ * y tampoco puede tocar el nombre ni el radio, que es lo que sí permitiría una policy de UPDATE.
+ * El radio lo sigue ajustando gestión desde admin.
+ *
+ * El servidor rechaza precisión peor que 100 m: una geocerca capturada con 300 m de
+ * incertidumbre no sirve, y al activarse dejaría a la clínica entera sin poder fichar.
+ */
+export const fijarGeocercaMiSucursal = async ({ lat, lng, precision }) => {
+  const { data, error } = await supabase.rpc("fijar_geocerca_mi_sucursal", {
+    p_lat: lat,
+    p_lng: lng,
+    p_precision: precision ?? null,
+  });
+
+  if (error) {
+    console.error("Error fijando la geocerca de mi sucursal:", error);
+    // Los mensajes de la RPC ya están escritos para quien los va a leer ("Tu GPS solo tiene
+    // 240 m de precisión…"). Se respetan en vez de taparlos con un genérico.
+    throw new Error(error.message || "No se pudo guardar la ubicación de tu clínica.");
+  }
+
+  // La RPC devuelve la fila de sucursales (a veces envuelta en array, según el driver).
+  const fila = Array.isArray(data) ? data[0] : data;
+  return fila ? mapSucursal(fila) : null;
 };
 
 /**

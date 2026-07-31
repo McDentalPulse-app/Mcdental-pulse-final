@@ -29,6 +29,9 @@ const mapUsuarioRow = (row) =>
     // Atiende el buzón de Soporte TI (mig. 094). Es un permiso aparte del rol: quienes lo tienen
     // son rol `empleado`, así que sin este campo la app no podría distinguirlos.
     soporteTi: !!row.soporte_ti,
+    // Puede fijar la geocerca de su clínica (recepción, mig. 103). Igual que soporteTi, es un
+    // permiso aparte del rol: quienes lo tienen son rol `empleado` como todos los demás.
+    puedeUbicarSucursal: !!row.puede_ubicar_sucursal,
     debeCambiarPassword: row.debe_cambiar_password,
     avatarUrl: row.avatar_url,
     bannerUrl: row.banner_url,

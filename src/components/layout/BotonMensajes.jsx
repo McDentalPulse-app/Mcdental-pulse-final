@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useGlobal } from "../../contexts/GlobalContext";
-import { NAV_ITEMS } from "../../config/navItems";
+import { navItemsPara } from "../../config/navItems";
 import Icon from "../ui/Icon";
 
 /**
@@ -20,7 +20,7 @@ export default function BotonMensajes({ variante = "header", activo = false }) {
 
   // Se pregunta al menú del rol en vez de asumir que todos lo tienen: si algún día un rol se queda
   // sin Mensajes, el botón desaparece con él y no hay que acordarse de este archivo.
-  if (!(NAV_ITEMS[user?.role] || []).some((i) => i.key === "mensajes")) return null;
+  if (!navItemsPara(user).some((i) => i.key === "mensajes")) return null;
 
   // Admin y RH no ven el chat (Mensajes les abre Reuniones): contarles "no leídos" señalaría una
   // conversación que no pueden atender.

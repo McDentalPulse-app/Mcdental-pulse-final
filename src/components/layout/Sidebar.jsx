@@ -7,7 +7,7 @@ import { notify } from "../../utils/notify";
 import logoSmall from "../../assets/logos/logo-small.png";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
-import { NAV_ITEMS, TABS_MOVIL, agruparPorCampo } from "../../config/navItems";
+import { navItemsPara, TABS_MOVIL, agruparPorCampo } from "../../config/navItems";
 import "./Sidebar.css";
 
 const RAIL_KEY = "mcdental_sidebar_rail";
@@ -57,7 +57,7 @@ const Sidebar = () => {
   // Los menús salen de config/navItems.js, la MISMA fuente que usa el header de escritorio.
   // Hasta el 2026-07-29 este archivo tenía su propia copia escrita a mano, y por eso los grupos
   // nuevos y Mensajes se quedaron sin llegar al teléfono: se cambió una lista y había dos.
-  const items = NAV_ITEMS[user?.role] || [];
+  const items = navItemsPara(user);
 
   const [masOpen, setMasOpen] = useState(false);
   // La barra inferior se declara por clave y ya no depende del orden del arreglo: así reordenar el

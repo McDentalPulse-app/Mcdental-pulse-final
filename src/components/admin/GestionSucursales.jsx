@@ -23,7 +23,7 @@ export default function GestionSucursales() {
   const { toast, confirm } = useNotification();
   // El estado global también guarda las sucursales (alimenta los desplegables de toda la app):
   // al crear una nueva hay que refrescar AMBAS listas para que aparezca al instante en los selects.
-  const { setSucursales: setSucursalesGlobal } = useGlobal();
+  const { setSucursales: setSucursalesGlobal, usuarios } = useGlobal();
   const [sucursales, setSucursales] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(null); // id de la sucursal en curso
@@ -105,6 +105,7 @@ export default function GestionSucursales() {
         lat: coords.lat,
         lng: coords.lng,
         radioM: sucursal.radioM,
+        precisionM: coords.precision,
       });
       setSucursales((prev) => prev.map((s) => (s.id === actualizada.id ? actualizada : s)));
       toast.success(`Ubicación de ${sucursal.nombre} guardada (±${coords.precision} m).`);
@@ -114,6 +115,47 @@ export default function GestionSucursales() {
       setGuardando(null);
     }
   };
+
+  /**
+   * El freno de emergencia.
+   *
+   * Existe porque una geocerca mal puesta no es un dato feo: BLOQUEA la checada de toda la
+   * clínica. Si mañana a las ocho media plantilla aparece "fuera", esto lo deshace en un clic —
+   * la clínica vuelve a 'sin_geocerca', que registra las checadas sin comprobar dónde se
+   * hicieron. Es peor no saber dónde ficharon que dejarlos sin fichar.
+   */
+  const quitarUbicacion = async (sucursal) => {
+    const confirmar = await confirm({
+      title: "Quitar ubicación",
+      description: `${sucursal.nombre} volverá a registrar checadas sin comprobar la ubicación. Úsalo si la geocerca está mal puesta y está dejando gente fuera.`,
+      variant: "danger",
+      confirmText: "Quitar ubicación",
+    });
+    if (!confirmar) return;
+
+    setGuardando(sucursal.id);
+    try {
+      const actualizada = await updateGeocercaSucursal({
+        id: sucursal.id,
+        lat: null,
+        lng: null,
+        radioM: sucursal.radioM,
+      });
+      setSucursales((prev) => prev.map((s) => (s.id === actualizada.id ? actualizada : s)));
+      toast.success(`${sucursal.nombre} ya no comprueba la ubicación al checar.`);
+    } catch (e) {
+      toast.error(e?.message || "No se pudo quitar la ubicación.");
+    } finally {
+      setGuardando(null);
+    }
+  };
+
+  // Nombre de quien fijó la geocerca. Sale del directorio que ya tiene el contexto global, para
+  // no pedir los usuarios otra vez solo por una etiqueta.
+  const nombrePorId = (id) => usuarios?.find((u) => u.id === id)?.name || null;
+
+  const fechaCorta = (iso) =>
+    iso ? new Date(iso).toLocaleDateString("es-MX", { day: "numeric", month: "short" }) : null;
 
   const cambiarRadio = async (sucursal, radioM) => {
     try {
@@ -143,9 +185,11 @@ export default function GestionSucursales() {
         <p className="mc-hint">
           <Icon name="alert" size={15} />
           <span>
-            Pulsa <strong>Usar mi ubicación actual</strong> estando dentro de la clínica. Las que
-            no tengan ubicación siguen funcionando: sus checadas se registran, pero sin comprobar
-            dónde se hicieron.
+            Pulsa <strong>Usar mi ubicación actual</strong> estando dentro de la clínica. La
+            recepcionista de cada clínica también puede fijar la suya desde su teléfono, y aquí
+            se ve quién lo hizo. Las que no tengan ubicación siguen funcionando: sus checadas se
+            registran, pero sin comprobar dónde se hicieron. Si una geocerca está dejando gente
+            fuera, <strong>Quitar ubicación</strong> lo deshace al instante.
           </span>
         </p>
       </Card>
@@ -183,7 +227,18 @@ export default function GestionSucursales() {
               <div className="rh-data-row-main">
                 <div className="rh-data-row-title">{s.nombre}</div>
                 {s.tieneGeocerca && (
-                  <div className="rh-data-row-sub">{s.lat.toFixed(5)}, {s.lng.toFixed(5)}</div>
+                  <div className="rh-data-row-sub">
+                    {s.lat.toFixed(5)}, {s.lng.toFixed(5)}
+                    {s.precisionM != null && ` · ±${s.precisionM} m`}
+                  </div>
+                )}
+                {/* Quién la fijó y cuándo. Es lo que permite ir a preguntarle a la persona
+                    correcta cuando una clínica empieza a rebotar a su propia gente. */}
+                {s.tieneGeocerca && s.fijadaPor && (
+                  <div className="rh-data-row-sub">
+                    {nombrePorId(s.fijadaPor) || "alguien de gestión"}
+                    {fechaCorta(s.fijadaEn) ? ` · ${fechaCorta(s.fijadaEn)}` : ""}
+                  </div>
                 )}
               </div>
               <div className="rh-data-row-meta">
@@ -217,6 +272,16 @@ export default function GestionSucursales() {
                   <Icon name="mapPin" size={15} />
                   {guardando === s.id ? "Obteniendo…" : "Usar mi ubicación actual"}
                 </button>
+                {s.tieneGeocerca && (
+                  <button
+                    type="button"
+                    className="mc-btn-outline"
+                    onClick={() => quitarUbicacion(s)}
+                    disabled={guardando === s.id}
+                  >
+                    Quitar ubicación
+                  </button>
+                )}
                 <button
                   type="button"
                   className="mc-btn-outline mc-btn-outline--danger"

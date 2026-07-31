@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { NAV_ITEMS } from "../../config/navItems";
+import { navItemsPara } from "../../config/navItems";
 import Icon from "../ui/Icon";
 
 // Búsqueda global: filtra las páginas del rol actual por nombre y navega a la elegida.
@@ -15,7 +15,7 @@ export default function BuscadorGlobal() {
   const [abierto, setAbierto] = useState(false);
   const ref = useRef(null);
 
-  const items = (NAV_ITEMS[user?.role] || []).filter((i) => i.group !== "Cuenta");
+  const items = navItemsPara(user).filter((i) => i.group !== "Cuenta");
   const nq = normalizar(q.trim());
   const resultados = nq ? items.filter((i) => normalizar(i.label).includes(nq)).slice(0, 8) : [];
 
