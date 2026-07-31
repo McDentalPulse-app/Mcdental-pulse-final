@@ -33,6 +33,8 @@ import AvisoPush from '../asistencia/AvisoPush';
 import { useAvisoPush } from '../../hooks/useAvisoPush';
 import AvisosPanel from '../avisos/AvisosPanel';
 
+import AvisoUbicacion from '../asistencia/AvisoUbicacion';
+import { useAvisoUbicacion } from '../../hooks/useAvisoUbicacion';
 export default function PsicologaLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
@@ -40,11 +42,17 @@ export default function PsicologaLayout({ user, globals, actions }) {
   const { restablecerPasswordUsuario, addNota, deleteNota, sendMensaje, marcarMensajesLeidos, addReconocimiento, subirArchivoExpediente, eliminarArchivoExpediente, addAviso, updateAviso, deleteAviso, justificarFalta, updatePermisoEstado, updateVacacionEstado, agendarPropio, revisarComision, registrarChecada } = actions;
   const { ofrecerPush, activarAvisos, cerrarOfertaPush } = useAvisoPush();
 
+  const { ofrecerUbicacion, estadoUbicacion, activarUbicacion, cerrarAviso } = useAvisoUbicacion();
+
+
   return (
     <div className="app-shell">
       <Navegacion />
       <main className="app-main">
         <div className="app-main-inner">
+          {ofrecerUbicacion && (
+            <AvisoUbicacion estado={estadoUbicacion} onActivar={activarUbicacion} onCerrar={cerrarAviso} />
+          )}
           {ofrecerPush && <AvisoPush onActivar={activarAvisos} onCerrar={cerrarOfertaPush} />}
           <Routes>
             <Route path="dashboard" element={<PsicologaDashboard encuestas={encuestas} mensajes={mensajes} reportesConfidenciales={reportesConfidenciales} />} />

@@ -4084,18 +4084,33 @@
   margin: 0;
 }
 
-.expediente-filters {
-  display: grid;
-  grid-template-columns: 1.2fr 1fr 1.4fr;
-  gap: 14px;
-  align-items: end;
-}
-
 /* ── Expediente Integral: cabecera + pestañas ──
    Antes eran nueve tarjetas a la vez en una rejilla auto-fit, con cada lista metida en una
    caja de scroll de 220px. En escritorio no se sabía dónde mirar y en un teléfono era un
    scroll interminable con listas cortadas. Ahora la ficha de la persona queda fija arriba y
    el resto se reparte en pestañas: una sección a la vista, entera y sin scroll interno. */
+
+/* ── Expediente Integral: lista + detalle ──
+   La versión de pestañas obligaba a un clic por sección para saber qué tenía una persona, y
+   cada pestaña dejaba la tarjeta con mucho aire. Ahora la lista de empleados vive a la
+   izquierda y el expediente entero se lee de un scroll a la derecha, repartido en dos
+   columnas para que no quede hueco. */
+
+.expediente-split {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.expediente-listado {
+  position: sticky;
+  top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: calc(100dvh - 120px);
+}
 
 .expediente-buscador {
   position: relative;
@@ -4113,6 +4128,140 @@
 .expediente-buscador-input {
   width: 100%;
   padding-left: 36px;
+}
+
+.expediente-listado-cuenta {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mc-texto-secundario);
+}
+
+.expediente-listado-filas {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  margin: 0 -8px;
+  padding: 0 8px;
+}
+
+.expediente-fila-emp {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: var(--mc-radio, 12px);
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.expediente-fila-emp:hover {
+  background: var(--mc-superficie-sutil-hover);
+}
+
+.expediente-fila-emp--activa {
+  background: var(--mc-brand-suave);
+}
+
+.expediente-fila-emp-texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.expediente-fila-emp-nombre {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--mc-texto-titulo);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.expediente-fila-emp-meta {
+  font-size: 11px;
+  color: var(--mc-texto-secundario);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* El score se pinta por nivel, nunca por color a pelo: así el modo oscuro lo resuelve el CSS
+   (ver DESIGN.md, "El semáforo se pinta por nivel"). */
+.expediente-fila-emp-score {
+  font-size: 13px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.expediente-fila-emp-score--verde { color: var(--mc-semaforo-verde); }
+.expediente-fila-emp-score--amarillo { color: var(--mc-semaforo-amarillo); }
+.expediente-fila-emp-score--rojo { color: var(--mc-semaforo-rojo); }
+.expediente-fila-emp-score--sin-datos { color: var(--mc-texto-apagado); }
+
+.expediente-detalle {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* Solo tiene sentido en móvil, donde el detalle tapa a la lista. */
+.expediente-volver {
+  display: none;
+  align-self: flex-start;
+}
+
+.expediente-volver-icono {
+  transform: rotate(90deg);
+}
+
+/* Las secciones se reparten en dos columnas para llenar el ancho: una sola columna de tarjetas
+   en un monitor dejaba media pantalla en blanco. */
+.expediente-secciones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.expediente-seccion--ancha {
+  grid-column: 1 / -1;
+}
+
+/* Vacía se encoge: sigue diciendo que no hay nada, pero no ocupa una tarjeta de aire. */
+.expediente-seccion--vacia {
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+.expediente-seccion--vacia .admin-section-title {
+  margin-bottom: 4px;
+}
+
+.expediente-seccion-vacio {
+  margin: 0;
+  font-size: 13px;
+}
+
+.expediente-seccion-cuenta {
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--mc-brand-suave);
+  color: var(--mc-marca-texto);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.expediente-subir-btn {
+  margin-top: 12px;
 }
 
 .expediente-ficha {
@@ -4187,33 +4336,6 @@
   color: var(--mc-texto-secundario);
 }
 
-/* Con ocho pestañas no caben en el ancho de un teléfono: se deslizan en horizontal en vez de
-   partirse en tres renglones. `mc-tabs` es inline-flex, así que basta con darle el carril. */
-.expediente-tabs-wrap {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  padding-bottom: 2px;
-}
-
-.expediente-tabs-wrap::-webkit-scrollbar {
-  display: none;
-}
-
-.expediente-tabs-wrap .mc-tabs {
-  flex-wrap: nowrap;
-}
-
-.expediente-tabs-wrap .mc-tabs-btn {
-  white-space: nowrap;
-}
-
-.expediente-panel {
-  min-height: 220px;
-}
-
-/* Dos columnas de etiqueta+valor. Antes era una lista de <div><b>Nombre:</b> valor</div> con
-   line-height 1.85, que en pantalla ancha dejaba una columna de texto larguísima. */
 .expediente-datos {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -4344,8 +4466,35 @@
     gap: 12px;
   }
 
-  .expediente-panel {
-    min-height: 0;
+  .expediente-split {
+    grid-template-columns: 1fr;
+  }
+
+  .expediente-listado {
+    position: static;
+    max-height: none;
+  }
+
+  .expediente-listado-filas {
+    max-height: 50vh;
+  }
+
+  .expediente-secciones {
+    grid-template-columns: 1fr;
+  }
+
+  /* En cuanto se elige a alguien, el detalle ocupa la pantalla y la lista se retira: no caben
+     las dos y media pantalla de lista encima del expediente no ayudaba a nadie. */
+  .expediente-page--detalle .expediente-listado {
+    display: none;
+  }
+
+  .expediente-page--detalle .expediente-volver {
+    display: inline-flex;
+  }
+
+  .expediente-page:not(.expediente-page--detalle) .expediente-detalle {
+    display: none;
   }
 }
 
@@ -12551,4 +12700,122 @@
   font-weight: 600;
   text-transform: none;
   white-space: nowrap;
+}
+
+
+/* ── Permisos del dispositivo (Mi perfil) y aviso de ubicación ──
+   El aviso de ubicación reutiliza .avisopush entero: es el mismo objeto (una tarjeta que pide
+   un permiso del navegador) y no merece un diseño propio. Solo cambia el matiz del borde,
+   porque este sí bloquea el trabajo. */
+
+.permisos-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.permisos-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--mc-slate-100);
+}
+
+.permisos-item:last-child {
+  border-bottom: none;
+}
+
+.permisos-item-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--mc-superficie-sutil);
+  color: var(--mc-texto-secundario);
+  flex-shrink: 0;
+}
+
+.permisos-item-texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.permisos-item-nombre {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--mc-texto-titulo);
+}
+
+/* Solo sale en la ubicación, y solo si falta: es el único permiso que impide fichar. */
+.permisos-item-critico {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--mc-badge-rojo-bg, var(--mc-superficie-sutil));
+  color: var(--mc-badge-rojo-texto);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.permisos-item-porque {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--mc-texto-secundario);
+}
+
+.permisos-item-ayuda {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: var(--mc-radio, 12px);
+  background: var(--mc-superficie-sutil);
+  font-size: 12px;
+  color: var(--mc-texto-secundario);
+}
+
+.permisos-item-accion {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.avisoubicacion {
+  border-color: var(--mc-btn-amber-borde);
+}
+
+.avisoubicacion-ayuda {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: var(--mc-radio, 12px);
+  background: var(--mc-superficie-sutil);
+}
+
+@media (max-width: 768px) {
+  .permisos-item {
+    flex-wrap: wrap;
+  }
+
+  /* El estado y el botón bajan a su propio renglón: a 390px, la columna de la derecha
+     estrujaba el nombre del permiso hasta partirlo letra a letra. */
+  .permisos-item-accion {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 46px;
+  }
 }

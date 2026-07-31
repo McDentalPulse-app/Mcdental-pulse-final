@@ -17,6 +17,8 @@ import AvisosPanel from '../avisos/AvisosPanel';
 import CalendarioIntercambio from '../calendario/CalendarioIntercambio';
 
 
+import AvisoUbicacion from '../asistencia/AvisoUbicacion';
+import { useAvisoUbicacion } from '../../hooks/useAvisoUbicacion';
 export default function EmpleadoLayout({ user, globals, actions }) {
   const { encuestas, mensajes, vacaciones, permisos, reconocimientos, checadasHoy, horarios, avisos, festivos, intercambios, destinosOcupados } = globals;
   const { addEncuesta, sendMensaje, addSolicitudEmpleadoRH, addReporteConfidencial, marcarMensajesLeidos, registrarChecada, solicitarIntercambio } = actions;
@@ -29,11 +31,17 @@ export default function EmpleadoLayout({ user, globals, actions }) {
     (m) => m.de === user?.id || m.para === user?.id || (user?.soporteTi && m.canal === "soporte"),
   );
 
+  const { ofrecerUbicacion, estadoUbicacion, activarUbicacion, cerrarAviso } = useAvisoUbicacion();
+
+
   return (
     <div className="app-shell">
       <Navegacion />
       <main className="app-main">
         <div className="app-main-inner">
+          {ofrecerUbicacion && (
+            <AvisoUbicacion estado={estadoUbicacion} onActivar={activarUbicacion} onCerrar={cerrarAviso} />
+          )}
           <Routes>
             <Route path="inicio" element={<InicioEmpleado user={user} encuestas={encuestas} mensajes={userMensajes} setActive={(view) => navigate(`/empleado/${view}`)} />} />
             <Route path="checador" element={<ChecadorEmpleado user={user} checadasHoy={checadasHoy} horarios={horarios} permisos={permisos} encuestas={encuestas} onChecar={registrarChecada} />} />

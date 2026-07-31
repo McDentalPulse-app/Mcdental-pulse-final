@@ -17,6 +17,8 @@ import ComisionesDoctor from '../comisiones/ComisionesDoctor';
 import CalendarioIntercambio from '../calendario/CalendarioIntercambio';
 
 
+import AvisoUbicacion from '../asistencia/AvisoUbicacion';
+import { useAvisoUbicacion } from '../../hooks/useAvisoUbicacion';
 // El doctor es un empleado con menús extra (Comisiones, Calendario de intercambio). Este layout
 // replica el de empleado para conservar TODO lo suyo (checador, encuesta, permisos, mensajes,
 // rostro…) y aquí se irán colgando las rutas propias del doctor.
@@ -32,11 +34,17 @@ export default function DoctorLayout({ user, globals, actions }) {
     (m) => m.de === user?.id || m.para === user?.id || (user?.soporteTi && m.canal === "soporte"),
   );
 
+  const { ofrecerUbicacion, estadoUbicacion, activarUbicacion, cerrarAviso } = useAvisoUbicacion();
+
+
   return (
     <div className="app-shell">
       <Navegacion />
       <main className="app-main">
         <div className="app-main-inner">
+          {ofrecerUbicacion && (
+            <AvisoUbicacion estado={estadoUbicacion} onActivar={activarUbicacion} onCerrar={cerrarAviso} />
+          )}
           <Routes>
             <Route path="inicio" element={<InicioEmpleado user={user} encuestas={encuestas} mensajes={userMensajes} setActive={(view) => navigate(`/doctor/${view}`)} />} />
             <Route path="checador" element={<ChecadorEmpleado user={user} checadasHoy={checadasHoy} horarios={horarios} permisos={permisos} encuestas={encuestas} onChecar={registrarChecada} />} />

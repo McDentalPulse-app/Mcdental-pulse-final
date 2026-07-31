@@ -13,6 +13,7 @@ import Card from "./Card";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
 import SelectorColor from "../settings/SelectorColor";
+import PermisosDispositivo from "../settings/PermisosDispositivo";
 import { mensajeDeFallo } from "../../utils/errores";
 
 // Etiqueta legible del rol (no hay un mapa central; local y pequeño).
@@ -243,6 +244,8 @@ export default function Perfil() {
       </Card>
 
       <SelectorColor />
+
+      <PermisosDispositivo />
 
       <Card className="perfil-info-card">
         <div className="perfil-info-title">

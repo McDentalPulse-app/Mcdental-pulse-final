@@ -35,6 +35,8 @@ import { useAvisoPush } from '../../hooks/useAvisoPush';
 import AvisosPanel from '../avisos/AvisosPanel';
 import Mensajes from '../comunicacion/Mensajes';
 
+import AvisoUbicacion from '../asistencia/AvisoUbicacion';
+import { useAvisoUbicacion } from '../../hooks/useAvisoUbicacion';
 export default function HRLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
@@ -45,11 +47,17 @@ export default function HRLayout({ user, globals, actions }) {
   const guardarEvento = (id, form) => (id ? updateEvento(id, form) : addEvento(form));
   const { ofrecerPush, activarAvisos, cerrarOfertaPush } = useAvisoPush();
 
+  const { ofrecerUbicacion, estadoUbicacion, activarUbicacion, cerrarAviso } = useAvisoUbicacion();
+
+
   return (
     <div className="app-shell">
       <Navegacion />
       <main className="app-main">
         <div className="app-main-inner">
+          {ofrecerUbicacion && (
+            <AvisoUbicacion estado={estadoUbicacion} onActivar={activarUbicacion} onCerrar={cerrarAviso} />
+          )}
           {ofrecerPush && <AvisoPush onActivar={activarAvisos} onCerrar={cerrarOfertaPush} />}
           <Routes>
             <Route path="dashboard" element={<HRDashboard users={USERS} />} />
