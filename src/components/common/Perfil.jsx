@@ -13,6 +13,7 @@ import Card from "./Card";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
 import SelectorColor from "../settings/SelectorColor";
+import { mensajeDeFallo } from "../../utils/errores";
 
 // Etiqueta legible del rol (no hay un mapa central; local y pequeño).
 const ROLE_LABEL = {
@@ -63,9 +64,9 @@ export default function Perfil() {
     setBuscandoUpdate(true);
     try {
       await buscarActualizacion();
-    } catch {
+    } catch (error) {
       setBuscandoUpdate(false);
-      toast.error("No se pudo comprobar si hay una versión nueva.");
+      toast.error(mensajeDeFallo("No se pudo comprobar si hay una versión nueva.", error));
     }
   };
 

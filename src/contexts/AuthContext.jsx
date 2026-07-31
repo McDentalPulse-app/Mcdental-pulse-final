@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from "react";
 import { supabase, usernameToSyntheticEmail } from "../config/supabase";
 import { notify } from "../utils/notify";
+import { mensajeDeFallo } from "../utils/errores";
 
 const VALID_ROLES = new Set(["admin", "rh", "psicologa", "empleado", "doctor"]);
 
@@ -162,7 +163,10 @@ export const AuthProvider = ({ children }) => {
 
   const restablecerPasswordUsuario = async (empleado) => {
     try {
-      if (!["admin", "rh", "recursos humanos"].includes(user?.role)) {
+      // psicologa entra aquí desde la paridad de la migración 099. Se había quedado fuera
+      // de esta guarda aunque la edge function ya la aceptaba: el botón le respondía "no
+      // tienes permiso" sin llegar a llamar a nadie.
+      if (!["admin", "rh", "psicologa", "recursos humanos"].includes(user?.role)) {
         notify.toast.error("No tienes permiso para restablecer contraseñas.");
         return;
       }
@@ -180,12 +184,19 @@ export const AuthProvider = ({ children }) => {
         body: { usuarioId: empleado.id },
         headers: { Authorization: `Bearer ${sessionData.session.access_token}` },
       });
-      if (error) throw error;
+      if (error) {
+        // supabase-js ENVUELVE los 4xx de una edge function: error.message dice
+        // "Edge Function returned a non-2xx status code" y el motivo real viaja en el
+        // cuerpo, dentro de error.context. Sin desenvolverlo, mostrar error.message es
+        // tan inútil como el texto fijo que había antes. Mismo patrón que usuariosService.
+        const detalle = await error?.context?.json?.().catch(() => null);
+        throw new Error(detalle?.error || error.message);
+      }
 
       notify.toast.success(`Contraseña restablecida para ${empleado.name}.`);
     } catch (error) {
       console.error("Error restableciendo contraseña:", error);
-      notify.toast.error("Error al restablecer contraseña.");
+      notify.toast.error(mensajeDeFallo("Error al restablecer contraseña.", error));
     }
   };
 

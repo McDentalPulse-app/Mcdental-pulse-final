@@ -23,21 +23,9 @@ import WeekSelect from "../common/WeekSelect";
 import PageHeader from "../common/PageHeader";
 import "./AIEngine.css";
 import { esEmpleadoActivo } from "../../utils/helpers";
+import { motivoFallo } from "../../utils/errores";
 
 
-// /api/gemini contesta SIEMPRE con el motivo exacto del fallo (llave sin configurar,
-// cuota agotada, sesión inválida, rol sin permiso…) y callAI lo propaga tal cual en
-// error.message. Antes se descartaba y se decía "revisa la conexión" pasara lo que
-// pasara, lo que mandaba a buscar el problema justo donde no estaba. Ahora se muestra
-// el motivo; solo el fallo de red de verdad (fetch rechazado, sin respuesta del
-// servidor) cae al mensaje genérico, que ahí sí es el correcto.
-const motivoFallo = (error) => {
-  const msg = error?.message?.trim();
-  if (!msg || /failed to fetch|networkerror|load failed/i.test(msg)) {
-    return "Revisa la conexión e inténtalo de nuevo.";
-  }
-  return msg;
-};
 
 const AIOutput = ({ text, loading, placeholder }) => {
   if (loading) {

@@ -63,6 +63,58 @@ src/
 
 ## Changelog
 
+### 2026-07-30 (tarde) · Auditoría del sistema y cierre de los hallazgos
+
+> Auditoría de los tres frentes —frontend, backend y seguridad— sobre 34.137 líneas, 18
+> endpoints, 4 edge functions y 35 tablas. El resultado de fondo es bueno: RLS activa en
+> las 35 tablas sin una sola policy permisiva, los 18 endpoints autentican, los tres que
+> manejan objetos ajenos verifican propiedad, ninguna función `SECURITY DEFINER` sin
+> `search_path` fijo, y cero secretos de servidor en el bundle (se decodificaron los JWT:
+> solo el `anon`, que es el correcto). Lo que sigue es lo que sí había que arreglar.
+
+- **🔴 Se podía subir contenido ejecutable a un bucket público (migración 101).** Los 7
+  buckets tenían `allowed_mime_types = null`: cero validación de tipo en el servidor.
+  `avatars` y `banners` son además públicos y se sirven desde el MISMO ORIGEN que la app.
+  La pantalla sí validaba —`avatarService` re-codifica por canvas a JPEG— pero eso es
+  validación de cliente, y la app le entrega al navegador la anon key y el JWT: bastaba
+  llamar a la API de storage directamente con `contentType: 'text/html'`. La policy solo
+  mira el nombre del archivo. Resultado: **XSS almacenado en el origen de la app**.
+  `nosniff` no protegía —hace que el navegador CONFÍE en el tipo declarado— y la CSP
+  estaba en Report-Only. Cerrado con listas por bucket. Verificado en producción: html y
+  svg rechazados con 415, jpeg legítimo sigue pasando.
+- **🔴 Los 16 sitios que quedaban tragándose el motivo del fallo.** El mismo patrón que
+  tuvo la pantalla de IA caída diciendo "revisa la conexión" mientras el servidor
+  contestaba un 413. Estaban encima de escrituras con RLS, que al bloquear no lanza un
+  error de permisos sino que afecta cero filas — así que nadie podía distinguir red de
+  permisos de validación. Se extrae `motivoFallo`/`mensajeDeFallo` a `utils/errores.js`
+  (con tests) y se aplica en `useAppActions`, `AuthContext` y `Perfil`. **No** se aplica en
+  `ForzarNotificaciones`: ahí el catch envuelve `Notification.requestPermission()` y un
+  "NotAllowedError" en pantalla es peor que el texto genérico.
+- **🔴 La psicóloga no podía restablecer contraseñas pese a la paridad de la 099.** La
+  guarda del frontend seguía en `["admin","rh"]` y le respondía "no tienes permiso" sin
+  llamar a nadie. Además, `functions.invoke` **envuelve** los 4xx: `error.message` decía
+  "Edge Function returned a non-2xx status code" y el motivo real viajaba en
+  `error.context`. Sin desenvolverlo, mostrar el mensaje era tan inútil como el texto fijo.
+- **🆕 CSP de Report-Only a ACTIVA.** Antes de tocar nada se sirvió el bundle compilado
+  con la política forzada y se recorrieron 19 pantallas (13 de admin + 6 de empleado,
+  incluido el checador con cámara y wasm): **0 violaciones**. La primera versión de esa
+  prueba daba 0 en falso —la app ni arrancaba— y solo se detectó por una comprobación de
+  sanidad que exigía sesión iniciada y contenido en pantalla. Sin cubrir: entrar a una
+  sala de Jitsi (`frame-src`) y el escáner de recibos.
+- **🆕 Primer arnés de pruebas de la capa que no tenía ninguna
+  (`supabase/tests/rls_invariantes.sql`).** Los 402 tests de vitest cubren `utils/` y ni
+  uno tocaba policies. Ocho invariantes contra una base real, dentro de una transacción
+  con rollback: que un empleado no lea la conversación de otro, que no se autoapruebe un
+  permiso, que no se haga admin, que solo se vea a sí mismo, y que gestión sí vea a todos.
+  8/8 en local y 8/8 en producción, sin tocar un dato.
+
+**Detalle que solo salió probándolo:** Supabase compara la cadena COMPLETA del mime. La
+grabadora de notas de voz manda `audio/webm;codecs=opus`, y una lista explícita lo
+rechazaba con 415 — la migración habría roto las notas de voz en Chrome y Android. Por eso
+el audio va con comodín `audio/*` y las imágenes NO: `image/*` dejaría pasar
+`image/svg+xml`, que es justo el vector que se cierra.
+
+
 ### 2026-07-30 · La IA llevaba días muerta por un tope de caracteres, y la pantalla mentía sobre ello
 
 > Reportado como "la IA no funciona". No era la llave de Gemini, ni el modelo, ni la cuota,

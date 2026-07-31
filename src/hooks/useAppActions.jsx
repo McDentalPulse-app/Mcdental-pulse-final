@@ -6,6 +6,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { addEncuesta as addEncuestaDb } from "../services/supabase/encuestasService";
 import { sendMensaje as sendMensajeDb, marcarMensajeLeido } from "../services/supabase/mensajesService";
 import { addNota as addNotaDb, deleteNota as deleteNotaDb } from "../services/supabase/notasService";
+import { mensajeDeFallo } from "../utils/errores";
 import { addVacacion, updateEstadoVacacion as updateEstadoVacacionDb } from "../services/supabase/vacacionesService";
 import { addPermiso, updateEstadoPermiso as updateEstadoPermisoDb } from "../services/supabase/permisosService";
 import { addDescuento as addDescuentoDb, updateDescuentoEstado as updateDescuentoEstadoDb } from "../services/supabase/descuentosService";
@@ -62,7 +63,7 @@ export const useAppActions = () => {
       return true;
     } catch (error) {
       console.error("Error guardando encuesta:", error);
-      notify.toast.error("No se pudo guardar la encuesta.");
+      notify.toast.error(mensajeDeFallo("No se pudo guardar la encuesta.", error));
       return false;
     }
   };
@@ -74,7 +75,7 @@ export const useAppActions = () => {
       return true;
     } catch (error) {
       console.error("Error guardando mensaje:", error);
-      notify.toast.error("No se pudo enviar el mensaje.");
+      notify.toast.error(mensajeDeFallo("No se pudo enviar el mensaje.", error));
       return false;
     }
   };
@@ -113,7 +114,7 @@ export const useAppActions = () => {
       setNotas(prev => [...prev, nuevaNota]);
     } catch (error) {
       console.error("Error guardando nota psicológica:", error);
-      notify.toast.error("No se pudo guardar la nota.");
+      notify.toast.error(mensajeDeFallo("No se pudo guardar la nota.", error));
     }
   };
 
@@ -128,7 +129,7 @@ export const useAppActions = () => {
       return true;
     } catch (error) {
       console.error("Error eliminando nota psicológica:", error);
-      notify.toast.error(error?.message || "No se pudo eliminar la nota.");
+      notify.toast.error(mensajeDeFallo("No se pudo eliminar la nota.", error));
       return false;
     }
   };
@@ -144,7 +145,7 @@ export const useAppActions = () => {
       // Sin revertir, la UI seguiría mostrando "aprobado" mientras la base sigue
       // en "pendiente", y la contradicción persiste hasta que se recargue.
       if (previo) setVacaciones(prev => prev.map(v => v.id === id ? previo : v));
-      notify.toast.error("No se pudo actualizar la vacación.");
+      notify.toast.error(mensajeDeFallo("No se pudo actualizar la vacación.", error));
     }
   };
 
@@ -157,7 +158,7 @@ export const useAppActions = () => {
     } catch (error) {
       console.error("Error actualizando permiso:", error);
       if (previo) setPermisos(prev => prev.map(p => p.id === id ? previo : p));
-      notify.toast.error("No se pudo actualizar el permiso.");
+      notify.toast.error(mensajeDeFallo("No se pudo actualizar el permiso.", error));
     }
   };
 
@@ -176,7 +177,7 @@ export const useAppActions = () => {
         setVacaciones((prev) => [nuevaVacacion, ...prev]);
       } catch (error) {
         console.error("Error guardando vacación:", error);
-        notify.toast.error("No se pudo guardar la solicitud de vacaciones.");
+        notify.toast.error(mensajeDeFallo("No se pudo guardar la solicitud de vacaciones.", error));
       }
       return;
     }
@@ -198,7 +199,7 @@ export const useAppActions = () => {
         setPermisos((prev) => [nuevoPermiso, ...prev]);
       } catch (error) {
         console.error("Error guardando permiso:", error);
-        notify.toast.error("No se pudo guardar la solicitud de permiso.");
+        notify.toast.error(mensajeDeFallo("No se pudo guardar la solicitud de permiso.", error));
       }
     }
   };
@@ -236,7 +237,7 @@ export const useAppActions = () => {
       }
     } catch (error) {
       console.error("Error auto-agendando:", error);
-      notify.toast.error("No se pudo agendar. Intenta de nuevo.");
+      notify.toast.error(mensajeDeFallo("No se pudo agendar. Intenta de nuevo.", error));
     }
   };
 
@@ -273,7 +274,7 @@ export const useAppActions = () => {
     } catch (error) {
       console.error("Error actualizando descuento:", error);
       if (previo) setDescuentos(prev => prev.map(d => d.id === id ? previo : d));
-      notify.toast.error("No se pudo actualizar el descuento.");
+      notify.toast.error(mensajeDeFallo("No se pudo actualizar el descuento.", error));
     }
   };
 
@@ -287,7 +288,7 @@ export const useAppActions = () => {
       setDescuentos(prev => [...prev, nuevoDescuento]);
     } catch (error) {
       console.error("Error guardando descuento:", error);
-      notify.toast.error("No se pudo guardar el descuento.");
+      notify.toast.error(mensajeDeFallo("No se pudo guardar el descuento.", error));
     }
   };
 
@@ -431,7 +432,7 @@ export const useAppActions = () => {
       setReportesConfidenciales(prev => [...prev, nuevoReporte]);
     } catch (error) {
       console.error("Error enviando reporte confidencial:", error);
-      notify.toast.error("No se pudo guardar el reporte confidencial.");
+      notify.toast.error(mensajeDeFallo("No se pudo guardar el reporte confidencial.", error));
     }
   };
 
@@ -445,7 +446,7 @@ export const useAppActions = () => {
       setReconocimientos(prev => [...prev, nuevoRec]);
     } catch (error) {
       console.error("Error enviando reconocimiento:", error);
-      notify.toast.error("No se pudo guardar el reconocimiento.");
+      notify.toast.error(mensajeDeFallo("No se pudo guardar el reconocimiento.", error));
     }
   };
 
@@ -570,7 +571,7 @@ export const useAppActions = () => {
       return true;
     } catch (error) {
       console.error("Error marcando aviso como leído:", error);
-      notify.toast.error("No se pudo marcar el aviso como leído.");
+      notify.toast.error(mensajeDeFallo("No se pudo marcar el aviso como leído.", error));
       return false;
     }
   };
