@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { quincenaDe, mesDeSemana, periodoDe, encuestaEnPeriodo, periodosDisponibles } from "./periodos";
+import { quincenaDe, mesDeSemana, periodoDe, encuestaEnPeriodo, periodosDisponibles, finDePeriodo, esPeriodoDePrueba } from "./periodos";
 
 // Las quincenas van de sábado a viernes ancladas al sábado de la semana de lanzamiento
 // (2026-07-04), que es como se trabaja y se paga aquí: lunes a sábado.
@@ -71,5 +71,25 @@ describe("etiquetas del selector", () => {
 
   it("las semanas normales conservan su etiqueta corta", () => {
     expect(periodoDe({ semana: "2026-W31" }, "semana").etiqueta).toBe("2026-W05");
+  });
+});
+
+describe("periodo de prueba", () => {
+  it("sabe cuando termina cada tipo de periodo", () => {
+    expect(finDePeriodo("semana", "2026-W31")).toBe("2026-08-02");
+    expect(finDePeriodo("quincena", "2026-07-18")).toBe("2026-07-31");
+    expect(finDePeriodo("mes", "2026-07")).toBe("2026-07-31");
+  });
+
+  it("es de prueba lo que termina dentro de la prueba", () => {
+    expect(esPeriodoDePrueba("quincena", "2026-07-18")).toBe(true);
+    expect(esPeriodoDePrueba("mes", "2026-07")).toBe(true);
+  });
+
+  it("un periodo que cruza el corte ya cuenta como normal", () => {
+    // La semana del 27 de julio termina el 2 de agosto: en su segunda mitad ya se podia
+    // contestar, asi que ahi el silencio si es "no contesto".
+    expect(esPeriodoDePrueba("semana", "2026-W31")).toBe(false);
+    expect(esPeriodoDePrueba("mes", "2026-08")).toBe(false);
   });
 });

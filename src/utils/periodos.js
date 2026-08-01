@@ -1,4 +1,5 @@
 import { LAUNCH_WEEK, formatSemanaDisplay, getISOWeek, isoWeekToMonday } from "./constants";
+import { FIN_PERIODO_PRUEBA } from "./asistencia";
 
 /**
  * Los periodos que se pueden exportar: semana, quincena y mes — y cualquiera de los pasados,
@@ -103,4 +104,32 @@ export const periodosDisponibles = (encuestas = [], tipo = "semana") => {
     if (p && !porId.has(p.id)) porId.set(p.id, p);
   }
   return [...porId.values()].sort((a, b) => String(b.id).localeCompare(String(a.id)));
+};
+
+/** Último día del periodo, en texto ISO. */
+export const finDePeriodo = (tipo, id) => {
+  if (tipo === "quincena") {
+    const inicio = desdeISO(id);
+    return inicio ? aISO(new Date(inicio.getTime() + 13 * DIA)) : null;
+  }
+  if (tipo === "mes") {
+    const [anio, mes] = String(id).split("-").map(Number);
+    return anio && mes ? aISO(new Date(Date.UTC(anio, mes, 0))) : null;
+  }
+  const lunes = isoWeekToMonday(id);
+  return lunes ? aISO(new Date(lunes.getTime() + 6 * DIA)) : null;
+};
+
+/**
+ * ¿Este periodo cae entero dentro del periodo de prueba de la app?
+ *
+ * Sirve para distinguir dos silencios que en la hoja se veían igual: quien no contestó
+ * pudiendo hacerlo, y quien no contestó porque la app todavía se estaba probando. El
+ * criterio es que el periodo TERMINE dentro de la prueba; uno que la cruza (la semana del
+ * 27 de julio al 2 de agosto) ya cuenta como normal, porque en su segunda mitad sí se
+ * podía contestar.
+ */
+export const esPeriodoDePrueba = (tipo, id) => {
+  const fin = finDePeriodo(tipo, id);
+  return !!fin && fin <= FIN_PERIODO_PRUEBA;
 };

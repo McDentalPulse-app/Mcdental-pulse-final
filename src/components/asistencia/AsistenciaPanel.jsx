@@ -31,6 +31,7 @@ const ETIQUETA_ESTADO = {
   [ESTADOS_DIA.DESCANSO]: "Descanso",
   [ESTADOS_DIA.INCOMPLETO]: "Sin salida",
   [ESTADOS_DIA.PENDIENTE]: "En curso",
+  [ESTADOS_DIA.PRUEBA]: "Periodo de prueba",
 };
 
 // Leyenda de colores del calendario: qué significa cada color de celda. Cada swatch reusa la
@@ -43,6 +44,7 @@ const LEYENDA = [
   { estado: "incompleto", label: "Sin salida" },
   { estado: "descanso", label: "Descanso" },
   { estado: "pendiente", label: "En curso" },
+  { estado: "prueba", label: "Periodo de prueba" },
 ];
 
 const MES_ABR = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
@@ -373,6 +375,7 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
           retardos: g.resumen.retardos,
           faltas: g.resumen.faltas,
           justificados: g.resumen.justificados,
+          prueba: g.resumen.prueba,
           horas: Number((g.resumen.minutosTrabajados / 60).toFixed(1)),
           puntualidad: g.resumen.puntualidad,
         });
@@ -389,6 +392,7 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
         { header: "Retardos", key: "retardos", width: 12, tipo: "numero" },
         { header: "Faltas", key: "faltas", width: 10, tipo: "numero" },
         { header: "Justificados", key: "justificados", width: 14, tipo: "numero" },
+        { header: "Periodo de prueba", key: "prueba", width: 18, tipo: "numero" },
         { header: "Horas trabajadas", key: "horas", width: 18, tipo: "decimal" },
         { header: "Puntualidad %", key: "puntualidad", width: 15, tipo: "numero" },
       ],

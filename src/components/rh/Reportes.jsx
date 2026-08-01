@@ -7,7 +7,7 @@ import { esEmpleadoActivo } from "../../utils/helpers";
 import { tieneScoreValido } from "../../utils/pulseScore";
 import { readRiesgoRenuncia, readProblemaPersonal, getComentarioAbierto } from "../../utils/encuestaDetail";
 import { descargarExcel } from "../../utils/exportarExcel";
-import { periodosDisponibles, encuestaEnPeriodo } from "../../utils/periodos";
+import { periodosDisponibles, encuestaEnPeriodo, esPeriodoDePrueba } from "../../utils/periodos";
 
 // Antes había un "Reporte Semanal" y un "Reporte Mensual", los dos clavados al periodo en
 // curso: no había forma de sacar la semana pasada ni el mes pasado, y para colmo cada uno
@@ -103,22 +103,32 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
   };
 
   const descargarConsolidado = () => {
+    const dePrueba = periodo ? esPeriodoDePrueba(tipoPeriodo, periodo.id) : false;
     const filas = empleadosActivos.map((emp) => {
       const suyas = encuestasDelPeriodo
         .filter((e) => e.empleadoId === emp.id && tieneScoreValido(e.score))
         .sort((a, b) => String(b.semana || "").localeCompare(String(a.semana || "")));
       const ultima = suyas[0];
+      // Una celda vacía no dice si la persona no quiso contestar o si la app no estaba en
+      // uso todavía. Se escribe cuál de los dos silencios es, en una columna de texto — los
+      // números se quedan vacíos a propósito, para que los promedios de la hoja no se rompan.
+      const estado = suyas.length
+        ? "Contestó"
+        : dePrueba
+          ? "No realizada · periodo de prueba de la app"
+          : "No contestó";
       return {
         nombre: emp.name || "",
         sucursal: normalizeSucursal(emp.sucursal) || "",
         puesto: emp.puesto || "",
         contestadas: suyas.length,
-        ultimaSemana: ultima?.semana ? formatSemanaDisplay(ultima.semana) : "Sin datos",
+        estado,
+        ultimaSemana: ultima?.semana ? formatSemanaDisplay(ultima.semana) : "—",
         promedio: suyas.length
           ? Math.round(suyas.reduce((sum, e) => sum + Number(e.score), 0) / suyas.length)
           : null,
         scoreActual: tieneScoreValido(ultima?.score) ? Number(ultima.score) : null,
-        semaforo: ultima?.semaforo || "Sin datos"
+        semaforo: ultima?.semaforo || "—"
       };
     });
     return descargarExcel({
@@ -129,6 +139,7 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
         { header: "Sucursal", key: "sucursal", width: 20 },
         { header: "Puesto", key: "puesto", width: 22 },
         { header: "Encuestas contestadas", key: "contestadas", width: 22, tipo: "numero" },
+        { header: "Estado", key: "estado", width: 38 },
         { header: "Última semana", key: "ultimaSemana", width: 16 },
         { header: "Score promedio", key: "promedio", width: 16, tipo: "numero" },
         { header: "Score más reciente", key: "scoreActual", width: 18, tipo: "numero" },

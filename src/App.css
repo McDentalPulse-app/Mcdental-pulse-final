@@ -9975,6 +9975,14 @@
 .asistencia-calendario-celda--justificado { background: var(--mc-info-bg); color: var(--mc-info-texto); }
 .asistencia-calendario-celda--descanso { background: transparent; color: var(--mc-texto-apagado); opacity: 0.6; }
 /* Día en curso: aún no es falta. Neutral y con borde punteado — "sin decidir todavía". */
+/* Periodo de prueba de la app: ni falta ni presente. Gris y en cursiva, para que se lea
+   como "aquí no hay dato" y no como un estado de asistencia mas. */
+.asistencia-calendario-celda--prueba {
+  background: var(--mc-gris-perla);
+  color: var(--mc-texto-apagado);
+  font-style: italic;
+}
+
 .asistencia-calendario-celda--pendiente { background: transparent; color: var(--mc-texto-apagado); border: 1px dashed var(--mc-borde); }
 
 /* Admin/RH: clic en un día con checada para anularla (no solo las marcadas sospechosas). */

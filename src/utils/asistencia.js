@@ -31,6 +31,21 @@ export const TZ_CLINICA = "America/Monterrey";
  */
 export const FECHA_INICIO_ASISTENCIA = "2026-07-21";
 
+/**
+ * Último día del periodo de prueba de la app.
+ *
+ * Entre el arranque y esta fecha, la app se estuvo probando: había horario cargado y la
+ * mitad de la plantilla todavía no checaba —el 30 de julio marcaron 14 personas y el 31 ya
+ * 56—, así que casi todos los días salían FALTA. Nadie faltó: no se estaba usando el
+ * checador todavía.
+ *
+ * Se marcan como PRUEBA en vez de rellenar la tabla con asistencias inventadas: un registro
+ * fabricado no se distingue de uno real, y esa tabla es la que sustenta descuentos y bajas.
+ * Los días que SÍ tienen checadas —presente, retardo, sin salida— se respetan tal cual: son
+ * reales y cuentan.
+ */
+export const FIN_PERIODO_PRUEBA = "2026-07-31";
+
 export const ESTADOS_DIA = {
   PRESENTE: "presente",
   RETARDO: "retardo",
@@ -41,6 +56,9 @@ export const ESTADOS_DIA = {
   // El día EN CURSO: tiene turno pero aún no checa y todavía no termina. No es falta —
   // la persona aún puede llegar. Se finaliza a medianoche (cuando su fecha deja de ser hoy).
   PENDIENTE: "pendiente",
+  // Día sin checada dentro del periodo de prueba de la app: no es falta ni presente, es
+  // "todavía no usábamos esto". Ver FIN_PERIODO_PRUEBA.
+  PRUEBA: "prueba",
 };
 
 /** "YYYY-MM-DD" de hoy en la zona de la clínica. Es el corte para "día en curso". */
@@ -222,7 +240,12 @@ export const clasificarDia = ({
     // Sin checada y sin justificación: es FALTA solo si el día ya pasó. El día en curso
     // (fecha === hoy) todavía no cuenta — la persona aún puede llegar; se vuelve falta al
     // cerrar el día. Contar hoy como falta a media mañana inflaba el panel entero.
-    return { ...base, estado: fecha >= hoy ? ESTADOS_DIA.PENDIENTE : ESTADOS_DIA.FALTA };
+    // El día en curso se decide primero: un día que todavía no termina no es nada aún,
+    // ni falta ni prueba.
+    if (fecha >= hoy) return { ...base, estado: ESTADOS_DIA.PENDIENTE };
+    // Sin checada durante el periodo de prueba no es falta: la app no estaba en uso.
+    if (fecha <= FIN_PERIODO_PRUEBA) return { ...base, estado: ESTADOS_DIA.PRUEBA };
+    return { ...base, estado: ESTADOS_DIA.FALTA };
   }
 
   if (!salida) {
@@ -353,6 +376,7 @@ export const resumen = (dias = []) => {
     descansos: 0,
     incompletos: 0,
     pendientes: 0,
+    prueba: 0,
     minutosTrabajados: 0,
     minutosRetardo: 0,
     puntualidad: 0,
@@ -366,13 +390,15 @@ export const resumen = (dias = []) => {
     else if (d.estado === ESTADOS_DIA.DESCANSO) r.descansos += 1;
     else if (d.estado === ESTADOS_DIA.INCOMPLETO) r.incompletos += 1;
     else if (d.estado === ESTADOS_DIA.PENDIENTE) r.pendientes += 1;
+    else if (d.estado === ESTADOS_DIA.PRUEBA) r.prueba += 1;
 
     r.minutosTrabajados += d.minutosTrabajados || 0;
     r.minutosRetardo += d.minutosRetardo || 0;
   }
 
   // Puntualidad sobre los días en que SE ESPERABA que viniera y vino. Descansos,
-  // justificados y días en curso (pendiente) no cuentan ni a favor ni en contra.
+  // justificados, días en curso (pendiente) y los del periodo de prueba no cuentan ni a
+  // favor ni en contra: de esos días no hay nada que juzgar.
   // Sin días juzgables => null (la UI muestra "—"): un 0% ahí es engañoso, no hubo
   // ningún día que evaluar todavía.
   const juzgables = r.presentes + r.retardos + r.incompletos;

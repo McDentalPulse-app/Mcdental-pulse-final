@@ -203,17 +203,17 @@ describe("clasificarDia", () => {
   });
 
   it("sin checadas y sin justificante => falta (día ya cerrado)", () => {
-    const d = clasificarDia({ fecha: "2026-07-13", checadas: [], horario: horarioNormal, hoy: "2026-07-17" });
+    const d = clasificarDia({ fecha: "2026-08-03", checadas: [], horario: horarioNormal, hoy: "2026-08-07" });
     expect(d.estado).toBe(ESTADOS_DIA.FALTA);
   });
 
   it("el día EN CURSO sin checada aún no es falta: es pendiente hasta medianoche", () => {
     // A media mañana, alguien con turno que todavía no checa NO es falta: aún puede llegar.
     // Se finaliza cuando el día deja de ser hoy.
-    const hoy = clasificarDia({ fecha: "2026-07-17", checadas: [], horario: horarioNormal, hoy: "2026-07-17" });
+    const hoy = clasificarDia({ fecha: "2026-08-07", checadas: [], horario: horarioNormal, hoy: "2026-08-07" });
     expect(hoy.estado).toBe(ESTADOS_DIA.PENDIENTE);
     // El mismo día, ya en el pasado, sí es falta.
-    const ayer = clasificarDia({ fecha: "2026-07-17", checadas: [], horario: horarioNormal, hoy: "2026-07-18" });
+    const ayer = clasificarDia({ fecha: "2026-08-07", checadas: [], horario: horarioNormal, hoy: "2026-08-08" });
     expect(ayer.estado).toBe(ESTADOS_DIA.FALTA);
   });
 
@@ -230,8 +230,8 @@ describe("clasificarDia", () => {
   it("un permiso PENDIENTE no justifica nada", () => {
     // Si el pendiente justificara, cualquiera evitaría una falta solicitando un permiso
     // que nadie ha aprobado.
-    const permisos = [{ estado: "pendiente", fecha: "2026-07-13", fechaFin: null }];
-    const d = clasificarDia({ fecha: "2026-07-13", checadas: [], horario: horarioNormal, permisos });
+    const permisos = [{ estado: "pendiente", fecha: "2026-08-03", fechaFin: null }];
+    const d = clasificarDia({ fecha: "2026-08-03", checadas: [], horario: horarioNormal, permisos, hoy: "2026-08-07" });
     expect(d.estado).toBe(ESTADOS_DIA.FALTA);
   });
 
@@ -276,13 +276,14 @@ describe("construirDias", () => {
       { diaSemana: 2, horaEntrada: "09:00:00", horaSalida: "18:00:00", toleranciaMin: 10 },
     ];
     const checadas = [
-      checada("entrada", "2026-07-27T15:00:00Z", { fecha: "2026-07-27" }),
-      checada("salida", "2026-07-28T00:00:00Z", { fecha: "2026-07-27" }),
+      checada("entrada", "2026-08-17T15:00:00Z", { fecha: "2026-08-17" }),
+      checada("salida", "2026-08-18T00:00:00Z", { fecha: "2026-08-17" }),
     ];
 
-    // Lunes 27 (vino) y martes 28 (no vino). Ambas después de FECHA_INICIO_ASISTENCIA.
-    // hoy fijo posterior para que el 28 cuente como día ya cerrado (falta), no en curso.
-    const dias = construirDias({ desde: "2026-07-27", hasta: "2026-07-28", checadas, horarios, hoy: "2026-08-01" });
+    // Lunes 17 (vino) y martes 18 (no vino) de agosto: ya fuera del periodo de prueba de
+    // la app, donde un día sin checada no sería falta sino PRUEBA. hoy fijo posterior para
+    // que el 18 cuente como día ya cerrado.
+    const dias = construirDias({ desde: "2026-08-17", hasta: "2026-08-18", checadas, horarios, hoy: "2026-08-20" });
 
     expect(dias).toHaveLength(2);
     expect(dias[0].estado).toBe(ESTADOS_DIA.PRESENTE);
@@ -296,8 +297,9 @@ describe("construirDias", () => {
       { diaSemana: 1, horaEntrada: "09:00:00", horaSalida: "18:00:00", toleranciaMin: 10 },
       { diaSemana: 6, horaEntrada: "09:00:00", horaSalida: "13:00:00", toleranciaMin: 10 },
     ];
-    // 2026-07-26 es domingo: sin horario => descanso.
-    const dias = construirDias({ desde: "2026-07-25", hasta: "2026-07-26", checadas: [], horarios, hoy: "2026-08-01" });
+    // 2026-08-16 es domingo: sin horario => descanso. En agosto, fuera del periodo de
+    // prueba: en julio el sábado sin checada sería PRUEBA y no falta.
+    const dias = construirDias({ desde: "2026-08-15", hasta: "2026-08-16", checadas: [], horarios, hoy: "2026-08-20" });
     expect(dias[0].estado).toBe(ESTADOS_DIA.FALTA); // sábado: sí tenía turno y no vino
     expect(dias[1].estado).toBe(ESTADOS_DIA.DESCANSO); // domingo: no tenía turno
   });
@@ -690,5 +692,32 @@ describe("jornada mínima entre entrada y salida", () => {
     );
     expect(r.permitido).toBe(true);
     expect(r.reciente).toBeUndefined();
+  });
+});
+
+describe("periodo de prueba de la app", () => {
+  // Hasta el 31 de julio la app se estuvo probando: la mitad de la plantilla no checaba
+  // todavia. Esos dias no son falta de nadie, pero tampoco se inventa una asistencia.
+  const horario = { diaSemana: 1, entrada: "09:00", salida: "18:00", toleranciaMin: 10 };
+
+  it("un dia sin checada dentro de la prueba no es falta", () => {
+    const d = clasificarDia({ fecha: "2026-07-24", checadas: [], horario, hoy: "2026-08-01" });
+    expect(d.estado).toBe(ESTADOS_DIA.PRUEBA);
+  });
+
+  it("despues del corte vuelve a ser falta", () => {
+    const d = clasificarDia({ fecha: "2026-08-01", checadas: [], horario, hoy: "2026-08-02" });
+    expect(d.estado).toBe(ESTADOS_DIA.FALTA);
+  });
+
+  it("los dias de prueba no cuentan como faltas ni tocan la puntualidad", () => {
+    const r = resumen([
+      { estado: ESTADOS_DIA.PRUEBA, minutosTrabajados: 0 },
+      { estado: ESTADOS_DIA.PRUEBA, minutosTrabajados: 0 },
+      { estado: ESTADOS_DIA.PRESENTE, minutosTrabajados: 480 },
+    ]);
+    expect(r.prueba).toBe(2);
+    expect(r.faltas).toBe(0);
+    expect(r.puntualidad).toBe(100);
   });
 });
