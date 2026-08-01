@@ -45,7 +45,7 @@ export const addEncuesta = async ({ empleadoId, semana, respuestas, score, semaf
 
   if (error) {
     console.error("Error guardando encuesta:", error);
-    throw new Error("No se pudo guardar la encuesta.");
+    throw new Error(error.message || "No se pudo guardar la encuesta.");
   }
   return mapEncuesta(data);
 };

@@ -360,7 +360,7 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
             <button
               type="button"
               className="checador-boton checador-boton--entrada"
-              onClick={() => navigate("/empleado/rostro")}
+              onClick={() => navigate(`/${user?.role}/rostro`)}
             >
               <Icon name="camera" size={20} />
               {puerta.caducado ? "Renovar mis fotos" : "Registrar mi rostro"}
@@ -496,7 +496,7 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
                   <Icon name="clipboardCheck" size={15} />
                   Antes de marcar tu salida hoy, contesta la encuesta semanal.
                 </p>
-                <button type="button" className="mc-btn-outline" onClick={() => navigate("encuesta")}>
+                <button type="button" className="mc-btn-outline" onClick={() => navigate(`/${user?.role}/encuesta`)}>
                   Contestar encuesta
                 </button>
               </>
