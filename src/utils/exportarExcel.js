@@ -56,7 +56,11 @@ export const descargarExcel = async ({ nombreArchivo, hoja = "Reporte", columnas
     for (const c of columnas) celdas[c.key] = valorDeCelda(fila[c.key], c.tipo);
     const agregada = ws.addRow(celdas);
     columnas.forEach((c, i) => {
-      if (FORMATO[c.tipo]) agregada.getCell(i + 1).numFmt = FORMATO[c.tipo];
+      const celda = agregada.getCell(i + 1);
+      if (FORMATO[c.tipo]) celda.numFmt = FORMATO[c.tipo];
+      // La cuadricula de asistencia mete estado y horario en la misma celda, uno debajo del
+      // otro: sin ajuste de texto, Excel enseña una sola linea y esconde el resto.
+      if (c.ajusteTexto) celda.alignment = { wrapText: true, vertical: "top", horizontal: "center" };
     });
   }
 
@@ -64,6 +68,7 @@ export const descargarExcel = async ({ nombreArchivo, hoja = "Reporte", columnas
   // filas se pueda leer sin perder de vista de qué columna es cada número.
   const encabezado = ws.getRow(1);
   encabezado.font = { bold: true };
+  encabezado.alignment = { wrapText: true, vertical: "middle", horizontal: "center" };
   encabezado.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEFF3F6" } };
   ws.views = [{ state: "frozen", ySplit: 1 }];
   ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: columnas.length } };

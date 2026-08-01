@@ -19,6 +19,7 @@ import {
   FECHA_INICIO_ASISTENCIA,
   horaEnClinica,
   nombreDiaSemana,
+  rangoDeFechas,
 } from "../../utils/asistencia";
 
 // Antes había un "Reporte Semanal" y un "Reporte Mensual", los dos clavados al periodo en
@@ -307,42 +308,60 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
       });
 
       if (modo === "detalle") {
+        // Una CUADRICULA, no una lista: una fila por persona y un dia por columna, igual que
+        // el calendario de la pantalla. La lista plana repetia el nombre y la sucursal en cada
+        // renglon -siete veces por persona en una semana, treinta en un mes- y para saber si
+        // alguien falto el martes habia que ir leyendo fechas una por una.
+        const fechas = rangoDeFechas(desdePeriodo, hastaPeriodo);
+        const claveDia = (f) => `d${String(f).replace(/-/g, "")}`;
+
         const filas = porEmpleado
-          .flatMap(({ empleado, dias }) =>
-            dias.map((d) => ({
-              nombre: empleado.name || "",
+          .map(({ empleado, dias, resumen: r }) => {
+            const porFecha = new Map(dias.map((d) => [d.fecha, d]));
+            const fila = {
               sucursal: normalizeSucursal(empleado.sucursal) || "",
-              fecha: d.fecha,
-              dia: nombreDiaSemana(d.fecha),
-              estado: ETIQUETA_ESTADO[d.estado] || d.estado,
-              entrada: horaEnClinica(d.entrada?.marcadaEn),
-              salida: horaEnClinica(d.salida?.marcadaEn),
-              horas: d.minutosTrabajados ? Number((d.minutosTrabajados / 60).toFixed(1)) : null,
-              minutosRetardo: d.minutosRetardo || null,
-              justificacion: d.justificacion?.motivo || "",
-            })),
-          )
-          // Por sucursal, luego por persona y luego por fecha: así el reporte se lee como se
-          // trabaja -clínica por clínica- en vez de en el orden en que vinieron los usuarios.
-          .sort((a, b) =>
-            a.sucursal.localeCompare(b.sucursal) ||
-            a.nombre.localeCompare(b.nombre) ||
-            a.fecha.localeCompare(b.fecha),
-          );
+              nombre: empleado.name || "",
+              presentes: r.presentes,
+              retardos: r.retardos,
+              faltas: r.faltas,
+              horas: Number((r.minutosTrabajados / 60).toFixed(1)),
+            };
+            for (const f of fechas) {
+              const d = porFecha.get(f);
+              if (!d) { fila[claveDia(f)] = ""; continue; }
+              // Solo las horas que existen: cuando falta la salida, el estado de la celda ya
+              // dice "Sin salida" y un guion suelto detras de la entrada no anade nada.
+              const horario = [horaEnClinica(d.entrada?.marcadaEn), horaEnClinica(d.salida?.marcadaEn)]
+                .filter(Boolean)
+                .join(" - ");
+              const retardo = d.minutosRetardo > 0 ? ` (+${d.minutosRetardo}m)` : "";
+              const etiqueta = ETIQUETA_ESTADO[d.estado] || d.estado;
+              // Estado arriba y horario debajo, en la misma celda: se lee de un vistazo quien
+              // llego tarde y a que hora, sin perder ninguno de los dos datos.
+              fila[claveDia(f)] = horario ? `${etiqueta}${retardo}\n${horario}` : etiqueta;
+            }
+            return fila;
+          })
+          .sort((a, b) => a.sucursal.localeCompare(b.sucursal) || a.nombre.localeCompare(b.nombre));
+
+        const columnasDias = fechas.map((f) => ({
+          header: `${nombreDiaSemana(f).slice(0, 3)} ${f.slice(8, 10)}/${f.slice(5, 7)}`,
+          key: claveDia(f),
+          width: 17,
+          ajusteTexto: true,
+        }));
+
         return await descargarExcel({
           nombreArchivo: `asistencia_detalle_${tipoPeriodo}_${sufijo}.xlsx`,
           hoja: "Detalle por día",
           columnas: [
             { header: "Sucursal", key: "sucursal", width: 22 },
             { header: "Nombre", key: "nombre", width: 34 },
-            { header: "Fecha", key: "fecha", width: 12 },
-            { header: "Día", key: "dia", width: 11 },
-            { header: "Estado", key: "estado", width: 18 },
-            { header: "Entrada", key: "entrada", width: 10 },
-            { header: "Salida", key: "salida", width: 10 },
+            ...columnasDias,
+            { header: "Presentes", key: "presentes", width: 11, tipo: "numero" },
+            { header: "Retardos", key: "retardos", width: 11, tipo: "numero" },
+            { header: "Faltas", key: "faltas", width: 9, tipo: "numero" },
             { header: "Horas", key: "horas", width: 9, tipo: "decimal" },
-            { header: "Retardo (min)", key: "minutosRetardo", width: 14, tipo: "numero" },
-            { header: "Justificación", key: "justificacion", width: 42 },
           ],
           filas,
         });
