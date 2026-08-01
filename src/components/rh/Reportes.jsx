@@ -17,6 +17,8 @@ import {
   resumen as resumirDias,
   ETIQUETA_ESTADO,
   FECHA_INICIO_ASISTENCIA,
+  horaEnClinica,
+  nombreDiaSemana,
 } from "../../utils/asistencia";
 
 // Antes había un "Reporte Semanal" y un "Reporte Mensual", los dos clavados al periodo en
@@ -305,32 +307,42 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
       });
 
       if (modo === "detalle") {
-        const filas = porEmpleado.flatMap(({ empleado, dias }) =>
-          dias.map((d) => ({
-            nombre: empleado.name || "",
-            sucursal: normalizeSucursal(empleado.sucursal) || "",
-            fecha: d.fecha,
-            estado: ETIQUETA_ESTADO[d.estado] || d.estado,
-            entrada: d.entrada?.marcadaEn || "",
-            salida: d.salida?.marcadaEn || "",
-            horas: d.minutosTrabajados ? Number((d.minutosTrabajados / 60).toFixed(1)) : null,
-            minutosRetardo: d.minutosRetardo || null,
-            justificacion: d.justificacion?.motivo || "",
-          })),
-        );
+        const filas = porEmpleado
+          .flatMap(({ empleado, dias }) =>
+            dias.map((d) => ({
+              nombre: empleado.name || "",
+              sucursal: normalizeSucursal(empleado.sucursal) || "",
+              fecha: d.fecha,
+              dia: nombreDiaSemana(d.fecha),
+              estado: ETIQUETA_ESTADO[d.estado] || d.estado,
+              entrada: horaEnClinica(d.entrada?.marcadaEn),
+              salida: horaEnClinica(d.salida?.marcadaEn),
+              horas: d.minutosTrabajados ? Number((d.minutosTrabajados / 60).toFixed(1)) : null,
+              minutosRetardo: d.minutosRetardo || null,
+              justificacion: d.justificacion?.motivo || "",
+            })),
+          )
+          // Por sucursal, luego por persona y luego por fecha: así el reporte se lee como se
+          // trabaja -clínica por clínica- en vez de en el orden en que vinieron los usuarios.
+          .sort((a, b) =>
+            a.sucursal.localeCompare(b.sucursal) ||
+            a.nombre.localeCompare(b.nombre) ||
+            a.fecha.localeCompare(b.fecha),
+          );
         return await descargarExcel({
           nombreArchivo: `asistencia_detalle_${tipoPeriodo}_${sufijo}.xlsx`,
           hoja: "Detalle por día",
           columnas: [
-            { header: "Nombre", key: "nombre", width: 32 },
-            { header: "Sucursal", key: "sucursal", width: 20 },
-            { header: "Fecha", key: "fecha", width: 14 },
-            { header: "Estado", key: "estado", width: 20 },
-            { header: "Entrada", key: "entrada", width: 24 },
-            { header: "Salida", key: "salida", width: 24 },
-            { header: "Horas", key: "horas", width: 10, tipo: "decimal" },
-            { header: "Minutos de retardo", key: "minutosRetardo", width: 18, tipo: "numero" },
-            { header: "Justificación", key: "justificacion", width: 30 },
+            { header: "Sucursal", key: "sucursal", width: 22 },
+            { header: "Nombre", key: "nombre", width: 34 },
+            { header: "Fecha", key: "fecha", width: 12 },
+            { header: "Día", key: "dia", width: 11 },
+            { header: "Estado", key: "estado", width: 18 },
+            { header: "Entrada", key: "entrada", width: 10 },
+            { header: "Salida", key: "salida", width: 10 },
+            { header: "Horas", key: "horas", width: 9, tipo: "decimal" },
+            { header: "Retardo (min)", key: "minutosRetardo", width: 14, tipo: "numero" },
+            { header: "Justificación", key: "justificacion", width: 42 },
           ],
           filas,
         });
@@ -347,13 +359,13 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
         prueba: r.prueba,
         horas: Number((r.minutosTrabajados / 60).toFixed(1)),
         puntualidad: r.puntualidad,
-      }));
+      })).sort((a, b) => a.sucursal.localeCompare(b.sucursal) || a.nombre.localeCompare(b.nombre));
       return await descargarExcel({
         nombreArchivo: `asistencia_resumen_${tipoPeriodo}_${sufijo}.xlsx`,
         hoja: "Asistencia",
         columnas: [
-          { header: "Nombre", key: "nombre", width: 32 },
-          { header: "Sucursal", key: "sucursal", width: 20 },
+          { header: "Sucursal", key: "sucursal", width: 22 },
+          { header: "Nombre", key: "nombre", width: 34 },
           { header: "Puesto", key: "puesto", width: 22 },
           { header: "Presentes", key: "presentes", width: 12, tipo: "numero" },
           { header: "Retardos", key: "retardos", width: 12, tipo: "numero" },

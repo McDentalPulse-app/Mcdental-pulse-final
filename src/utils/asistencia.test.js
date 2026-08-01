@@ -18,6 +18,8 @@ import {
   horaSalidaAutorizada,
   minutosNoTrabajados,
   formatoDuracion,
+  horaEnClinica,
+  nombreDiaSemana,
   ESTADOS_DIA,
 } from "./asistencia";
 
@@ -719,5 +721,28 @@ describe("periodo de prueba de la app", () => {
     expect(r.prueba).toBe(2);
     expect(r.faltas).toBe(0);
     expect(r.puntualidad).toBe(100);
+  });
+});
+
+describe("horaEnClinica", () => {
+  // Las checadas se guardan en UTC y Monterrey va seis horas por detras. Volcarlas crudas en
+  // el reporte decia que alguien entro a las 15:35 y salio al dia SIGUIENTE a la 1:01, cuando
+  // entro a las 9:35 y salio a las 19:01 del mismo dia.
+  it("traduce el timestamp UTC a la hora que vivio la persona", () => {
+    expect(horaEnClinica("2026-07-27T15:35:47.226420+00:00")).toBe("09:35");
+    expect(horaEnClinica("2026-07-28T01:01:39.927250+00:00")).toBe("19:01");
+  });
+
+  it("sin dato devuelve vacio, no 'Invalid Date'", () => {
+    expect(horaEnClinica(null)).toBe("");
+    expect(horaEnClinica("")).toBe("");
+    expect(horaEnClinica("no es fecha")).toBe("");
+  });
+});
+
+describe("nombreDiaSemana", () => {
+  it("dice el dia en palabras", () => {
+    expect(nombreDiaSemana("2026-07-27")).toBe("Lunes");
+    expect(nombreDiaSemana("2026-08-01")).toBe("Sábado");
   });
 });

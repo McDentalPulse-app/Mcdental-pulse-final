@@ -68,6 +68,28 @@ export const ESTADOS_DIA = {
  * calendario de Asistencia y el reporte de Reportes, y con dos copias un estado nuevo se
  * añadiría en una y no en la otra — que es justo lo que pasó al añadir PRUEBA.
  */
+/**
+ * La hora tal como la vivió la persona ("09:35"), no la del reloj UTC.
+ *
+ * Las checadas se guardan en UTC, que en Monterrey van seis horas por delante. Volcarlas
+ * crudas en un reporte decía que Elizabeth entró a las 15:35 y salió al día SIGUIENTE a la
+ * 1:01 — cuando entró a las 9:35 y salió a las 19:01 del mismo día. No es un detalle de
+ * formato: quien lee ese reporte saca conclusiones falsas sobre los horarios de su gente.
+ */
+export const horaEnClinica = (ts) => {
+  if (!ts) return "";
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return "";
+  return new Intl.DateTimeFormat("es-MX", {
+    timeZone: TZ_CLINICA, hour: "2-digit", minute: "2-digit", hour12: false,
+  }).format(d);
+};
+
+const NOMBRE_DIA = { 1: "Lunes", 2: "Martes", 3: "Miércoles", 4: "Jueves", 5: "Viernes", 6: "Sábado", 7: "Domingo" };
+
+/** "Lunes", "Martes"… de una fecha "YYYY-MM-DD". */
+export const nombreDiaSemana = (fecha) => NOMBRE_DIA[diaISO(fecha)] || "";
+
 export const ETIQUETA_ESTADO = {
   [ESTADOS_DIA.PRESENTE]: "Presente",
   [ESTADOS_DIA.RETARDO]: "Retardo",
