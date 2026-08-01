@@ -3734,7 +3734,11 @@
   height: 56px;
   flex-shrink: 0;
   border-radius: 14px;
-  background: linear-gradient(135deg, var(--mc-brand-suave), var(--mc-verde-claro));
+  /* --mc-verde-claro es color CRUDO de la paleta (#E6F7F4, un pastel para fondo claro) y el
+     tema oscuro no lo redefine: en oscuro este cuadro salia casi blanco. --mc-brand-suave si
+     es semantico -en claro ese mismo pastel, en oscuro un tinte del acento sobre el fondo- y
+     es el que ya usan los cuadritos de cada tarjeta, que se veian bien en los dos temas. */
+  background: var(--mc-brand-suave);
   color: var(--mc-marca-texto);
   display: flex;
   align-items: center;
