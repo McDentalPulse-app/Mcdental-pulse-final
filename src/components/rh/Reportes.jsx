@@ -7,7 +7,15 @@ import { esEmpleadoActivo } from "../../utils/helpers";
 import { tieneScoreValido } from "../../utils/pulseScore";
 import { readRiesgoRenuncia, readProblemaPersonal, getComentarioAbierto } from "../../utils/encuestaDetail";
 import { descargarExcel } from "../../utils/exportarExcel";
-import { periodosDisponibles, encuestaEnPeriodo, esPeriodoDePrueba } from "../../utils/periodos";
+import { periodosDisponibles, periodosEnRango, encuestaEnPeriodo, esPeriodoDePrueba, inicioDePeriodo, finDePeriodo } from "../../utils/periodos";
+import { useGlobal } from "../../contexts/GlobalContext";
+import { getAsistencias } from "../../services/supabase/asistenciasService";
+import {
+  construirDias,
+  resumen as resumirDias,
+  ETIQUETA_ESTADO,
+  FECHA_INICIO_ASISTENCIA,
+} from "../../utils/asistencia";
 
 // Antes había un "Reporte Semanal" y un "Reporte Mensual", los dos clavados al periodo en
 // curso: no había forma de sacar la semana pasada ni el mes pasado, y para colmo cada uno
@@ -16,6 +24,17 @@ import { periodosDisponibles, encuestaEnPeriodo, esPeriodoDePrueba } from "../..
 // quincena o mes, el actual o cualquier anterior con datos. Qué entra en cada periodo lo
 // decide utils/periodos.js, en un solo sitio y con sus motivos escritos.
 const hoy = () => new Date().toISOString().slice(0, 10);
+
+// Qué se está reportando. Antes cada familia vivía en su propia pantalla: las encuestas
+// aquí, la asistencia dentro del calendario de Asistencia con su propio botón y su propio
+// rango, y vacaciones/permisos en "Reportes RH", donde ni siquiera se podían descargar. Son
+// tres preguntas distintas sobre lo mismo -qué quiero, de cuándo- y ahora se responden en un
+// solo sitio.
+const TIPOS_REPORTE = [
+  { value: "asistencia", label: "Asistencia" },
+  { value: "bienestar", label: "Bienestar (encuestas)" },
+  { value: "ausencias", label: "Vacaciones, permisos y descuentos" },
+];
 
 const TIPOS = [
   { value: "semana", label: "Semana", pista: "lunes a domingo" },
@@ -28,11 +47,23 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
   const [mostrarSelectorSucursal, setMostrarSelectorSucursal] = useState(false);
   const [tipoPeriodo, setTipoPeriodo] = useState("semana");
   const [periodoElegido, setPeriodoElegido] = useState(null);
+  const [tipoReporte, setTipoReporte] = useState("asistencia");
+  const [bajando, setBajando] = useState(false);
+  const { horarios = [], permisos = [], vacaciones = [], descuentos = [] } = useGlobal();
 
-  const periodos = useMemo(
-    () => periodosDisponibles(encuestas, tipoPeriodo),
-    [encuestas, tipoPeriodo],
-  );
+  // Los periodos que se ofrecen dependen de lo que se va a reportar: los de bienestar salen
+  // de las encuestas que existen, y los de asistencia y ausencias del calendario — un periodo
+  // sin encuestas puede tener diez días de checadas o unas vacaciones a la mitad.
+  const periodos = useMemo(() => {
+    if (tipoReporte === "bienestar") return periodosDisponibles(encuestas, tipoPeriodo);
+    const hoyISO = new Date().toISOString().slice(0, 10);
+    const fechas = tipoReporte === "ausencias"
+      ? [...vacaciones.map((v) => v.fechaInicio), ...permisos.map((p) => p.fecha), ...descuentos.map((d) => d.fecha)]
+        .filter(Boolean).map((f) => String(f).slice(0, 10))
+      : [];
+    const inicio = fechas.length ? fechas.sort()[0] : FECHA_INICIO_ASISTENCIA;
+    return periodosEnRango(tipoPeriodo, inicio, hoyISO);
+  }, [tipoReporte, tipoPeriodo, encuestas, vacaciones, permisos, descuentos]);
   // Al cambiar de tipo, el id elegido deja de existir: se cae al más reciente en vez de
   // guardarlo en un efecto, que solo añadiría un render de más y una forma de desincronizarse.
   const periodo = periodos.find((p) => p.id === periodoElegido) || periodos[0];
@@ -57,6 +88,19 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
 
   // Para el nombre del archivo: "2026-W31", "2026-07-18", "2026-07" ya son inequívocos.
   const sufijo = periodo ? periodo.id.replace(/[^\w-]/g, "") : hoy();
+  const desdePeriodo = periodo ? inicioDePeriodo(tipoPeriodo, periodo.id) : null;
+  const hastaPeriodo = periodo ? finDePeriodo(tipoPeriodo, periodo.id) : null;
+
+  // ¿Este registro con fecha (o rango) toca el periodo elegido? Una vacación de cinco días
+  // que empieza el viernes y acaba el martes pertenece a las DOS semanas que cruza: se
+  // pregunta por solapamiento, no por el día en que empezó.
+  const tocaPeriodo = (inicio, fin) => {
+    if (!desdePeriodo || !hastaPeriodo) return false;
+    const a = String(inicio || "").slice(0, 10);
+    if (!a) return false;
+    const b = String(fin || inicio).slice(0, 10);
+    return a <= hastaPeriodo && b >= desdePeriodo;
+  };
 
   const ultimaEncuestaDe = (empleadoId, lista) =>
     lista
@@ -214,33 +258,240 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
     });
   };
 
-  const exportOptions = [
-    {
-      icon: "file",
-      title: "Detalle del periodo",
-      desc: `Excel · una fila por encuesta · ${encuestasDelPeriodo.length} en ${periodo?.etiqueta || "—"}`,
-      action: descargarDetalle,
-    },
-    {
-      icon: "chart",
-      title: "Consolidado del periodo",
-      desc: `Excel · una fila por persona · ${empleadosActivos.length} en plantilla`,
-      action: descargarConsolidado,
-    },
-    {
-      icon: "building",
-      title: "Por Sucursal",
-      desc: "Excel · foto actual, filtrada por ubicación",
-      action: () => setMostrarSelectorSucursal(!mostrarSelectorSucursal),
-      toggle: true,
-    },
-    {
-      icon: "users",
-      title: "Directorio de Empleados",
-      desc: "Excel · foto actual con score y semáforo",
-      action: descargarEmpleados,
-    },
-  ];
+  /**
+   * Asistencia del periodo. Las checadas se piden AL PULSAR, no al abrir la pantalla: son
+   * miles de filas y quien entra a Reportes muchas veces viene por otra cosa.
+   *
+   * El criterio de qué es falta, retardo o periodo de prueba NO se reimplementa aquí: es el
+   * mismo construirDias que pinta el calendario de Asistencia, probado en su propio test. Dos
+   * copias del criterio serían dos reportes que un día dicen cosas distintas.
+   */
+  const descargarAsistencia = async (modo) => {
+    if (!desdePeriodo || !hastaPeriodo) return;
+    setBajando(true);
+    try {
+      const checadas = await getAsistencias({ desde: desdePeriodo, hasta: hastaPeriodo });
+      const porEmpleado = empleadosActivos.map((u) => {
+        const dias = construirDias({
+          desde: desdePeriodo,
+          hasta: hastaPeriodo,
+          checadas: checadas.filter((c) => c.empleadoId === u.id),
+          horarios: horarios.filter((h) => h.empleadoId === u.id),
+          permisos: permisos.filter((p) => p.empleadoId === u.id),
+          vacaciones: vacaciones.filter((v) => v.empleadoId === u.id),
+          fechaIngreso: u.fechaIngreso,
+        });
+        return { empleado: u, dias, resumen: resumirDias(dias) };
+      });
+
+      if (modo === "detalle") {
+        const filas = porEmpleado.flatMap(({ empleado, dias }) =>
+          dias.map((d) => ({
+            nombre: empleado.name || "",
+            sucursal: normalizeSucursal(empleado.sucursal) || "",
+            fecha: d.fecha,
+            estado: ETIQUETA_ESTADO[d.estado] || d.estado,
+            entrada: d.entrada?.marcadaEn || "",
+            salida: d.salida?.marcadaEn || "",
+            horas: d.minutosTrabajados ? Number((d.minutosTrabajados / 60).toFixed(1)) : null,
+            minutosRetardo: d.minutosRetardo || null,
+            justificacion: d.justificacion?.motivo || "",
+          })),
+        );
+        return await descargarExcel({
+          nombreArchivo: `asistencia_detalle_${tipoPeriodo}_${sufijo}.xlsx`,
+          hoja: "Detalle por día",
+          columnas: [
+            { header: "Nombre", key: "nombre", width: 32 },
+            { header: "Sucursal", key: "sucursal", width: 20 },
+            { header: "Fecha", key: "fecha", width: 14 },
+            { header: "Estado", key: "estado", width: 20 },
+            { header: "Entrada", key: "entrada", width: 24 },
+            { header: "Salida", key: "salida", width: 24 },
+            { header: "Horas", key: "horas", width: 10, tipo: "decimal" },
+            { header: "Minutos de retardo", key: "minutosRetardo", width: 18, tipo: "numero" },
+            { header: "Justificación", key: "justificacion", width: 30 },
+          ],
+          filas,
+        });
+      }
+
+      const filas = porEmpleado.map(({ empleado, resumen: r }) => ({
+        nombre: empleado.name || "",
+        sucursal: normalizeSucursal(empleado.sucursal) || "",
+        puesto: empleado.puesto || "",
+        presentes: r.presentes,
+        retardos: r.retardos,
+        faltas: r.faltas,
+        justificados: r.justificados,
+        prueba: r.prueba,
+        horas: Number((r.minutosTrabajados / 60).toFixed(1)),
+        puntualidad: r.puntualidad,
+      }));
+      return await descargarExcel({
+        nombreArchivo: `asistencia_resumen_${tipoPeriodo}_${sufijo}.xlsx`,
+        hoja: "Asistencia",
+        columnas: [
+          { header: "Nombre", key: "nombre", width: 32 },
+          { header: "Sucursal", key: "sucursal", width: 20 },
+          { header: "Puesto", key: "puesto", width: 22 },
+          { header: "Presentes", key: "presentes", width: 12, tipo: "numero" },
+          { header: "Retardos", key: "retardos", width: 12, tipo: "numero" },
+          { header: "Faltas", key: "faltas", width: 10, tipo: "numero" },
+          { header: "Justificados", key: "justificados", width: 14, tipo: "numero" },
+          { header: "Periodo de prueba", key: "prueba", width: 18, tipo: "numero" },
+          { header: "Horas trabajadas", key: "horas", width: 18, tipo: "decimal" },
+          { header: "Puntualidad %", key: "puntualidad", width: 15, tipo: "numero" },
+        ],
+        filas,
+      });
+    } catch (err) {
+      console.error("Error generando el reporte de asistencia:", err);
+      throw err;
+    } finally {
+      setBajando(false);
+    }
+  };
+
+  // Vacaciones y permisos juntos: para RH son la misma pregunta -quién no va a estar y por
+  // qué-, y tenerlos en dos hojas obligaba a cruzarlos a mano.
+  const descargarAusencias = () => {
+    const filas = [
+      ...vacaciones.filter((v) => tocaPeriodo(v.fechaInicio, v.fechaFin)).map((v) => ({
+        tipo: "Vacaciones",
+        nombre: v.empleado || "",
+        sucursal: normalizeSucursal(v.sucursal) || "",
+        puesto: v.puesto || "",
+        desde: v.fechaInicio || "",
+        hasta: v.fechaFin || "",
+        dias: v.dias ?? null,
+        motivo: v.motivo || "",
+        estado: v.estado || "",
+      })),
+      ...permisos.filter((p) => tocaPeriodo(p.fecha, p.fechaFin)).map((p) => ({
+        tipo: "Permiso",
+        nombre: p.empleado || "",
+        sucursal: normalizeSucursal(p.sucursal) || "",
+        puesto: p.puesto || "",
+        desde: p.fecha || "",
+        hasta: p.fechaFin || p.fecha || "",
+        dias: null,
+        motivo: [p.causa, p.motivo].filter(Boolean).join(" · "),
+        estado: p.estado || "",
+      })),
+    ].sort((a, b) => String(a.desde).localeCompare(String(b.desde)));
+
+    return descargarExcel({
+      nombreArchivo: `ausencias_${tipoPeriodo}_${sufijo}.xlsx`,
+      hoja: "Vacaciones y permisos",
+      columnas: [
+        { header: "Tipo", key: "tipo", width: 14 },
+        { header: "Nombre", key: "nombre", width: 32 },
+        { header: "Sucursal", key: "sucursal", width: 20 },
+        { header: "Puesto", key: "puesto", width: 22 },
+        { header: "Desde", key: "desde", width: 14 },
+        { header: "Hasta", key: "hasta", width: 14 },
+        { header: "Días", key: "dias", width: 10, tipo: "numero" },
+        { header: "Motivo", key: "motivo", width: 40 },
+        { header: "Estado", key: "estado", width: 14 },
+      ],
+      filas,
+    });
+  };
+
+  const descargarDescuentos = () => {
+    const filas = descuentos
+      .filter((d) => tocaPeriodo(d.fecha, d.fecha))
+      .map((d) => ({
+        nombre: d.empleado || "",
+        sucursal: normalizeSucursal(d.sucursal) || "",
+        puesto: d.puesto || "",
+        fecha: d.fecha || "",
+        tipo: d.tipo || "",
+        motivo: d.motivo || "",
+        monto: Number(d.monto),
+        estado: d.estado || "",
+        responsable: d.responsable || "",
+      }))
+      .sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
+
+    return descargarExcel({
+      nombreArchivo: `descuentos_${tipoPeriodo}_${sufijo}.xlsx`,
+      hoja: "Descuentos",
+      columnas: [
+        { header: "Nombre", key: "nombre", width: 32 },
+        { header: "Sucursal", key: "sucursal", width: 20 },
+        { header: "Puesto", key: "puesto", width: 22 },
+        { header: "Fecha", key: "fecha", width: 14 },
+        { header: "Tipo", key: "tipo", width: 18 },
+        { header: "Motivo", key: "motivo", width: 40 },
+        { header: "Monto", key: "monto", width: 14, tipo: "decimal" },
+        { header: "Estado", key: "estado", width: 14 },
+        { header: "Responsable", key: "responsable", width: 26 },
+      ],
+      filas,
+    });
+  };
+
+  const OPCIONES = {
+    asistencia: [
+      {
+        icon: "clock",
+        title: "Resumen por persona",
+        desc: "Excel · presentes, retardos, faltas, horas y puntualidad",
+        action: () => descargarAsistencia("resumen"),
+      },
+      {
+        icon: "file",
+        title: "Detalle por día",
+        desc: "Excel · un renglón por día, con entrada y salida",
+        action: () => descargarAsistencia("detalle"),
+      },
+    ],
+    bienestar: [
+      {
+        icon: "file",
+        title: "Detalle del periodo",
+        desc: `Excel · una fila por encuesta · ${encuestasDelPeriodo.length} en ${periodo?.etiqueta || "—"}`,
+        action: descargarDetalle,
+      },
+      {
+        icon: "chart",
+        title: "Consolidado del periodo",
+        desc: `Excel · una fila por persona · ${empleadosActivos.length} en plantilla`,
+        action: descargarConsolidado,
+      },
+      {
+        icon: "building",
+        title: "Por Sucursal",
+        desc: "Excel · foto actual, filtrada por ubicación",
+        action: () => setMostrarSelectorSucursal(!mostrarSelectorSucursal),
+        toggle: true,
+      },
+      {
+        icon: "users",
+        title: "Directorio de Empleados",
+        desc: "Excel · foto actual con score y semáforo",
+        action: descargarEmpleados,
+      },
+    ],
+    ausencias: [
+      {
+        icon: "vacation",
+        title: "Vacaciones y permisos",
+        desc: "Excel · quién no estuvo, cuándo y por qué",
+        action: descargarAusencias,
+      },
+      {
+        icon: "dollar",
+        title: "Descuentos",
+        desc: "Excel · monto, motivo y estado",
+        action: descargarDescuentos,
+      },
+    ],
+  };
+
+  const exportOptions = OPCIONES[tipoReporte] || [];
 
   return (
     <div className="admin-page">
@@ -256,12 +507,25 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
           <div>
             <h2 className="reportes-hero-heading">Exportar reportes</h2>
             <p className="reportes-hero-lead">
-              Elige el periodo y descarga. Puedes sacar el actual o cualquier anterior con datos.
+              Elige qué reporte y de qué periodo. Puedes sacar el actual o cualquier anterior.
             </p>
           </div>
         </div>
 
         <div className="reportes-periodo-panel">
+          <div className="mc-form-group">
+            <label className="mc-form-label" htmlFor="rep-que">¿Qué reporte?</label>
+            <select
+              id="rep-que"
+              className="mc-form-select"
+              value={tipoReporte}
+              onChange={(e) => { setTipoReporte(e.target.value); setPeriodoElegido(null); setMostrarSelectorSucursal(false); }}
+            >
+              {TIPOS_REPORTE.map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+          </div>
           <div className="mc-form-row-2">
             <div className="mc-form-group">
               <label className="mc-form-label" htmlFor="rep-tipo">Agrupar por</label>
@@ -295,12 +559,15 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
         </div>
 
         <div className="admin-info-box">
-          {periodo
-            ? `${periodo.etiqueta}: ${encuestasDelPeriodo.length} encuesta(s) de ${empleadosActivos.length} personas en plantilla.`
-            : "Todavía no hay encuestas que exportar."}
+          {!periodo
+            ? "Todavía no hay nada que exportar en este periodo."
+            : tipoReporte === "bienestar"
+              ? `${periodo.etiqueta}: ${encuestasDelPeriodo.length} encuesta(s) de ${empleadosActivos.length} personas en plantilla.`
+              : `${periodo.etiqueta}: del ${desdePeriodo} al ${hastaPeriodo}.`}
+          {bajando && " · Generando el archivo…"}
         </div>
 
-        {mostrarSelectorSucursal && (
+        {mostrarSelectorSucursal && tipoReporte === "bienestar" && (
           <div className="reportes-sucursal-panel">
             <div className="mc-form-group">
               <label className="mc-form-label" htmlFor="rep-sucursal">Selecciona la sucursal</label>

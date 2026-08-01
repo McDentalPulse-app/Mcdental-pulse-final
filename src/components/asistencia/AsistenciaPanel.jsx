@@ -17,22 +17,11 @@ import {
   detectarDispositivosCompartidos,
   diaISO,
   ESTADOS_DIA,
+  ETIQUETA_ESTADO,
   TZ_CLINICA,
 } from "../../utils/asistencia";
 import { normalizeSucursal } from "../../utils/constants";
 import { useGlobal } from "../../contexts/GlobalContext";
-import { descargarExcel } from "../../utils/exportarExcel";
-
-const ETIQUETA_ESTADO = {
-  [ESTADOS_DIA.PRESENTE]: "Presente",
-  [ESTADOS_DIA.RETARDO]: "Retardo",
-  [ESTADOS_DIA.FALTA]: "Falta",
-  [ESTADOS_DIA.JUSTIFICADO]: "Justificado",
-  [ESTADOS_DIA.DESCANSO]: "Descanso",
-  [ESTADOS_DIA.INCOMPLETO]: "Sin salida",
-  [ESTADOS_DIA.PENDIENTE]: "En curso",
-  [ESTADOS_DIA.PRUEBA]: "Periodo de prueba",
-};
 
 // Leyenda de colores del calendario: qué significa cada color de celda. Cada swatch reusa la
 // misma clase que pinta la celda, así el color de la leyenda y el del día son SIEMPRE el mismo.
@@ -359,47 +348,6 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
     cargar();
   };
 
-  // Salía como CSV con cada celda entrecomillada: horas trabajadas y puntualidad llegaban a
-  // Excel como texto y no se podían sumar ni promediar. Ahora es .xlsx y esas dos columnas
-  // van como número — vacías cuando no hay dato, para que un promedio de la columna no se
-  // rompa por una celda con texto dentro.
-  const exportarExcelAsistencia = () => {
-    const filas = [];
-    for (const { empleado, grupos } of porEmpleado) {
-      for (const g of grupos) {
-        filas.push({
-          empleado: empleado.name,
-          sucursal: empleado.sucursal || "",
-          periodo: g.clave,
-          presentes: g.resumen.presentes,
-          retardos: g.resumen.retardos,
-          faltas: g.resumen.faltas,
-          justificados: g.resumen.justificados,
-          prueba: g.resumen.prueba,
-          horas: Number((g.resumen.minutosTrabajados / 60).toFixed(1)),
-          puntualidad: g.resumen.puntualidad,
-        });
-      }
-    }
-    return descargarExcel({
-      nombreArchivo: `asistencia_${desde}_a_${hasta}.xlsx`,
-      hoja: "Asistencia",
-      columnas: [
-        { header: "Empleado", key: "empleado", width: 32 },
-        { header: "Sucursal", key: "sucursal", width: 20 },
-        { header: "Periodo", key: "periodo", width: 16 },
-        { header: "Presentes", key: "presentes", width: 12, tipo: "numero" },
-        { header: "Retardos", key: "retardos", width: 12, tipo: "numero" },
-        { header: "Faltas", key: "faltas", width: 10, tipo: "numero" },
-        { header: "Justificados", key: "justificados", width: 14, tipo: "numero" },
-        { header: "Periodo de prueba", key: "prueba", width: 18, tipo: "numero" },
-        { header: "Horas trabajadas", key: "horas", width: 18, tipo: "decimal" },
-        { header: "Puntualidad %", key: "puntualidad", width: 15, tipo: "numero" },
-      ],
-      filas,
-    });
-  };
-
   const hoy = new Date();
 
   return (
@@ -410,9 +358,6 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
             <Icon name="check" size={16} /> Justificar {faltasVisibles.length} falta{faltasVisibles.length === 1 ? "" : "s"}
           </button>
         )}
-        <button type="button" className="mc-btn-outline" onClick={exportarExcelAsistencia} disabled={cargando}>
-          <Icon name="file" size={16} /> Exportar Excel
-        </button>
       </PageHeader>
 
       <Card className="asistencia-toolbar-card">

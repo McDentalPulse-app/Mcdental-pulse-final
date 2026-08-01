@@ -61,6 +61,24 @@ export const ESTADOS_DIA = {
   PRUEBA: "prueba",
 };
 
+/**
+ * Cómo se llama cada estado en pantalla.
+ *
+ * Vive aquí, junto a la definición del estado, y no en la pantalla que lo pinta: lo usan el
+ * calendario de Asistencia y el reporte de Reportes, y con dos copias un estado nuevo se
+ * añadiría en una y no en la otra — que es justo lo que pasó al añadir PRUEBA.
+ */
+export const ETIQUETA_ESTADO = {
+  [ESTADOS_DIA.PRESENTE]: "Presente",
+  [ESTADOS_DIA.RETARDO]: "Retardo",
+  [ESTADOS_DIA.FALTA]: "Falta",
+  [ESTADOS_DIA.JUSTIFICADO]: "Justificado",
+  [ESTADOS_DIA.DESCANSO]: "Descanso",
+  [ESTADOS_DIA.INCOMPLETO]: "Sin salida",
+  [ESTADOS_DIA.PENDIENTE]: "En curso",
+  [ESTADOS_DIA.PRUEBA]: "Periodo de prueba",
+};
+
 /** "YYYY-MM-DD" de hoy en la zona de la clínica. Es el corte para "día en curso". */
 export const hoyEnClinica = () =>
   new Intl.DateTimeFormat("en-CA", { timeZone: TZ_CLINICA }).format(new Date());

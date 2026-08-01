@@ -106,6 +106,14 @@ export const periodosDisponibles = (encuestas = [], tipo = "semana") => {
   return [...porId.values()].sort((a, b) => String(b.id).localeCompare(String(a.id)));
 };
 
+/** Primer día del periodo, en texto ISO. */
+export const inicioDePeriodo = (tipo, id) => {
+  if (tipo === "quincena") return /^\d{4}-\d{2}-\d{2}$/.test(String(id)) ? String(id) : null;
+  if (tipo === "mes") return /^\d{4}-\d{2}$/.test(String(id)) ? `${id}-01` : null;
+  const lunes = isoWeekToMonday(id);
+  return lunes ? aISO(lunes) : null;
+};
+
 /** Último día del periodo, en texto ISO. */
 export const finDePeriodo = (tipo, id) => {
   if (tipo === "quincena") {
@@ -132,4 +140,26 @@ export const finDePeriodo = (tipo, id) => {
 export const esPeriodoDePrueba = (tipo, id) => {
   const fin = finDePeriodo(tipo, id);
   return !!fin && fin <= FIN_PERIODO_PRUEBA;
+};
+
+/**
+ * Los periodos que cubren un rango de fechas, del más reciente al más antiguo.
+ *
+ * La otra lista —periodosDisponibles— sale de las encuestas que hay, y para el reporte de
+ * asistencia eso no vale: un periodo sin encuestas puede tener diez días de checadas. Aquí
+ * los periodos salen del calendario, entre la fecha en que se empezó a checar y hoy.
+ */
+export const periodosEnRango = (tipo, desde, hasta) => {
+  const fin = desdeISO(hasta);
+  let cursor = desdeISO(desde);
+  if (!cursor || !fin) return [];
+  const vistos = new Map();
+  // Se avanza día a día y se pregunta a qué periodo pertenece cada uno: así no hay que
+  // escribir tres bucles distintos (semana, quincena y mes no duran lo mismo).
+  while (cursor <= fin) {
+    const p = periodoDe({ semana: getISOWeek(cursor), fecha: aISO(cursor) }, tipo);
+    if (p && !vistos.has(p.id)) vistos.set(p.id, p);
+    cursor = new Date(cursor.getTime() + DIA);
+  }
+  return [...vistos.values()].sort((a, b) => String(b.id).localeCompare(String(a.id)));
 };
