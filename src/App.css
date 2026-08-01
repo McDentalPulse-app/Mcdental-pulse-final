@@ -3739,7 +3739,12 @@
      es semantico -en claro ese mismo pastel, en oscuro un tinte del acento sobre el fondo- y
      es el que ya usan los cuadritos de cada tarjeta, que se veian bien en los dos temas. */
   background: var(--mc-brand-suave);
-  color: var(--mc-marca-texto);
+  /* --mc-icono-accion y no --mc-marca-texto: accentPalette.js escribe --mc-marca-texto como
+     estilo EN LINEA sobre <html>, y un inline gana a la hoja de estilos, asi que la version
+     oscura de esa variable nunca se aplica -se queda en #466a9d, azul oscuro-. Sobre esta
+     caja, que en oscuro es translucida, ese azul casi no se ve. --mc-icono-accion existe
+     justo para esto y si cambia con el tema. */
+  color: var(--mc-icono-accion);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3827,7 +3832,9 @@
   flex-shrink: 0;
   border-radius: 12px;
   background: var(--mc-brand-suave);
-  color: var(--mc-marca-texto);
+  /* Mismo motivo que en .reportes-hero-icon: sobre fondo de marca, el icono va con
+     --mc-icono-accion, que si tiene version oscura. */
+  color: var(--mc-icono-accion);
   display: flex;
   align-items: center;
   justify-content: center;

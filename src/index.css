@@ -882,9 +882,13 @@ img {
 }
 
 .auth-demo-btn:hover:not(:disabled) {
-  background: var(--mc-verde-claro);
-  border-color: rgba(45, 106, 95, 0.25);
-  color: var(--mc-verde-medio);
+  /* Igual que el cuadro de Reportes: --mc-verde-claro es un pastel para fondo claro y en
+     oscuro dejaba un parche casi blanco al pasar el raton. El borde tampoco seguia a la
+     marca -era un teal fijo escrito a mano, que dejo de coincidir el dia que el color de la
+     app se volvio configurable-. */
+  background: var(--mc-brand-suave);
+  border-color: rgba(var(--mc-verde-rgb) / 0.25);
+  color: var(--mc-icono-accion);
 }
 
 .auth-demo-btn:disabled {
