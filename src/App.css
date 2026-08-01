@@ -3764,6 +3764,7 @@
   text-align: left;
 }
 
+.reportes-periodo-panel,
 .reportes-sucursal-panel {
   display: flex;
   flex-wrap: wrap;
@@ -3776,6 +3777,7 @@
   border: 1px solid var(--mc-gris-suave);
 }
 
+.reportes-periodo-panel .mc-form-group,
 .reportes-sucursal-panel .mc-form-group {
   flex: 1;
   min-width: 200px;

@@ -54,7 +54,7 @@ export let semanaActual = getISOWeek();
 export const LAUNCH_WEEK = "2026-W27";
 
 /** Lunes (UTC) de una semana ISO "YYYY-Www". */
-const isoWeekToMonday = (week) => {
+export const isoWeekToMonday = (week) => {
   const m = /^(\d{4})-W(\d{2})$/.exec(String(week ?? "").trim());
   if (!m) return null;
   const [, year, wk] = m;
