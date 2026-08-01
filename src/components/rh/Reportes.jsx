@@ -1,12 +1,19 @@
 import React, { useState } from "react";
 import Card from "../common/Card";
-import SectionTitle from "../common/SectionTitle";
 import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { semanaActual, normalizeSucursal, sucursalMatches, isSemanaActual, formatSemanaDisplay } from "../../utils/constants";
 import { esEmpleadoActivo } from "../../utils/helpers";
 import { tieneScoreValido } from "../../utils/pulseScore";
 import { readRiesgoRenuncia, readProblemaPersonal, getComentarioAbierto } from "../../utils/encuestaDetail";
+import { descargarExcel } from "../../utils/exportarExcel";
+
+// Los cuatro reportes salían como CSV con todo entrecomillado aunque las tarjetas dijeran
+// "Excel": el score y los promedios llegaban como texto y no se podían sumar ni graficar sin
+// rehacer el archivo a mano. Ahora son .xlsx de verdad (ver utils/exportarExcel.js), y las
+// columnas numéricas van como número — cuando no hay dato, la celda queda vacía en vez de
+// llevar el texto "Sin datos", que es lo que rompía cualquier fórmula sobre la columna.
+const hoy = () => new Date().toISOString().slice(0, 10);
 
 const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
   const [sucursalReporte, setSucursalReporte] = useState("Todas");
@@ -23,19 +30,14 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
     ).sort()
   ];
 
-  const descargarEmpleadosCSV = () => {
-    const empleados = users.filter(esEmpleadoActivo);
-    const limpiarCSV = (valor) => {
-      const texto = String(valor ?? "").replace(/"/g, '""');
-      return `"${texto}"`;
-    };
-    const getUltimaEncuesta = (empleadoId) => {
-      return encuestas
-        .filter((e) => e.empleadoId === empleadoId && tieneScoreValido(e.score))
-        .sort((a, b) => String(b.semana || "").localeCompare(String(a.semana || "")))[0];
-    };
-    const filas = empleados.map((emp) => {
-      const ultima = getUltimaEncuesta(emp.id);
+  const ultimaEncuestaDe = (empleadoId) =>
+    encuestas
+      .filter((e) => e.empleadoId === empleadoId && tieneScoreValido(e.score))
+      .sort((a, b) => String(b.semana || "").localeCompare(String(a.semana || "")))[0];
+
+  const descargarEmpleados = () => {
+    const filas = users.filter(esEmpleadoActivo).map((emp) => {
+      const ultima = ultimaEncuestaDe(emp.id);
       return {
         nombre: emp.name || "",
         sucursal: normalizeSucursal(emp.sucursal) || "",
@@ -43,157 +45,136 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
         usuario: emp.user || "",
         estatus: "Activo",
         semana: ultima?.semana ? formatSemanaDisplay(ultima.semana) : "Sin datos",
-        score: tieneScoreValido(ultima?.score) ? Number(ultima.score) : "Sin datos",
+        score: tieneScoreValido(ultima?.score) ? Number(ultima.score) : null,
         semaforo: ultima?.semaforo || "Sin datos"
       };
     });
-    const encabezados = ["Nombre", "Sucursal", "Puesto", "Usuario", "Estatus", "Semana", "Score", "Semaforo"];
-    const contenido = [
-      encabezados.join(","),
-      ...filas.map((fila) =>
-        [fila.nombre, fila.sucursal, fila.puesto, fila.usuario, fila.estatus, fila.semana, fila.score, fila.semaforo]
-          .map(limpiarCSV).join(",")
-      )
-    ].join("\n");
-    const blob = new Blob(["\uFEFF" + contenido], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `empleados_mcdental_${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    return descargarExcel({
+      nombreArchivo: `empleados_mcdental_${hoy()}.xlsx`,
+      hoja: "Empleados",
+      columnas: [
+        { header: "Nombre", key: "nombre", width: 32 },
+        { header: "Sucursal", key: "sucursal", width: 20 },
+        { header: "Puesto", key: "puesto", width: 22 },
+        { header: "Usuario", key: "usuario", width: 18 },
+        { header: "Estatus", key: "estatus", width: 12 },
+        { header: "Semana", key: "semana", width: 16 },
+        { header: "Score", key: "score", width: 10, tipo: "numero" },
+        { header: "Semáforo", key: "semaforo", width: 12 },
+      ],
+      filas,
+    });
   };
 
-  const descargarReporteMensualExcel = () => {
-    const empleados = users.filter(esEmpleadoActivo);
+  const descargarReporteMensual = () => {
     const mesActual = new Date().toISOString().slice(0, 7);
-    const limpiarCSV = (valor) => {
-      const texto = String(valor ?? "").replace(/"/g, '""');
-      return `"${texto}"`;
-    };
     const encuestasDelMes = encuestas.filter((e) => String(e.fecha || "").startsWith(mesActual));
-    const getEncuestasEmpleado = (empleadoId) => {
-      return encuestasDelMes
-        .filter((e) => e.empleadoId === empleadoId && tieneScoreValido(e.score))
+    const filas = users.filter(esEmpleadoActivo).map((emp) => {
+      const suyas = encuestasDelMes
+        .filter((e) => e.empleadoId === emp.id && tieneScoreValido(e.score))
         .sort((a, b) => String(b.semana || "").localeCompare(String(a.semana || "")));
-    };
-    const filas = empleados.map((emp) => {
-      const encEmpleado = getEncuestasEmpleado(emp.id);
-      const ultima = encEmpleado[0];
-      const promedio = encEmpleado.length
-        ? Math.round(encEmpleado.reduce((sum, e) => sum + Number(e.score), 0) / encEmpleado.length)
-        : "Sin datos";
+      const ultima = suyas[0];
       return {
-        nombre: emp.name || "", sucursal: normalizeSucursal(emp.sucursal) || "", puesto: emp.puesto || "",
-        encuestasContestadas: encEmpleado.length, ultimaSemana: ultima?.semana ? formatSemanaDisplay(ultima.semana) : "Sin datos",
-        scorePromedioMes: promedio,
-        scoreActual: tieneScoreValido(ultima?.score) ? Number(ultima.score) : "Sin datos",
-        semaforo: ultima?.semaforo || "Sin datos"
-      };
-    });
-    const encabezados = ["Nombre", "Sucursal", "Puesto", "Encuestas contestadas", "Ultima semana", "Score promedio mes", "Score actual", "Semaforo"];
-    const contenido = [
-      encabezados.join(","),
-      ...filas.map((fila) =>
-        [fila.nombre, fila.sucursal, fila.puesto, fila.encuestasContestadas, fila.ultimaSemana, fila.scorePromedioMes, fila.scoreActual, fila.semaforo]
-          .map(limpiarCSV).join(",")
-      )
-    ].join("\n");
-    const blob = new Blob(["\uFEFF" + contenido], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `reporte_mensual_mcdental_${mesActual}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  const descargarReporteSucursalExcel = () => {
-    const empleados = users
-      .filter(esEmpleadoActivo)
-      .filter((u) => sucursalReporte === "Todas" || sucursalMatches(u.sucursal, sucursalReporte));
-    const limpiarCSV = (valor) => {
-      const texto = String(valor ?? "").replace(/"/g, '""');
-      return `"${texto}"`;
-    };
-    const getUltimaEncuesta = (empleadoId) => {
-      return encuestas
-        .filter((e) => e.empleadoId === empleadoId && tieneScoreValido(e.score))
-        .sort((a, b) => String(b.semana || "").localeCompare(String(a.semana || "")))[0];
-    };
-    const filas = empleados.map((emp) => {
-      const ultima = getUltimaEncuesta(emp.id);
-      return {
-        nombre: emp.name || "", sucursal: normalizeSucursal(emp.sucursal) || "", puesto: emp.puesto || "",
+        nombre: emp.name || "",
+        sucursal: normalizeSucursal(emp.sucursal) || "",
+        puesto: emp.puesto || "",
+        encuestasContestadas: suyas.length,
         ultimaSemana: ultima?.semana ? formatSemanaDisplay(ultima.semana) : "Sin datos",
-        scoreActual: tieneScoreValido(ultima?.score) ? Number(ultima.score) : "Sin datos",
+        scorePromedioMes: suyas.length
+          ? Math.round(suyas.reduce((sum, e) => sum + Number(e.score), 0) / suyas.length)
+          : null,
+        scoreActual: tieneScoreValido(ultima?.score) ? Number(ultima.score) : null,
         semaforo: ultima?.semaforo || "Sin datos"
       };
     });
-    const encabezados = ["Nombre", "Sucursal", "Puesto", "Ultima semana", "Score actual", "Semaforo"];
-    const contenido = [
-      encabezados.join(","),
-      ...filas.map((fila) =>
-        [fila.nombre, fila.sucursal, fila.puesto, fila.ultimaSemana, fila.scoreActual, fila.semaforo]
-          .map(limpiarCSV).join(",")
-      )
-    ].join("\n");
-    const blob = new Blob(["\uFEFF" + contenido], { type: "text/csv;charset=utf-8;" });
-    const nombreSucursal = sucursalReporte === "Todas" ? "todas_las_sucursales" : sucursalReporte.toLowerCase().replace(/\s+/g, "_");
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `reporte_sucursal_${nombreSucursal}_${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    return descargarExcel({
+      nombreArchivo: `reporte_mensual_mcdental_${mesActual}.xlsx`,
+      hoja: "Mensual",
+      columnas: [
+        { header: "Nombre", key: "nombre", width: 32 },
+        { header: "Sucursal", key: "sucursal", width: 20 },
+        { header: "Puesto", key: "puesto", width: 22 },
+        { header: "Encuestas contestadas", key: "encuestasContestadas", width: 22, tipo: "numero" },
+        { header: "Última semana", key: "ultimaSemana", width: 16 },
+        { header: "Score promedio mes", key: "scorePromedioMes", width: 20, tipo: "numero" },
+        { header: "Score actual", key: "scoreActual", width: 14, tipo: "numero" },
+        { header: "Semáforo", key: "semaforo", width: 12 },
+      ],
+      filas,
+    });
   };
 
-  const descargarReporteSemanalExcel = () => {
-    const empleados = users.filter(esEmpleadoActivo);
-    const limpiarCSV = (valor) => {
-      const texto = String(valor ?? "").replace(/"/g, '""');
-      return `"${texto}"`;
-    };
-    const encuestasSemana = encuestas.filter(
-      (e) => isSemanaActual(e.semana) && tieneScoreValido(e.score)
-    );
-    const getEmpleado = (empleadoId) => empleados.find((emp) => emp.id === empleadoId);
-    const filas = encuestasSemana.map((encuesta) => {
-      const emp = getEmpleado(encuesta.empleadoId);
-      return {
-        nombre: emp?.name || "Empleado no encontrado", sucursal: normalizeSucursal(emp?.sucursal) || "Sin sucursal",
-        puesto: emp?.puesto || "Sin puesto", semana: formatSemanaDisplay(encuesta.semana) || "", fecha: encuesta.fecha || "",
-        score: encuesta.score, semaforo: encuesta.semaforo || "Sin datos",
-        // El jsonb `respuestas` se indexa por el id de la pregunta (un UUID), no por un
-        // número: buscar la clave 9 / 7 / 10 dejaba estas tres columnas SIEMPRE vacías.
-        riesgoRenuncia: readRiesgoRenuncia(encuesta, preguntas) || "",
-        problemaPersonal: readProblemaPersonal(encuesta, preguntas) || "",
-        comentario: getComentarioAbierto(encuesta, preguntas) || ""
-      };
+  const descargarReporteSucursal = () => {
+    const filas = users
+      .filter(esEmpleadoActivo)
+      .filter((u) => sucursalReporte === "Todas" || sucursalMatches(u.sucursal, sucursalReporte))
+      .map((emp) => {
+        const ultima = ultimaEncuestaDe(emp.id);
+        return {
+          nombre: emp.name || "",
+          sucursal: normalizeSucursal(emp.sucursal) || "",
+          puesto: emp.puesto || "",
+          ultimaSemana: ultima?.semana ? formatSemanaDisplay(ultima.semana) : "Sin datos",
+          scoreActual: tieneScoreValido(ultima?.score) ? Number(ultima.score) : null,
+          semaforo: ultima?.semaforo || "Sin datos"
+        };
+      });
+    const nombreSucursal = sucursalReporte === "Todas"
+      ? "todas_las_sucursales"
+      : sucursalReporte.toLowerCase().replace(/\s+/g, "_");
+    return descargarExcel({
+      nombreArchivo: `reporte_sucursal_${nombreSucursal}_${hoy()}.xlsx`,
+      hoja: "Por sucursal",
+      columnas: [
+        { header: "Nombre", key: "nombre", width: 32 },
+        { header: "Sucursal", key: "sucursal", width: 20 },
+        { header: "Puesto", key: "puesto", width: 22 },
+        { header: "Última semana", key: "ultimaSemana", width: 16 },
+        { header: "Score actual", key: "scoreActual", width: 14, tipo: "numero" },
+        { header: "Semáforo", key: "semaforo", width: 12 },
+      ],
+      filas,
     });
-    const encabezados = ["Nombre", "Sucursal", "Puesto", "Semana", "Fecha", "Score", "Semaforo", "Riesgo renuncia", "Problema personal", "Comentario"];
-    const contenido = [
-      encabezados.join(","),
-      ...filas.map((fila) =>
-        [fila.nombre, fila.sucursal, fila.puesto, fila.semana, fila.fecha, fila.score, fila.semaforo, fila.riesgoRenuncia, fila.problemaPersonal, fila.comentario]
-          .map(limpiarCSV).join(",")
-      )
-    ].join("\n");
-    const blob = new Blob(["\uFEFF" + contenido], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `reporte_semanal_mcdental_${semanaActual}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+  };
+
+  const descargarReporteSemanal = () => {
+    const empleados = users.filter(esEmpleadoActivo);
+    const filas = encuestas
+      .filter((e) => isSemanaActual(e.semana) && tieneScoreValido(e.score))
+      .map((encuesta) => {
+        const emp = empleados.find((e) => e.id === encuesta.empleadoId);
+        return {
+          nombre: emp?.name || "Empleado no encontrado",
+          sucursal: normalizeSucursal(emp?.sucursal) || "Sin sucursal",
+          puesto: emp?.puesto || "Sin puesto",
+          semana: formatSemanaDisplay(encuesta.semana) || "",
+          fecha: encuesta.fecha || "",
+          score: Number(encuesta.score),
+          semaforo: encuesta.semaforo || "Sin datos",
+          // El jsonb `respuestas` se indexa por el id de la pregunta (un UUID), no por un
+          // número: buscar la clave 9 / 7 / 10 dejaba estas tres columnas SIEMPRE vacías.
+          riesgoRenuncia: readRiesgoRenuncia(encuesta, preguntas) || "",
+          problemaPersonal: readProblemaPersonal(encuesta, preguntas) || "",
+          comentario: getComentarioAbierto(encuesta, preguntas) || ""
+        };
+      });
+    return descargarExcel({
+      nombreArchivo: `reporte_semanal_mcdental_${semanaActual}.xlsx`,
+      hoja: "Semanal",
+      columnas: [
+        { header: "Nombre", key: "nombre", width: 32 },
+        { header: "Sucursal", key: "sucursal", width: 20 },
+        { header: "Puesto", key: "puesto", width: 22 },
+        { header: "Semana", key: "semana", width: 16 },
+        { header: "Fecha", key: "fecha", width: 14 },
+        { header: "Score", key: "score", width: 10, tipo: "numero" },
+        { header: "Semáforo", key: "semaforo", width: 12 },
+        { header: "Riesgo renuncia", key: "riesgoRenuncia", width: 22 },
+        { header: "Problema personal", key: "problemaPersonal", width: 22 },
+        { header: "Comentario", key: "comentario", width: 60 },
+      ],
+      filas,
+    });
   };
 
   const exportOptions = [
@@ -201,13 +182,13 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
       icon: "file",
       title: "Reporte Semanal",
       desc: "Excel · bienestar de la semana activa",
-      action: descargarReporteSemanalExcel,
+      action: descargarReporteSemanal,
     },
     {
       icon: "chart",
       title: "Reporte Mensual",
       desc: "Excel · consolidado del mes en curso",
-      action: descargarReporteMensualExcel,
+      action: descargarReporteMensual,
     },
     {
       icon: "building",
@@ -220,7 +201,7 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
       icon: "users",
       title: "Directorio de Empleados",
       desc: "Excel · listado con score y semáforo",
-      action: descargarEmpleadosCSV,
+      action: descargarEmpleados,
     },
   ];
 
@@ -257,7 +238,7 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
                 ))}
               </select>
             </div>
-            <button type="button" className="mc-btn-primary mc-btn-with-icon" onClick={descargarReporteSucursalExcel}>
+            <button type="button" className="mc-btn-primary mc-btn-with-icon" onClick={descargarReporteSucursal}>
               <Icon name="spreadsheet" size={16} /> Descargar reporte de sucursal
             </button>
           </div>

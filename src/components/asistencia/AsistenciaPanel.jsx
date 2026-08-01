@@ -21,6 +21,7 @@ import {
 } from "../../utils/asistencia";
 import { normalizeSucursal } from "../../utils/constants";
 import { useGlobal } from "../../contexts/GlobalContext";
+import { descargarExcel } from "../../utils/exportarExcel";
 
 const ETIQUETA_ESTADO = {
   [ESTADOS_DIA.PRESENTE]: "Presente",
@@ -356,33 +357,43 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
     cargar();
   };
 
-  const exportarCSV = () => {
-    const filas = [
-      ["Empleado", "Sucursal", "Periodo", "Presentes", "Retardos", "Faltas", "Justificados", "Horas trabajadas", "Puntualidad %"],
-    ];
+  // Salía como CSV con cada celda entrecomillada: horas trabajadas y puntualidad llegaban a
+  // Excel como texto y no se podían sumar ni promediar. Ahora es .xlsx y esas dos columnas
+  // van como número — vacías cuando no hay dato, para que un promedio de la columna no se
+  // rompa por una celda con texto dentro.
+  const exportarExcelAsistencia = () => {
+    const filas = [];
     for (const { empleado, grupos } of porEmpleado) {
       for (const g of grupos) {
-        filas.push([
-          empleado.name,
-          empleado.sucursal || "",
-          g.clave,
-          g.resumen.presentes,
-          g.resumen.retardos,
-          g.resumen.faltas,
-          g.resumen.justificados,
-          (g.resumen.minutosTrabajados / 60).toFixed(1),
-          g.resumen.puntualidad ?? "",
-        ]);
+        filas.push({
+          empleado: empleado.name,
+          sucursal: empleado.sucursal || "",
+          periodo: g.clave,
+          presentes: g.resumen.presentes,
+          retardos: g.resumen.retardos,
+          faltas: g.resumen.faltas,
+          justificados: g.resumen.justificados,
+          horas: Number((g.resumen.minutosTrabajados / 60).toFixed(1)),
+          puntualidad: g.resumen.puntualidad,
+        });
       }
     }
-    const contenido = filas.map((f) => f.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
-    const blob = new Blob(["﻿" + contenido], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `asistencia_${desde}_a_${hasta}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    return descargarExcel({
+      nombreArchivo: `asistencia_${desde}_a_${hasta}.xlsx`,
+      hoja: "Asistencia",
+      columnas: [
+        { header: "Empleado", key: "empleado", width: 32 },
+        { header: "Sucursal", key: "sucursal", width: 20 },
+        { header: "Periodo", key: "periodo", width: 16 },
+        { header: "Presentes", key: "presentes", width: 12, tipo: "numero" },
+        { header: "Retardos", key: "retardos", width: 12, tipo: "numero" },
+        { header: "Faltas", key: "faltas", width: 10, tipo: "numero" },
+        { header: "Justificados", key: "justificados", width: 14, tipo: "numero" },
+        { header: "Horas trabajadas", key: "horas", width: 18, tipo: "decimal" },
+        { header: "Puntualidad %", key: "puntualidad", width: 15, tipo: "numero" },
+      ],
+      filas,
+    });
   };
 
   const hoy = new Date();
@@ -395,8 +406,8 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
             <Icon name="check" size={16} /> Justificar {faltasVisibles.length} falta{faltasVisibles.length === 1 ? "" : "s"}
           </button>
         )}
-        <button type="button" className="mc-btn-outline" onClick={exportarCSV} disabled={cargando}>
-          <Icon name="file" size={16} /> Exportar CSV
+        <button type="button" className="mc-btn-outline" onClick={exportarExcelAsistencia} disabled={cargando}>
+          <Icon name="file" size={16} /> Exportar Excel
         </button>
       </PageHeader>
 
