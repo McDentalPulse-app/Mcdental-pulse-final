@@ -225,14 +225,18 @@ const diaISODeFecha = (fecha) => {
  * CÓMO: a cada entrada huérfana se le pone una salida a la hora en que ESE día terminaba su
  * turno (la de su horario), no la hora del cron — así las horas trabajadas salen razonables y
  * no una jornada de 14 h porque el cron corre a las 7am. Si ese día no tenía horario cargado,
- * se usa una salida por defecto a las 18:00. La salida lleva `origen = 'sistema'` y una nota,
+ * se usa una salida por defecto a las 19:00. La salida lleva `origen = 'sistema'` y una nota,
  * para que en el panel se distinga de una salida que la persona sí marcó.
  *
  * Solo toca días ANTERIORES a hoy: el día en curso todavía puede cerrarse solo, la persona
  * aún puede marcar su salida real.
  */
 const CIERRE_TZ_OFFSET = "-06:00"; // Monterrey es UTC-6 todo el año (México no aplica horario de verano).
-const HORA_SALIDA_DEFECTO = "18:00:00";
+// 19:00 y no 18:00: es la hora a la que termina la jornada entre semana en TODAS las clinicas
+// (el sabado son las 14:00, pero ese dia si hay horario cargado y se usa el suyo). Con las
+// 18:00 anteriores, los pocos dias sin horario cerraban una hora antes de tiempo y le
+// recortaban una hora trabajada a quien ya se habia olvidado de marcar salida.
+const HORA_SALIDA_DEFECTO = "19:00:00";
 
 const cerrarJornadasAbiertas = async (supabase) => {
   const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Monterrey" }).format(new Date());
