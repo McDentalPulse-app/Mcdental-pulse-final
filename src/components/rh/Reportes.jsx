@@ -9,6 +9,8 @@ import { readRiesgoRenuncia, readProblemaPersonal, getComentarioAbierto } from "
 import { descargarExcel } from "../../utils/exportarExcel";
 import { periodosDisponibles, periodosEnRango, encuestaEnPeriodo, esPeriodoDePrueba, inicioDePeriodo, finDePeriodo } from "../../utils/periodos";
 import { useGlobal } from "../../contexts/GlobalContext";
+import { useNotification } from "../../contexts/NotificationContext";
+import { mensajeDeFallo } from "../../utils/errores";
 import { getAsistencias } from "../../services/supabase/asistenciasService";
 import {
   construirDias,
@@ -50,6 +52,24 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
   const [tipoReporte, setTipoReporte] = useState("asistencia");
   const [bajando, setBajando] = useState(false);
   const { horarios = [], permisos = [], vacaciones = [], descuentos = [] } = useGlobal();
+  const { toast } = useNotification();
+
+  /**
+   * Envuelve la descarga para que un fallo se VEA.
+   *
+   * Sin esto, cualquier error -la consulta de checadas, el navegador negando la descarga, un
+   * dato inesperado- terminaba en una promesa rechazada que nadie atrapaba: la pantalla se
+   * quedaba igual y era imposible distinguir "fallo" de "no pasó nada". Eso convierte un
+   * problema de dos minutos en una tarde de adivinar.
+   */
+  const conAviso = (accion) => async () => {
+    try {
+      await accion();
+    } catch (err) {
+      console.error("Error generando el reporte:", err);
+      toast.error(mensajeDeFallo("No se pudo generar el reporte.", err));
+    }
+  };
 
   // Los periodos que se ofrecen dependen de lo que se va a reportar: los de bienestar salen
   // de las encuestas que existen, y los de asistencia y ausencias del calendario — un periodo
@@ -345,9 +365,6 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
         ],
         filas,
       });
-    } catch (err) {
-      console.error("Error generando el reporte de asistencia:", err);
-      throw err;
     } finally {
       setBajando(false);
     }
@@ -439,13 +456,13 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
         icon: "clock",
         title: "Resumen por persona",
         desc: "Excel · presentes, retardos, faltas, horas y puntualidad",
-        action: () => descargarAsistencia("resumen"),
+        action: conAviso(() => descargarAsistencia("resumen")),
       },
       {
         icon: "file",
         title: "Detalle por día",
         desc: "Excel · un renglón por día, con entrada y salida",
-        action: () => descargarAsistencia("detalle"),
+        action: conAviso(() => descargarAsistencia("detalle")),
       },
     ],
     bienestar: [
@@ -453,13 +470,13 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
         icon: "file",
         title: "Detalle del periodo",
         desc: `Excel · una fila por encuesta · ${encuestasDelPeriodo.length} en ${periodo?.etiqueta || "—"}`,
-        action: descargarDetalle,
+        action: conAviso(descargarDetalle),
       },
       {
         icon: "chart",
         title: "Consolidado del periodo",
         desc: `Excel · una fila por persona · ${empleadosActivos.length} en plantilla`,
-        action: descargarConsolidado,
+        action: conAviso(descargarConsolidado),
       },
       {
         icon: "building",
@@ -472,7 +489,7 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
         icon: "users",
         title: "Directorio de Empleados",
         desc: "Excel · foto actual con score y semáforo",
-        action: descargarEmpleados,
+        action: conAviso(descargarEmpleados),
       },
     ],
     ausencias: [
@@ -480,13 +497,13 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
         icon: "vacation",
         title: "Vacaciones y permisos",
         desc: "Excel · quién no estuvo, cuándo y por qué",
-        action: descargarAusencias,
+        action: conAviso(descargarAusencias),
       },
       {
         icon: "dollar",
         title: "Descuentos",
         desc: "Excel · monto, motivo y estado",
-        action: descargarDescuentos,
+        action: conAviso(descargarDescuentos),
       },
     ],
   };
@@ -582,7 +599,7 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
                 ))}
               </select>
             </div>
-            <button type="button" className="mc-btn-primary mc-btn-with-icon" onClick={descargarReporteSucursal}>
+            <button type="button" className="mc-btn-primary mc-btn-with-icon" onClick={conAviso(descargarReporteSucursal)}>
               <Icon name="spreadsheet" size={16} /> Descargar reporte de sucursal
             </button>
           </div>
