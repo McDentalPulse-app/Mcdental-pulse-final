@@ -2,14 +2,14 @@ import {
   LayoutAlt01, Stars01, Users01, Settings01, Folder, Award01, Gift01, Clipboard,
   TrendUp01, Lock01, Home01, File01, ClockRewind, Umbrella01, MessageSquare01, Target01,
   Calendar, CurrencyDollar, BarChart01, User01, Heart, Pin01, Paperclip, Shield01, Bell01,
-  AlertTriangle, Clock, Plus, Grid01, Building02, CheckCircle, Circle, Key01, LogOut01,
+  AlertTriangle, Clock, Plus, Building02, CheckCircle, Circle, Key01, LogOut01,
   Activity, Zap, BarChartSquare02, UserEdit, CalendarDate, ClipboardCheck, Inbox01, Minus,
   SearchLg, RefreshCw01, Bold01, Italic01, Underline01, Strikethrough01, List, Dotpoints02,
   Link01, Heading02, Heading01, Eraser, XCircle, Star01, StickerSquare, MagicWand01,
   FolderSearch, Lightbulb01, Tool01, TrendDown01, Eye, Sun, Moon01, Briefcase01, Camera01,
   MarkerPin01, ChevronDown, AlertCircle, VolumeMax, VolumeX, Trash01, Edit05,
   Send01, FaceHappy, Microphone01, Image01, CornerUpLeft, CheckDone01, Check,
-  Play, PauseCircle, Download01, XClose,
+  Play, PauseCircle, Download01, XClose, Table, FileDownload03,
 } from "@untitledui/icons";
 
 // Iconos de la app con el set de Untitled UI (@untitledui/icons, MIT). Un único punto: cambiar
@@ -46,7 +46,11 @@ const ICON_MAP = {
   gift: Gift01,
   clock: Clock,
   plus: Plus,
-  spreadsheet: Grid01,
+  // Grid01 eran cuatro cuadros sueltos: el icono de "menu de aplicaciones", que no significa
+  // ni hoja de calculo ni exportar. Table es una tabla con su encabezado -eso si es una hoja-
+  // y fileDownload dice lo que hace el boton: te deja un archivo.
+  spreadsheet: Table,
+  fileDownload: FileDownload03,
   building: Building02,
   check: CheckCircle,
   circle: Circle,

@@ -631,7 +631,7 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
               </select>
             </div>
             <button type="button" className="mc-btn-primary mc-btn-with-icon" onClick={conAviso(descargarReporteSucursal)}>
-              <Icon name="spreadsheet" size={16} /> Descargar reporte de sucursal
+              <Icon name="fileDownload" size={16} /> Descargar reporte de sucursal
             </button>
           </div>
         )}
@@ -649,7 +649,7 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
                 <span className="reportes-export-btn-title">{opt.title}</span>
                 <span className="reportes-export-btn-desc">{opt.desc}</span>
               </span>
-              <Icon name="spreadsheet" size={16} className="reportes-export-btn-arrow" />
+              <Icon name="fileDownload" size={16} className="reportes-export-btn-arrow" />
             </button>
           ))}
         </div>
