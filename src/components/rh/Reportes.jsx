@@ -564,6 +564,11 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
             : tipoReporte === "bienestar"
               ? `${periodo.etiqueta}: ${encuestasDelPeriodo.length} encuesta(s) de ${empleadosActivos.length} personas en plantilla.`
               : `${periodo.etiqueta}: del ${desdePeriodo} al ${hastaPeriodo}.`}
+          {/* Sin esta nota, la lista corta parecía un error: en asistencia solo salen dos
+              semanas porque antes del arranque no hay una sola checada que reportar. */}
+          {tipoReporte === "asistencia" && (
+            ` La app registra asistencia desde el ${FECHA_INICIO_ASISTENCIA}; antes de esa fecha no hay nada que reportar.`
+          )}
           {bajando && " · Generando el archivo…"}
         </div>
 
