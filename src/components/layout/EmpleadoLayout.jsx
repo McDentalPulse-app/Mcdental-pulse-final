@@ -59,7 +59,7 @@ export default function EmpleadoLayout({ user, globals, actions }) {
             <Route path="calendario" element={<CalendarioIntercambio user={user} festivos={festivos} intercambios={intercambios} destinosOcupados={destinosOcupados} onSolicitar={solicitarIntercambio} />} />
             <Route path="reconocimientos" element={<ReconocimientosEmpleado user={user} reconocimientos={reconocimientos} />} />
             <Route path="reporteconfidencial" element={<ReporteConfidencialEmpleado user={user} onSubmit={addReporteConfidencial} />} />
-            <Route path="soporte" element={<SoporteTI />} />
+            <Route path="soporte" element={<SoporteTI user={user} />} />
             {/* El destinatario ya NO se fuerza aquí: desde el canal de Soporte TI (mig. 094) hay
                 dos conversaciones y solo Mensajes sabe cuál está abierta — en la de soporte va
                 sin destinatario, porque el buzón no es una persona. */}

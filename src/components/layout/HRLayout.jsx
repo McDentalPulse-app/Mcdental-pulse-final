@@ -86,7 +86,7 @@ export default function HRLayout({ user, globals, actions }) {
             <Route path="reportes" element={<Reportes users={USERS} encuestas={encuestas} preguntas={encuestaPreguntas} />} />
             <Route path="config" element={<Config />} />
             <Route path="soporte" element={<IdeasMejora />} />
-            <Route path="soporteti" element={<SoporteTI />} />
+            <Route path="soporteti" element={<SoporteTI user={user} />} />
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} />} />
             <Route path="mensajes" element={<Mensajes user={user} mensajes={mensajes} onSend={sendMensaje} onMarkRead={marcarMensajesLeidos} />} />
             <Route path="perfil" element={<Perfil />} />

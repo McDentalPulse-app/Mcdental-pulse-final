@@ -64,7 +64,7 @@ export default function DoctorLayout({ user, globals, actions }) {
             <Route path="calendario" element={<CalendarioIntercambio user={user} festivos={festivos} intercambios={intercambios} destinosOcupados={destinosOcupados} onSolicitar={solicitarIntercambio} />} />
             <Route path="reconocimientos" element={<ReconocimientosEmpleado user={user} reconocimientos={reconocimientos} />} />
             <Route path="reporteconfidencial" element={<ReporteConfidencialEmpleado user={user} onSubmit={addReporteConfidencial} />} />
-            <Route path="soporte" element={<SoporteTI />} />
+            <Route path="soporte" element={<SoporteTI user={user} />} />
             {/* Igual que en EmpleadoLayout: el destinatario lo decide Mensajes, porque desde la
                 mig. 094 hay dos conversaciones y la de Soporte TI va sin destinatario. */}
             <Route path="mensajes" element={<Mensajes user={user} mensajes={userMensajes} onSend={sendMensaje} onMarkRead={marcarMensajesLeidos}/>} />
