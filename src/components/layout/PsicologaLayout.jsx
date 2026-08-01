@@ -80,7 +80,7 @@ export default function PsicologaLayout({ user, globals, actions }) {
             <Route path="encuestas" element={<GestionEncuestas encuestas={encuestas} />} />
             <Route path="reportes" element={<Reportes users={USERS} encuestas={encuestas} preguntas={encuestaPreguntas} />} />
             <Route path="config" element={<Config />} />
-            <Route path="soporte" element={<IdeasMejora />} />
+            <Route path="soporte" element={<IdeasMejora user={user} />} />
             <Route path="soporteti" element={<SoporteTI user={user} />} />
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} />} />
             <Route path="perfil" element={<Perfil />} />
