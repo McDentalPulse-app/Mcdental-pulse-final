@@ -198,7 +198,8 @@ export default async function handler(req, res) {
   }
 
   let retoSuperado = null; // null = no se le pidió ninguno
-  let motivoReto = null;
+  let motivoReto = null;   // el texto que lee la persona
+  let codigoReto = null;   // el mismo motivo para la base: se guarda y se consulta, no se lee
 
   // Anti-spoofing, EN MODO SOMBRA: se mide y NO BLOQUEA A NADIE.
   //
@@ -249,6 +250,7 @@ export default async function handler(req, res) {
 
         if (!retoFoto) {
           motivoReto = "Falta la foto girada.";
+          codigoReto = "reto_falta_foto";
         } else {
           let girada = null;
           try {
@@ -267,10 +269,12 @@ export default async function handler(req, res) {
 
           if (!girada?.huella) {
             motivoReto = "No se distingue tu cara en la foto girada.";
+            codigoReto = "reto_sin_cara";
           } else if (!giroCorrecto(girada.t, rostro.reto_pendiente)) {
             // Aquí muere la foto de una foto: por mucho que la giren, la nariz no se mueve
             // respecto a los ojos. No hay relieve, no hay paralaje, no hay giro.
             motivoReto = "No giraste la cabeza hacia donde se te pidió.";
+            codigoReto = "reto_giro";
           } else if ((pareceEl(girada.huella) ?? 0) < UMBRAL_MISMA_PERSONA) {
             // EL ATAQUE QUE ESTA LÍNEA CIERRA, y sin ella el reto entero es teatro: enseñar la
             // foto de Ana para el primer fotograma (que pasa el cotejo, porque ES la cara de
@@ -282,6 +286,7 @@ export default async function handler(req, res) {
             // referencia YA incluyen tomas de perfil (el registro obliga a tres poses distintas),
             // así que una cara girada tiene contra qué parecerse.
             motivoReto = "La cara de la foto girada no es la misma.";
+            codigoReto = "reto_no_coincide";
           } else {
             retoSuperado = true;
           }
@@ -295,13 +300,27 @@ export default async function handler(req, res) {
   // ---------------------------------------------------------------------------
   const hayQueCotejar = !!rostro; // sin rostro aprobado no hay contra qué comparar
 
-  // Piso mínimo de anti-spoofing: NO es el umbral calibrado (sigue apagado, ver
-  // UMBRAL_ANTISPOOF_OBVIO en _rostro.js), solo bloquea lo obviamente falso (pantalla,
-  // papel liso). Si la medición falló (viveza null), no cuenta — que se caiga el modelo
-  // no puede ser motivo de bloqueo.
+  // Piso mínimo de anti-spoofing: solo pretende bloquear lo obviamente falso (una pantalla,
+  // un papel liso). Si la medición falló (viveza null) no cuenta — que se caiga el modelo no
+  // puede ser motivo de bloqueo.
   const spoofObvio = hayQueCotejar && viveza != null && viveza < UMBRAL_ANTISPOOF_OBVIO;
 
-  const fallo = hayQueCotejar && (verificado !== true || retoSuperado === false || spoofObvio);
+  // ...pero HOY NO BLOQUEA, y esto hay que explicarlo porque parece un descuido y no lo es.
+  //
+  // Hasta el 2026-08-03 la medición de viveza fallaba en el 100% de las checadas (bug de
+  // recorte en _rostro.js, ver recortarConMargen), así que `viveza` siempre era null y este
+  // piso jamás llegó a evaluarse: es código que nunca se ha ejecutado contra una cara real.
+  // Arreglar la medición lo despertaría de golpe, y le daría poder de bloqueo a un umbral que
+  // NADIE ha medido con estos teléfonos, estas clínicas y esta luz — exactamente la lección
+  // del 0.363 que el propio módulo lleva escrita.
+  //
+  // Así que se mide y se guarda, pero no se bloquea. Se enciende poniendo esto en true, y solo
+  // cuando la pantalla de Calibración enseñe las dos nubes con datos de verdad: entonces el
+  // umbral saldrá de esos datos y no de una corazonada.
+  const ANTISPOOF_BLOQUEA = false;
+
+  const fallo =
+    hayQueCotejar && (verificado !== true || retoSuperado === false || (ANTISPOOF_BLOQUEA && spoofObvio));
 
   if (fallo) {
     // El reto NO se limpia al fallar: se queda pegado. Si al fallarlo se volviera a tirar el
@@ -313,20 +332,50 @@ export default async function handler(req, res) {
         .update({ reto_pendiente: null, reto_pedido_en: null })
         .eq("id", rostro.id);
     }
-    await supabase.from("cotejo_intentos").insert({ empleado_id: quien.id, score });
+    // POR QUÉ falló, no solo que falló (migración 106). El orden es el de la comprobación:
+    // primero la selfie, y solo si esa pasó se mira el reto.
+    const motivo =
+      verificado !== true
+        ? score === null
+          ? "sin_cara"      // no se le vio la cara: problema de luz o encuadre
+          : "no_coincide"   // se le vio, y no es la suya
+        : codigoReto;
+
+    await supabase.from("cotejo_intentos").insert({ empleado_id: quien.id, score, motivo });
     const intentos = (await contarIntentos()) || 1;
 
-    // Cruzar el umbral de fallos seguidos es la señal más clara de suplantación en el momento:
-    // alguien insiste con una cara que no es la del dueño de la cuenta. Se avisa a RH EXACTAMENTE
-    // al cruzarlo (===), no en cada fallo posterior: si se enviara del 3.º al 12.º intento, RH
-    // recibiría diez avisos del mismo incidente y acabaría silenciándolos todos.
-    if (intentos === INTENTOS_ANTES_DE_AVISAR) {
-      await notificarGestion({
-        tipo: "checada",
-        titulo: "Posible suplantación",
-        cuerpo: `Varios intentos fallidos de checar como ${quien.name}. La cara no coincide.`,
-        url: { admin: "/admin/asistencia", rh: "/rh/asistencia", psicologa: "/psicologa/asistencia" },
-      }).catch(() => {});
+    // A gestión solo se le avisa de lo que ES una señal de identidad.
+    //
+    // Antes se avisaba al tercer fallo de cualquier tipo, y eso convertía en "Posible
+    // suplantación" —con nombre y apellidos— a quien peleaba con el contraluz de la mañana.
+    // Medido sobre 7 días de producción: de 66 fallos, 26 eran "no se distingue tu cara" y solo
+    // 7 una cara que de verdad no coincidía. La mayoría de esos avisos eran acusaciones falsas,
+    // y un aviso que casi siempre es falso deja de leerse — llevándose por delante el que sí
+    // importa.
+    //
+    // Quedan dos motivos, y los dos dicen lo mismo: hay una cara que no es la del dueño de la
+    // cuenta. `reto_no_coincide` es además el ataque de enseñar la foto de otro y girar la
+    // cabeza propia, así que pesa igual o más que el primero.
+    const MOTIVOS_DE_IDENTIDAD = ["no_coincide", "reto_no_coincide"];
+
+    if (MOTIVOS_DE_IDENTIDAD.includes(motivo)) {
+      const { count } = await supabase
+        .from("cotejo_intentos")
+        .select("id", { count: "exact", head: true })
+        .eq("empleado_id", quien.id)
+        .gte("creado_en", desdeVentana)
+        .in("motivo", MOTIVOS_DE_IDENTIDAD);
+
+      // EXACTAMENTE al cruzarlo (===), no en cada fallo posterior: del 3.º al 12.º intento
+      // gestión recibiría diez avisos del mismo incidente y acabaría silenciándolos todos.
+      if ((count || 1) === INTENTOS_ANTES_DE_AVISAR) {
+        await notificarGestion({
+          tipo: "checada",
+          titulo: "Posible suplantación",
+          cuerpo: `Varios intentos de checar como ${quien.name} con una cara que no es la suya.`,
+          url: { admin: "/admin/asistencia", rh: "/rh/asistencia", psicologa: "/psicologa/asistencia" },
+        }).catch(() => {});
+      }
     }
 
     // No hay checada. Ni ahora ni al décimo intento: rendirse tras N fallos sería una puerta

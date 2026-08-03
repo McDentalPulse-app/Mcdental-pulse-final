@@ -322,6 +322,123 @@ const cerrarJornadasAbiertas = async (supabase) => {
  *
  * Sin esto, el aviso llega por teléfono a las ocho de la mañana y de la peor manera.
  */
+/**
+ * "Se te olvidó marcar tu salida": un aviso a quien tiene entrada de HOY y todavía no ha salido,
+ * poco después de su hora.
+ *
+ * EL PROBLEMA, medido: en 7 días, 70 de 426 checadas —una de cada seis— las tuvo que cerrar el
+ * sistema al día siguiente, repartidas entre 56 personas distintas. No es un despiste de dos o
+ * tres: es que a las siete de la tarde nadie se acuerda del teléfono. Y una salida puesta por el
+ * cron es una hora estimada, no la real: quien se fue a las 19:40 queda registrado a las 19:00.
+ *
+ * Por eso el aviso llega a los 10 MINUTOS de su hora y no a la hora en punto: a la hora en punto
+ * la persona está todavía recogiendo y el aviso se pierde entre lo que está haciendo. Diez
+ * minutos después ya va de salida, que es justo cuando puede actuar.
+ *
+ * LA VENTANA (de +10 a +70 min) es lo que permite que el MISMO endpoint sirva para los dos
+ * horarios de la clínica —19:00 entre semana y 14:00 el sábado— con dos entradas de cron y sin
+ * ninguna lógica de calendario: cada llamada avisa solo a quien acaba de pasarse de su hora. El
+ * de las 14:10 no molesta a quien sale a las 19:00, y el de las 19:10 no vuelve a avisar al que
+ * salía a las 14:00 hace cinco horas.
+ */
+const MARGEN_AVISO_SALIDA_MIN = 10;
+const VENTANA_AVISO_SALIDA_MIN = 60;
+
+const recordarSalidaPendiente = async (supabase) => {
+  const enClinica = (fmt, d = new Date()) =>
+    new Intl.DateTimeFormat(fmt.locale, { timeZone: "America/Monterrey", ...fmt.opts }).format(d);
+
+  const hoy = enClinica({ locale: "en-CA", opts: {} });
+  const [hh, mm] = enClinica({ locale: "en-GB", opts: { hour: "2-digit", minute: "2-digit", hour12: false } })
+    .split(":");
+  const ahoraMin = Number(hh) * 60 + Number(mm);
+
+  const { data: entradas, error } = await supabase
+    .from("asistencias")
+    .select("empleado_id")
+    .eq("tipo", "entrada")
+    .eq("anulada", false)
+    .eq("fecha", hoy);
+
+  if (error) {
+    console.error("Error buscando entradas de hoy:", error);
+    return { avisados: 0, error: "No se pudieron buscar las entradas de hoy." };
+  }
+  if (!entradas?.length) return { avisados: 0 };
+
+  const { data: salidas } = await supabase
+    .from("asistencias")
+    .select("empleado_id")
+    .eq("tipo", "salida")
+    .eq("fecha", hoy);
+
+  const yaSalieron = new Set((salidas || []).map((s) => s.empleado_id));
+  const abiertos = [...new Set(entradas.map((e) => e.empleado_id))].filter((id) => !yaSalieron.has(id));
+  if (!abiertos.length) return { avisados: 0 };
+
+  const dia = diaISODeFecha(hoy);
+  const { data: horarios } = await supabase
+    .from("horarios")
+    .select("empleado_id, hora_salida")
+    .eq("dia_semana", dia)
+    .in("empleado_id", abiertos);
+
+  const horaPorEmpleado = new Map((horarios || []).map((h) => [h.empleado_id, h.hora_salida]));
+
+  // Quien ya recibió el aviso hoy no lo recibe otra vez. La ventana de arriba ya lo hace casi
+  // imposible, pero esto es lo que impide que añadir una tercera entrada de cron mañana
+  // convierta el recordatorio en spam sin que nadie lo note.
+  const { data: avisadosHoy } = await supabase
+    .from("notificaciones")
+    .select("empleado_id")
+    .eq("tipo", "salida_pendiente")
+    .gte("created_at", `${hoy}T00:00:00${CIERRE_TZ_OFFSET}`);
+
+  const yaAvisados = new Set((avisadosHoy || []).map((n) => n.empleado_id));
+
+  const pendientes = abiertos.filter((id) => {
+    if (yaAvisados.has(id)) return false;
+    const hora = horaPorEmpleado.get(id) || HORA_SALIDA_DEFECTO;
+    const [h, m] = String(hora).split(":");
+    const salidaMin = Number(h) * 60 + Number(m);
+    if (!Number.isFinite(salidaMin)) return false;
+    const pasados = ahoraMin - salidaMin;
+    return pasados >= MARGEN_AVISO_SALIDA_MIN && pasados <= VENTANA_AVISO_SALIDA_MIN;
+  });
+
+  if (!pendientes.length) return { fecha: hoy, abiertos: abiertos.length, avisados: 0 };
+
+  // La ruta se arma con el ROL de cada quien y no se escribe fija.
+  //
+  // El checador vive bajo cuatro prefijos (/empleado, /doctor, /rh, /psicologa) y App.jsx rebota
+  // a su portada a quien pida uno que no le toca. Una URL fija a /empleado/checador mandaría a
+  // los doctores a otra pantalla — que es exactamente el fallo que se arregló el 2026-08-01 en
+  // los botones del propio checador. No conviene volver a introducirlo por la puerta del cron.
+  const { data: personas } = await supabase
+    .from("usuarios")
+    .select("id, role")
+    .in("id", pendientes);
+
+  const rolPorId = new Map((personas || []).map((u) => [u.id, u.role]));
+
+  await Promise.all(
+    pendientes.map((id) => {
+      const rol = rolPorId.get(id);
+      // Sin rol conocido no se inventa una ruta: la campana lleva a la portada y desde ahí la
+      // persona llega al checador. Mejor eso que un enlace que rebota.
+      const url = rol ? `/${rol}/checador` : "/";
+      return notificar(id, {
+        tipo: "salida_pendiente",
+        titulo: "No has marcado tu salida",
+        cuerpo: "Antes de irte, registra tu salida en el checador. Si no, la cerramos nosotros a tu hora de turno.",
+        url,
+      }).catch(() => {});
+    })
+  );
+
+  return { fecha: hoy, abiertos: abiertos.length, avisados: pendientes.length };
+};
+
 const revisarGeocercas = async (supabase) => {
   const { data, error } = await supabase.rpc("revisar_geocercas");
   if (error) {
@@ -386,6 +503,19 @@ export default async function handler(req, res) {
 
   const supabase = admin();
   const resultado = {};
+
+  // Una tarea con horario PROPIO, en el mismo endpoint.
+  //
+  // El recordatorio de salida tiene que sonar a las 19:10 y a las 14:10, no a las 07:00 con el
+  // resto. Lo natural sería un archivo aparte, pero cada archivo en api/ es una Serverless
+  // Function y el plan Hobby admite 12 (ver la cabecera de este archivo; el repo ya va por 19,
+  // que es justamente por lo que los despliegues de Vercel fallan hoy). Así que el cron lo pide
+  // por `?tarea=salidas` y este endpoint hace SOLO eso: nada de cerrar jornadas ni purgar la
+  // bandeja dos veces al día.
+  if ((req.query?.tarea || "") === "salidas") {
+    resultado.salidasPendientes = await recordarSalidaPendiente(supabase);
+    return res.status(200).json(resultado);
+  }
 
   // Cierre de jornadas abiertas: corre SIEMPRE, no depende del push — es higiene de datos, no
   // un aviso. Sin esto, las entradas sin salida se acumulan como días "incompletos".

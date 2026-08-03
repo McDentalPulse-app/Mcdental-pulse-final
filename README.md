@@ -115,6 +115,79 @@ lee nadie.
 
 ## Changelog
 
+### 2026-08-03 · El checador: el anti-spoofing llevaba toda su vida sin medir nada, y la cámara se quedaba en negro hablando sola
+
+> Repaso del módulo con los datos de producción delante (426 checadas en 7 días, 84 personas).
+> Lo que salió no fue un fallo sino una cadena: una excepción silenciosa dejaba sin datos al
+> anti-spoofing, sin datos no se puede calibrar, sin calibrar hay que pedir el giro de cabeza en
+> **todas** las checadas, y ese giro es hoy la primera causa de que a alguien no le dejen fichar.
+> Buena parte de la fricción diaria del checador colgaba de un `.extract()` mal encadenado.
+
+- **🔴 El anti-spoofing no ha medido nunca nada** (`api/_rostro.js`). `sharp` aplica
+  `.extract()` **antes** que `.extend()` cuando van encadenados, así que el recorte se calculaba
+  contra la imagen **sin acolchar** y se salía siempre por la derecha: `extract_area: bad extract
+  area` en **el 100% de las checadas** — 301 excepciones en 7 días y `liveness_score` en NULL en
+  todas las filas. No se vio nunca porque quien llama se traga el error a propósito (que se caiga
+  el modelo no puede impedir una checada), y esa decisión, que es correcta, es justo la que lo
+  mantuvo invisible. Arreglado separando el acolchado del recorte en dos tuberías. La geometría
+  pasa a estar cubierta por 8 pruebas —cara pegada al borde, cara mayor que la foto, horizontal—
+  que **fallan 6 de 8 con el código anterior**: era código sin una sola prueba.
+- **⚠️ Y por eso mismo, el piso de anti-spoofing NO se enciende todavía.** Arreglar la medición
+  despertaba de golpe un bloqueo (`viveza < 0.10`) que jamás se había ejecutado contra una cara
+  real, en estas clínicas y con esta luz. Habría sido repetir la lección del 0.363 el mismo día
+  que se arregla el bug. Se mide, se guarda y **no se bloquea**: `ANTISPOOF_BLOQUEA` en
+  `api/checar.js` se pone en true cuando Calibración enseñe las dos nubes con datos de verdad, y
+  entonces el umbral saldrá de esos datos.
+- **🔴 Tres fallos por mala luz mandaban a RH un aviso de "Posible suplantación" con nombre y
+  apellidos** (migración 106). Los tres motivos de fallo caían en la misma tabla sin
+  distinguirse. Medido: de 66 fallos en 7 días, **26 eran "no se distingue tu cara"** —luz,
+  contraluz, encuadre— y solo **7** una cara que de verdad no coincidía. O sea que la mayoría de
+  esas alertas acusaban a alguien de suplantar su propia cuenta por pelearse con la luz de las
+  ocho de la mañana. Ahora se guarda el motivo y solo avisan los dos que son de identidad
+  (`no_coincide` y `reto_no_coincide`, este último el ataque de enseñar la foto de otro y girar
+  la cabeza propia). Un aviso que casi siempre es falso deja de leerse, y se lleva por delante
+  el que sí importa.
+- **🆕 La cámara avisa de la luz antes de que el servidor rechace la foto.** El navegador detecta
+  con BlazeFace y el servidor con YuNet: no son igual de permisivos, y lo que los separa suele
+  ser la iluminación. Ahora, con la cara ya bien encuadrada, se mide la luminancia de la cara
+  contra la del fondo y se dice lo que se puede arreglar: *"tienes una luz fuerte detrás"*,
+  *"hay poca luz para verte bien"*. **Avisa y no bloquea** —hay una prueba dedicada a que nunca
+  devuelva un veto—: dejar sin fichar a quien trabaja en un recibidor a oscuras sería peor que
+  el problema que se intenta resolver.
+- **🔴 Al terminar de checar, la pantalla se quedaba en negro y la voz seguía hablando.**
+  `CapturaSelfie` nunca reiniciaba su estado al cerrarse la cámara: se quedaba en `"lista"` para
+  siempre, así que el `<video>` seguía visible con un stream ya detenido —el rectángulo negro— y
+  el bucle de guía, que solo se apaga cuando el estado deja de ser `"lista"`, seguía corriendo
+  sobre esa imagen congelada, no encontraba ninguna cara y repetía *"colócate frente a la
+  cámara"* **encima de la confirmación de la checada**. Los dos síntomas, una sola causa. De
+  paso se veía un tercero: al entrar a la pantalla, sin haber pulsado nada, la caja decía
+  *"Abriendo la cámara…"* de forma permanente sin que hubiera ninguna cámara abriéndose. Ahora
+  la cámara se monta **solo mientras se está checando**.
+- **🆕 Confirmación en medio de la pantalla, con la hora escrita.** Antes solo había un toast, y
+  con el recuadro negro detrás la gente no sabía si había fichado — y volvía a intentarlo, que
+  es la peor respuesta posible: la segunda checada del día es la **salida**. El aviso dice
+  "Entrada registrada · Hoy a las 09:35", más el retardo o el "fuera de tu clínica" si los hubo.
+  Se cierra solo a los 8 segundos y también con el botón: al revés que el aviso de versión
+  nueva, este no tiene por qué exigir un toque a las ocho de la mañana con el teléfono en una
+  mano. La voz se **calla** antes de confirmar, así que la frase por fin se oye entera en vez de
+  entrar en la cola detrás de las pistas de encuadre.
+- **🆕 Recordatorio de salida sin marcar.** Una de cada seis checadas la cerraba el sistema al
+  día siguiente: **70 de 426 en 7 días, repartidas entre 56 personas distintas**. Y una salida
+  puesta por el cron es una hora estimada, no la real — quien se fue a las 19:40 quedaba
+  registrado a las 19:00. Ahora, a los 10 minutos de su hora de turno, quien tenga entrada sin
+  salida recibe un aviso. La ventana (+10 a +70 min) permite que el mismo endpoint sirva a los
+  dos horarios de la clínica —19:00 entre semana, 14:00 el sábado— con dos entradas de cron y
+  cero lógica de calendario. La ruta del aviso se arma con el **rol** de cada quien y no fija a
+  `/empleado/checador`: el checador vive bajo cuatro prefijos y una URL fija habría repetido el
+  fallo que dejaba a los doctores rebotando, arreglado dos días antes.
+
+**Lo que NO se tocó, y por qué:** `PROBABILIDAD_RETO` sigue en 1.0 — se pide el giro de cabeza
+en todas las checadas. Es la causa directa de la mitad de los fallos (33 de 66 tenían la cara
+correcta, con score sobre el umbral), así que la tentación de bajarlo era grande. Pero mientras
+el anti-spoofing no esté calibrado, ese giro es la única barrera contra enseñarle una foto
+impresa a la cámara — confirmado en vivo en su día. Primero los datos, después el umbral, y solo
+entonces bajar el reto.
+
 ### 2026-08-01 · Reportes deja de ser cuatro botones fijos, y una encuesta que llevaba cinco días sin poder enviarse
 
 > El día empezó con un fallo callado: **desde el 27 de julio no había entrado una sola

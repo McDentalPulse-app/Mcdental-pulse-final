@@ -16,6 +16,8 @@ const ICONO_TIPO = {
   vacacion: "vacation",
   mensaje: "message",
   checada: "shieldAlert",
+  // El recordatorio de salida es un despiste, no una alerta de seguridad: reloj y no escudo.
+  salida_pendiente: "clock",
   encuesta: "clipboard",
   ticket: "wrench",
   confidencial: "lock",

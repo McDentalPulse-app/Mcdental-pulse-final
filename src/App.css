@@ -2956,6 +2956,15 @@
   color: var(--mc-marca-texto);
 }
 
+/* Confirmación de checada. Usa los tokens de badge verde y no --mc-marca-texto (que es lo que
+   usa --info) a propósito: accentPalette escribe --mc-marca-texto EN LÍNEA sobre <html>, así que
+   su versión oscura no llega nunca y el icono queda azul oscuro sobre caja oscura. Estos dos sí
+   se redefinen en [data-theme=dark]. Ver DESIGN.md. */
+.mc-notify-modal-icon--ok {
+  background: var(--mc-badge-verde-bg);
+  color: var(--mc-badge-verde-texto);
+}
+
 .mc-notify-modal-icon--warning {
   background: rgba(154, 107, 31, 0.12);
   color: var(--mc-ambar-apagado);

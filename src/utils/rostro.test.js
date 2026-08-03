@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { estimarPose, poseCoincide, POSE } from "./rostro";
+import { estimarPose, poseCoincide, POSE, evaluarLuz } from "./rostro";
 
 /**
  * Los puntos vienen de MediaPipe en este orden: ojo derecho, ojo izquierdo, nariz.
@@ -79,5 +79,55 @@ describe("poseCoincide", () => {
     // Una comprobación que no se puede hacer no puede bloquear a nadie. Misma regla que con
     // el GPS y con el propio detector.
     expect(poseCoincide(null, POSE.DERECHA).ok).toBe(true);
+  });
+});
+
+/**
+ * La guía de luz. Lo que se prueba de verdad es el invariante que la sostiene: AVISA, NO
+ * BLOQUEA. Si algún día alguien le añade un `ok: false`, esto lo tiene que cazar — sería
+ * dejar sin fichar a quien trabaja en un recibidor a oscuras.
+ */
+describe("evaluarLuz", () => {
+  it("una cara bien iluminada no dice nada", () => {
+    expect(evaluarLuz({ cara: 140, fondo: 150 })).toEqual({ nivel: "ok", pista: null });
+  });
+
+  it("cara en penumbra => avisa de poca luz", () => {
+    const r = evaluarLuz({ cara: 40, fondo: 45 });
+    expect(r.nivel).toBe("oscura");
+    expect(r.pista).toMatch(/poca luz/i);
+  });
+
+  it("fondo mucho más claro que la cara => contraluz, no 'poca luz'", () => {
+    // El caso de la puerta de cristal: la pantalla se ve luminosa y la cara sale en sombra.
+    const r = evaluarLuz({ cara: 70, fondo: 200 });
+    expect(r.nivel).toBe("contraluz");
+    expect(r.pista).toMatch(/detrás/i);
+  });
+
+  it("el contraluz gana a la penumbra cuando se dan los dos", () => {
+    // Cara oscura Y fondo quemado: decir "enciende la luz" sería el consejo equivocado.
+    expect(evaluarLuz({ cara: 45, fondo: 210 }).nivel).toBe("contraluz");
+  });
+
+  it("cara quemada => avisa de demasiada luz", () => {
+    expect(evaluarLuz({ cara: 245, fondo: 200 }).nivel).toBe("quemada");
+  });
+
+  it("sin medición no inventa un aviso", () => {
+    expect(evaluarLuz(null)).toEqual({ nivel: "ok", pista: null });
+    expect(evaluarLuz({ cara: NaN, fondo: 100 })).toEqual({ nivel: "ok", pista: null });
+  });
+
+  it("sin dato de fondo sigue detectando la penumbra", () => {
+    expect(evaluarLuz({ cara: 30, fondo: null }).nivel).toBe("oscura");
+  });
+
+  it("NUNCA devuelve un veto: ningún nivel bloquea la checada", () => {
+    const casos = [
+      { cara: 10, fondo: 10 }, { cara: 70, fondo: 220 },
+      { cara: 250, fondo: 250 }, { cara: 140, fondo: 150 },
+    ];
+    for (const c of casos) expect(evaluarLuz(c).ok).toBeUndefined();
   });
 });

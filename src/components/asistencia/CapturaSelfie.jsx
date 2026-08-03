@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, useImperativeHandle, forwardRef } from "react";
 import Icon from "../ui/Icon";
 import { canvasABlob } from "../../utils/imagen";
-import { detectarRostro, encuadreBueno, poseCoincide, RESULTADO } from "../../utils/rostro";
+import { detectarRostro, encuadreBueno, poseCoincide, medirLuz, evaluarLuz, RESULTADO } from "../../utils/rostro";
 
 const ANCHO_SELFIE = 640;  // más píxeles = mejor huella. El fotograma entero, sin recortar.
 const INTERVALO_MS = 350;   // cada cuánto se mira el vídeo buscando la cara
@@ -31,12 +31,25 @@ const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true, onAutoC
   const establesRef = useRef(0);
   const ocupadoRef = useRef(false);
 
-  const [estado, setEstado] = useState("iniciando"); // iniciando | lista | denegada | no_disponible
+  const [estado, setEstado] = useState("apagada"); // apagada | iniciando | lista | denegada | no_disponible
   const [guia, setGuia] = useState({ ok: false, pista: "Colócate frente a la cámara." });
 
   useEffect(() => {
-    if (!activa) return undefined;
+    if (!activa) {
+      // VOLVER A "apagada" ES EL ARREGLO, y sin él pasaban las dos cosas que la gente reportaba
+      // al terminar de checar: el estado se quedaba en "lista" para siempre, así que (1) el
+      // <video> seguía visible con un stream ya detenido — el famoso rectángulo negro — y (2) el
+      // bucle de guía, que solo se apaga cuando el estado deja de ser "lista", seguía corriendo
+      // sobre esa imagen congelada, no encontraba ninguna cara y repetía en voz alta "no se ve
+      // tu cara, colócate frente a la cámara" encima de la confirmación de la checada.
+      setEstado("apagada");
+      setGuia({ ok: false, pista: "Colócate frente a la cámara." });
+      establesRef.current = 0;
+      if (videoRef.current) videoRef.current.srcObject = null;
+      return undefined;
+    }
 
+    setEstado("iniciando");
     let cancelado = false;
 
     const abrirCamara = async () => {
@@ -146,7 +159,11 @@ const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true, onAutoC
   // reconocer a su propio dueño. Guiar el encuadre al checar es lo que hace que la selfie se
   // parezca a las fotos con las que se va a comparar.
   useEffect(() => {
-    if (estado !== "lista" || (!onAutoCaptura && !onEncuadre)) return undefined;
+    // `activa` además del estado: son dos cerrojos para lo mismo a propósito. El estado ya
+    // vuelve a "apagada" al cerrarse la cámara, pero este bucle es el que habla en voz alta, y
+    // un bucle que sigue hablando después de una checada es exactamente el fallo que se
+    // arregló aquí. Que dependa también de la orden del padre lo hace imposible de repetir.
+    if (!activa || estado !== "lista" || (!onAutoCaptura && !onEncuadre)) return undefined;
 
     let vivo = true;
 
@@ -200,7 +217,21 @@ const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true, onAutoC
         return;
       }
 
-      avisar({ ok: true, pista: "¡Así! No te muevas…" });
+      // La luz, en último lugar y SIN VETO.
+      //
+      // Está bien colocada y mirando donde toca: lo único que puede seguir saliendo mal es que
+      // el servidor no le vea la cara, y en primera hora eso casi siempre es la luz (el
+      // navegador detecta con BlazeFace y el servidor con YuNet — no son igual de permisivos).
+      // Se le dice para que lo pueda arreglar ANTES de fallar, pero `ok` sigue en true: dejar
+      // sin fichar a quien trabaja en un recibidor a oscuras sería peor que el problema.
+      const luz = evaluarLuz(medirLuz(lienzo, box));
+      if (luz.pista) {
+        avisar({ ok: true, pista: luz.pista });
+        // No se resetea `establesRef`: el disparo automático del reto tiene que seguir
+        // funcionando con mala luz, o quien esté a oscuras no podría girar la cabeza nunca.
+      } else {
+        avisar({ ok: true, pista: "¡Así! No te muevas…" });
+      }
 
       establesRef.current += 1;
       if (establesRef.current < FRAMES_ESTABLES || !onAutoCaptura) return;
@@ -217,7 +248,7 @@ const CapturaSelfie = forwardRef(function CapturaSelfie({ activa = true, onAutoC
     }, INTERVALO_MS);
 
     return () => { vivo = false; clearInterval(id); };
-  }, [estado, onAutoCaptura, onEncuadre, capturar, poseRequerida, hablar]);
+  }, [activa, estado, onAutoCaptura, onEncuadre, capturar, poseRequerida, hablar]);
 
   useImperativeHandle(ref, () => ({ capturar, estado }), [capturar, estado]);
 

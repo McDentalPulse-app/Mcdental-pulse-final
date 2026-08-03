@@ -4,6 +4,7 @@ import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
 import CapturaSelfie from "./CapturaSelfie";
+import ModalChecada from "./ModalChecada";
 import AvisoPush from "./AvisoPush";
 import { useNotification } from "../../contexts/NotificationContext";
 import { obtenerUbicacion, textoUbicacion, evaluarUbicacion, textoCandado } from "../../utils/geo";
@@ -165,6 +166,10 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
       return nueva;
     });
 
+  // La confirmación en medio de la pantalla. Antes esto era solo un toast, y con el recuadro de
+  // la cámara quedándose en negro detrás, la gente no sabía si había fichado.
+  const [confirmacion, setConfirmacion] = useState(null); // { tipo, hora, tarde, fuera }
+
   // La oferta de activar avisos, que aparece bajo la checada recién hecha (no un modal al entrar).
   const [ofrecerPush, setOfrecerPush] = useState(false);
 
@@ -315,11 +320,22 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
         checada.tipo === "entrada" && minutosRetardo({ marcadaEn: checada.marcadaEn }, horarioHoy) > tolerancia;
       const fuera = checada.ubicacionEstado === "fuera";
 
+      // La cámara se cierra AQUÍ, antes de confirmar nada, y no solo en el `finally`. Así el
+      // recuadro desaparece y el bucle de guía se para en el mismo instante en que aparece la
+      // confirmación, en vez de quedarse hablando por debajo.
+      setCapturando(false);
+
+      // Y se calla lo que estuviera sonando antes de decir la confirmación: la guía va soltando
+      // pistas cada 350 ms ("acércate", "centra tu cara") y sin este corte la confirmación
+      // entraba en la cola detrás de ellas — se oía tarde, o pisada.
+      callar();
+
       toast.success(
         checada.tipo === "entrada"
           ? `Entrada registrada a las ${hora}${tarde ? ", con retardo" : ""}.`
           : `Salida registrada a las ${hora}. ¡Buen día!`
       );
+      setConfirmacion({ tipo: checada.tipo, hora, tarde, fuera });
       hablar(construirFraseChecada(checada.tipo, hora, { tarde, fuera }), { repetir: true });
 
       // El momento de ofrecer los avisos es JUSTO AHORA, no al abrir la app. Un navegador al que
@@ -400,14 +416,22 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
       </PageHeader>
 
       <Card>
-        <CapturaSelfie
-          ref={camaraRef}
-          activa={capturando && !bloqueado}
-          onEncuadre={girando ? undefined : onEncuadre}
-          poseRequerida={girando ? reto : null}
-          onAutoCaptura={girando ? onGiroCapturado : null}
-          hablar={voz ? hablar : null}
-        />
+        {/* La cámara se MONTA solo mientras se está checando, no siempre.
+            Antes vivía aquí permanentemente: al entrar a la pantalla, sin haber pulsado nada,
+            se veía un recuadro que decía "Abriendo la cámara…" para siempre (no había ninguna
+            cámara abriéndose), y al terminar de checar ese mismo recuadro se quedaba en negro.
+            Montándola solo cuando toca, las dos cosas desaparecen y además no queda ni un
+            bucle de detección corriendo cuando nadie está fichando. */}
+        {capturando && (
+          <CapturaSelfie
+            ref={camaraRef}
+            activa={!bloqueado}
+            onEncuadre={girando ? undefined : onEncuadre}
+            poseRequerida={girando ? reto : null}
+            onAutoCaptura={girando ? onGiroCapturado : null}
+            hablar={voz ? hablar : null}
+          />
+        )}
 
         {girando && (
           <>
@@ -526,7 +550,13 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
         )}
       </Card>
 
-      {ofrecerPush && (
+      {confirmacion && (
+        <ModalChecada {...confirmacion} onCerrar={() => setConfirmacion(null)} />
+      )}
+
+      {/* La oferta de avisos espera a que se cierre la confirmación: dos ventanas encima de la
+          otra a las ocho de la mañana es una de más, y la que importa es la de la checada. */}
+      {ofrecerPush && !confirmacion && (
         <AvisoPush onActivar={activarAvisos} onCerrar={() => setOfrecerPush(false)} />
       )}
 

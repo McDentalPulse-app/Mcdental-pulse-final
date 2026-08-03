@@ -296,28 +296,49 @@ const alinear = (rgb, ancho, alto, puntos) => {
 const LADO_VIVEZA = 128;   // lo que espera el modelo
 const MARGEN_CAJA = 1.5;   // cuánto se ensancha la caja de la cara antes de recortar
 
+/**
+ * Recorta un cuadrado centrado en la cara, más ancho que ella, rellenando por REFLEJO lo que
+ * se salga de la imagen.
+ *
+ * DOS TUBERÍAS DE SHARP Y NO UNA, y esto no es estilo: **sharp aplica `.extract()` ANTES que
+ * `.extend()` cuando van encadenados**. Un `.extend().extract()` no recorta la imagen
+ * acolchada, recorta la ORIGINAL — así que el recorte se sale por la derecha y sharp tira
+ * `extract_area: bad extract area`. Encadenado así falló en el 100% de las checadas durante
+ * toda la vida del anti-spoofing (301 excepciones en 7 días, `liveness_score` siempre NULL) y
+ * no se notó porque quien llama se traga el error para no impedir ninguna checada.
+ *
+ * Materializar el acolchado con un `.toBuffer()` intermedio es lo que fuerza el orden real.
+ *
+ * Se rellena por reflejo y no con negro: una banda negra junto a la cara es un artefacto que
+ * el modelo nunca vio al entrenarse y le haría gritar "spoof" a media plantilla.
+ *
+ * Exportada solo para poder probar la geometría sin cargar los modelos ONNX.
+ */
+export const recortarConMargen = async (bufferImagen, caja, lado_ = null) => {
+  const [x, y, w, h] = caja;
+  const lado = lado_ ?? Math.round(Math.max(w, h) * MARGEN_CAJA);
+  if (!Number.isFinite(lado) || lado < 16) return null;
+
+  const izq = Math.round(x + w / 2 - lado / 2);
+  const arr = Math.round(y + h / 2 - lado / 2);
+  const pad = lado;
+
+  const acolchada = await sharp(bufferImagen)
+    .extend({ top: pad, bottom: pad, left: pad, right: pad, extendWith: "mirror" })
+    .toBuffer();
+
+  return sharp(acolchada)
+    .extract({ left: izq + pad, top: arr + pad, width: lado, height: lado })
+    .resize(LADO_VIVEZA, LADO_VIVEZA)
+    .removeAlpha()
+    .raw()
+    .toBuffer();
+};
+
 const calcularViveza = async (bufferImagen, caja) => {
   try {
-    const [x, y, w, h] = caja;
-    const lado = Math.round(Math.max(w, h) * MARGEN_CAJA);
-    if (lado < 16) return null;
-
-    const izq = Math.round(x + w / 2 - lado / 2);
-    const arr = Math.round(y + h / 2 - lado / 2);
-
-    // La cara suele estar pegada al borde (o salirse), así que el recorte ensanchado se sale de
-    // la imagen constantemente. Se rellena por REFLEJO, no con negro: una banda negra al lado de
-    // la cara es un artefacto que el modelo nunca vio al entrenarse, y le haría gritar "spoof"
-    // a media plantilla. Se acolcha la imagen entera y luego se recorta dentro: así el recorte
-    // siempre cae en zona válida y no hay que llevar la cuenta de los bordes a mano.
-    const pad = lado;
-    const recorte = await sharp(bufferImagen)
-      .extend({ top: pad, bottom: pad, left: pad, right: pad, extendWith: "mirror" })
-      .extract({ left: izq + pad, top: arr + pad, width: lado, height: lado })
-      .resize(LADO_VIVEZA, LADO_VIVEZA)
-      .removeAlpha()
-      .raw()
-      .toBuffer();
+    const recorte = await recortarConMargen(bufferImagen, caja);
+    if (!recorte) return null;
 
     const datos = new Float32Array(3 * LADO_VIVEZA * LADO_VIVEZA);
     const pixeles = LADO_VIVEZA * LADO_VIVEZA;

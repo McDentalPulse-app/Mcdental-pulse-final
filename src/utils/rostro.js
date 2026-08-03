@@ -114,6 +114,84 @@ export const encuadreBueno = (box, anchoVideo, altoVideo) => {
   return { ok: true, pista: "¡Así! No te muevas…" };
 };
 
+/**
+ * Luminancia media (0-255) de la cara y del resto del encuadre.
+ *
+ * POR QUÉ EXISTE ESTO: el navegador detecta con BlazeFace y el servidor con YuNet. No son el
+ * mismo modelo ni tienen el mismo umbral, así que una cara que aquí se ve "bien" allá puede no
+ * verse en absoluto — y entonces la persona recibe un "no se distingue tu cara" después de
+ * haber hecho todo bien. Medido en producción: 26 de 66 fallos de cotejo en una semana eran
+ * exactamente eso, y se concentran a primera hora. Lo que separa los dos modelos en esos casos
+ * casi siempre es la luz.
+ *
+ * Se mide sobre el lienzo pequeño de la guía (240 px), que ya está pintado: no cuesta un
+ * fotograma extra. Se muestrea de 4 en 4 píxeles porque para una media no hace falta más y
+ * esto corre cada 350 ms en un móvil.
+ */
+export const medirLuz = (canvas, box) => {
+  try {
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    const { width: ancho, height: alto } = canvas;
+    const img = ctx.getImageData(0, 0, ancho, alto).data;
+
+    const x0 = Math.max(0, Math.round(box.x));
+    const y0 = Math.max(0, Math.round(box.y));
+    const x1 = Math.min(ancho, Math.round(box.x + box.ancho));
+    const y1 = Math.min(alto, Math.round(box.y + box.alto));
+
+    let sumaCara = 0, nCara = 0, sumaFondo = 0, nFondo = 0;
+
+    for (let y = 0; y < alto; y += 4) {
+      for (let x = 0; x < ancho; x += 4) {
+        const i = (y * ancho + x) * 4;
+        // Luma perceptual (Rec. 601): el ojo pesa mucho más el verde que el azul, y una media
+        // plana de RGB llamaría "oscura" a una cara bien iluminada sobre un fondo azul.
+        const luma = 0.299 * img[i] + 0.587 * img[i + 1] + 0.114 * img[i + 2];
+        if (x >= x0 && x < x1 && y >= y0 && y < y1) { sumaCara += luma; nCara += 1; }
+        else { sumaFondo += luma; nFondo += 1; }
+      }
+    }
+
+    if (!nCara) return null;
+    return { cara: sumaCara / nCara, fondo: nFondo ? sumaFondo / nFondo : null };
+  } catch {
+    // Un lienzo "sucio" (tainted) o un contexto que no se puede leer no puede tumbar la guía:
+    // sin medición, sencillamente no se dice nada de la luz.
+    return null;
+  }
+};
+
+/**
+ * Qué decirle sobre la luz. NUNCA bloquea: devuelve un aviso, no un veto.
+ *
+ * Es deliberado y es la misma regla que rige el GPS y el detector en este módulo: una
+ * comprobación auxiliar no puede dejar a nadie sin fichar. Si el recibidor de una clínica está
+ * a oscuras, la persona tiene que poder marcar su entrada igual — solo que avisada de que la
+ * foto puede no reconocerla, que es información que hoy no tiene hasta que ya ha fallado.
+ *
+ * Los cortes son conservadores a propósito: pretenden cazar el contraluz de la puerta de
+ * cristal y la penumbra de las siete y media, no afinar una exposición.
+ */
+export const evaluarLuz = (medida) => {
+  if (!medida || !Number.isFinite(medida.cara)) return { nivel: "ok", pista: null };
+
+  const { cara, fondo } = medida;
+
+  // El contraluz primero: es el caso con arreglo más claro ("date la vuelta") y el que más
+  // desconcierta, porque la pantalla se ve luminosa y aun así la cara sale en sombra.
+  if (Number.isFinite(fondo) && fondo - cara > 60 && cara < 110) {
+    return { nivel: "contraluz", pista: "Tienes una luz fuerte detrás. Date la vuelta o apártate de la ventana." };
+  }
+  if (cara < 55) {
+    return { nivel: "oscura", pista: "Hay poca luz para verte bien. Acércate a una ventana o enciende la luz." };
+  }
+  if (cara > 235) {
+    return { nivel: "quemada", pista: "Te está dando demasiada luz de frente. Apártate un poco." };
+  }
+
+  return { nivel: "ok", pista: null };
+};
+
 export const POSE = {
   FRONTAL: "frontal",
   DERECHA: "derecha",   // la persona gira la cabeza hacia SU derecha
