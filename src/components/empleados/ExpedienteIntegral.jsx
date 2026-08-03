@@ -315,7 +315,10 @@ const ExpedienteIntegral = ({
           </Card>
 
           <div className="expediente-secciones">
-            <Seccion icono="pin" titulo="Datos generales" cuenta={1}>
+            {/* A lo ancho: son ocho datos cortos, y en una tarjeta estrecha se apilaban en ocho
+                renglones ocupando media pantalla. Su propia rejilla interna
+                (`expediente-datos`) los reparte en cuatro columnas en cuanto tiene sitio. */}
+            <Seccion icono="pin" titulo="Datos generales" cuenta={1} className="expediente-seccion--ancha">
               <dl className="expediente-datos">
                 <div className="expediente-dato"><dt>Puesto</dt><dd>{empleado.puesto}</dd></div>
                 <div className="expediente-dato"><dt>Sucursal</dt><dd>{normalizeSucursal(empleado.sucursal)}</dd></div>

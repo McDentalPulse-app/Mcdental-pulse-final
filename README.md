@@ -115,6 +115,30 @@ lee nadie.
 
 ## Changelog
 
+### 2026-08-03 (noche, 3) · El expediente abría con un hueco del tamaño de media pantalla
+
+> Reportado como «se ve mal acomodado». Lo reproduje con el CSS compilado de verdad y el
+> problema estaba a la vista en el primer golpe de ojo.
+
+- **🔴 «Datos generales» dejaba dos columnas vacías a su derecha.** Las secciones se colocaban
+  con `grid: repeat(auto-fit, minmax(320px, 1fr))`, o sea tres columnas en una pantalla normal.
+  «Datos generales» es una tarjeta de ancho normal **seguida de una ancha** («Archivos», que
+  ocupa `1 / -1`), así que se quedaba **sola en su fila** con dos huecos al lado. Era lo primero
+  que se veía al abrir cualquier expediente.
+- **🔴 Y encima estiraba los datos en vertical.** Encerrados en una tarjeta de 320px, los ocho
+  campos —puesto, sucursal, ingreso, antigüedad, cumpleaños, teléfono, estatus, encuestas— se
+  apilaban en ocho renglones. Su propia rejilla interna (`expediente-datos`, `minmax(240px, 1fr)`)
+  puede repartirlos en cuatro columnas: solo le faltaba sitio. Ahora va a lo ancho y ocupa **dos
+  filas en vez de ocho**.
+- **🔴 Huecos entre secciones de altura distinta.** En una rejilla, cada fila es tan alta como su
+  tarjeta más alta: «Vacaciones» con una fila junto a «Permisos» con siete dejaba un agujero
+  debajo de la corta. El contenedor pasa de `grid` a **columnas** (`columns: 340px` +
+  `break-inside: avoid`), que empaquetan las tarjetas una debajo de otra sin aire muerto. Las
+  secciones anchas cruzan con `column-span: all`, que parte el flujo justo donde se quiere.
+
+Verificado con Chromium sobre el CSS ya compilado, en escritorio y en un móvil de 390px (donde
+cae a una sola columna, como antes).
+
 ### 2026-08-03 (noche, 2) · Los tres dashboards dejan de ser tres copias que se estaban separando
 
 > Petición: que RH y psicóloga tengan los elementos que les faltan del de admin. Al abrirlos, el

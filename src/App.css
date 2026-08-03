@@ -4246,15 +4246,29 @@
 
 /* Las secciones se reparten en dos columnas para llenar el ancho: una sola columna de tarjetas
    en un monitor dejaba media pantalla en blanco. */
+/* COLUMNAS Y NO REJILLA, y el motivo se ve al abrir cualquier expediente.
+   Con `grid`, cada fila es tan alta como su tarjeta más alta, y estas secciones tienen alturas
+   muy dispares: "Vacaciones" con una fila al lado de "Permisos" con siete deja un agujero
+   enorme debajo de la corta. Y peor: "Datos generales" es una tarjeta normal seguida de una
+   ancha, así que en una pantalla de tres columnas se quedaba SOLA con dos columnas vacías a su
+   derecha — el primer golpe de vista de cada expediente era un hueco.
+   Con columnas, las tarjetas se empaquetan una debajo de otra y no queda aire muerto. */
 .expediente-secciones {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 16px;
-  align-items: start;
+  columns: 340px;
+  column-gap: 16px;
 }
 
+/* `break-inside` para que ninguna tarjeta se parta a mitad entre dos columnas, y el margen
+   inferior hace de separación vertical (en multicol el `gap` solo separa columnas). */
+.expediente-secciones > .expediente-seccion {
+  break-inside: avoid;
+  margin: 0 0 16px;
+}
+
+/* Las secciones anchas cruzan todas las columnas y parten el flujo en dos, que es justo lo que
+   se quiere: "Datos generales" y "Archivos" arriba a lo ancho, y debajo el resto empaquetado. */
 .expediente-seccion--ancha {
-  grid-column: 1 / -1;
+  column-span: all;
 }
 
 /* Vacía se encoge: sigue diciendo que no hay nada, pero no ocupa una tarjeta de aire. */
@@ -4501,8 +4515,10 @@
     max-height: 50vh;
   }
 
+  /* Una sola columna: en el teléfono no hay sitio para dos, y `columns: 340px` ya lo haría
+     solo — se deja explícito para que no dependa del ancho exacto del viewport. */
   .expediente-secciones {
-    grid-template-columns: 1fr;
+    columns: 1;
   }
 
   /* En cuanto se elige a alguien, el detalle ocupa la pantalla y la lista se retira: no caben
