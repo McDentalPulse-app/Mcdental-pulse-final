@@ -175,6 +175,15 @@ librería de componentes. Se sustituyen por un tooltip propio con los tokens de 
 > volverían a crecer desde cero delante de quien esté leyéndolas. Es además la única versión que
 > se pudo verificar renderizada. Se encienden cambiando `isAnimationActive` en `WeeklyScoreChart`.
 
+**Las barras van de PEOR a MEJOR, y el orden importa más de lo que parece.** La primera versión
+iba de mayor a menor, y al probarla con las 26 clínicas apareció el fallo: en una pantalla de
+1280px caben 23, así que **las tres últimas se salían por la derecha — y eran justo las tres
+peores** (Tuxpan 67, Popular Tampico 63, Popular Irapuato 59). La gráfica escondía su propia
+conclusión detrás de un scroll horizontal que mucha gente no ve. Con las peores primero, lo
+accionable está siempre a la vista y lo que se va por la derecha son las clínicas que van bien.
+Verificado con las 26 en escritorio (caben todas) y en un móvil de 390px (entran unas seis, con
+la barra de desplazamiento visible, y la roja es la primera).
+
 ### 2026-08-03 (tarde) · No todas las clínicas están en la misma hora, y el sistema creía que sí
 
 > Empezó como «a algunos les marca descanso aunque sí registraron entrada». La causa era simple

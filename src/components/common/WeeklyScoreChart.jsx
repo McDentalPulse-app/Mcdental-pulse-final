@@ -81,10 +81,15 @@ const WeeklyScoreChart = ({ datos = [], semanaLabel = "", semanaPreviaLabel = nu
   const filas = datos.filter((d) => esNumero(d.score));
   if (!filas.length) return null;
 
-  // De mayor a menor: con 26 barras, el orden alfabético obliga a recorrerlas todas para saber
-  // quién está peor. Ordenadas, el problema está siempre en el mismo sitio — a la derecha.
+  // DE PEOR A MEJOR, y el orden importa más de lo que parece.
+  //
+  // La primera versión iba de mayor a menor, y al probarla con las 26 clínicas se vio el fallo:
+  // en una pantalla de 1280px caben 23, así que las tres últimas se salían por la derecha — y
+  // eran justo las tres peores. La gráfica escondía su propia conclusión detrás de un scroll
+  // horizontal que mucha gente no ve. Con las peores primero, lo accionable está siempre a la
+  // vista y lo que se va por la derecha son las clínicas que van bien.
   const data = [...filas]
-    .sort((a, b) => Number(b.score) - Number(a.score))
+    .sort((a, b) => Number(a.score) - Number(b.score))
     .map((d) => ({
       sucursal: d.sucursal,
       corto: nombreCorto(d.sucursal),
@@ -96,8 +101,8 @@ const WeeklyScoreChart = ({ datos = [], semanaLabel = "", semanaPreviaLabel = nu
     }));
 
   // Con 26 clínicas no caben en el ancho de la tarjeta: se desplaza en horizontal en vez de
-  // encogerse hasta ser ilegible. 52px por barra deja que el nombre girado se lea sin pisarse.
-  const anchoMin = Math.max(320, data.length * 52);
+  // encogerse hasta ser ilegible. 46px por barra es el mínimo para que el nombre girado no se pise.
+  const anchoMin = Math.max(320, data.length * 46);
 
   return (
     <div className="mc-chart-scroll">
