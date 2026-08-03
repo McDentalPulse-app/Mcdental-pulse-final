@@ -4262,7 +4262,13 @@
    inferior hace de separación vertical (en multicol el `gap` solo separa columnas). */
 .expediente-secciones > .expediente-seccion {
   break-inside: avoid;
-  margin: 0 0 16px;
+  margin: 0 0 12px;
+}
+
+/* La última no arrastra margen: si no, el expediente termina con un hueco por debajo que no
+   separa de nada. */
+.expediente-secciones > .expediente-seccion:last-child {
+  margin-bottom: 0;
 }
 
 /* Las secciones anchas cruzan todas las columnas y parten el flujo en dos, que es justo lo que
@@ -4271,19 +4277,35 @@
   column-span: all;
 }
 
-/* Vacía se encoge: sigue diciendo que no hay nada, pero no ocupa una tarjeta de aire. */
+/* Vacía se encoge de VERDAD.
+   Ya lo intentaba antes recortando el relleno de la tarjeta, pero no servía de nada: el párrafo
+   de dentro lleva `.mc-empty`, que trae 24px arriba y abajo y centra el texto. Entre eso y el
+   título, una sección sin nada ocupaba una caja de ~130px con una frase flotando en medio — y
+   en un expediente recién creado son seis cajas así seguidas. Hay que anular ese relleno aquí,
+   que es lo que faltaba.
+
+   Y va alineada a la izquierda, no centrada: "Sin vacaciones registradas." es una nota al pie
+   del título, no un estado vacío de pantalla completa que merezca protagonismo. */
 .expediente-seccion--vacia {
-  padding-top: 14px;
-  padding-bottom: 14px;
+  padding-top: 12px;
+  padding-bottom: 12px;
 }
 
 .expediente-seccion--vacia .admin-section-title {
-  margin-bottom: 4px;
+  margin-bottom: 0;
 }
 
-.expediente-seccion-vacio {
-  margin: 0;
+/* DOS CLASES Y NO UNA, y es justo lo que fallaba.
+   `.expediente-seccion-vacio` y `.mc-empty` tienen la misma especificidad, y `.mc-empty` está
+   5.000 líneas más abajo en este archivo: gana por orden. Por eso la sección "vacía" nunca se
+   encogió — se le recortaba el relleno a la tarjeta mientras el párrafo de dentro conservaba
+   sus 24px arriba y abajo y su centrado. Anidándolo bajo el modificador son dos clases, que sí
+   ganan sin depender de dónde caiga la regla en el archivo. */
+.expediente-seccion--vacia .expediente-seccion-vacio {
+  margin: 6px 0 0;
+  padding: 0;
   font-size: 13px;
+  text-align: left;
 }
 
 .expediente-seccion-cuenta {

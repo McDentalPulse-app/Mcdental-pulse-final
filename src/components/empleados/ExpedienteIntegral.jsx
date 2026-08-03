@@ -457,7 +457,7 @@ const ExpedienteIntegral = ({
               )}
             </Seccion>
 
-            <Seccion icono="vacation" titulo="Vacaciones" cuenta={vacacionesEmpleado.length} vacio="Sin vacaciones registradas.">
+            <Seccion icono="vacation" titulo="Vacaciones" cuenta={vacacionesEmpleado.length} vacio="Sin vacaciones registradas." className="expediente-seccion--ancha">
               <div className="expediente-lista">
                 {vacacionesEmpleado.map(v => (
                   <div key={v.id} className="expediente-fila">
@@ -479,7 +479,7 @@ const ExpedienteIntegral = ({
 
             {/* Permisos: el expediente tenía Vacaciones pero no Permisos, así que la mitad del
                 historial de ausencias de una persona no estaba aquí. */}
-            <Seccion icono="clipboardCheck" titulo="Permisos" cuenta={permisosEmpleado.length} vacio="Sin permisos registrados.">
+            <Seccion icono="clipboardCheck" titulo="Permisos" cuenta={permisosEmpleado.length} vacio="Sin permisos registrados." className="expediente-seccion--ancha">
               <div className="expediente-lista">
                 {permisosEmpleado.map(p => (
                   <div key={p.id} className="expediente-fila">
@@ -516,7 +516,7 @@ const ExpedienteIntegral = ({
               </Seccion>
             )}
 
-            <Seccion icono="award" titulo="Reconocimientos" cuenta={reconocimientosEmpleado.length} vacio="Sin reconocimientos registrados.">
+            <Seccion icono="award" titulo="Reconocimientos" cuenta={reconocimientosEmpleado.length} vacio="Sin reconocimientos registrados." className="expediente-seccion--ancha">
               <div className="expediente-lista">
                 {reconocimientosEmpleado.map(r => {
                   const medalla = getMedalla(r.categoria);

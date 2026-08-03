@@ -139,6 +139,18 @@ lee nadie.
 Verificado con Chromium sobre el CSS ya compilado, en escritorio y en un móvil de 390px (donde
 cae a una sola columna, como antes).
 
+- **🔴 Y la sección «vacía» nunca se encogió, aunque el código creyera que sí.** Había una regla
+  para ello desde hace tiempo —recortaba el relleno de la tarjeta— pero no servía de nada:
+  `.expediente-seccion-vacio` y `.mc-empty` tienen **la misma especificidad**, y `.mc-empty`
+  está 5.000 líneas más abajo en `App.css`, así que ganaba por orden y conservaba sus 24px
+  arriba y abajo y su centrado. Cada sección sin datos era una caja de ~140px con una frase
+  flotando en medio, y en un expediente recién creado son **seis cajas así seguidas**. Anidada
+  bajo el modificador son dos clases, que ganan sin depender de dónde caiga la regla. Ahora una
+  sección vacía es su título con una línea debajo, alineada a la izquierda: es una nota al pie,
+  no un estado vacío de pantalla completa.
+- **🆕 Vacaciones, Permisos y Reconocimientos pasan a ancho completo**, como Archivos. A dos
+  columnas quedaban tarjetas estrechas medio vacías y una tercera sola con un hueco al lado.
+
 ### 2026-08-03 (noche, 2) · Los tres dashboards dejan de ser tres copias que se estaban separando
 
 > Petición: que RH y psicóloga tengan los elementos que les faltan del de admin. Al abrirlos, el
