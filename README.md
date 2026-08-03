@@ -181,6 +181,15 @@ lee nadie.
   `/empleado/checador`: el checador vive bajo cuatro prefijos y una URL fija habría repetido el
   fallo que dejaba a los doctores rebotando, arreglado dos días antes.
 
+- **🔴 Una salida anulada dejaba la jornada abierta para siempre.** Lo cazó la primera checada
+  de prueba del día: al anularla, la persona seguía contando como "ya cerró su día". Ni el
+  cierre automático la volvía a mirar —así que el día se quedaba en «incompleto» sin que nadie
+  lo tocara nunca más— ni el recordatorio nuevo la avisaba. Las dos consultas filtraban
+  `anulada` en las **entradas** pero no en las **salidas**, y anular es justo lo que hace RH
+  cuando una checada está mal: no es el caso raro, es el caso. Ahora las dos aplican la misma
+  regla que `emparejarChecadas` lleva siempre en el cliente — para el cálculo, una checada
+  anulada no existe.
+
 **Lo que NO se tocó, y por qué:** `PROBABILIDAD_RETO` sigue en 1.0 — se pide el giro de cabeza
 en todas las checadas. Es la causa directa de la mitad de los fallos (33 de 66 tenían la cara
 correcta, con score sobre el umbral), así que la tentación de bajarlo era grande. Pero mientras

@@ -260,10 +260,19 @@ const cerrarJornadasAbiertas = async (supabase) => {
   }
   if (!entradas?.length) return { cerradas: 0 };
 
+  // `anulada = false` también en las SALIDAS, no solo en las entradas.
+  //
+  // Sin esto, una salida que RH anuló seguía contando como "ya cerró su día", así que la
+  // jornada quedaba abierta para siempre: el cierre automático la saltaba cada noche y el día
+  // se quedaba en "incompleto" sin que nadie volviera a mirarlo. Anular es justamente lo que
+  // hace RH cuando una checada está mal, o sea que el caso no es raro — es el caso.
+  // Es la misma regla que emparejarChecadas ya aplica en el cliente: para el cálculo, una
+  // checada anulada no existe.
   const { data: salidas } = await supabase
     .from("asistencias")
     .select("empleado_id, fecha")
     .eq("tipo", "salida")
+    .eq("anulada", false)
     .gte("fecha", hace7)
     .lt("fecha", hoy);
 
@@ -366,10 +375,14 @@ const recordarSalidaPendiente = async (supabase) => {
   }
   if (!entradas?.length) return { avisados: 0 };
 
+  // Misma regla que en el cierre automático: una salida anulada no cuenta como salida. Si no,
+  // a quien RH le acaba de anular una checada mal puesta se le trataría como que ya se fue, y
+  // sería precisamente el que más necesita el recordatorio.
   const { data: salidas } = await supabase
     .from("asistencias")
     .select("empleado_id")
     .eq("tipo", "salida")
+    .eq("anulada", false)
     .eq("fecha", hoy);
 
   const yaSalieron = new Set((salidas || []).map((s) => s.empleado_id));
