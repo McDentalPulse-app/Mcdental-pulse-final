@@ -8,6 +8,10 @@ const mapSucursal = (row) => ({
   lng: row.lng === null ? null : Number(row.lng),
   radioM: row.radio_m,
   activa: row.activa,
+  // Zona horaria de la clínica (migración 107). No todas están en la hora del centro:
+  // Hermosillo es UTC-7 y Reynosa conserva el horario de verano. Sin esto, a quien llegaba
+  // puntual en Hermosillo se le apuntaban 55 minutos de retardo todos los días.
+  zonaHoraria: row.zona_horaria || "America/Monterrey",
   // Derivado, para que la UI no tenga que repetir la condición en cada sitio.
   tieneGeocerca: row.lat !== null && row.lng !== null,
   // Quién fijó la ubicación, cuándo y con qué precisión. Lo rellena solo el trigger

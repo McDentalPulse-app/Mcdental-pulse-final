@@ -22,6 +22,36 @@ import { getISOWeek } from "./constants";
 export const TZ_CLINICA = "America/Monterrey";
 
 /**
+ * La zona horaria NO es una constante: cada clínica tiene la suya (migración 107).
+ *
+ * Se descubrió midiendo. Hora de entrada mediana por sucursal, leída como Monterrey:
+ * Reynosa 09:04, las otras 21 entre 09:53 y 10:13, Hermosillo 10:54. Dos desviaciones de
+ * exactamente una hora, en sentidos opuestos:
+ *
+ *  · Hermosillo está en Sonora (UTC-7, sin horario de verano): se leía una hora TARDE, así que
+ *    a quien llegaba a las 09:54 se le apuntaban 55 minutos de retardo. Todos los días.
+ *  · Reynosa es municipio fronterizo y conserva el horario de verano de EE.UU.: hoy va una hora
+ *    por delante, así que sus retardos reales eran invisibles.
+ *
+ * Por eso `TZ_CLINICA` queda solo como VALOR POR DEFECTO, para las 23 sucursales que sí están
+ * en la hora del centro y para cuando no se sabe de qué clínica es alguien. Nunca como verdad
+ * universal.
+ */
+
+/** Índice nombre de sucursal → zona horaria, a partir de la lista que ya carga la app. */
+export const mapaZonas = (sucursales = []) =>
+  new Map(sucursales.filter((s) => s?.nombre).map((s) => [s.nombre, s.zonaHoraria || TZ_CLINICA]));
+
+/**
+ * La zona horaria de una sucursal. Sin mapa o sin coincidencia, la del centro.
+ *
+ * El fallback importa: alguien con la sucursal mal escrita, o sin asignar, tiene que seguir
+ * apareciendo en los reportes con una hora razonable en vez de romper la pantalla.
+ */
+export const zonaDe = (mapa, nombreSucursal) =>
+  (mapa instanceof Map ? mapa.get(nombreSucursal) : null) || TZ_CLINICA;
+
+/**
  * Desde cuándo cuenta la asistencia de verdad.
  *
  * Los horarios ya están cargados (para que el checador sepa desde el día 1 quién llega
@@ -76,12 +106,12 @@ export const ESTADOS_DIA = {
  * 1:01 — cuando entró a las 9:35 y salió a las 19:01 del mismo día. No es un detalle de
  * formato: quien lee ese reporte saca conclusiones falsas sobre los horarios de su gente.
  */
-export const horaEnClinica = (ts) => {
+export const horaEnClinica = (ts, tz = TZ_CLINICA) => {
   if (!ts) return "";
   const d = new Date(ts);
   if (Number.isNaN(d.getTime())) return "";
   return new Intl.DateTimeFormat("es-MX", {
-    timeZone: TZ_CLINICA, hour: "2-digit", minute: "2-digit", hour12: false,
+    timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false,
   }).format(d);
 };
 
@@ -102,8 +132,8 @@ export const ETIQUETA_ESTADO = {
 };
 
 /** "YYYY-MM-DD" de hoy en la zona de la clínica. Es el corte para "día en curso". */
-export const hoyEnClinica = () =>
-  new Intl.DateTimeFormat("en-CA", { timeZone: TZ_CLINICA }).format(new Date());
+export const hoyEnClinica = (tz = TZ_CLINICA) =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date());
 
 const MIN_POR_DIA = 24 * 60;
 
@@ -222,9 +252,12 @@ export const minutosTrabajados = (entrada, salida) => {
  * tolerancia: la tolerancia decide SI es retardo, no CUÁNTO). Llegar antes da 0, no
  * un número negativo — nadie tiene "retardo de −5 minutos".
  */
-export const minutosRetardo = (entrada, horario) => {
+export const minutosRetardo = (entrada, horario, tz = TZ_CLINICA) => {
   if (!entrada?.marcadaEn || !horario?.horaEntrada) return 0;
-  const llegada = minutosLocales(entrada.marcadaEn);
+  // La hora del turno ("10:00") es LOCAL de su clínica, así que la llegada hay que leerla en
+  // esa misma zona. Compararla contra la hora de Monterrey es lo que le apuntaba 55 minutos de
+  // retardo a quien en Hermosillo llegó a las 09:54.
+  const llegada = minutosLocales(entrada.marcadaEn, tz);
   const esperada = horaAMinutos(horario.horaEntrada);
   if (llegada == null || esperada == null) return 0;
   return Math.max(0, llegada - esperada);
@@ -248,7 +281,8 @@ export const clasificarDia = ({
   horario = null,
   permisos = [],
   vacaciones = [],
-  hoy = hoyEnClinica(),
+  tz = TZ_CLINICA,
+  hoy = hoyEnClinica(tz),
 } = {}) => {
   const { entrada, salida, extras } = emparejarChecadas(checadas);
 
@@ -291,10 +325,10 @@ export const clasificarDia = ({
   if (!salida) {
     // Entró y no cerró el día: se le olvidó checar la salida, o sigue dentro. En
     // cualquier caso no se puede calcular la jornada, y RH tiene que mirarlo.
-    return { ...base, estado: ESTADOS_DIA.INCOMPLETO, minutosRetardo: minutosRetardo(entrada, horario) };
+    return { ...base, estado: ESTADOS_DIA.INCOMPLETO, minutosRetardo: minutosRetardo(entrada, horario, tz) };
   }
 
-  const retardo = minutosRetardo(entrada, horario);
+  const retardo = minutosRetardo(entrada, horario, tz);
   const tolerancia = Number.isFinite(horario.toleranciaMin) ? horario.toleranciaMin : 0;
 
   // Estrictamente mayor: entrar en el minuto exacto del límite de tolerancia NO es
@@ -345,7 +379,8 @@ export const construirDias = ({
   permisos = [],
   vacaciones = [],
   fechaIngreso = null,
-  hoy = hoyEnClinica(),
+  tz = TZ_CLINICA,
+  hoy = hoyEnClinica(tz),
 } = {}) => {
   const porFecha = new Map();
   for (const c of checadas) {
@@ -368,6 +403,7 @@ export const construirDias = ({
         horario: porDia.get(diaISO(fecha)) || null,
         permisos,
         vacaciones,
+        tz,
         hoy,
       })
     );
@@ -500,14 +536,16 @@ export const JORNADA_MINIMA_MIN = 30;
  * Devuelve también `disponibleDesde` para poder decirle a qué hora podrá, en vez de un
  * "no puedes" a secas que no le dice qué hacer.
  */
-export const puedeRegistrarSalida = (horario, ahora = new Date(), horaAutorizada = null, entradaEn = null) => {
+export const puedeRegistrarSalida = (horario, ahora = new Date(), horaAutorizada = null, entradaEn = null, tz = TZ_CLINICA) => {
   // La jornada mínima manda sobre todo lo demás, incluido el permiso.
   if (entradaEn) {
     const minimoEn = new Date(new Date(entradaEn).getTime() + JORNADA_MINIMA_MIN * 60000);
     if (ahora < minimoEn) {
       return {
         permitido: false,
-        disponibleDesde: minutosAHora(minutosLocales(minimoEn.toISOString())),
+        // En la hora de SU clínica: decirle "a partir de las 13:20" a alguien de Hermosillo
+        // usando la hora de Monterrey le manda a esperar una hora de más.
+        disponibleDesde: minutosAHora(minutosLocales(minimoEn.toISOString(), tz)),
         autorizada: false,
         reciente: true, // "acabas de entrar", no "todavía no es tu hora"
       };

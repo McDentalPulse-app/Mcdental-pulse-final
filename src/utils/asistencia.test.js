@@ -21,6 +21,9 @@ import {
   horaEnClinica,
   nombreDiaSemana,
   ESTADOS_DIA,
+  TZ_CLINICA,
+  mapaZonas,
+  zonaDe,
 } from "./asistencia";
 
 // Las clínicas están en America/Monterrey (UTC-6 todo el año: México dejó el horario
@@ -744,5 +747,76 @@ describe("nombreDiaSemana", () => {
   it("dice el dia en palabras", () => {
     expect(nombreDiaSemana("2026-07-27")).toBe("Lunes");
     expect(nombreDiaSemana("2026-08-01")).toBe("Sábado");
+  });
+});
+
+/**
+ * Zonas horarias por sucursal (migración 107).
+ *
+ * El caso que motivó todo esto, con datos reales: Dania Limón, McDental Hermosillo, entró el
+ * 2026-08-01 a las 09:54 hora de Hermosillo. Su turno empieza a las 10:00 con 10 minutos de
+ * tolerancia — llegó SEIS MINUTOS ANTES. Leyéndolo como Monterrey, el sistema le apuntaba 55
+ * minutos de retardo y la marcaba en retardo todos los días.
+ *
+ * 09:54 en Hermosillo (UTC-7) son las 16:54 UTC.
+ */
+describe("zona horaria por sucursal", () => {
+  const ENTRADA_DANIA = "2026-08-01T16:54:00Z"; // 09:54 Hermosillo · 10:54 Monterrey
+  const TURNO = { horaEntrada: "10:00", horaSalida: "19:00", toleranciaMin: 10, diaSemana: 5 };
+
+  it("leída en Monterrey, una entrada puntual de Hermosillo parecía 54 min de retardo", () => {
+    expect(minutosRetardo({ marcadaEn: ENTRADA_DANIA }, TURNO)).toBe(54);
+  });
+
+  it("leída en su propia zona, la misma entrada no tiene ni un minuto de retardo", () => {
+    expect(minutosRetardo({ marcadaEn: ENTRADA_DANIA }, TURNO, "America/Hermosillo")).toBe(0);
+  });
+
+  it("y por tanto el día pasa de RETARDO a PRESENTE", () => {
+    const comun = {
+      fecha: "2026-08-01",
+      checadas: [
+        { tipo: "entrada", marcadaEn: ENTRADA_DANIA, anulada: false },
+        { tipo: "salida", marcadaEn: "2026-08-02T02:05:00Z", anulada: false }, // 19:05 Hermosillo
+      ],
+      horario: TURNO,
+      hoy: "2026-08-04",
+    };
+    expect(clasificarDia(comun).estado).toBe(ESTADOS_DIA.RETARDO);
+    expect(clasificarDia({ ...comun, tz: "America/Hermosillo" }).estado).toBe(ESTADOS_DIA.PRESENTE);
+  });
+
+  it("Reynosa va al revés: en verano se le lee una hora antes de la que es", () => {
+    // 2026-08-01 15:30Z = 09:30 Monterrey, pero 10:30 en Reynosa (UTC-5 por horario de verano).
+    // O sea que quien parecía llegar media hora antes, llegó media hora tarde.
+    const entrada = { marcadaEn: "2026-08-01T15:30:00Z" };
+    expect(minutosRetardo(entrada, TURNO)).toBe(0);
+    expect(minutosRetardo(entrada, TURNO, "America/Matamoros")).toBe(30);
+  });
+
+  it("en invierno Reynosa vuelve a coincidir con el centro, y el nombre IANA lo resuelve solo", () => {
+    // 2026-12-01 16:30Z = 10:30 en las dos: Matamoros deja el horario de verano en noviembre.
+    // Un desfase fijo en horas guardado en la base se habría quedado mal justo aquí.
+    const entrada = { marcadaEn: "2026-12-01T16:30:00Z" };
+    expect(minutosRetardo(entrada, TURNO)).toBe(30);
+    expect(minutosRetardo(entrada, TURNO, "America/Matamoros")).toBe(30);
+  });
+
+  it("horaEnClinica dice la hora que vivió la persona, no la del centro", () => {
+    expect(horaEnClinica(ENTRADA_DANIA)).toBe("10:54");
+    expect(horaEnClinica(ENTRADA_DANIA, "America/Hermosillo")).toBe("09:54");
+  });
+
+  it("sin zona conocida se sigue usando la del centro: nadie se queda sin clasificar", () => {
+    const mapa = mapaZonas([{ nombre: "McDental Hermosillo", zonaHoraria: "America/Hermosillo" }]);
+    expect(zonaDe(mapa, "McDental Hermosillo")).toBe("America/Hermosillo");
+    expect(zonaDe(mapa, "Sucursal Que No Existe")).toBe(TZ_CLINICA);
+    expect(zonaDe(null, "McDental Hermosillo")).toBe(TZ_CLINICA);
+    expect(zonaDe(mapaZonas([]), undefined)).toBe(TZ_CLINICA);
+  });
+
+  it("una sucursal sin zona guardada cae al centro, no a undefined", () => {
+    const mapa = mapaZonas([{ nombre: "McDental Tampico", zonaHoraria: null }]);
+    expect(zonaDe(mapa, "McDental Tampico")).toBe(TZ_CLINICA);
   });
 });

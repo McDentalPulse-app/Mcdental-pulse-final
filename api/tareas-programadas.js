@@ -231,7 +231,55 @@ const diaISODeFecha = (fecha) => {
  * Solo toca días ANTERIORES a hoy: el día en curso todavía puede cerrarse solo, la persona
  * aún puede marcar su salida real.
  */
-const CIERRE_TZ_OFFSET = "-06:00"; // Monterrey es UTC-6 todo el año (México no aplica horario de verano).
+const TZ_POR_DEFECTO = "America/Monterrey";
+const CIERRE_TZ_OFFSET = "-06:00"; // solo como respaldo: Monterrey es UTC-6 todo el año.
+
+/**
+ * Zona horaria de cada empleado, resuelta por su sucursal (migración 107).
+ *
+ * No todas las clínicas están en la hora del centro: Hermosillo es UTC-7 y no aplica horario de
+ * verano, y Reynosa es municipio fronterizo y sí lo aplica. Un cron que da por hecho Monterrey
+ * le cierra la jornada a Hermosillo una hora antes de tiempo y a Reynosa una hora tarde.
+ */
+const zonasPorEmpleado = async (supabase, empleadoIds) => {
+  const [{ data: personas }, { data: sucursales }] = await Promise.all([
+    supabase.from("usuarios").select("id, sucursal").in("id", empleadoIds),
+    supabase.from("sucursales").select("nombre, zona_horaria"),
+  ]);
+
+  const tzPorSucursal = new Map((sucursales || []).map((s) => [s.nombre, s.zona_horaria || TZ_POR_DEFECTO]));
+  return new Map((personas || []).map((u) => [u.id, tzPorSucursal.get(u.sucursal) || TZ_POR_DEFECTO]));
+};
+
+/**
+ * El desfase real de una zona en una fecha concreta ("-06:00", "-07:00"…).
+ *
+ * Se calcula EN LA FECHA y no una vez, porque el de Reynosa cambia dos veces al año: escribir un
+ * número fijo es exactamente el error que se está arreglando. Se mide al mediodía para no caer
+ * dentro del salto del horario de verano, que ocurre de madrugada.
+ */
+const desfaseEn = (tz, fecha) => {
+  try {
+    const partes = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "longOffset" })
+      .formatToParts(new Date(`${fecha}T12:00:00Z`));
+    const nombre = partes.find((p) => p.type === "timeZoneName")?.value || "";
+    const off = nombre.replace("GMT", "").trim();
+    return /^[+-]\d{2}:\d{2}$/.test(off) ? off : CIERRE_TZ_OFFSET;
+  } catch {
+    return CIERRE_TZ_OFFSET;
+  }
+};
+
+/** "YYYY-MM-DD" de hoy en una zona. */
+const hoyEn = (tz) => new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date());
+
+/** Minutos desde medianoche AHORA MISMO en una zona. */
+const minutosAhoraEn = (tz) => {
+  const [h, m] = new Intl.DateTimeFormat("en-GB", {
+    timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false,
+  }).format(new Date()).split(":");
+  return Number(h) * 60 + Number(m);
+};
 // 19:00 y no 18:00: es la hora a la que termina la jornada entre semana en TODAS las clinicas
 // (el sabado son las 14:00, pero ese dia si hay horario cargado y se usa el suyo). Con las
 // 18:00 anteriores, los pocos dias sin horario cerraban una hora antes de tiempo y le
@@ -296,14 +344,20 @@ const cerrarJornadasAbiertas = async (supabase) => {
     (horarios || []).map((h) => [`${h.empleado_id}|${h.dia_semana}`, h.hora_salida])
   );
 
+  const zonas = await zonasPorEmpleado(supabase, empleadoIds);
+
   const filas = [...huerfanas.values()].map((e) => {
     const dia = diaISODeFecha(e.fecha);
     const horaSalida = horaPorClave.get(`${e.empleado_id}|${dia}`) || HORA_SALIDA_DEFECTO;
+    // "19:00" son las 19:00 DE SU CLINICA. Con el desfase fijo -06:00 se cerraba a las 19:00 de
+    // Monterrey, que en Hermosillo son las 18:00: una hora trabajada menos, y encima a quien ya
+    // se le habia olvidado marcar salida.
+    const tz = zonas.get(e.empleado_id) || TZ_POR_DEFECTO;
     return {
       empleado_id: e.empleado_id,
       tipo: "salida",
       fecha: e.fecha,
-      marcada_en: `${e.fecha}T${horaSalida}${CIERRE_TZ_OFFSET}`,
+      marcada_en: `${e.fecha}T${horaSalida}${desfaseEn(tz, e.fecha)}`,
       ubicacion_estado: "sin_gps",
       origen: "sistema",
       nota_rh: "Salida automática: no marcó salida.",
@@ -354,13 +408,11 @@ const MARGEN_AVISO_SALIDA_MIN = 10;
 const VENTANA_AVISO_SALIDA_MIN = 60;
 
 const recordarSalidaPendiente = async (supabase) => {
-  const enClinica = (fmt, d = new Date()) =>
-    new Intl.DateTimeFormat(fmt.locale, { timeZone: "America/Monterrey", ...fmt.opts }).format(d);
-
-  const hoy = enClinica({ locale: "en-CA", opts: {} });
-  const [hh, mm] = enClinica({ locale: "en-GB", opts: { hour: "2-digit", minute: "2-digit", hour12: false } })
-    .split(":");
-  const ahoraMin = Number(hh) * 60 + Number(mm);
+  // La fecha se busca con la zona del centro, que es la de 23 de las 26 clinicas. El dia natural
+  // de Hermosillo y Reynosa solo se separa del centro en la franja de medianoche, y a esa hora no
+  // hay jornadas abiertas que avisar. La HORA, en cambio, si se resuelve por persona: es lo que
+  // decide si alguien acaba de pasarse de su turno.
+  const hoy = hoyEn(TZ_POR_DEFECTO);
 
   const { data: entradas, error } = await supabase
     .from("asistencias")
@@ -405,9 +457,11 @@ const recordarSalidaPendiente = async (supabase) => {
     .from("notificaciones")
     .select("empleado_id")
     .eq("tipo", "salida_pendiente")
-    .gte("created_at", `${hoy}T00:00:00${CIERRE_TZ_OFFSET}`);
+    .gte("created_at", `${hoy}T00:00:00${desfaseEn(TZ_POR_DEFECTO, hoy)}`);
 
   const yaAvisados = new Set((avisadosHoy || []).map((n) => n.empleado_id));
+
+  const zonas = await zonasPorEmpleado(supabase, abiertos);
 
   const pendientes = abiertos.filter((id) => {
     if (yaAvisados.has(id)) return false;
@@ -415,7 +469,10 @@ const recordarSalidaPendiente = async (supabase) => {
     const [h, m] = String(hora).split(":");
     const salidaMin = Number(h) * 60 + Number(m);
     if (!Number.isFinite(salidaMin)) return false;
-    const pasados = ahoraMin - salidaMin;
+    // "Su hora" es la de SU clinica: las 19:00 de Hermosillo llegan una hora despues que las de
+    // Monterrey. Con una sola hora para todos, al de Hermosillo le sonaba el aviso cuando todavia
+    // le quedaba una hora de jornada.
+    const pasados = minutosAhoraEn(zonas.get(id) || TZ_POR_DEFECTO) - salidaMin;
     return pasados >= MARGEN_AVISO_SALIDA_MIN && pasados <= VENTANA_AVISO_SALIDA_MIN;
   });
 

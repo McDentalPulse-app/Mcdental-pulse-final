@@ -21,13 +21,16 @@ import { emparejarChecadas, diaISO, puedeRegistrarSalida, horaSalidaAutorizada, 
 import { useVoz, construirFraseChecada } from "../../utils/voz";
 import { semanaActual } from "../../utils/constants";
 
-const horaCorta = (timestamp) =>
+const horaCorta = (timestamp, tz = TZ_CLINICA) =>
   new Intl.DateTimeFormat("es-MX", {
-    timeZone: TZ_CLINICA,
+    timeZone: tz,
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
   }).format(new Date(timestamp));
+
+/** "YYYY-MM-DD" de hoy en la zona de SU clínica. */
+const hoyEn = (tz) => new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date());
 
 const PILL_UBICACION = {
   dentro: { icono: "mapPin", clase: "checador-pill--ok" },
@@ -113,6 +116,12 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
     );
     return () => navigator.geolocation.clearWatch(id);
   }, []);
+
+  // La zona horaria de SU clínica. Mientras la sucursal carga (o si no se pudo resolver) se usa
+  // la del centro, que es la correcta para 23 de las 26. Todo lo que compara una hora del turno
+  // contra una checada tiene que pasar por aquí: es lo que le apuntaba 55 minutos de retardo a
+  // quien en Hermosillo llegaba puntual.
+  const tz = sucursal?.zonaHoraria || TZ_CLINICA;
 
   const candado = useMemo(
     // sucursal aún cargando: se fuerza "sin_gps" para que el botón espere y muestre "buscando".
@@ -222,10 +231,10 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
   // navegador: si no, un móvil mal configurado le enseñaría al empleado el turno de otro
   // día.
   const horarioHoy = useMemo(() => {
-    const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: TZ_CLINICA }).format(new Date());
+    const hoy = hoyEn(tz);
     const dia = diaISO(hoy);
     return horarios.find((h) => h.empleadoId === user?.id && h.diaSemana === dia) || null;
-  }, [horarios, user?.id]);
+  }, [horarios, user?.id, tz]);
 
   // Qué toca ahora. Si ya entró y ya salió, el día está cerrado: no se ofrece otro botón,
   // porque una tercera checada solo confundiría el registro.
@@ -240,12 +249,12 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
   // ventana: autorizado a las 15:00, puede checar desde las 14:50. El pendiente no cuenta —
   // tratarlo como autorización convertiría "pedir permiso" en "tomárselo".
   const autorizada = useMemo(() => {
-    const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: TZ_CLINICA }).format(new Date());
+    const hoy = hoyEn(tz);
     return horaSalidaAutorizada(permisos.filter((p) => p.empleadoId === user?.id), hoy);
-  }, [permisos, user?.id]);
+  }, [permisos, user?.id, tz]);
 
   const ventanaSalida = siguiente === "salida"
-    ? puedeRegistrarSalida(horarioHoy, new Date(), autorizada, entrada?.marcadaEn)
+    ? puedeRegistrarSalida(horarioHoy, new Date(), autorizada, entrada?.marcadaEn, tz)
     : { permitido: true, disponibleDesde: null };
 
   const bloqueado = siguiente === "salida" && !ventanaSalida.permitido;
@@ -255,11 +264,11 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
   // migración 082); esto solo evita el trámite de foto/ubicación para enterarse al final.
   const encuestaPendiente = useMemo(() => {
     if (siguiente !== "salida") return false;
-    const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: TZ_CLINICA }).format(new Date());
+    const hoy = hoyEn(tz);
     const esSabado = diaISO(hoy) === 6;
     if (!esSabado) return false;
     return !encuestas.some((e) => e.empleadoId === user?.id && e.semana === semanaActual);
-  }, [siguiente, encuestas, user?.id]);
+  }, [siguiente, encuestas, user?.id, tz]);
 
   const handleChecar = async () => {
     if (!siguiente || enviando) return;
@@ -314,10 +323,10 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
 
       // ¿La entrada llegó tarde? La tolerancia decide SI es retardo; se compara igual que el
       // resto de la app (minutosRetardo vs toleranciaMin del horario). La salida nunca es retardo.
-      const hora = horaCorta(checada.marcadaEn);
+      const hora = horaCorta(checada.marcadaEn, tz);
       const tolerancia = Number.isFinite(horarioHoy?.toleranciaMin) ? horarioHoy.toleranciaMin : 0;
       const tarde =
-        checada.tipo === "entrada" && minutosRetardo({ marcadaEn: checada.marcadaEn }, horarioHoy) > tolerancia;
+        checada.tipo === "entrada" && minutosRetardo({ marcadaEn: checada.marcadaEn }, horarioHoy, tz) > tolerancia;
       const fuera = checada.ubicacionEstado === "fuera";
 
       // La cámara se cierra AQUÍ, antes de confirmar nada, y no solo en el `finally`. Así el
@@ -570,7 +579,7 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
               <li key={c.id} className={c.anulada ? "checador-lista-item--anulada" : ""}>
                 <Icon name={c.tipo === "entrada" ? "check" : "logout"} size={16} />
                 <strong>{c.tipo === "entrada" ? "Entrada" : "Salida"}</strong>
-                <span>{horaCorta(c.marcadaEn)}</span>
+                <span>{horaCorta(c.marcadaEn, tz)}</span>
                 {c.anulada && <em>Anulada por RH</em>}
               </li>
             ))}

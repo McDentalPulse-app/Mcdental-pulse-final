@@ -14,6 +14,8 @@ import { mensajeDeFallo } from "../../utils/errores";
 import { getAsistencias } from "../../services/supabase/asistenciasService";
 import {
   construirDias,
+  mapaZonas,
+  zonaDe,
   resumen as resumirDias,
   ETIQUETA_ESTADO,
   FECHA_INICIO_ASISTENCIA,
@@ -54,7 +56,12 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
   const [periodoElegido, setPeriodoElegido] = useState(null);
   const [tipoReporte, setTipoReporte] = useState("asistencia");
   const [bajando, setBajando] = useState(false);
-  const { horarios = [], permisos = [], vacaciones = [], descuentos = [] } = useGlobal();
+  const { horarios = [], permisos = [], vacaciones = [], descuentos = [], sucursales = [] } = useGlobal();
+
+  // Cada clinica tiene su zona horaria (mig. 107): un reporte que mezcla Hermosillo, Reynosa y
+  // el centro tiene que leer cada checada en la hora de SU sucursal, o dice horas que nadie
+  // trabajo y retardos que nadie tuvo.
+  const zonas = useMemo(() => mapaZonas(sucursales), [sucursales]);
   const { toast } = useNotification();
 
   /**
@@ -303,8 +310,9 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
           permisos: permisos.filter((p) => p.empleadoId === u.id),
           vacaciones: vacaciones.filter((v) => v.empleadoId === u.id),
           fechaIngreso: u.fechaIngreso,
+          tz: zonaDe(zonas, u.sucursal),
         });
-        return { empleado: u, dias, resumen: resumirDias(dias) };
+        return { empleado: u, dias, tz: zonaDe(zonas, u.sucursal), resumen: resumirDias(dias) };
       });
 
       if (modo === "detalle") {
@@ -316,7 +324,7 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
         const claveDia = (f) => `d${String(f).replace(/-/g, "")}`;
 
         const filas = porEmpleado
-          .map(({ empleado, dias, resumen: r }) => {
+          .map(({ empleado, dias, tz, resumen: r }) => {
             const porFecha = new Map(dias.map((d) => [d.fecha, d]));
             const fila = {
               sucursal: normalizeSucursal(empleado.sucursal) || "",
@@ -331,7 +339,7 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
               if (!d) { fila[claveDia(f)] = ""; continue; }
               // Solo las horas que existen: cuando falta la salida, el estado de la celda ya
               // dice "Sin salida" y un guion suelto detras de la entrada no anade nada.
-              const horario = [horaEnClinica(d.entrada?.marcadaEn), horaEnClinica(d.salida?.marcadaEn)]
+              const horario = [horaEnClinica(d.entrada?.marcadaEn, tz), horaEnClinica(d.salida?.marcadaEn, tz)]
                 .filter(Boolean)
                 .join(" - ");
               const retardo = d.minutosRetardo > 0 ? ` (+${d.minutosRetardo}m)` : "";

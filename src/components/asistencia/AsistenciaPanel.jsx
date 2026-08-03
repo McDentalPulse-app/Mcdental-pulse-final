@@ -11,6 +11,8 @@ import {
 } from "../../services/supabase/asistenciasService";
 import {
   construirDias,
+  mapaZonas,
+  zonaDe,
   agruparPor,
   resumen,
   requiereRevision,
@@ -41,9 +43,9 @@ const MES_ABR = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", 
 const hoyClinica = () =>
   new Intl.DateTimeFormat("en-CA", { timeZone: TZ_CLINICA }).format(new Date());
 
-const horaCorta = (ts) =>
+const horaCorta = (ts, tz = TZ_CLINICA) =>
   new Intl.DateTimeFormat("es-MX", {
-    timeZone: TZ_CLINICA,
+    timeZone: tz,
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
@@ -71,11 +73,11 @@ const nombreMes = (fecha) => {
 
 const NOMBRES_DIA_SEMANA = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
-const tituloCeldaCalendario = (d) => {
+const tituloCeldaCalendario = (d, tz = TZ_CLINICA) => {
   const estado = ETIQUETA_ESTADO[d.estado] || d.estado;
   if (d.estado === ESTADOS_DIA.DESCANSO) return `${d.fecha} · Descanso`;
   const horas = d.entrada || d.salida
-    ? ` · ${d.entrada ? horaCorta(d.entrada.marcadaEn) : "—"} → ${d.salida ? horaCorta(d.salida.marcadaEn) : "—"}`
+    ? ` · ${d.entrada ? horaCorta(d.entrada.marcadaEn, tz) : "—"} → ${d.salida ? horaCorta(d.salida.marcadaEn, tz) : "—"}`
     : "";
   const retardo = d.minutosRetardo > 0 ? ` (+${d.minutosRetardo} min tarde)` : "";
   return `${d.fecha} · ${estado}${horas}${retardo}`;
@@ -84,7 +86,7 @@ const tituloCeldaCalendario = (d) => {
 /** Un mes completo en cuadrícula (7 columnas, Lun-Dom). Cada celda se colorea por el estado del
  * día; clic en un día con checada lo anula, clic en una falta la justifica. Muestra la hora de
  * entrada/salida cuando la hay, y un punto si esa checada quedó marcada para revisión. */
-const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustificar, onJustificarDia, revisarIds }) => {
+const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustificar, onJustificarDia, revisarIds, tz = TZ_CLINICA }) => {
   const [anio, mes] = mesInicio.split("-").map(Number);
   const diasEnMes = new Date(Date.UTC(anio, mes, 0)).getUTCDate();
   const columnaInicial = diaISO(mesInicio); // 1=lunes … 7=domingo
@@ -120,12 +122,12 @@ const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustifi
         const accion = anulable ? () => onAnularDia(c) : justificable ? () => onJustificarDia(c) : undefined;
         const pista = anulable ? "clic para anular" : justificable ? "clic para justificar" : null;
         const porRevisar = !!revisarIds && ((c.entrada && revisarIds.has(c.entrada.id)) || (c.salida && revisarIds.has(c.salida.id)));
-        const horaEntrada = c.entrada ? horaCorta(c.entrada.marcadaEn).replace(/\s?[ap]\.?\s?m\.?/i, "") : null;
+        const horaEntrada = c.entrada ? horaCorta(c.entrada.marcadaEn, tz).replace(/\s?[ap]\.?\s?m\.?/i, "") : null;
         return (
           <div
             key={c.fecha}
             className={`asistencia-calendario-celda asistencia-calendario-celda--${c.estado}${accionable ? " asistencia-calendario-celda--anulable" : ""}`}
-            title={pista ? `${tituloCeldaCalendario(c)} · ${pista}` : tituloCeldaCalendario(c)}
+            title={pista ? `${tituloCeldaCalendario(c, tz)} · ${pista}` : tituloCeldaCalendario(c, tz)}
             role={accionable ? "button" : undefined}
             tabIndex={accionable ? 0 : undefined}
             onClick={accion}
@@ -145,7 +147,7 @@ const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustifi
 
 export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos = [], vacaciones = [], puedeAnular = false, puedeJustificar = false, onJustificarFalta }) {
   const { toast, prompt, confirm } = useNotification();
-  const { nombresSucursales } = useGlobal();
+  const { nombresSucursales, sucursales = [] } = useGlobal();
 
   const [desde, setDesde] = useState(() => primerDiaDeMes(hoyClinica()));
   const [hasta, setHasta] = useState(() => {
@@ -220,6 +222,12 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
 
   // Los días clasificados, por empleado (todo el criterio falta/justificado/retardo vive en
   // construirDias, probado en utils/asistencia.test.js).
+  // Un panel puede mezclar clinicas de husos distintos (Hermosillo va una hora por detras del
+  // centro y Reynosa una por delante en verano), asi que cada empleado se clasifica en la zona
+  // de SU sucursal. Con una sola zona para todos, a los de Hermosillo se les pintaba un retardo
+  // diario que no existia.
+  const zonas = useMemo(() => mapaZonas(sucursales), [sucursales]);
+
   const porEmpleado = useMemo(() =>
     empleados.map((u) => {
       const dias = construirDias({
@@ -230,10 +238,11 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
         permisos: permisos.filter((p) => p.empleadoId === u.id),
         vacaciones: vacaciones.filter((v) => v.empleadoId === u.id),
         fechaIngreso: u.fechaIngreso,
+        tz: zonaDe(zonas, u.sucursal),
       });
       return { empleado: u, dias, resumen: resumen(dias), grupos: agruparPor(dias, "dia") };
     }),
-    [empleados, checadas, horarios, permisos, vacaciones, desde, hasta]
+    [empleados, checadas, horarios, permisos, vacaciones, desde, hasta, zonas]
   );
 
   // El empleado que se está viendo: el elegido, o el primero de la lista por defecto.
@@ -492,6 +501,7 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
                 </div>
 
                 <CalendarioMes
+                  tz={zonaDe(zonas, seleccionado.empleado.sucursal)}
                   dias={seleccionado.dias}
                   mesInicio={primerDiaDeMes(desde)}
                   puedeAnular={puedeAnular}

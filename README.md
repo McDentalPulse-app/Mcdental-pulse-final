@@ -115,6 +115,65 @@ lee nadie.
 
 ## Changelog
 
+### 2026-08-03 (tarde) · No todas las clínicas están en la misma hora, y el sistema creía que sí
+
+> Empezó como «a algunos les marca descanso aunque sí registraron entrada». La causa era simple
+> —ocho personas sin horario cargado— pero tirando del hilo apareció algo que llevaba semanas
+> corrompiendo registros en silencio: **el sistema entero daba por hecho que las 26 clínicas
+> viven en `America/Monterrey`**, y dos no.
+
+- **🔴 Ocho personas sin ningún horario, y por eso «de descanso» todos los días.** Un día sin
+  fila en `horarios` es DESCANSO por diseño (mig. 035) — así un domingo no puede salir como
+  falta. Pero eso hace **indistinguible** «hoy libras» de «nadie te cargó el turno», y las ocho
+  altas del 30–31 de julio (posteriores a la carga masiva) cayeron ahí. El efecto es peor que la
+  etiqueta: sin horario **no se puede llegar tarde ni se puede faltar**, así que estaban fuera de
+  todo control de asistencia. Dieciocho días-persona afectados. Cargados sus turnos, esos días se
+  reclasificaron solos: el estado se deriva, no se guarda.
+- **🆕 Turno automático al dar de alta (migración 107).** Un trigger crea el turno estándar —
+  lunes a viernes 10:00-19:00, sábado 10:00-14:00, tolerancia 10 min— con la persona. Se puso en
+  la **base** y no en la pantalla de alta a propósito: cubre los tres caminos por los que puede
+  nacer un usuario (la pantalla de RH, la edge function y cualquier alta manual), y el hueco se
+  abrió justamente porque uno de ellos no pasaba por horarios. De paso, índice único por
+  `(empleado, día)`: ahora que hay un escritor automático, dos turnos el mismo día no pueden
+  colarse en silencio.
+- **🔴 Hermosillo acumulaba retardos falsos todos los días.** Sonora es UTC-7 y no aplica horario
+  de verano, así que sus checadas se leían **una hora tarde**. Con turno de 10:00 y 10 minutos de
+  tolerancia, esto marcaba RETARDO a gente que llegaba antes de su hora:
+
+  | Persona | Llegó (hora de Hermosillo) | Retardo que apuntaba el sistema |
+  |---|---|---|
+  | Dania Limón | 09:54 | 55 min |
+  | Dania Limón | 09:48 | 49 min |
+  | Roberto Esparza | 09:43 | 44 min |
+  | Roberto Esparza | 09:32 | 33 min |
+
+  Cuatro personas, todos los días, alimentando la tabla que sustenta descuentos.
+- **🔴 Y Reynosa, al revés: sus retardos reales eran invisibles.** Es municipio fronterizo y por
+  el decreto de 2022 conserva el horario de verano de EE.UU.: hoy va en UTC-5. Se le leía **una
+  hora temprano**, así que cualquiera podía llegar hasta una hora tarde sin que apareciera nada.
+  Siete personas. Corregido, y sin dramas: con la tolerancia de 10 minutos casi todos siguen
+  puntuales — sale **un** retardo real de 26 minutos.
+- **🆕 `sucursales.zona_horaria`, y el nombre IANA en vez de un desfase.** Un `-06:00` guardado a
+  mano se rompería solo en noviembre, cuando Reynosa cambie de horario. Con el nombre
+  (`America/Matamoros`) el cambio lo resuelve el sistema operativo, y hay una prueba que lo
+  fija: la misma llegada da 30 minutos de retardo en agosto y en diciembre. Se valida al
+  escribir, porque una zona mal escrita rompería **todas** las checadas de esa clínica y se
+  descubriría a las ocho de la mañana con la gente en la puerta.
+- **🆕 La zona horaria llega hasta el final.** `registrar_checada` la resuelve de la sucursal
+  antes de decidir en qué día natural cae la checada; el checador, el calendario de Asistencia y
+  los Excel de Reportes leen cada checada en la hora de SU clínica; y el cron dejó de construir
+  las salidas automáticas con `-06:00` fijo — a Hermosillo le cerraba la jornada a las 18:00
+  locales, una hora antes, quitándole una hora trabajada a quien ya se había olvidado de marcar.
+- **🆕 El recordatorio de salida pasa a llamarse cada hora.** Con horas fijas de cron habría
+  avisado solo a las clínicas del centro: las 19:10 de Monterrey son las 18:10 en Hermosillo. Al
+  resolver la hora por persona, una sola entrada horaria cubre los tres husos, sigue funcionando
+  cuando Reynosa cambie de horario y no hay que recalcular nada al abrir una clínica nueva.
+
+**Lo que se descartó por el camino:** León y Popular Poza Rica también salían con medianas de
+entrada raras (13:57, 14:36), pero no es huso ni turno equivocado — son las checadas de prueba
+del 31 de julio por la tarde, que con solo tres días de datos arrastran la mediana. Sus entradas
+reales van de 09:42 a 10:08. **Solo Hermosillo y Reynosa tenían problema de zona horaria.**
+
 ### 2026-08-03 · El checador: el anti-spoofing llevaba toda su vida sin medir nada, y la cámara se quedaba en negro hablando sola
 
 > Repaso del módulo con los datos de producción delante (426 checadas en 7 días, 84 personas).
