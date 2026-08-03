@@ -115,6 +115,27 @@ lee nadie.
 
 ## Changelog
 
+### 2026-08-03 (noche, 10) · El detalle de sucursal se dibujaba dentro de la tarjeta, no sobre la pantalla
+
+- **🔴 Al pulsar una clínica, el modal salía encajado y a medias.** No se desplegaba sobre la
+  pantalla: aparecía metido dentro de la propia tarjeta, descuadrado y cortado por abajo.
+- **Causa: un `transform` que no se veía venir.** El dashboard anima la entrada de cada sección
+  con `dashSectionIn`, y esa animación toca `transform`. El comentario del CSS afirmaba que, al
+  no declararlo en el fotograma final, en reposo quedaba en `none` — **es falso**. Con
+  `animation-fill-mode: both` la animación sigue aplicándose y el valor calculado en reposo es
+  `translateY(0)`: un `transform` de verdad. Eso convierte a la sección en el marco de referencia
+  de cualquier `position: fixed` que cuelgue de ella, así que el overlay dejaba de referirse a la
+  pantalla. Medido en Chromium, no supuesto.
+- **Por qué apareció ahora.** El overlay colgaba antes directo de `.dashboard-page`, que se excluye
+  de la animación. Al agrupar «Score por Sucursal» en su propio contenedor quedó por debajo de esa
+  exclusión y pasó a heredar el problema.
+- **Los dos modales del dashboard pasan a un portal a `<body>`**, la misma solución que ya usaba
+  `FotoAmpliada` por este mismo motivo. «Sucursales en riesgo» tenía el fallo idéntico y solo no
+  se notaba porque su lista casi siempre está vacía.
+- Se corrige el comentario del CSS que indujo el error, para que no vuelva a inducirlo.
+- Medido con el CSS real: overlay de `1400x673` sobre un viewport de `1400x673` y modal centrado
+  con 220px a cada lado. Antes: `1080x254` encajado dentro de la sección.
+
 ### 2026-08-03 (noche, 9) · Se retiran los últimos `:has()`, y el ranking de sucursales era una mirilla
 
 - **🔴 «Score por Sucursal» mostraba 6 clínicas de 26.** La lista estaba topada a `240px` y cada
