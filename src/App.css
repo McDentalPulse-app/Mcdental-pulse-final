@@ -4244,6 +4244,25 @@
   transform: rotate(90deg);
 }
 
+/* Volver a la lista de conversaciones. Oculto en escritorio, donde lista y chat conviven en
+   dos columnas y el botón no significaría nada. */
+.mensajes-chat-volver {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  margin-right: 2px;
+  border: 1px solid var(--mc-card-borde);
+  border-radius: 10px;
+  background: none;
+  color: var(--mc-texto-secundario);
+  cursor: pointer;
+}
+.mensajes-chat-volver:hover { background: var(--mc-brand-suave); color: var(--mc-icono-accion); }
+.mensajes-chat-volver-icono { transform: rotate(90deg); }
+
 /* Las secciones se reparten en dos columnas para llenar el ancho: una sola columna de tarjetas
    en un monitor dejaba media pantalla en blanco. */
 /* COLUMNAS Y NO REJILLA, y el motivo se ve al abrir cualquier expediente.
@@ -8027,8 +8046,12 @@
     flex-direction: column;
     gap: 0;
     flex: 1;
-    min-height: min(calc(100dvh - 148px), 720px);
-    height: auto;
+    /* ALTO FIJO al hueco que queda bajo la cabecera, no `min-height`: con un mínimo, el
+       contenido empuja la caja hacia abajo y la página entera pide scroll — que es lo que
+       obligaba a bajar y subir para ver la interfaz. Con alto fijo, lo único que se desplaza
+       es la lista o los mensajes, por dentro. */
+    height: calc(100dvh - 168px);
+    min-height: 320px;
     max-height: none;
     border: 1px solid var(--mc-gris-suave);
     border-radius: 16px;
@@ -8045,12 +8068,18 @@
     margin: 0 !important;
   }
 
+  /* O LA LISTA O EL CHAT, nunca los dos apretados.
+     Antes la lista se recortaba a 72px con las conversaciones a 56px cada una: cabía una y
+     media. Quien tenía a la psicóloga y a Soporte TI no veía el segundo, y la tira de 72px no
+     parece desplazable, así que no había pista de que hubiera algo más abajo. Encima el chat
+     seguía debajo, así que la página entera pedía scroll además del scroll del chat.
+     Mismo patrón que el expediente: la lista ocupa la pantalla, y al abrir una conversación se
+     retira y vuelve con el botón de volver. */
   .mensajes-sidebar-card {
-    flex: 0 0 auto;
-    max-height: min(128px, 18vh) !important;
+    flex: 1 1 auto;
+    max-height: none !important;
     height: auto !important;
     min-height: 0 !important;
-    border-bottom: 1px solid var(--mc-gris-suave);
   }
 
   .mensajes-sidebar-head {
@@ -8064,8 +8093,23 @@
   }
 
   .mensajes-conv-list {
-    max-height: 72px;
-    flex: 0 0 auto;
+    max-height: none;
+    flex: 1 1 auto;
+    overflow-y: auto;
+  }
+
+  /* Sin conversación abierta: solo la lista. */
+  .mensajes-layout:not(.mensajes-layout--detalle) .mensajes-chat-card {
+    display: none;
+  }
+
+  /* Con conversación abierta: solo el chat, y el botón para volver. */
+  .mensajes-layout--detalle .mensajes-sidebar-card {
+    display: none;
+  }
+
+  .mensajes-chat-volver {
+    display: inline-flex;
   }
 
   .mensajes-conv-item {
@@ -8318,20 +8362,20 @@
     min-height: 40px;
   }
 
+  /* Este bloque volvía a recortar la lista a 112px —aún más apretado que los 128px del
+     breakpoint de arriba—, así que en un teléfono de 390px se veía UNA conversación y la
+     cabecera. Era el segundo cerrojo del mismo problema: quien tenía psicóloga y Soporte TI
+     nunca llegaba al segundo. Ahora manda el patrón lista-o-detalle. */
   .mensajes-layout {
-    min-height: min(calc(100dvh - 136px), 680px);
+    height: calc(100dvh - 152px);
   }
 
   .mensajes-sidebar-card {
-    max-height: min(112px, 16vh) !important;
-  }
-
-  .mensajes-layout--single .mensajes-sidebar-card {
     max-height: none !important;
   }
 
   .mensajes-chat-card {
-    min-height: min(340px, calc(100dvh - 248px)) !important;
+    min-height: 0 !important;
   }
 
   .chat-burbuja {

@@ -115,6 +115,30 @@ lee nadie.
 
 ## Changelog
 
+### 2026-08-03 (noche, 5) · En el teléfono, Soporte TI quedaba fuera de la pantalla
+
+> Reportado como «no se ve el chat de Soporte TI y hay que hacer mucho scroll». Las dos cosas
+> tenían la misma causa.
+
+- **🔴 La lista de conversaciones estaba recortada a 72px, con filas de 56px.** Cabía **una
+  conversación y media**. Quien tiene a la psicóloga y a Soporte TI —o sea, toda la plantilla—
+  veía la primera y nada más: la tira de 72px no parece desplazable, así que no había ninguna
+  pista de que hubiera algo debajo. Y había un **segundo cerrojo** en el breakpoint de 430px que
+  lo apretaba todavía más, a 112px: en un teléfono normal se veía la cabecera y una fila.
+- **🔴 Y el chat seguía debajo, así que la página entera pedía scroll.** El contenedor usaba
+  `min-height`, o sea que el contenido lo empujaba hacia abajo: había que bajar y subir para ver
+  la interfaz, además del scroll interno del chat. Ahora tiene **alto fijo** al hueco disponible
+  y lo único que se desplaza es la lista o los mensajes, por dentro.
+- **🆕 O la lista, o el chat — nunca los dos aplastados.** El mismo patrón que ya usa el
+  expediente: la lista ocupa la pantalla, y al abrir una conversación se retira y aparece un
+  botón para volver. En escritorio no cambia nada, porque allí las dos columnas caben.
+
+El detalle que lo hacía invisible: `selected` cae por defecto en la primera conversación, así
+que en el teléfono **siempre** había un chat abierto y la lista nunca llegaba a verse entera. La
+clase de detalle mira `selectedId` —lo que la persona ha abierto— y no `selected`.
+
+Verificado con Chromium a 390px en los dos estados, sobre el CSS ya compilado.
+
 ### 2026-08-03 (noche, 4) · RH aprobaba vacaciones sin saber de qué día a qué día eran
 
 - **🔴 La pantalla de vacaciones no enseñaba las fechas.** Pedía `v.inicio` y `v.fin`, dos campos

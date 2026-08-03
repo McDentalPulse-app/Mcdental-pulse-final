@@ -407,7 +407,12 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
           </p>
         </Card>
       ) : (
-        <div className={`mensajes-layout${conversacionesActivas.length === 1 ? " mensajes-layout--single" : ""}`}>
+        // `--detalle` cuando la persona ha ABIERTO una conversación (selectedId), no cuando
+        // simplemente hay una seleccionada: `selected` cae por defecto en la primera, así que en
+        // el teléfono siempre había un chat abierto y la lista quedaba aplastada a 72px — cabía
+        // una conversación y media, y Soporte TI se quedaba fuera de la vista. En escritorio la
+        // clase no cambia nada: allí caben las dos columnas.
+        <div className={`mensajes-layout${conversacionesActivas.length === 1 ? " mensajes-layout--single" : ""}${selectedId ? " mensajes-layout--detalle" : ""}`}>
           <Card className="mensajes-sidebar-card">
             <div className="mensajes-sidebar-head">
               <span className="mensajes-sidebar-head-main">
@@ -484,6 +489,16 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
             ) : (
               <>
                 <div className="mensajes-chat-head">
+                  {/* Solo se ve en el telefono, donde el chat tapa la lista. En escritorio las
+                      dos columnas conviven y un boton de volver no significaria nada. */}
+                  <button
+                    type="button"
+                    className="mensajes-chat-volver"
+                    onClick={() => setSelectedId(null)}
+                    aria-label="Volver a las conversaciones"
+                  >
+                    <Icon name="chevronDown" size={18} className="mensajes-chat-volver-icono" />
+                  </button>
                   <Avatar
                     name={selected.usuario.name}
                     size={40}
