@@ -8112,6 +8112,84 @@
     display: inline-flex;
   }
 
+  /* ─────────────────────────────────────────────────────────────────────────
+     QUE SOLO SE DESPLACEN LOS MENSAJES, como en WhatsApp o Telegram.
+     ─────────────────────────────────────────────────────────────────────────
+     El armazón (`.app-main`) es el que scrollea toda la app, y con la cabecera, las pestañas y
+     el chat debajo la suma pasaba del alto de la pantalla: la interfaz entera subía y bajaba.
+     La versión anterior lo intentaba con `height: calc(100dvh - 168px)`, un número a ojo que
+     nunca acierta —cambia con la cabecera del navegador, con la barra de tabs, con el teclado—.
+
+     Aquí se encadena el alto de verdad: el contenedor de la app deja de scrollear SOLO en esta
+     pantalla, y a partir de ahí cada caja reparte con flex. `min-height: 0` en cada eslabón es
+     imprescindible: sin él, un hijo flexible se niega a encogerse por debajo de su contenido y
+     el scroll se escapa hacia arriba otra vez. */
+  .app-main:has(.mensajes-page) {
+    overflow: hidden;
+    padding-bottom: 0;
+    /* FLEX y no `height: 100%` en el hijo: en el armazón móvil `.app-main` queda con
+       `height: auto` (crece por flex desde `.app-shell`), y contra un alto indefinido un
+       `height: 100%` no resuelve — el hijo cae a la altura de su contenido y deja un hueco
+       muerto al final. Medido: 583px de contenido en un viewport de 693. */
+    display: flex;
+    flex-direction: column;
+  }
+
+  .app-main:has(.mensajes-page) .app-main-inner {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mensajes-page {
+    height: 100%;
+    max-height: none;
+    min-height: 0;
+    gap: 10px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
+  .mensajes-layout {
+    height: auto;
+    min-height: 0;
+    flex: 1 1 auto;
+  }
+
+  /* Con la conversación abierta, el chat se queda la pantalla entera: fuera la cabecera de
+     página y las pestañas. Es lo que hacen WhatsApp y Telegram, y aquí libera ~120px que en un
+     teléfono son la diferencia entre leer tres mensajes o siete. Se vuelve con el botón. */
+  .mensajes-page:has(.mensajes-layout--detalle) .mensajes-page-header,
+  .mensajes-page:has(.mensajes-layout--detalle) .mensajes-pestanas {
+    display: none;
+  }
+
+  /* La cadena hasta el único que scrollea. */
+  .mensajes-chat-card {
+    flex: 1 1 auto;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mensajes-chat-head { flex: 0 0 auto; }
+
+  .mensajes-chat-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* El compositor es el que ancla abajo: `flex: 0 0 auto` para que no se encoja cuando la
+     lista de mensajes crece, que es lo que empujaría el campo de escribir fuera de la pantalla. */
+  .chat-composer {
+    flex: 0 0 auto;
+    margin: 0 10px 10px;
+  }
+
   .mensajes-conv-item {
     padding: 10px 12px;
     min-height: 56px;

@@ -139,6 +139,28 @@ clase de detalle mira `selectedId` —lo que la persona ha abierto— y no `sele
 
 Verificado con Chromium a 390px en los dos estados, sobre el CSS ya compilado.
 
+- **🆕 Segunda vuelta: solo se desplazan los mensajes, como en WhatsApp o Telegram.** La primera
+  versión seguía pidiendo scroll de página porque fijaba el alto con `calc(100dvh - 168px)` — un
+  número a ojo que nunca acierta: cambia con la barra del navegador, con la de pestañas y con el
+  teclado. Ahora el alto se **encadena con flex** desde el armazón: `.app-main` deja de
+  desplazarse solo en esta pantalla y cada caja reparte lo suyo, con `min-height: 0` en cada
+  eslabón (sin él, un hijo flexible se niega a encoger por debajo de su contenido y el scroll se
+  escapa hacia arriba otra vez). Y con la conversación abierta se ocultan la cabecera de página
+  y las pestañas: son ~120px que en un teléfono son la diferencia entre leer tres mensajes o
+  siete.
+
+  Dos cosas que solo salieron midiendo, no mirando:
+  1. `height: 100%` en el hijo **no resolvía**, porque en el armazón móvil `.app-main` queda con
+     `height: auto` y contra un alto indefinido ese 100% se ignora. Medido: 583px de contenido
+     en un viewport de 693.
+  2. El hueco de 96px del final **no era un fallo**: es el espacio reservado con `!important`
+     para la barra flotante de navegación móvil. La reproducción no la dibujaba y parecía aire
+     desperdiciado.
+
+  Comprobado con las medidas del navegador, no a ojo: el documento mide exactamente lo que el
+  viewport (no hay scroll de página) y la caja de mensajes tiene 1489px de contenido en 463px
+  de alto.
+
 ### 2026-08-03 (noche, 4) · RH aprobaba vacaciones sin saber de qué día a qué día eran
 
 - **🔴 La pantalla de vacaciones no enseñaba las fechas.** Pedía `v.inicio` y `v.fin`, dos campos
