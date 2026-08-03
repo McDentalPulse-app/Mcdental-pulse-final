@@ -80,6 +80,16 @@ const TendenciaBienestar = ({ encuestas = [], usuarios = [] }) => {
     }));
   }, [porSemana, semana, previa]);
 
+  // Cuántas sucursales tienen con qué compararse. Es lo que decide si la línea punteada existe
+  // de verdad, y hace falta saberlo para no anunciarla en la leyenda cuando no se dibuja nada:
+  // la primera versión la anunciaba siempre, y quien la buscaba en la gráfica no la encontraba.
+  // Hacen falta DOS para que haya un segmento; con una sola solo puede pintarse un punto.
+  const conPrevio = useMemo(
+    () => datos.filter((d) => d.scorePrevio !== null && d.scorePrevio !== undefined).length,
+    [datos]
+  );
+  const sinPrevio = datos.length - conPrevio;
+
   return (
     <Card>
       <div className="tendencia-head">
@@ -118,7 +128,10 @@ const TendenciaBienestar = ({ encuestas = [], usuarios = [] }) => {
                 {l.texto}
               </span>
             ))}
-            {previa && (
+            {/* Solo si de verdad hay algo dibujado. Antes salía siempre que existiera una semana
+                previa, aunque ninguna sucursal tuviera dato en ella: la leyenda prometía una
+                línea punteada que no estaba en ninguna parte. */}
+            {conPrevio > 0 && (
               <span className="psico-trend-legend-item">
                 <span className="psico-trend-dash" />
                 {`Semana anterior (${previa})`}
@@ -129,6 +142,17 @@ const TendenciaBienestar = ({ encuestas = [], usuarios = [] }) => {
           <p className="psico-chart-foot">
             {`Pulse Score promedio por sucursal en ${semana} · ${datos.length} sucursale${datos.length === 1 ? "" : "s"} con respuestas.`}
           </p>
+
+          {/* Explicar la AUSENCIA de la línea, que si no se lee como un fallo de la pantalla.
+              En el arranque pasa siempre: la plantilla entera estrena la encuesta la misma
+              semana, así que esa primera semana nadie tiene con qué compararse. */}
+          {sinPrevio > 0 && (
+            <p className="psico-chart-foot">
+              {conPrevio === 0
+                ? `Todavía no hay línea de comparación: ninguna de estas sucursales tiene respuestas de ${previa || "la semana anterior"}.`
+                : `${sinPrevio} de ${datos.length} sucursales no tienen respuestas de ${previa} con las que compararse, así que la línea punteada solo cubre a las demás.`}
+            </p>
+          )}
         </>
       )}
     </Card>

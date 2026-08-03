@@ -173,7 +173,11 @@ const WeeklyScoreChart = ({ datos = [], semanaLabel = "", semanaPreviaLabel = nu
               // El punto sí se dibuja, al revés que en el ejemplo: aquí una sucursal puede tener
               // dato previo con las dos vecinas sin él, y un tramo de un solo punto sin `dot`
               // sería invisible — ese "veníamos de 83" desaparecería sin avisar.
-              dot={{ r: 2.5, fill: "var(--mc-texto-secundario)", strokeWidth: 0 }}
+              //
+              // Y lleva borde del color del fondo: cuando el valor previo se parece al actual, el
+              // punto cae justo sobre el borde superior de su propia barra y se confunde con ella.
+              // Pasa de verdad — se vio con Oficina Administrativa, 83 sobre una barra de 84.
+              dot={{ r: 3, fill: "var(--mc-texto-secundario)", stroke: "var(--mc-superficie)", strokeWidth: 1.5 }}
               activeDot={{ r: 4 }}
               connectNulls={false}
               isAnimationActive={false}
