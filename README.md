@@ -115,6 +115,28 @@ lee nadie.
 
 ## Changelog
 
+### 2026-08-03 (noche, 6) · El buzón de Soporte se quedaba con el aviso encendido para siempre
+
+- **🔴 El contador y el marcado como leído usaban condiciones distintas.** El contador incluye
+  los mensajes de **canal** —`para` nulo, que es como un empleado escribe al buzón de Soporte
+  TI— pero al abrir el hilo solo se marcaban los dirigidos a una persona concreta
+  (`m.para === user.id`). O sea que el badge de Soporte contaba mensajes que **ninguna lectura
+  podía limpiar**: se quedaba encendido aunque el hilo estuviera leído y atendido. Medido en
+  producción: dos mensajes de canal sin leer desde hacía días, ya respondidos.
+- **🆕 La misma condición en los dos sitios.** Un contador y un marcado que no coinciden son, por
+  construcción, un aviso que no se puede apagar.
+
+**La base ya estaba preparada; era solo el cliente.** La política RLS de escritura permite
+`(para_id = yo) OR (canal = 'soporte' AND es_soporte_ti())` — o sea que quien atiende Soporte
+siempre pudo marcar los mensajes de canal. Comprobado simulando su sesión real contra la base de
+producción, dentro de una transacción revertida: alcanza los 2 mensajes que antes quedaban
+colgados.
+
+> **Nota de producto:** el buzón de Soporte es **compartido**. Un mensaje de canal es una sola
+> fila con un solo `leido`, así que cuando uno de los dos encargados lo abre, el aviso se apaga
+> para los dos. Es el comportamiento normal de un buzón de equipo —si uno lo atendió, está
+> atendido—, pero conviene saberlo. Marcarlo por persona pediría otra tabla.
+
 ### 2026-08-03 (noche, 5) · En el teléfono, Soporte TI quedaba fuera de la pantalla
 
 > Reportado como «no se ve el chat de Soporte TI y hay que hacer mucho scroll». Las dos cosas

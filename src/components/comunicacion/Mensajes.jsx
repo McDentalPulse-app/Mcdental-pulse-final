@@ -192,9 +192,18 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
   const mensajesChat = selected?.mensajes || [];
 
   // Al abrir/actualizar una conversación: marcar recibidos como leídos + bajar al final.
+  //
+  // LA CONDICIÓN TIENE QUE SER LA MISMA QUE LA DEL CONTADOR (ver `noLeidos` arriba), y no lo era.
+  // El contador incluye los mensajes de CANAL —`para` nulo, que es como un empleado escribe al
+  // buzón de Soporte TI— pero aquí solo se marcaban los dirigidos a una persona concreta. O sea
+  // que el badge de Soporte contaba mensajes que ninguna lectura podía limpiar: se quedaba
+  // encendido para siempre aunque el hilo estuviera leído. Medido en producción: dos mensajes de
+  // canal sin leer desde hacía días, ya atendidos.
   useEffect(() => {
     if (!selected) return;
-    const pendientes = selected.mensajes.filter(m => m.para === user.id && !m.leido);
+    const pendientes = selected.mensajes.filter(
+      (m) => !m.leido && m.de !== user.id && (m.para === user.id || !m.para)
+    );
     if (pendientes.length) onMarkRead(pendientes);
     if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
   }, [selected?.usuario.id, selected?.mensajes.length]);
