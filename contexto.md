@@ -2,6 +2,11 @@
 
 Este archivo conserva el estado actual de la interacción y del proyecto para reanudar el trabajo en futuras sesiones.
 
+> ⚠️ **Este archivo está congelado en la sesión del 2026-07-25.** Lo posterior —el corte de
+> producción a la VPS (2026-07-27) y todo lo que vino después— vive en el **changelog del
+> `README.md`**, que es el registro vivo. Para operar la VPS, el runbook es
+> `/opt/pulse/HANDOFF.md`. Lo de aquí abajo se conserva como historia, no como estado actual.
+
 ---
 
 ## 📅 Estado de la Sesión

@@ -50,6 +50,22 @@ tono de la familia de marca.
 > **Regresión cero por defecto:** con la semilla teal (`#0E8C7A`) `generarPaleta` reproduce
 > EXACTAMENTE los valores de `index.css` (sin drift). La app sin elección se ve igual que siempre.
 
+> ⛔ **`--mc-verde-claro` y `--mc-marca-texto` no sirven como superficie ni como color de texto
+> (2026-08-01).** `accentPalette.js` las escribe como **estilo inline sobre `<html>`**, y un
+> inline gana a cualquier hoja de estilos: las versiones oscuras que `[data-theme=dark]` sí
+> define **nunca se aplican**. `--mc-verde-claro` es además color crudo de la paleta —un pastel
+> para fondo claro— así que en oscuro deja un parche casi blanco, y `--mc-marca-texto` se queda
+> en un azul oscuro sobre caja oscura (medido: contraste **1.46:1**). Ningún componente puede
+> corregirlo desde su propio CSS.
+>
+> | En lugar de | Usa | Por qué |
+> |---|---|---|
+> | `--mc-verde-claro` como fondo | `--mc-brand-suave` | Semántico: en claro es ese mismo pastel, en oscuro un tinte del acento sobre el fondo |
+> | `--mc-marca-texto` sobre fondo de marca | `--mc-icono-accion` | Existe justo para que el color de marca llegue a los iconos en oscuro (1.46:1 → **4.23:1**) |
+>
+> La causa de fondo sigue abierta: mientras `accentPalette` fije esas dos en línea, el tema
+> oscuro no puede corregirlas en ningún sitio.
+
 ## Tokens
 
 ### Primitivos — la marca. No cambian con el tema.

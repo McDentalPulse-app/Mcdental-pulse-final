@@ -40,6 +40,11 @@ api/gemini.js            Proxy serverless de Gemini (key server-side)
 api/soporte-ticket.js    Proxy serverless a MCTIC: alta (POST) y consulta (GET) de tickets
                          de TI. Valida el JWT de Supabase; la clave de integración vive
                          en el servidor y nunca llega al navegador
+api/idea-mejora.js       Hermano del anterior para «Ideas de mejora»: escribe en el tablero
+                         de Pendientes de MCTIC con la etiqueta idea-pulse. Mismo criterio —
+                         el correo del solicitante sale del JWT verificado, nunca del cliente
+api/tareas-programadas.js  Cron diario: cierre de jornadas abiertas, recordatorio de encuesta
+                         y revisión de geocercas (`revisar_geocercas`)
 supabase/
   migrations/            Schema SQL + RLS policies + Storage policies
   functions/             Edge Functions (admin-create-usuario, admin-reset-password)
@@ -47,21 +52,240 @@ src/
   components/            UI por rol (admin, rh, psicologia, empleados, ia, layout, common…)
   contexts/              Auth, Global, Notification, Theme
   services/supabase/     Acceso a datos (una función por operación)
-  utils/                 pulseScore, constants (semanas), helpers, analysisEngine…
+  utils/                 pulseScore, constants (semanas), helpers, analysisEngine,
+                         asistencia (estados, horaEnClinica, FIN_PERIODO_PRUEBA),
+                         periodos (semana/quincena/mes), errores, exportarExcel…
   config/                supabase, theme, constants
 ```
 
 ## Despliegue
 
-- **Producción:** `McDentalPulse-app/Mcdental-pulse-final` (remoto `prod`, rama `main`)
-- **Backup:** `MCDentalSist/MCDentalPulseBackUp` (remoto `origin`, rama `main`)
+**Desde el corte del 2026-07-27, producción es la VPS.** Vercel + Supabase Cloud siguen
+encendidos pero congelados, como única vía de rollback.
 
-> La rama viva de producción es **`main`**. La rama `develop` de `prod` quedó obsoleta
-> (varios commits atrás) y no se usa para desplegar.
+- **Producción — VPS.** `https://mcdentalpulse.duckdns.org`. Docker sobre `2.25.150.106`,
+  código en `/opt/pulse/app`, Supabase autoalojado (Postgres, Auth, Storage, Realtime,
+  Edge Functions) y Jitsi en el mismo servidor. Es la única instalación que usa la clínica.
+  Runbook completo en `/opt/pulse/HANDOFF.md`.
+- **Backup — `MCDentalSist/MCDentalPulseBackUp`** (remoto `origin`). La rama **`vps-docker`**
+  es el espejo de lo que corre en producción; `main` quedó en el árbol previo al corte.
+- **Rollback — `McDentalPulse-app/Mcdental-pulse-final`** (remoto `prod`, rama `main`), el
+  repo que alimentaba Vercel.
+
+> **La rama viva es `vps-docker`, no `main`.** `main` y la rama `develop` de `prod` son
+> historia anterior al corte y no despliegan nada.
+
+### Cómo se despliega en la VPS
+
+| Qué | Cómo |
+|---|---|
+| Frontend | `/opt/pulse/build-frontend.sh` — **siempre este script**, nunca un `docker build` a mano: la URL de Supabase se compila DENTRO del bundle y la usa el navegador, así que tiene que ser la pública. Tomarla de `api.env` mete `http://pulse-kong:8000` (la dirección interna de Docker) y deja la app sin poder iniciar sesión. El script la fija, verifica que el bundle la contenga y, si no, aborta y restaura la imagen anterior |
+| Migraciones | `docker exec -i pulse-db psql -U postgres < supabase/migrations/000000000001NN_*.sql` |
+| Edge Functions | copiar a `/opt/pulse/pulse-supabase/supabase-project/volumes/functions/` y reiniciar `pulse-edge-functions` |
+| API | reconstruir la imagen `pulse-api` y recrear `pulse-api-server` |
+
+> ⚠️ **Sobre Vercel.** `mcdental-pulse-final.vercel.app` responde hoy un **307 hacia la VPS**,
+> pero ese redirect se desplegó a mano y **no está en git**: el `vercel.json` de este repo
+> sigue siendo el de la aplicación completa, con sus `crons`. Un despliegue de producción en
+> Vercel desde este repo se llevaría por delante el redirect y reactivaría las tareas
+> programadas. Si hay que redesplegar Vercel a propósito, revisar `vercel.json` antes.
 
 ---
 
 ## Changelog
+
+### 2026-08-01 · Reportes deja de ser cuatro botones fijos, y una encuesta que llevaba cinco días sin poder enviarse
+
+> El día empezó con un fallo callado: **desde el 27 de julio no había entrado una sola
+> encuesta** y nadie lo sabía, porque la pantalla decía «No se pudo guardar la encuesta» en
+> vez del motivo real que Postgres sí estaba dando. El resto del día se fue en Reportes, que
+> respondía a la pregunta equivocada: sabía de encuestas y de nada más, y el mismo dato salía
+> por tres sitios distintos según desde dónde se pidiera. La lección que se repitió tres veces
+> hoy es la misma de la auditoría del 30: **un error que no se enseña convierte un problema de
+> dos minutos en una tarde de adivinar.**
+
+- **🔴 Nadie podía enviar la encuesta (migración 105).** El trigger
+  `encuestas_calcular_score()` exigía respuesta numérica de **todas** las preguntas de escala
+  activas —núcleo y bloques—, pero el empleado solo ve el núcleo más el bloque de la quincena,
+  y con los cuatro bloques apagados no ve ninguno: mandaba 6 respuestas y el trigger pedía 14.
+  Ahora cuenta solo el núcleo (`bloque_id is null`), que es exactamente lo que ya hacía el
+  cliente en `repartirPreguntas()`: las de bloque se responden y se reportan, pero **no
+  puntúan**, porque si puntuaran el score dejaría de ser comparable entre quincenas — y de esa
+  comparación viven el historial, la tendencia y el foco rojo por sucursal. La validación no se
+  afloja: del núcleo se sigue exigiendo número en rango 1-10.
+- **🔴 Y el motivo real nunca llegó a la pantalla.** `addEncuesta` tiraba el mensaje de
+  Postgres y lo cambiaba por un texto fijo. Por eso se leía «No se pudo guardar la encuesta»
+  en lugar de «Falta la respuesta de una pregunta de escala», y por eso el fallo del trigger
+  pasó cinco días invisible.
+- **🔴 El checador mandaba al doctor a otro sitio.** Las dos navegaciones iban fijas a
+  `/empleado`: un doctor pulsaba «Registrar mi rostro», `App.jsx` veía que la ruta no empieza
+  por `/doctor` y lo rebotaba a su portada. Son **12 doctores sin rostro aprobado**, es decir
+  12 personas que dependían de que RH les fichara a mano. Ahora la ruta se arma con el rol de
+  quien mira.
+- **🔴 Los cinco «Excel» eran CSV con cada celda escrita como texto.** El score, el promedio
+  del mes, las horas trabajadas y la puntualidad no se podían sumar, promediar ni graficar sin
+  rehacer el archivo columna por columna. Ahora son `.xlsx` de verdad con `exceljs`, que ya
+  estaba instalado y ya se cargaba por import dinámico: ni una dependencia nueva ni un byte al
+  arranque. Lo que más importa no es el formato sino las columnas numéricas: **donde no hay
+  dato la celda queda vacía** en vez de llevar el texto «Sin datos», porque un `PROMEDIO()`
+  sobre una columna con texto dentro devuelve error aunque las demás celdas estén bien.
+- **🔴 El detalle de asistencia decía horas que nadie trabajó.** Las checadas se guardan en
+  UTC y Monterrey va seis horas por detrás, pero el reporte volcaba el timestamp crudo: decía
+  que una empleada entró a las 15:35 y salió al día **siguiente** a la 1:01, cuando entró a las
+  9:35 y salió a las 19:01 del mismo día. No es un problema de formato — quien lee ese reporte
+  saca conclusiones falsas sobre los horarios de su gente. La conversión vive ahora en
+  `horaEnClinica()` dentro de `utils/asistencia`, junto al resto de la lógica y no en la
+  pantalla, porque el calendario y el reporte tienen que decir la misma hora.
+- **🔴 El cierre automático de respaldo cerraba a las 18:00, una hora antes de tiempo.** Ese
+  cierre usa la hora de salida del horario de cada quien —19:00 entre semana, 14:00 el
+  sábado— y solo cae en la hora por defecto los días sin horario cargado. Esa hora por defecto
+  no era la de nadie: **le recortaba una hora trabajada justo a quien ya se había olvidado de
+  marcar salida.** Pasó 3 veces, todas el 31 de julio.
+- **🔴 Un fallo al descargar se veía igual que «no pasó nada».** Ninguna de las siete
+  descargas atrapaba errores: la promesa quedaba rechazada sin que nadie la escuchara y la
+  pantalla se quedaba exactamente igual. Ahora todas pasan por `conAviso()`, que enseña el
+  motivo real con el mismo `mensajeDeFallo` que ya usa el resto de la app.
+- **🔴 Los tickets llegaban a MCTIC sin el nombre de quien pide ayuda.** `SoporteTI` arma el
+  solicitante con `user?.name`, pero los cuatro layouts lo montaban sin pasarle la prop: el
+  ticket salía con el correo pelado. La identidad seguía siendo confiable —el correo lo pone
+  el servidor desde el JWT ya verificado— así que esto era legibilidad, no seguridad.
+- **🆕 Reportes: elegir QUÉ reporte, no solo de cuándo.** Antes el reporte de asistencia estaba
+  escondido dentro del calendario, con su propio botón y su propio rango mes a mes, y
+  vacaciones, permisos y descuentos solo se miraban en pantalla. Tres sitios para la misma
+  pregunta hecha en dos partes. Ahora hay un selector de tipo —**asistencia** (resumen por
+  persona y detalle por día), **bienestar** y **vacaciones/permisos/descuentos**— encima del de
+  periodo. El criterio de qué es falta, retardo o periodo de prueba **no se reimplementa**: el
+  reporte llama al mismo `construirDias` que pinta el calendario, porque dos copias del
+  criterio serían dos reportes que un día dicen cosas distintas sobre la misma persona. Las
+  ausencias se filtran por **solapamiento** y no por el día en que empiezan: unas vacaciones
+  que arrancan el viernes y acaban el martes salen en las dos semanas que cruzan.
+- **🆕 Semana, quincena o mes — y cualquier periodo anterior.** Había un «Reporte Semanal» y
+  un «Reporte Mensual» clavados al periodo en curso, aunque la pantalla ya tenía el historial
+  entero cargado. Ahora son dos formas de mirar —detalle y consolidado— y el periodo se elige
+  aparte. Las tres duraciones **no** se agrupan igual, y está escrito en `utils/periodos.js`:
+  la semana por la columna `semana` (ISO); la **quincena de sábado a viernes**, porque así se
+  trabaja y así se paga aquí, y es la única que agrupa por fecha de respuesta —una semana de
+  encuesta puede repartirse entre dos quincenas, y es el precio de que cuadre con la nómina—;
+  y el mes por las semanas cuyo **lunes** cae dentro, porque filtrar por fecha de envío partía
+  las semanas a caballo y ningún mes tenía la semana entera. Verificado con las 67 encuestas
+  de producción: en los tres modos la suma por periodos da exactamente 67.
+- **🆕 El periodo de prueba de la app deja de parecer faltas.** Hasta el 31 de julio la app se
+  estuvo probando: había horario cargado para toda la plantilla y solo una parte checaba —14
+  personas el 30 de julio, 56 el 31—, así que casi todos los días anteriores salían **falta**.
+  Nadie faltó. Se añade el estado `PRUEBA`, con su color en el calendario, su entrada en la
+  leyenda y su columna en el Excel; no cuenta como falta, no entra en el cálculo de puntualidad
+  y no aparece en «justificar faltas en bloque». **No se rellena la tabla con asistencias
+  inventadas**, que era la otra forma de arreglarlo: un registro fabricado no se distingue de
+  uno real, y `asistencias` es la tabla que sustenta descuentos, retardos y bajas — dentro de
+  tres meses nadie podría decir si alguien de verdad llegó puntual el 24 de julio, y en un
+  pleito laboral esos registros hablan. Reversible cambiando una fecha: `FIN_PERIODO_PRUEBA`.
+- **🆕 «Ideas de mejora» deja de ser un placeholder.** Llevaba desde que reemplazó al viejo
+  Soporte TI diciendo «módulo en desarrollo». Ahora la idea entra al tablero de **Pendientes**
+  que TI ya mira a diario, con la etiqueta `idea-pulse`, y quien la propuso ve aquí mismo en
+  qué va —Recibida / En marcha / Aplicada, que son las tres columnas del Kanban dichas en el
+  idioma de quien propone—. Sin prioridad crítica, al revés que un ticket: una idea de mejora
+  nunca es una urgencia; si algo urge, es un ticket.
+- **🆕 El detalle de asistencia pasa a ser cuadrícula, no lista.** Era una fila por persona **y
+  por día**, con el nombre y la sucursal repetidos en cada renglón: 700 renglones para
+  responder de un vistazo si alguien faltó el martes. Ahora es una fila por persona, un día por
+  columna, y las cuentas del periodo al final — de 700 renglones a 100.
+- **🔴 Tema oscuro: los iconos de marca casi no se veían.** El cuadro de Reportes se pintaba
+  con un gradiente que terminaba en `--mc-verde-claro`, color **crudo** de la paleta pensado
+  para fondo claro; en oscuro dejaba un parche casi blanco. Al quitarlo quedó a la vista el
+  segundo fallo que ese blanco tapaba: el icono usaba `--mc-marca-texto`, que en oscuro
+  resolvía a un azul oscuro sobre caja oscura — **contraste 1.46:1, se adivinaba**. Corregido
+  con los tokens que sí cambian con el tema (`--mc-brand-suave` y `--mc-icono-accion`): de
+  1.46:1 a **4.23:1** en oscuro, y 4.94:1 sin tocar en claro. Mismo arreglo en el hover de la
+  pantalla de acceso, cuyo borde era además un teal fijo escrito a mano que dejó de coincidir
+  con nada el día que el color de la app se volvió configurable.
+- **🆕 Iconos que dicen lo que hacen.** `spreadsheet` apuntaba a una rejilla de cuatro
+  cuadros — el icono estándar de «menú de aplicaciones», que no dice hoja de cálculo ni dice
+  descargar. Ahora es una tabla, y las acciones de descarga usan un documento con flecha.
+- **🆕 `index.html` se sirve con `Cache-Control: no-cache`.** Es el único archivo que dice qué
+  rutas tienen los assets: sin eso el navegador podía quedarse con un index viejo pidiendo el
+  bundle anterior — se desplegaba, el servidor tenía el cambio, y al usuario no le llegaba.
+
+**Queda pendiente la causa de fondo del tema oscuro:** `accentPalette.js` escribe
+`--mc-verde-claro` y `--mc-marca-texto` como estilo **en línea** sobre `<html>` (vía
+`AccentContext`, para que el color de marca sea configurable), y un estilo en línea gana a
+cualquier hoja de estilos. Las versiones oscuras de esas dos variables que `[data-theme=dark]`
+sí define **nunca se aplican**, y ningún componente puede corregirlo desde su propio CSS.
+Mientras eso siga así, cualquier superficie que use una de las dos se verá mal en oscuro.
+
+
+### 2026-07-31 · Cada clínica fija su propia ubicación, y un cambio de contraseña que dejaba a la gente fuera
+
+> **25 de las 26 sucursales no tenían geocerca**, y configurarlas obligaba a viajar clínica por
+> clínica porque «Usar mi ubicación actual» solo existía en la pantalla de admin. Se resolvió
+> dejando que la recepcionista de cada clínica la capture ella misma, estando dentro — lo que
+> abre un riesgo nuevo que mandó sobre todo el diseño: **estar «fuera» BLOQUEA la checada**, así
+> que una geocerca mal puesta deja a una clínica entera sin poder fichar.
+
+- **🆕 Recepción fija la ubicación de su clínica desde su teléfono (migración 103).** Permiso
+  `puede_ubicar_sucursal` como booleano y **no** el texto de `puesto`, que tenía tres grafías
+  distintas (se normalizaron de paso); otorgado a las 26 activas. La RPC
+  `fijar_geocerca_mi_sucursal` es `security definer` y **no recibe id de sucursal**: la resuelve
+  del propio usuario, así que no hay forma de nombrar una ajena. Rechaza precisión peor que
+  100 m y no toca el radio. Los triggers `sellar_geocerca` y `log_geocerca` rellenan solos quién
+  y cuándo —venga el cambio de admin o de recepción— y dejan cada cambio en historial. Admin ve
+  quién la fijó, con qué precisión, y gana un botón para **quitarla al instante**. Verificado
+  con 6 pruebas en base simulando sesiones reales (propia/ajena, GPS malo, empleado sin
+  permiso, escalada de privilegios) y una prueba end-to-end por HTTPS con sucursal desechable.
+- **🆕 Vigilancia de geocercas (migración 104).** El punto ciego: lo intuitivo sería contar
+  checadas con `ubicacion_estado = 'fuera'`, y **no sirve** — `checar.js` responde 403 y no
+  inserta fila, así que una checada bloqueada no deja rastro en ninguna tabla. El síntoma no es
+  «muchas fuera», es **silencio**: una clínica que fichaba y de pronto deja de aparecer.
+  `revisar_geocercas()` detecta tres casos — *muda* (fichaban 2+ personas, se fijó geocerca,
+  cero checadas desde entonces), *lejos* (la mediana de sus checadas cae fuera del radio) y
+  *propuesta* (sin geocerca, pero ya hay datos para calcularla) — y se engancha al cron diario
+  que ya existía, con freno anti-repetición de 48 h. **Mediana y no promedio:** una sola checada
+  desde otra ciudad arrastraría el centro. Solo notifica *muda* y *lejos*; avisar las propuestas
+  a diario las volvería ruido.
+- **🆕 Aviso fijo en portada mientras la clínica siga sin ubicación.** La campanita no bastó: de
+  las 9 recepcionistas pendientes, **7 ni la abrieron**, y solo 4 de las 9 tienen push. El aviso
+  **no se puede cerrar** — no va de una preferencia de quien lo ve, va de que las checadas de
+  toda su clínica se guardan sin ubicación — y desaparece solo cuando el dato está puesto. Si
+  la sucursal de la persona no aparece en la tabla no se enseña nada, para no dejar un aviso
+  perpetuo que quien lo ve no puede quitar.
+- **🆕 Que una doctora también pueda fijarla.** Ébano se quedó sin recepcionista. El servidor ya
+  lo permitía —la 103 mira el permiso, no el rol—; faltaba todo del lado del navegador: el menú
+  de doctor, la ruta en `DoctorLayout` y el banner. El permiso se sigue dando persona a persona.
+- **🆕 Aviso a quien no tiene la ubicación activada, y panel de permisos en Mi perfil.** Sin
+  permiso de ubicación el botón de fichar no se activa, y hasta hoy la persona solo veía un
+  botón muerto y se enteraba a las ocho de la mañana. El panel (cámara, ubicación, micrófono,
+  avisos) existe porque el aviso de push ya prometía «puedes activarlos luego desde tu perfil» y
+  ese sitio no existía. El estado se lee del navegador en cada visita y **no** se guarda en la
+  fila del usuario: el permiso es del dispositivo, no de la cuenta. Si el navegador está en
+  `denied` no hay API para volver a preguntar, así que en vez de un botón que no hace nada se
+  enseña la ruta de los ajustes, distinta por navegador.
+- **🆕 La foto de perfil se ve en grande al picarla.** Solo se veía del tamaño de una moneda en
+  todas las pantallas. El cambio va dentro de `Avatar`, así que lo heredan los 22 sitios que lo
+  usan; se apaga donde el avatar ya vive dentro de un botón, porque un botón dentro de otro es
+  HTML inválido y le robaría el clic al control.
+- **🆕 El expediente pasa a lista + detalle.** Las pestañas obligaban a un clic por sección y
+  dejaban la tarjeta con mucho aire. Ahora la lista de empleados a la izquierda y el expediente
+  entero de un scroll a la derecha; una sección vacía se encoge a un renglón.
+- **🔴 El cambio de contraseña funcionaba, pero la app decía que no — y dejaba a la gente
+  fuera.** `auth.updateUser` emite `USER_UPDATED`, eso disparaba `cargarPerfil`, y ese SELECT
+  sale **antes** de que `mark_password_changed` apague el flag y a veces llega **después**: el
+  panel reaparecía con la contraseña ya cambiada. La persona creía que había fallado, la
+  reescribía igual, Auth contestaba 422 `same_password`, y entonces volvía a entrar con `emp123`
+  — que ya no existía — y se quedaba fuera. Verificado contra producción: tras el 422, el login
+  con la nueva daba 200 y con `emp123` daba 400, o sea que **el cambio había surtido efecto
+  todas las veces**. Ahora se ignora `USER_UPDATED`, el 422 `same_password` deja de tratarse
+  como error (significa que ya está puesta) y si falla solo el RPC ya no se miente diciendo que
+  falló el cambio.
+- **🔴 La psicóloga veía la pantalla de rostros vacía (migración 102).** La migración 052 le dio
+  SELECT sobre `public.rostros` pero no sobre `rostro_fotos` ni sobre el bucket `rostros`: le
+  llegaban las 38 filas y **cero fotos**, así que no podía comprobar si la cara era de quien
+  decía ser.
+
+**Detalle que solo salió probándolo:** en `revisar_geocercas`, `revoke ... from public` **no
+basta**. Supabase concede `EXECUTE` a `authenticated` y `anon` por default privileges, y hay que
+revocárselo por nombre. Comprobado que ambos reciben «permission denied» y que `service_role`
+puede. La integración se probó dentro del contenedor sin disparar el resto del cron: era
+viernes, y habría re-notificado la encuesta a toda la plantilla.
+
 
 ### 2026-07-30 (tarde) · Auditoría del sistema y cierre de los hallazgos
 
