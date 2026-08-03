@@ -5,6 +5,7 @@ import SectionTitle from "../common/SectionTitle";
 import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { normalizeSucursal } from "../../utils/constants";
+import { formatRangoFechas } from "../../utils/helpers";
 import { useNotification } from "../../contexts/NotificationContext";
 import { ETIQUETA_CAUSA, CAUSA_SALIDA_ANTICIPADA } from "../../utils/permisos";
 import { minutosNoTrabajados, formatoDuracion, diaISO } from "../../utils/asistencia";
@@ -74,8 +75,12 @@ const PermisosRH = ({ permisos, onUpdateEstado, horarios = [] }) => {
               </div>
 
               <div className="rh-data-row-meta">
+                {/* Antes salia la fecha cruda de la base ("2026-08-10"). Es correcta, pero se lee
+                    como un dato de sistema, no como un dia; y con un rango quedaba
+                    "2026-08-10 → 2026-08-12", que hay que descifrar. Mismo formato que
+                    vacaciones, para que las dos pantallas hablen igual. */}
                 <div className="rh-data-row-meta-primary">
-                  {p.fechaFin && p.fechaFin !== p.fecha ? `${p.fecha} → ${p.fechaFin}` : p.fecha}
+                  {formatRangoFechas(p.fecha, p.fechaFin)}
                 </div>
                 {p.hora && <div className="rh-data-row-meta-secondary">Sale a las {String(p.hora).slice(0, 5)}</div>}
                 {descuentoDe(p) && (

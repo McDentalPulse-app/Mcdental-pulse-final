@@ -5,6 +5,7 @@ import SectionTitle from "../common/SectionTitle";
 import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { normalizeSucursal } from "../../utils/constants";
+import { formatRangoFechas } from "../../utils/helpers";
 import { useNotification } from "../../contexts/NotificationContext";
 
 const VacacionesRH = ({ vacaciones, onUpdateEstado }) => {
@@ -50,10 +51,19 @@ const VacacionesRH = ({ vacaciones, onUpdateEstado }) => {
                 <div className="rh-data-row-title">{v.empleado}</div>
                 <div className="rh-data-row-sub">{normalizeSucursal(v.sucursal)} · {v.puesto}</div>
                 <div className="rh-data-row-note">Motivo: {v.motivo}</div>
+                {/* Se guarda al aprobar o rechazar, pero no se enseñaba en ningun sitio: quien
+                    escribia el motivo del rechazo no volvia a verlo nunca. */}
+                {v.comentarioRH && (
+                  <div className="rh-data-row-note">Comentario RH: {v.comentarioRH}</div>
+                )}
               </div>
 
               <div className="rh-data-row-meta">
-                <div className="rh-data-row-meta-primary">{v.inicio} al {v.fin}</div>
+                {/* `fechaInicio`/`fechaFin` y no `inicio`/`fin`: la pantalla llevaba pidiendo
+                    dos campos que el servicio nunca devolvio, asi que aqui solo se veia la
+                    palabra "al" suelta y RH aprobaba vacaciones sin saber de que dia a que dia
+                    eran. */}
+                <div className="rh-data-row-meta-primary">{formatRangoFechas(v.fechaInicio, v.fechaFin)}</div>
                 <div className="rh-data-row-meta-secondary">{v.dias} días</div>
               </div>
 

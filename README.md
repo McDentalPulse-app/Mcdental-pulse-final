@@ -115,6 +115,27 @@ lee nadie.
 
 ## Changelog
 
+### 2026-08-03 (noche, 4) · RH aprobaba vacaciones sin saber de qué día a qué día eran
+
+- **🔴 La pantalla de vacaciones no enseñaba las fechas.** Pedía `v.inicio` y `v.fin`, dos campos
+  que el servicio **nunca ha devuelto** —se llaman `fechaInicio` y `fechaFin`—, así que pintaba
+  la palabra **«al» suelta**, sin fechas a los lados, y debajo «5 días». O sea que quien aprobaba
+  unas vacaciones no sabía de cuándo a cuándo eran. El dato estaba en la base desde siempre
+  (20 al 24 de agosto): solo no llegaba a la pantalla. Es el tipo de fallo que no revienta nada
+  y por eso puede vivir meses a la vista.
+- **🆕 Las fechas se dicen como las diría una persona.** «20 ago 2026 al 24 ago 2026» en vez de
+  `2026-08-20`, y un solo día no se repite dos veces. Mismo formato en vacaciones y en permisos,
+  que enseñaban la fecha cruda de la base — correcta, pero se lee como un dato de sistema.
+- **⚠️ Sin fecha fin es UN SOLO DÍA, no un rango abierto.** La primera versión del formateador
+  decía «Desde el 10 ago 2026» cuando faltaba el fin, y eso habría afirmado que tres permisos
+  reales seguían abiertos: en permisos, `fecha_fin` nulo significa justamente permiso de un solo
+  día (migración 038). Cazado al probarlo contra los datos de producción antes de desplegar.
+- **🆕 El comentario de RH por fin se ve en vacaciones.** Se guardaba al aprobar o rechazar, pero
+  no se enseñaba en ninguna parte: quien escribía el motivo de un rechazo no volvía a verlo.
+
+9 pruebas nuevas para el formateador, incluida una que fija el fallo original: nunca debe quedar
+un «al» sin fechas alrededor.
+
 ### 2026-08-03 (noche, 3) · El expediente abría con un hueco del tamaño de media pantalla
 
 > Reportado como «se ve mal acomodado». Lo reproduje con el CSS compilado de verdad y el

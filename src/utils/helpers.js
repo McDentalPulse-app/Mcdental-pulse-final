@@ -191,3 +191,40 @@ export const ROLES_PLANTILLA = ["empleado", "doctor"];
  *  usan (listas, dashboards, reportes RH, reconocimientos, descuentos,
  *  mensajes y AI Engine). */
 export const esEmpleadoActivo = (u) => ROLES_PLANTILLA.includes(u?.role) && !u?.inactivo;
+
+/**
+ * Una fecha suelta ("2026-08-20") en corto y legible: "20 ago 2026".
+ *
+ * Se ancla a MEDIODÍA, igual que formatFechaIngreso: una fecha sin hora la interpreta el
+ * navegador como medianoche UTC, y en México eso cae en el día ANTERIOR. Sin el ancla, unas
+ * vacaciones del 20 al 24 se muestran del 19 al 23.
+ */
+export const formatFechaCorta = (fecha) => {
+  if (!fecha) return "";
+  const date = new Date(`${String(fecha).slice(0, 10)}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" });
+};
+
+/**
+ * Un rango de fechas dicho como lo diría una persona.
+ *
+ * Si empieza y acaba el mismo día, no se repite: "20 ago 2026" y no "20 ago 2026 al 20 ago
+ * 2026".
+ *
+ * SIN FECHA FIN ES UN SOLO DÍA, no un rango abierto. En permisos, `fecha_fin` nulo significa
+ * exactamente eso (migración 038), así que decir "Desde el 10 de agosto" sería afirmar que el
+ * permiso sigue abierto — que es falso y además preocupante para quien lo lea. Se muestra el
+ * día y ya.
+ *
+ * Y nunca se devuelve un "al" suelto sin fechas alrededor, que es lo que se veía en la pantalla
+ * de vacaciones cuando leía un campo que no existía.
+ */
+export const formatRangoFechas = (inicio, fin) => {
+  const a = formatFechaCorta(inicio);
+  const b = formatFechaCorta(fin);
+  if (a && b) return a === b ? a : `${a} al ${b}`;
+  if (a) return a;
+  if (b) return b;
+  return "Sin fechas";
+};
