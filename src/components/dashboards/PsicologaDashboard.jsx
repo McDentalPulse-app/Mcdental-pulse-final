@@ -7,13 +7,12 @@ import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
 import Badge from "../common/Badge";
 import Icon from "../ui/Icon";
-import GroupedBarChart from "../common/GroupedBarChart";
+import TendenciaBienestar from "./TendenciaBienestar";
 import WeekSelect from "../common/WeekSelect";
 import PageHeader from "../common/PageHeader";
 import EmptyState from "../common/EmptyState";
 import { semanaActual, normalizeSucursal, formatSemanaDisplay } from "../../utils/constants";
 import { getPulseStatus, tieneScoreValido } from "../../utils/pulseScore";
-import { colorSerie } from "../../config/theme";
 import { esEmpleadoActivo } from "../../utils/helpers";
 
 const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }) => {
@@ -71,38 +70,6 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
   const focoRojo = dist.rojo;
   const reportesNuevos = reportesConfidenciales.filter(r => r.estado === "nuevo").length;
   const mensajesNoLeidos = mensajes.filter(m => m.para === user?.id && !m.leido).length;
-
-  // Tendencia del bienestar por oficina: Pulse Score promedio por sucursal y semana.
-  
-  const empSucursal = {};
-  USERS.forEach(u => { empSucursal[u.id] = normalizeSucursal(u.sucursal) || "Sin sucursal"; });
-
-  const officeWeek = {};
-  const bucketSet = new Set();
-  encuestas.forEach(e => {
-    const s = Number(e.score);
-    if (!Number.isFinite(s)) return;
-    const suc = empSucursal[e.empleadoId];
-    if (!suc) return; // encuesta huérfana: empleadoId ya no existe en usuarios
-    const b = formatSemanaDisplay(String(e.semana)); // junta pre-lanzamiento en "2026-W00"
-    bucketSet.add(b);
-    (officeWeek[suc] ||= {});
-    (officeWeek[suc][b] ||= []).push(s);
-  });
-  const semanas = [...bucketSet].sort((a, b) => a.localeCompare(b)).slice(-6);
-  const trendLabels = semanas;
-  const trendSeries = Object.keys(officeWeek)
-    .filter(suc => semanas.some(b => officeWeek[suc][b]))
-    .map((suc, i) => ({
-      label: suc,
-      color: colorSerie(i),
-      values: semanas.map(b => {
-        const arr = officeWeek[suc][b];
-        return arr ? Math.round(arr.reduce((a, c) => a + c, 0) / arr.length) : null;
-      }),
-    }))
-    .slice(0, 8);
-  const trendHayDatos = semanas.length >= 2 && trendSeries.length > 0;
 
   // Sucursales con más casos en riesgo (amarillo/rojo) + sus empleados.
   const sucMap = {};
@@ -172,26 +139,7 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
         ))}
       </div>
 
-      {/* Tendencia del bienestar (ancho completo) */}
-      <Card>
-          <SectionTitle icon="trending">Tendencia del bienestar por oficina</SectionTitle>
-          {!trendHayDatos ? (
-            <EmptyState icon="trending" message="Se necesitan al menos 2 semanas con datos para la tendencia." />
-          ) : (
-            <>
-              <GroupedBarChart labels={trendLabels} series={trendSeries} height={200} />
-              <div className="psico-trend-legend">
-                {trendSeries.map(s => (
-                  <span key={s.label} className="psico-trend-legend-item">
-                    <span className="psico-trend-dot" style={{ background: s.color }} />
-                    {s.label}
-                  </span>
-                ))}
-              </div>
-              <p className="psico-chart-foot">Pulse Score promedio por sucursal y semana.</p>
-            </>
-          )}
-        </Card>
+      <TendenciaBienestar encuestas={encuestas} usuarios={USERS} />
 
       {/* Sucursales en riesgo + Casos prioritarios */}
       <Card>

@@ -60,7 +60,7 @@ export default function HRLayout({ user, globals, actions }) {
           )}
           {ofrecerPush && <AvisoPush onActivar={activarAvisos} onCerrar={cerrarOfertaPush} />}
           <Routes>
-            <Route path="dashboard" element={<HRDashboard users={USERS} />} />
+            <Route path="dashboard" element={<HRDashboard />} />
             <Route path="ai" element={<AIEngine encuestas={encuestas} mensajes={mensajes} notas={notas} userRole="rh" permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>} />
             <Route path="empleados" element={<EmpleadosList encuestas={encuestas} notas={notas} role="rh" currentUser={user} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} />} />
             <Route path="usuarios" element={<GestionUsuarios />} />

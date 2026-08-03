@@ -8772,6 +8772,34 @@
 }
 .psico-trend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
+/* La muestra de la línea punteada (semana anterior). Se dibuja con el mismo patrón que la
+   gráfica para que la leyenda y el trazo se reconozcan como lo mismo. */
+.psico-trend-dash {
+  width: 18px;
+  height: 2px;
+  flex-shrink: 0;
+  border-radius: 2px;
+  background-image: linear-gradient(to right, var(--mc-texto-secundario) 2px, transparent 2px);
+  background-size: 5px 2px;
+  opacity: 0.75;
+}
+
+/* Cabecera de la tendencia: el título a la izquierda y su selector de semana a la derecha.
+   En móvil se apilan — con el selector al lado, el título se partía en tres renglones. */
+.tendencia-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.tendencia-head > :first-child { margin-bottom: 0; }
+
+/* Con 26 sucursales la gráfica no cabe: se desplaza en horizontal en vez de encogerse hasta
+   ser ilegible. Alineada a la izquierda para que al abrirla se vean las mejores primero. */
+.mc-weekly-chart { width: auto; max-width: none; }
+.dashboard-bar-chart-wrap:has(.mc-weekly-chart) { justify-content: flex-start; }
+
 /* Gráfica de barras agrupadas */
 .dashboard-bar-chart-wrap {
   width: 100%;

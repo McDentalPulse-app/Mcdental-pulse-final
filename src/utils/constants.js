@@ -111,3 +111,19 @@ export const refreshSemana = () => {
   semanaDisplay = formatSemanaDisplay(w);
   return true;
 };
+
+/** Lunes y sábado de una semana ISO "YYYY-Www". La clínica trabaja de lunes a sábado. */
+export const rangoDeSemana = (semana) => {
+  const m = /^(\d{4})-W(\d{2})$/.exec(String(semana || ""));
+  if (!m) return null;
+  const [, anio, sem] = m;
+  // El 4 de enero siempre cae en la semana ISO 1: es la forma estándar de anclar el cálculo.
+  const cuatroEnero = new Date(Date.UTC(Number(anio), 0, 4));
+  const lunesW1 = new Date(cuatroEnero);
+  lunesW1.setUTCDate(cuatroEnero.getUTCDate() - ((cuatroEnero.getUTCDay() || 7) - 1));
+  const lunes = new Date(lunesW1);
+  lunes.setUTCDate(lunesW1.getUTCDate() + (Number(sem) - 1) * 7);
+  const sabado = new Date(lunes);
+  sabado.setUTCDate(lunes.getUTCDate() + 5);
+  return { desde: lunes.toISOString().slice(0, 10), hasta: sabado.toISOString().slice(0, 10) };
+};

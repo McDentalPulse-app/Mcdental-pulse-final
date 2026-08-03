@@ -115,6 +115,47 @@ lee nadie.
 
 ## Changelog
 
+### 2026-08-03 (noche) · El dashboard de RH era una maqueta, y la gráfica de bienestar enseñaba un tercio de la empresa
+
+> Petición: que los dashboards de RH y psicóloga se parezcan al de admin, y que la gráfica de
+> tendencia se pueda ver por semana porque con 26 clínicas se volvió ilegible. Al abrirlos
+> aparecieron dos cosas que nadie había pedido arreglar porque nadie sabía que estaban rotas.
+
+- **🔴 El dashboard de RH no enseñaba datos: los inventaba.** Los cuatro indicadores estaban
+  escritos a mano en el código —«3 vacaciones pendientes», «4 retardos», «2 descuentos»— y la
+  lista de pendientes hablaba de un tal **«Luis Torres», que no existe en la base**. Eran los
+  restos de la maqueta original, sirviéndose como si fueran ciertos. Reconstruido entero con
+  datos reales: vacaciones y permisos que de verdad esperan aprobación (con el nombre de quien
+  los pidió y sus fechas), descuentos del periodo, y retardos y faltas calculados con el **mismo
+  `construirDias`** que pinta el calendario y los reportes — dos criterios distintos serían dos
+  pantallas diciendo cosas distintas de la misma persona.
+- **🔴 La gráfica de bienestar llevaba tiempo ocultando dos tercios de las clínicas.** Ponía seis
+  semanas a la vez con una barra por sucursal dentro de cada semana: con 26 clínicas son 156
+  barras, así que el código las recortaba a las 8 primeras (`.slice(0, 8)`) **sin decirlo en
+  ninguna parte**. Ahora se elige la semana con un selector y se ven **todas** las que
+  contestaron.
+- **🆕 El color pasa a ser el semáforo, no un color por clínica.** Con 26 series, 26 colores
+  dejan de distinguirse entre sí y obligan a bajar a la leyenda para responder la única pregunta
+  que importa: cuáles están mal. Verde/amarillo/rojo lo contesta de un vistazo, y es el mismo
+  código que la app ya usa en todas las demás pantallas. Las barras van ordenadas de mayor a
+  menor, así que el problema está siempre en el mismo sitio: a la derecha.
+- **🆕 Línea punteada con la semana anterior.** Es lo que convierte una foto en una tendencia:
+  sin ella, un 72 no se distingue de un 72 que viene de 85.
+- **🆕 Un solo bloque de tendencia para los tres roles.** Antes el mismo código estaba duplicado
+  en admin y psicóloga y ya se había ido separando; ahora es un componente con su propio
+  selector, y RH lo estrena.
+
+**Dos fallos que solo aparecieron al dibujarlo.** El componente se renderizó a PNG con los datos
+reales de producción (20 sucursales de la semana W31) antes de desplegarlo, y salieron dos cosas
+que ninguna prueba habría cazado:
+
+1. **La línea punteada se desplomaba a cero** entre sucursales sin dato previo. La causa es un
+   clásico de JavaScript: `Number(null)` es `0` y `Number.isFinite(0)` es `true`, así que la
+   guarda `Number.isFinite(Number(v))` daba por bueno un hueco y lo dibujaba como un cero. La
+   gráfica inventaba caídas al suelo que nunca ocurrieron.
+2. **Una sucursal con dato previo aislado no dibujaba nada** — un punto suelto en una polilínea
+   es invisible. Ahora se pinta como punto para que ese «veníamos de 83» no desaparezca.
+
 ### 2026-08-03 (tarde) · No todas las clínicas están en la misma hora, y el sistema creía que sí
 
 > Empezó como «a algunos les marca descanso aunque sí registraron entrada». La causa era simple
