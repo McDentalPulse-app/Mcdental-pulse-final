@@ -35,8 +35,15 @@ import { useNotification } from "../../contexts/NotificationContext";
  * Cuando está vacía se encoge a un renglón gris en vez de ocupar una tarjeta entera de aire:
  * con nueve secciones y una persona nueva, media pantalla eran cajas vacías y el expediente
  * parecía roto. Vacía sigue apareciendo —"no tiene archivos" es información— pero no grita.
+ *
+ * `accion` va SIEMPRE, esté vacía o no, y esa es la razón de que exista.
+ * Al estar vacía no se pintan los `children`, así que cualquier botón metido ahí dentro
+ * desaparecía justo cuando hacía falta. Es lo que le pasaba a "Subir archivo": solo se veía si
+ * el expediente YA tenía un archivo, y para tener el primero había que poder subirlo. Nadie
+ * pudo nunca — cero filas en `archivos_expediente` desde que existe la tabla. Lo que invita a
+ * llenar una sección no puede depender de que la sección ya esté llena.
  */
-const Seccion = ({ icono, titulo, vacio, children, cuenta, className = "" }) => {
+const Seccion = ({ icono, titulo, vacio, children, cuenta, className = "", accion = null }) => {
   const estaVacia = !cuenta;
   return (
     <Card className={`expediente-seccion${estaVacia ? " expediente-seccion--vacia" : ""} ${className}`.trim()}>
@@ -45,6 +52,7 @@ const Seccion = ({ icono, titulo, vacio, children, cuenta, className = "" }) => 
         {cuenta > 0 && <span className="expediente-seccion-cuenta">{cuenta}</span>}
       </SectionTitle>
       {estaVacia ? <p className="mc-empty expediente-seccion-vacio">{vacio}</p> : children}
+      {accion}
     </Card>
   );
 };
@@ -342,6 +350,85 @@ const ExpedienteIntegral = ({
               cuenta={archivosEmpleado.length || (mostrarSubirArchivo ? 1 : 0)}
               vacio="No hay archivos adjuntos."
               className="expediente-seccion--ancha"
+              accion={
+                mostrarSubirArchivo ? (
+                  <div className="expediente-upload-panel">
+                    <div className="mc-form-group">
+                      <label className="mc-form-label" htmlFor="exp-tipo-archivo">Tipo de archivo</label>
+                      <select id="exp-tipo-archivo" className="mc-form-select" value={tipoArchivoExpediente} onChange={(e) => setTipoArchivoExpediente(e.target.value)}>
+                        <option value="General">General</option>
+                        <option value="Contrato">Contrato</option>
+                        <option value="INE">INE</option>
+                        <option value="Comprobante">Comprobante</option>
+                        <option value="PDF">PDF</option>
+                      </select>
+                    </div>
+
+                    <div className="mc-form-group">
+                      <label className="mc-form-label" htmlFor="exp-archivo-adjunto">Archivo adjunto</label>
+                      <label className="mc-file-input-wrap">
+                        <span className="mc-file-input-icon"><Icon name="paperclip" size={18} /></span>
+                        <span className="mc-file-input-text">
+                          {archivoExpediente ? archivoExpediente.name : "Seleccionar archivo del expediente"}
+                        </span>
+                        <input
+                          id="exp-archivo-adjunto"
+                          type="file"
+                          className="mc-file-input-overlay"
+                          onChange={(e) => setArchivoExpediente(e.target.files?.[0] || null)}
+                        />
+                      </label>
+                    </div>
+
+                    <div className="mc-form-hint">
+                      <Icon name="alert" size={14} />
+                      <span>Límite de 10 MB por archivo.</span>
+                    </div>
+
+                    <div className="expediente-upload-actions">
+                      <button
+                        type="button"
+                        className="mc-btn-secondary"
+                        onClick={() => {
+                          setMostrarSubirArchivo(false);
+                          setArchivoExpediente(null);
+                        }}
+                      >
+                        Cancelar archivo
+                      </button>
+                      <button
+                        className="mc-btn-primary mc-btn-with-icon"
+                        type="button"
+                        disabled={subiendoArchivo}
+                        onClick={async () => {
+                          if (!archivoExpediente) {
+                            toast.warning("Por favor selecciona un archivo primero.");
+                            return;
+                          }
+                          setSubiendoArchivo(true);
+                          try {
+                            await onSubirArchivoExpediente({ empleado, archivo: archivoExpediente, tipo: tipoArchivoExpediente });
+                            setArchivoExpediente(null);
+                            setMostrarSubirArchivo(false);
+                          } finally {
+                            setSubiendoArchivo(false);
+                          }
+                        }}
+                      >
+                        <Icon name="paperclip" size={16} /> {subiendoArchivo ? "Subiendo..." : "Subir archivo"}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="mc-btn-outline mc-btn-with-icon expediente-subir-btn"
+                    onClick={() => setMostrarSubirArchivo(true)}
+                  >
+                    <Icon name="plus" size={16} /> Subir archivo
+                  </button>
+                )
+              }
             >
               <div className="expediente-lista">
                 {archivosEmpleado.map(a => (
@@ -377,84 +464,6 @@ const ExpedienteIntegral = ({
                   </div>
                 ))}
               </div>
-
-              {mostrarSubirArchivo ? (
-                <div className="expediente-upload-panel">
-                  <div className="mc-form-group">
-                    <label className="mc-form-label" htmlFor="exp-tipo-archivo">Tipo de archivo</label>
-                    <select id="exp-tipo-archivo" className="mc-form-select" value={tipoArchivoExpediente} onChange={(e) => setTipoArchivoExpediente(e.target.value)}>
-                      <option value="General">General</option>
-                      <option value="Contrato">Contrato</option>
-                      <option value="INE">INE</option>
-                      <option value="Comprobante">Comprobante</option>
-                      <option value="PDF">PDF</option>
-                    </select>
-                  </div>
-
-                  <div className="mc-form-group">
-                    <label className="mc-form-label" htmlFor="exp-archivo-adjunto">Archivo adjunto</label>
-                    <label className="mc-file-input-wrap">
-                      <span className="mc-file-input-icon"><Icon name="paperclip" size={18} /></span>
-                      <span className="mc-file-input-text">
-                        {archivoExpediente ? archivoExpediente.name : "Seleccionar archivo del expediente"}
-                      </span>
-                      <input
-                        id="exp-archivo-adjunto"
-                        type="file"
-                        className="mc-file-input-overlay"
-                        onChange={(e) => setArchivoExpediente(e.target.files?.[0] || null)}
-                      />
-                    </label>
-                  </div>
-
-                  <div className="mc-form-hint">
-                    <Icon name="alert" size={14} />
-                    <span>Límite de 10 MB por archivo.</span>
-                  </div>
-
-                  <div className="expediente-upload-actions">
-                    <button
-                      type="button"
-                      className="mc-btn-secondary"
-                      onClick={() => {
-                        setMostrarSubirArchivo(false);
-                        setArchivoExpediente(null);
-                      }}
-                    >
-                      Cancelar archivo
-                    </button>
-                    <button
-                      className="mc-btn-primary mc-btn-with-icon"
-                      type="button"
-                      disabled={subiendoArchivo}
-                      onClick={async () => {
-                        if (!archivoExpediente) {
-                          toast.warning("Por favor selecciona un archivo primero.");
-                          return;
-                        }
-                        setSubiendoArchivo(true);
-                        try {
-                          await onSubirArchivoExpediente({ empleado, archivo: archivoExpediente, tipo: tipoArchivoExpediente });
-                          setArchivoExpediente(null);
-                          setMostrarSubirArchivo(false);
-                        } finally {
-                          setSubiendoArchivo(false);
-                        }
-                      }}
-                    >
-                      <Icon name="paperclip" size={16} /> {subiendoArchivo ? "Subiendo..." : "Subir archivo"}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  className="mc-btn-outline mc-btn-with-icon expediente-subir-btn"
-                  onClick={() => setMostrarSubirArchivo(true)}
-                >
-                  <Icon name="plus" size={16} /> Subir archivo
-                </button>
-              )}
             </Seccion>
 
             <Seccion icono="vacation" titulo="Vacaciones" cuenta={vacacionesEmpleado.length} vacio="Sin vacaciones registradas." className="expediente-seccion--ancha">
@@ -504,7 +513,7 @@ const ExpedienteIntegral = ({
             </Seccion>
 
             {puedeVerDescuentos && (
-              <Seccion icono="dollar" titulo="Descuentos" cuenta={descuentosEmpleado.length} vacio="Sin descuentos registrados.">
+              <Seccion icono="dollar" titulo="Descuentos" cuenta={descuentosEmpleado.length} vacio="Sin descuentos registrados." className="expediente-seccion--ancha">
                 <div className="expediente-lista">
                   {descuentosEmpleado.map(d => (
                     <div key={d.id} className="expediente-fila">

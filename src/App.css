@@ -4356,6 +4356,13 @@
   text-align: left;
 }
 
+/* La acción de una sección vacía necesita despegarse del renglón gris: pegada al texto parece
+   parte de la frase, no algo que se pueda pulsar. */
+.expediente-seccion--vacia .expediente-subir-btn,
+.expediente-seccion--vacia .expediente-upload-panel {
+  margin-top: 10px;
+}
+
 .expediente-seccion-cuenta {
   margin-left: 8px;
   padding: 1px 8px;

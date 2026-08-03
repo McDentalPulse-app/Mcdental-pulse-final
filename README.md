@@ -115,6 +115,22 @@ lee nadie.
 
 ## Changelog
 
+### 2026-08-03 (noche, 11) · Nunca se pudo subir un archivo al expediente, y Descuentos se quedó estrecho
+
+- **🔴 «Subir archivo» solo aparecía si el expediente ya tenía un archivo.** Una sección vacía no
+  pinta sus `children`, y el botón vivía justo ahí dentro. Para tener el primer archivo había que
+  poder subirlo, y para poder subirlo había que tener ya uno. **Nadie lo consiguió nunca:** cero
+  filas en `archivos_expediente` desde que existe la tabla.
+- Se añade `accion` a las secciones del expediente, que se pinta **siempre**, esté vacía o no. Lo
+  que invita a llenar una sección no puede depender de que la sección ya esté llena.
+- **Afecta por igual a admin, RH y psicología**, porque los tres usan el mismo componente y los
+  tres ya tenían el permiso concedido. No hacía falta tocar la base de datos: el bucket
+  `expedientes` ya aceptaba inserciones de los tres roles, PDF/Word/Excel/imágenes hasta 10 MB.
+- **«Descuentos» era la única sección sin `--ancha`**, así que se quedaba a media anchura entre
+  dos secciones completas. Ahora va como el resto.
+- Verificado renderizando el componente real: con el código anterior el botón no aparecía en una
+  sección vacía; con el nuevo aparece, y la lista y el mensaje de vacío siguen comportándose igual.
+
 ### 2026-08-03 (noche, 10) · El detalle de sucursal se dibujaba dentro de la tarjeta, no sobre la pantalla
 
 - **🔴 Al pulsar una clínica, el modal salía encajado y a medias.** No se desplegaba sobre la
