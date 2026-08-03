@@ -127,11 +127,14 @@ a,
 /* Modales en móvil: el tabbar inferior (position:fixed) tapaba los botones de
    acción del modal (Guardar/Cancelar) — el overlay queda atrapado en el
    stacking-context de .app-main, por debajo del tabbar. Con un modal abierto se
-   oculta el tabbar (patrón estándar: el modal toma el foco). :has() cubre TODOS
-   los modales de una vez vía la clase compartida .mc-modal-overlay; reaparece al
+   oculta el tabbar (patrón estándar: el modal toma el foco). Cubre TODOS los
+   modales de una vez vía la clase compartida .mc-modal-overlay; reaparece al
    cerrar. Además, el modal y sus botones respetan el área segura inferior. */
 @media (max-width: 768px) {
-  body:has(.mc-modal-overlay) .mobile-tabbar {
+  /* La clase la pone App.jsx con un MutationObserver, no `:has()`. Ese selector no existe
+     antes de iOS 15.4 ni Chrome Android 105, y al descartarse la regla entera la barra flotante
+     seguía tapando los botones de Guardar/Cancelar en esos teléfonos, en silencio. */
+  body.mc-modal-abierto .mobile-tabbar {
     display: none;
   }
   .mc-modal-overlay,

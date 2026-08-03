@@ -37,6 +37,33 @@ export default function App() {
     return () => clearInterval(id);
   }, []);
 
+  /**
+   * Marca el <body> cuando hay algún modal abierto.
+   *
+   * En el teléfono, la barra flotante de navegación (`position: fixed`) tapaba los botones de
+   * Guardar/Cancelar de los modales, así que el CSS la esconde mientras hay uno abierto. Eso se
+   * hacía con `body:has(.mc-modal-overlay)`, y ahí estaba la trampa: `:has()` no existe en iOS
+   * Safari anterior a 15.4 ni en Chrome de Android anterior al 105, y un selector que el
+   * navegador no entiende se descarta ENTERO y en silencio. En esos teléfonos la barra seguía
+   * encima del botón de guardar, sin que nada lo delatara.
+   *
+   * Un observador aquí cubre todos los modales de la app —los de ahora y los que vengan— sin
+   * tener que acordarse en cada componente, y funciona en cualquier navegador. Los modales se
+   * abren y cierran de tarde en tarde, así que el coste es irrelevante.
+   */
+  useEffect(() => {
+    const sincronizar = () => {
+      document.body.classList.toggle("mc-modal-abierto", !!document.querySelector(".mc-modal-overlay"));
+    };
+    sincronizar();
+    const observador = new MutationObserver(sincronizar);
+    observador.observe(document.body, { childList: true, subtree: true });
+    return () => {
+      observador.disconnect();
+      document.body.classList.remove("mc-modal-abierto");
+    };
+  }, []);
+
   // Mientras se restaura la sesión (al abrir/recargar la app) "user" empieza en
   // null por un instante; sin este guard se ve un flash de la landing/login
   // antes de saltar al dashboard aunque ya haya sesión activa.

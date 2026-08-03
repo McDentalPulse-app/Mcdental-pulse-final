@@ -115,6 +115,27 @@ lee nadie.
 
 ## Changelog
 
+### 2026-08-03 (noche, 9) · Se retiran los últimos `:has()`, y el ranking de sucursales era una mirilla
+
+- **🔴 «Score por Sucursal» mostraba 6 clínicas de 26.** La lista estaba topada a `240px` y cada
+  fila mide ~42px, así que se veían seis y el resto quedaba dentro de una caja pequeña que hay
+  que descubrir desplazando. Con cinco clínicas el tope no se notaba; con veintiséis convierte
+  el ranking en una mirilla. Es **el mismo fallo por tercera vez**: la lista de conversaciones a
+  72px, la gráfica recortada a 8 series, y ahora esto — topes puestos cuando la empresa era
+  pequeña y nadie revisó al crecer. Ahora crece con el contenido y solo se detiene cerca del
+  alto de la ventana: **de 6 filas visibles a 17**.
+- **🆕 Cero `:has()` en toda la app.** Quedaba uno funcional en `mobile-polish.css` —el que
+  esconde la barra flotante de navegación cuando hay un modal abierto, para que no tape los
+  botones de Guardar y Cancelar—. En un teléfono anterior a iOS 15.4 o Chrome Android 105 esa
+  regla se descartaba entera y la barra seguía encima del botón, sin que nada lo delatara. Lo
+  sustituye un `MutationObserver` en `App.jsx` que pone `mc-modal-abierto` en el `<body>`: una
+  sola pieza que cubre todos los modales de la app —los de ahora y los que vengan— sin tener
+  que acordarse en cada componente.
+
+Nota sobre el recuento: dije que quedaban 4 usos de `:has()` y en realidad eran 2 en `App.css`
+(redundantes, ya cubiertos por la clase) más 1 en `mobile-polish.css`, que era el único con
+consecuencias reales.
+
 ### 2026-08-03 (noche, 8) · El arreglo del scroll no llegaba a los teléfonos algo antiguos
 
 > Reportado como «sigue con el scroll gigante en vez de la corrección». Estaba desplegado y era

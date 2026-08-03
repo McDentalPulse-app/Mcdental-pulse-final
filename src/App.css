@@ -716,8 +716,14 @@
   overflow: hidden;
 }
 
+/* 240px daban para SEIS sucursales de las 26 (cada fila mide ~42px con su relleno), y el
+   resto quedaba dentro de una caja pequeña que hay que descubrir desplazando. Con cinco
+   clínicas el tope no se notaba; con veintiséis convierte el ranking en una mirilla —el mismo
+   fallo que la lista de conversaciones a 72px y la gráfica recortada a 8 series—.
+   Ahora crece con el contenido y solo se detiene cerca del alto de la ventana, que es donde un
+   tope sí tiene sentido: para que la tarjeta no empuje el resto del dashboard fuera de la vista. */
 .dashboard-sucursal-rank-list {
-  max-height: 240px;
+  max-height: min(72vh, 900px);
   overflow-y: auto;
   overflow-x: hidden;
   display: flex;
@@ -8195,8 +8201,11 @@
   /* Con la conversación abierta, el chat se queda la pantalla entera: fuera la cabecera de
      página y las pestañas. Es lo que hacen WhatsApp y Telegram, y aquí libera ~120px que en un
      teléfono son la diferencia entre leer tres mensajes o siete. Se vuelve con el botón. */
-  .mensajes-page:has(.mensajes-layout--detalle) .mensajes-page-header,
-  .mensajes-page:has(.mensajes-layout--detalle) .mensajes-pestanas,
+  /* Solo la clase, sin `:has()`. Las dos variantes hacían exactamente lo mismo —las dos salen
+     de `selectedId`— pero `:has()` no existe antes de iOS 15.4 ni Chrome Android 105, así que
+     tener las dos solo garantiza que el comportamiento dependa del teléfono sin que se note.
+     Una regla que unos navegadores aplican y otros descartan, haciendo lo mismo que la de al
+     lado, es ruido con riesgo. */
   body.mc-en-chat-detalle .mensajes-page-header,
   body.mc-en-chat-detalle .mensajes-pestanas {
     display: none;
