@@ -115,6 +115,31 @@ lee nadie.
 
 ## Changelog
 
+### 2026-08-03 (noche, 2) · Los tres dashboards dejan de ser tres copias que se estaban separando
+
+> Petición: que RH y psicóloga tengan los elementos que les faltan del de admin. Al abrirlos, el
+> problema no era que faltaran bloques sino que **el mismo bloque estaba escrito tres veces**.
+
+- **🔴 «Sucursales en riesgo» estaba duplicado literal** entre admin y psicóloga: la misma lista,
+  el mismo modal, las mismas clases, con la única diferencia del nombre de la variable de estado.
+  Y el cálculo de semanas, scores y semáforo —unas 60 líneas— también estaba copiado, **y ya
+  había empezado a divergir**: el de psicóloga cortaba a 6 semanas y el de admin a 8 sucursales,
+  cada uno por su cuenta. Con RH sumándose habrían sido tres copias.
+- **🆕 Un solo cálculo (`usePulseSemana`) y tres bloques compartidos** — `SucursalesEnRiesgo`,
+  `FocoRojo` y `ScorePorSucursal`. El dashboard de admin pasa de **554 líneas a 95**: lo que
+  queda es la composición, que es lo único que de verdad cambia entre roles.
+- **🆕 Psicóloga** estrena la cabecera del admin (rejilla de KPIs y el Pulse Score grande, en vez
+  de las cuatro tarjetas sueltas) y **Score por Sucursal**. Mantiene «Casos prioritarios», que es
+  suyo. **No** lleva «Foco Rojo»: sería la misma gente dos veces en la misma pantalla.
+- **🆕 RH** estrena **Foco Rojo** y **Score por Sucursal**. Decisión del dueño: ve los nombres
+  igual que admin. Es coherente con la migración 099, que le dio a RH las mismas capacidades, y
+  con que ya descarga el reporte de bienestar con nombres y scores — verlo en la portada no le da
+  acceso nuevo, se lo pone delante.
+
+**Un detalle de rendimiento que salió del linter:** `selRawWeeks` se calculaba suelto, así que
+era un array nuevo en cada render y el `useMemo` que recorre los ~100 empleados con todas sus
+encuestas se recalculaba **siempre**. Ahora tiene su propio `useMemo`.
+
 ### 2026-08-03 (noche) · El dashboard de RH era una maqueta, y la gráfica de bienestar enseñaba un tercio de la empresa
 
 > Petición: que los dashboards de RH y psicóloga se parezcan al de admin, y que la gráfica de

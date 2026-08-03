@@ -48,7 +48,7 @@ export default function AdminLayout({ user, globals, actions }) {
           )}
           {ofrecerPush && <AvisoPush onActivar={activarAvisos} onCerrar={cerrarOfertaPush} />}
           <Routes>
-            <Route path="dashboard" element={<AdminDashboard encuestas={encuestas} mensajes={mensajes}/>} />
+            <Route path="dashboard" element={<AdminDashboard encuestas={encuestas} />} />
             <Route path="ai" element={<AIEngine encuestas={encuestas} mensajes={mensajes} notas={notas} userRole="admin" permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>} />
             <Route path="empleados" element={<EmpleadosList encuestas={encuestas} notas={notas} role="admin" currentUser={user} onRestablecerPassword={restablecerPasswordUsuario} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} />} />
             <Route path="usuarios" element={<GestionUsuarios />} />

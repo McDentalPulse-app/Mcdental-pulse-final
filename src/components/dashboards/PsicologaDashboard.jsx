@@ -1,107 +1,57 @@
-import React, { useState } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import { useAuth } from "../../contexts/AuthContext";
-import { useEscapeKey } from "../../hooks/useEscapeKey";
 import Card from "../common/Card";
-import StatCard from "../common/StatCard";
+import KPI from "../common/KPI";
 import SectionTitle from "../common/SectionTitle";
 import Badge from "../common/Badge";
 import Icon from "../ui/Icon";
 import TendenciaBienestar from "./TendenciaBienestar";
+import SucursalesEnRiesgo from "./SucursalesEnRiesgo";
+import ScorePorSucursal from "./ScorePorSucursal";
 import WeekSelect from "../common/WeekSelect";
 import PageHeader from "../common/PageHeader";
 import EmptyState from "../common/EmptyState";
-import { semanaActual, normalizeSucursal, formatSemanaDisplay } from "../../utils/constants";
-import { getPulseStatus, tieneScoreValido } from "../../utils/pulseScore";
-import { esEmpleadoActivo } from "../../utils/helpers";
+import { usePulseSemana } from "../../hooks/usePulseSemana";
+import { normalizeSucursal } from "../../utils/constants";
+import { tieneScoreValido } from "../../utils/pulseScore";
+import { nivelColor } from "../../config/theme";
 
-const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }) => {
-  const { usuarios: USERS } = useGlobal();
+/**
+ * Dashboard de psicologia organizacional.
+ *
+ * Comparte cabecera, calculo y bloques con el de admin (usePulseSemana + los componentes de
+ * dashboards/): antes tenia su propia copia de las mismas ~60 lineas de buckets de semana y
+ * promedios, y ya habian empezado a divergir. Lo que SI es suyo es «Casos prioritarios», que
+ * mira a las personas en amarillo o rojo con su tendencia, no a las sucursales.
+ *
+ * NO lleva «Empleados en Foco Rojo» aunque el de admin si: seria la misma gente dos veces en
+ * la misma pantalla, y aqui ya se ve con mas detalle.
+ */
+const PsicologaDashboard = ({ encuestas = [], mensajes = [], reportesConfidenciales = [] }) => {
+  const { usuarios: USERS, nombresSucursales } = useGlobal();
   const { user } = useAuth();
-  const empleados = USERS.filter(esEmpleadoActivo);
 
-  // Semanas como "buckets" por etiqueta de display: las pre-lanzamiento
-  // (2025-W15, 2026-W01 viejo) se juntan en "2026-W00"; lanzamiento+ = "2026-W01"…
-  const semanasRaw = [...new Set(
-    encuestas.filter(e => tieneScoreValido(e.score)).map(e => String(e.semana))
-  )];
-  const bucketWeeks = {}; // etiqueta -> [semanas ISO crudas]
-  semanasRaw.forEach(w => {
-    const b = formatSemanaDisplay(w);
-    (bucketWeeks[b] ||= []).push(w);
-  });
-  const labelActual = formatSemanaDisplay(semanaActual);
-  const opcionesSemana = [...new Set([labelActual, ...Object.keys(bucketWeeks)])].sort((a, b) => b.localeCompare(a));
-  const defaultWeek = bucketWeeks[labelActual] ? labelActual : (opcionesSemana.find(o => bucketWeeks[o]) || labelActual);
-  const [weekSel, setWeekSel] = useState(defaultWeek);
+  const {
+    empleados, semana, setWeekSel, labelActual, opcionesSemana,
+    pulsePorEmpleado, contestaron, verdes, amarillos, rojos,
+    sucursalesRiesgo, porSucursal, avgPulse, avgPulseStatus,
+  } = usePulseSemana(encuestas, USERS, nombresSucursales);
 
-  const selRawWeeks = bucketWeeks[weekSel] || (weekSel === labelActual ? [semanaActual] : []);
+  const reportesNuevos = reportesConfidenciales.filter((r) => r.estado === "nuevo").length;
+  const mensajesNoLeidos = mensajes.filter((m) => m.para === user?.id && !m.leido).length;
 
-  // Encuesta más reciente del empleado dentro del bucket seleccionado.
-  const encDelBucket = (empId) =>
-    encuestas
-      .filter(e => e.empleadoId === empId && tieneScoreValido(e.score) && selRawWeeks.includes(String(e.semana)))
-      .sort((a, b) => String(b.semana).localeCompare(String(a.semana)))[0];
-  // Score de la encuesta anterior al bucket (para la tendencia ↑↓).
-  const scorePrevio = (empId) => {
-    const minSel = [...selRawWeeks].sort()[0] || "";
-    const prev = encuestas
-      .filter(e => e.empleadoId === empId && tieneScoreValido(e.score) && String(e.semana) < minSel)
-      .sort((a, b) => String(b.semana).localeCompare(String(a.semana)))[0];
-    return prev ? Math.round(Number(prev.score)) : null;
-  };
-
-  // Estado por empleado en el bucket seleccionado (snapshot).
-  const estados = empleados.map(emp => {
-    const enc = encDelBucket(emp.id);
-    const score = enc ? Math.round(Number(enc.score)) : null;
-    const nivel = score == null ? "sin-datos" : getPulseStatus(score).nivel;
-    const prev = score == null ? null : scorePrevio(emp.id);
-    const delta = score != null && prev != null ? score - prev : null;
-    const tendencia = delta == null ? "→" : delta > 0 ? "↑" : delta < 0 ? "↓" : "→";
-    return { emp, score, nivel, delta, tendencia };
-  });
-
-  const contestaron = estados.filter(e => e.score != null).length;
-  const pendientes = empleados.length - contestaron;
-
-  const dist = { verde: 0, amarillo: 0, rojo: 0, "sin-datos": 0 };
-  estados.forEach(e => { dist[e.nivel] += 1; });
-  const focoRojo = dist.rojo;
-  const reportesNuevos = reportesConfidenciales.filter(r => r.estado === "nuevo").length;
-  const mensajesNoLeidos = mensajes.filter(m => m.para === user?.id && !m.leido).length;
-
-  // Sucursales con más casos en riesgo (amarillo/rojo) + sus empleados.
-  const sucMap = {};
-  estados.forEach(s => {
-    const suc = normalizeSucursal(s.emp.sucursal) || "Sin sucursal";
-    (sucMap[suc] ||= { suc, total: 0, riesgo: 0, emps: [] });
-    sucMap[suc].total += 1;
-    if (s.nivel === "rojo" || s.nivel === "amarillo") {
-      sucMap[suc].riesgo += 1;
-      sucMap[suc].emps.push(s);
-    }
-  });
-  const sucursalesRiesgo = Object.values(sucMap)
-    .filter(x => x.riesgo > 0)
-    .sort((a, b) => b.riesgo - a.riesgo)
-    .slice(0, 5);
-  sucursalesRiesgo.forEach(s => s.emps.sort((a, b) => (a.nivel === "rojo" ? 0 : 1) - (b.nivel === "rojo" ? 0 : 1)));
-
-  const [sucursalDetalle, setSucursalDetalle] = useState(null);
-  useEscapeKey(() => setSucursalDetalle(null), !!sucursalDetalle);
-
-  const casosPrioritarios = estados
-    .filter(e => e.nivel === "rojo" || e.nivel === "amarillo")
+  // Las personas en amarillo o rojo, los rojos primero. Seis como mucho: esta pantalla es para
+  // decidir a quien llamar hoy, y una lista de cuarenta no ayuda a decidir nada.
+  const casosPrioritarios = pulsePorEmpleado
+    .filter((e) => !e.sinDatos && (e.status.semaforo === "Rojo" || e.status.semaforo === "Amarillo"))
+    .map((e) => ({
+      emp: e.empleado,
+      score: e.score,
+      tendencia: e.pulse.tendencia,
+      nivel: e.status.semaforo === "Rojo" ? "rojo" : "amarillo",
+    }))
     .sort((a, b) => (a.nivel === "rojo" ? -1 : 1) - (b.nivel === "rojo" ? -1 : 1))
     .slice(0, 6);
-
-  const stats = [
-    { label: "Colaboradores", value: empleados.length, iconName: "users", valueClass: "admin-stat-value--green" },
-    { label: "Contestaron", value: contestaron, iconName: "clipboardCheck", valueClass: "admin-stat-value--blue" },
-    { label: "Pendientes", value: pendientes, iconName: "clock", valueClass: "admin-stat-value--amber" },
-    { label: "Foco rojo", value: focoRojo, iconName: "critical", valueClass: "admin-stat-value--red" },
-  ];
 
   return (
     <div className="admin-page dashboard-page psico-dashboard">
@@ -112,12 +62,9 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
         subtitle="Seguimiento clínico, bienestar emocional y casos prioritarios del equipo."
       >
         <WeekSelect
-          value={weekSel}
+          value={semana}
           onChange={setWeekSel}
-          options={opcionesSemana.map(w => ({
-            value: w,
-            label: `${w}${w === labelActual ? " · actual" : ""}${w === `${w.slice(0, 4)}-W00` ? " · anterior" : ""}`,
-          }))}
+          options={opcionesSemana.map((w) => ({ value: w, label: `${w}${w === labelActual ? " · actual" : ""}` }))}
         />
         {reportesNuevos > 0 && (
           <span className="dashboard-participation-badge psico-meta-badge--conf">
@@ -133,45 +80,46 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
         )}
       </PageHeader>
 
-      <div className="admin-stat-grid">
-        {stats.map((s, i) => (
-          <StatCard key={i} iconName={s.iconName} value={s.value} label={s.label} valueClass={s.valueClass} />
-        ))}
+      {/* Misma rejilla y mismo Pulse Score que el dashboard de admin: son la misma empresa vista
+          desde dos sillas, y que cada pantalla invente su lenguaje visual obliga a reaprenderla
+          al cambiar de rol. */}
+      <div className="dashboard-metrics">
+        <div className="dashboard-kpi-grid">
+          <KPI iconName="users" label="Colaboradores" value={empleados.length} color="var(--mc-stat-teal)" />
+          <KPI iconName="check" label="Contestaron" value={contestaron} sub={`de ${empleados.length}`} color="var(--mc-stat-teal-2)" />
+          <KPI iconName="stable" label="Verde" value={verdes} slug="verde" />
+          <KPI iconName="warning" label="Amarillo" value={amarillos} slug="amarillo" />
+          <KPI iconName="critical" label="Rojo" value={rojos} slug="rojo" />
+        </div>
+
+        <Card className="pulse-hero-card dashboard-pulse-feature">
+          <div className="pulse-hero-top">
+            <div className="pulse-hero-icon-wrap">
+              <Icon name="activity" size={22} color="var(--mc-verde)" />
+            </div>
+            <div className="pulse-hero-label">Pulse Score™</div>
+          </div>
+          <div className="pulse-hero-value">{avgPulse ?? "—"}</div>
+          <div className="pulse-hero-meta">
+            <span className="pulse-hero-status" style={{ color: nivelColor(avgPulseStatus.nivel) }}>
+              {avgPulseStatus.label}
+            </span>
+            <span className="pulse-hero-dot">·</span>
+            <span>Semáforo {avgPulseStatus.semaforo}</span>
+          </div>
+          <div className="pulse-hero-sub">Promedio del equipo en el periodo</div>
+        </Card>
       </div>
 
       <TendenciaBienestar encuestas={encuestas} usuarios={USERS} />
 
-      {/* Sucursales en riesgo + Casos prioritarios */}
       <Card>
         <div className="admin-grid-2">
           <div>
-            <SectionTitle icon="alert">Sucursales en riesgo</SectionTitle>
-            {sucursalesRiesgo.length === 0 ? (
-              <EmptyState icon="check" message="Ninguna sucursal con casos en amarillo o rojo." />
-            ) : (
-              <div className="psico-suc-list">
-                {sucursalesRiesgo.map((s) => (
-                  <button
-                    key={s.suc}
-                    type="button"
-                    className="psico-suc-row psico-suc-row--clickable"
-                    title={`${s.riesgo} en riesgo: ${s.emps.map(e => e.emp.name.split(" ")[0]).join(", ")}`}
-                    onClick={() => setSucursalDetalle(s)}
-                  >
-                    <div className="psico-suc-head">
-                      <span className="psico-suc-name">{s.suc}</span>
-                      <span className="psico-suc-count">{s.riesgo}/{s.total} <Icon name="eye" size={13} /></span>
-                    </div>
-                    <div className="psico-suc-track">
-                      <div
-                        className="psico-suc-fill"
-                        style={{ width: `${Math.round((s.riesgo / s.total) * 100)}%` }}
-                      />
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
+            <SucursalesEnRiesgo
+              sucursales={sucursalesRiesgo}
+              vacio="Ninguna sucursal con casos en amarillo o rojo."
+            />
           </div>
 
           <div>
@@ -207,45 +155,11 @@ const PsicologaDashboard = ({ encuestas, mensajes, reportesConfidenciales = [] }
         </div>
       </Card>
 
-      {sucursalDetalle && (
-        <div className="mc-modal-overlay" onClick={() => setSucursalDetalle(null)}>
-          <div className="mc-modal psico-suc-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="psico-suc-modal-title">
-            <div className="psico-suc-modal-head">
-              <div>
-                <h2 id="psico-suc-modal-title" className="mc-modal-title">
-                  <Icon name="building" size={18} /> {sucursalDetalle.suc}
-                </h2>
-                <p className="admin-page-subtitle psico-suc-modal-sub">
-                  {sucursalDetalle.riesgo} de {sucursalDetalle.total} colaboradores en riesgo
-                </p>
-              </div>
-              <button type="button" className="psico-detail-close" onClick={() => setSucursalDetalle(null)} aria-label="Cerrar">
-                <Icon name="xCircle" size={20} />
-              </button>
-            </div>
-
-            <div className="psico-suc-modal-list">
-              {sucursalDetalle.emps.map(({ emp, score, tendencia, nivel }) => (
-                <div key={emp.id} className={`psico-suc-emp psico-suc-emp--${nivel}`}>
-                  <div className="psico-suc-emp-info">
-                    <div className="psico-suc-emp-name">{emp.name}</div>
-                    <div className="psico-suc-emp-meta">{emp.puesto}</div>
-                  </div>
-                  <div className="psico-suc-emp-right">
-                    <span className="psico-suc-emp-score">Score {tieneScoreValido(score) ? score : "—"} {tendencia}</span>
-                    <Badge tipo={nivel} />
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="psico-confidential-banner">
-              <Icon name="lock" size={16} />
-              Vista privada disponible únicamente para Psicóloga.
-            </div>
-          </div>
-        </div>
-      )}
+      <ScorePorSucursal
+        porSucursal={porSucursal}
+        empleados={empleados}
+        pulsePorEmpleado={pulsePorEmpleado}
+      />
     </div>
   );
 };

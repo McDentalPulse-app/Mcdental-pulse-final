@@ -8,10 +8,14 @@ import WeekSelect from "../common/WeekSelect";
 import EmptyState from "../common/EmptyState";
 import Icon from "../ui/Icon";
 import TendenciaBienestar from "./TendenciaBienestar";
+import SucursalesEnRiesgo from "./SucursalesEnRiesgo";
+import FocoRojo from "./FocoRojo";
+import ScorePorSucursal from "./ScorePorSucursal";
+import { usePulseSemana } from "../../hooks/usePulseSemana";
 import { getAsistencias } from "../../services/supabase/asistenciasService";
 import { construirDias, resumen, mapaZonas, zonaDe, hoyEnClinica } from "../../utils/asistencia";
 import { esEmpleadoActivo } from "../../utils/helpers";
-import { semanaActual, normalizeSucursal, rangoDeSemana } from "../../utils/constants";
+import { semanaActual, rangoDeSemana } from "../../utils/constants";
 import { getPulseStatus, tieneScoreValido } from "../../utils/pulseScore";
 import { nivelColor } from "../../config/theme";
 
@@ -32,8 +36,15 @@ import { nivelColor } from "../../config/theme";
 const HRDashboard = () => {
   const {
     usuarios = [], sucursales = [], encuestas = [],
-    vacaciones = [], permisos = [], descuentos = [], horarios = [],
+    vacaciones = [], permisos = [], descuentos = [], horarios = [], nombresSucursales = [],
   } = useGlobal();
+
+  // El mismo calculo que usan admin y psicologa: semana, semaforo, sucursales en riesgo y
+  // quien esta en rojo. Vive en un hook para que las tres pantallas no digan cosas distintas
+  // de la misma persona.
+  const {
+    pulsePorEmpleado, enFocoRojo, sucursalesRiesgo, porSucursal,
+  } = usePulseSemana(encuestas, usuarios, nombresSucursales);
 
   const empleados = useMemo(() => usuarios.filter(esEmpleadoActivo), [usuarios]);
 
@@ -120,28 +131,6 @@ const HRDashboard = () => {
   const participacion = empleados.length
     ? Math.round((new Set(encSemana.map((e) => e.empleadoId)).size / empleados.length) * 100)
     : 0;
-
-  // ── Sucursales con peor score esta semana ─────────────────────────────────
-  const sucursalesEnRiesgo = useMemo(() => {
-    const sucDe = new Map(usuarios.map((u) => [u.id, normalizeSucursal(u.sucursal) || "Sin sucursal"]));
-    const acc = new Map();
-    for (const e of encSemana) {
-      const s = Number(e.score);
-      if (!tieneScoreValido(s)) continue;
-      const suc = sucDe.get(e.empleadoId);
-      if (!suc) continue;
-      if (!acc.has(suc)) acc.set(suc, []);
-      acc.get(suc).push(s);
-    }
-    return [...acc.entries()]
-      .map(([sucursal, arr]) => ({
-        sucursal,
-        score: Math.round(arr.reduce((a, c) => a + c, 0) / arr.length),
-        respuestas: arr.length,
-      }))
-      .filter((s) => getPulseStatus(s.score).nivel !== "verde")
-      .sort((a, b) => a.score - b.score);
-  }, [encSemana, usuarios]);
 
   const nombreDe = useCallback(
     (id) => usuarios.find((u) => u.id === id)?.name || "Alguien",
@@ -238,24 +227,7 @@ const HRDashboard = () => {
       <Card>
         <div className="admin-grid-2">
           <div>
-            <SectionTitle icon="alert">Sucursales en riesgo</SectionTitle>
-            {!sucursalesEnRiesgo.length ? (
-              <EmptyState icon="check" message="Ninguna sucursal en amarillo o rojo esta semana." />
-            ) : (
-              <div className="rh-pending-list">
-                {sucursalesEnRiesgo.map((s) => (
-                  <div key={s.sucursal} className="rh-pending-item">
-                    <span className="rh-pending-icon" style={{ color: nivelColor(getPulseStatus(s.score).nivel) }}>
-                      <Icon name="building" size={16} />
-                    </span>
-                    <span className="rh-pending-text">
-                      <strong>{s.sucursal}</strong>
-                      {` · ${s.score} de Pulse Score (${s.respuestas} respuesta${s.respuestas === 1 ? "" : "s"})`}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
+            <SucursalesEnRiesgo sucursales={sucursalesRiesgo} />
           </div>
 
           <div>
@@ -276,6 +248,19 @@ const HRDashboard = () => {
           </div>
         </div>
       </Card>
+
+      {/* Foco rojo: mismo bloque que el de admin. RH ya descarga el reporte de bienestar con
+          nombres y scores (migracion 099, paridad con admin), asi que esto no le da acceso
+          nuevo — se lo pone delante, que es lo que hace que alguien actue. */}
+      <Card>
+        <FocoRojo empleados={enFocoRojo} />
+      </Card>
+
+      <ScorePorSucursal
+        porSucursal={porSucursal}
+        empleados={empleados}
+        pulsePorEmpleado={pulsePorEmpleado}
+      />
     </div>
   );
 };
