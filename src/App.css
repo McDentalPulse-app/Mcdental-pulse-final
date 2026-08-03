@@ -8160,7 +8160,7 @@
      pantalla, y a partir de ahí cada caja reparte con flex. `min-height: 0` en cada eslabón es
      imprescindible: sin él, un hijo flexible se niega a encogerse por debajo de su contenido y
      el scroll se escapa hacia arriba otra vez. */
-  .app-main:has(.mensajes-page) {
+  body.mc-en-chat .app-main {
     overflow: hidden;
     padding-bottom: 0;
     /* FLEX y no `height: 100%` en el hijo: en el armazón móvil `.app-main` queda con
@@ -8171,7 +8171,7 @@
     flex-direction: column;
   }
 
-  .app-main:has(.mensajes-page) .app-main-inner {
+  body.mc-en-chat .app-main-inner {
     flex: 1 1 auto;
     min-height: 0;
     display: flex;
@@ -8196,7 +8196,9 @@
      página y las pestañas. Es lo que hacen WhatsApp y Telegram, y aquí libera ~120px que en un
      teléfono son la diferencia entre leer tres mensajes o siete. Se vuelve con el botón. */
   .mensajes-page:has(.mensajes-layout--detalle) .mensajes-page-header,
-  .mensajes-page:has(.mensajes-layout--detalle) .mensajes-pestanas {
+  .mensajes-page:has(.mensajes-layout--detalle) .mensajes-pestanas,
+  body.mc-en-chat-detalle .mensajes-page-header,
+  body.mc-en-chat-detalle .mensajes-pestanas {
     display: none;
   }
 

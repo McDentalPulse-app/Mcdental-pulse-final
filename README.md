@@ -115,6 +115,28 @@ lee nadie.
 
 ## Changelog
 
+### 2026-08-03 (noche, 8) · El arreglo del scroll no llegaba a los teléfonos algo antiguos
+
+> Reportado como «sigue con el scroll gigante en vez de la corrección». Estaba desplegado y era
+> correcto — pero en su teléfono el navegador lo estaba **descartando entero**.
+
+- **🔴 El layout dependía de `:has()`, y ese selector no existe antes de 2022.** La regla que
+  hace que el armazón deje de desplazarse era `.app-main:has(.mensajes-page)`. `:has()` llegó a
+  iOS Safari en la 15.4 y a Chrome de Android en la 105; en cualquier teléfono anterior el
+  navegador **no falla a medias: descarta la regla completa, en silencio**. Ahí volvía el scroll
+  gigante sin ninguna pista de por qué, y en el navegador de escritorio todo se veía bien.
+- **🆕 La pantalla se marca desde React.** Un `useEffect` pone `mc-en-chat` en el `<body>`
+  mientras Mensajes está montado, y otra clase para «hay conversación abierta». Una clase
+  funciona en todos los navegadores; un selector moderno, solo en los que lo entienden.
+
+Comprobado con el CSS compilado por el camino que **no** usa `:has()`: el documento mide
+exactamente lo que el viewport (no hay scroll de página) y la caja de mensajes tiene 1489px de
+contenido en 463px de alto.
+
+**Lección para el resto de la app:** quedan 4 usos de `:has()` en `App.css`. Ninguno es crítico
+—si se descartan solo se pierde un ajuste fino— pero conviene no apoyar en él nada de lo que
+dependa que una pantalla se pueda usar.
+
 ### 2026-08-03 (noche, 7) · Las imágenes del chat no se podían ampliar y los archivos no se descargaban
 
 - **🔴 Las imágenes abrían la URL firmada en otra pestaña.** Eso saca de la app —en el móvil, al

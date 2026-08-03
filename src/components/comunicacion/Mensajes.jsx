@@ -191,6 +191,29 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
 
   const mensajesChat = selected?.mensajes || [];
 
+  /**
+   * Marca el <body> mientras esta pantalla está montada.
+   *
+   * El CSS necesita saber "estamos en el chat" para que el armazón deje de desplazarse y solo se
+   * muevan los mensajes. Se hacía con `.app-main:has(.mensajes-page)`, y ahí estaba el fallo:
+   * `:has()` no existe en iOS Safari anterior a 15.4 ni en Chrome de Android anterior al 105,
+   * y un selector que el navegador no entiende NO falla a medias — descarta la regla entera y
+   * en silencio. En esos teléfonos volvía el scroll gigante y no había forma de saber por qué.
+   *
+   * Una clase puesta desde JavaScript funciona en todos.
+   */
+  useEffect(() => {
+    document.body.classList.add("mc-en-chat");
+    return () => document.body.classList.remove("mc-en-chat");
+  }, []);
+
+  // Y otra para "hay una conversación abierta", que es la que retira la cabecera y las pestañas
+  // para dejarle la pantalla entera al chat. Mismo motivo: no depender de `:has()`.
+  useEffect(() => {
+    document.body.classList.toggle("mc-en-chat-detalle", !!selectedId);
+    return () => document.body.classList.remove("mc-en-chat-detalle");
+  }, [selectedId]);
+
   // Al abrir/actualizar una conversación: marcar recibidos como leídos + bajar al final.
   //
   // LA CONDICIÓN TIENE QUE SER LA MISMA QUE LA DEL CONTADOR (ver `noLeidos` arriba), y no lo era.
