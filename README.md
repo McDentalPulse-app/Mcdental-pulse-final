@@ -169,10 +169,33 @@ lee nadie.
   resolver la hora por persona, una sola entrada horaria cubre los tres husos, sigue funcionando
   cuando Reynosa cambie de horario y no hay que recalcular nada al abrir una clínica nueva.
 
+- **🔴 El cierre automático podía dejar la salida ANTES de la entrada.** Lo destapó revisar los
+  días de esas ocho personas: quien fichaba **después** de su hora de turno —pasó de verdad el 31
+  de julio, el día del estreno, cuando la plantilla probó el checador por la tarde— recibía una
+  salida automática a la hora de su turno, o sea anterior a su propia entrada. Medido: jornadas
+  de **−42, −40 y −11 minutos**. No envenenaba las sumas (`minutosTrabajados` devuelve null ante
+  un negativo) pero dejaba el día con una pareja entrada/salida imposible de interpretar. Ahora,
+  si la hora del turno cae antes de la entrada, se cierra a la entrada más la jornada mínima, y
+  la nota lo dice. Las tres jornadas imposibles ya existentes quedaron anuladas.
+- **🆕 Corregidos los días de los ocho.** El 31 de julio de Karla, Merie y Rubén vuelve a ser
+  «periodo de prueba» — sus checadas de las 19:11–19:41 no eran una jornada, era probar la app
+  después de la hora. Y la falta de Conrado del sábado queda justificada: no tiene rostro
+  registrado y `exigir_rostro` está activo, así que **el checador no le deja fichar**; marcarle
+  falta era culparle de no usar algo que el sistema le impide usar. **No se tocaron los retardos
+  reales** (Alicia 39 min, Sofía 18 min): borrarlos sería falsear el registro en el otro sentido.
+
 **Lo que se descartó por el camino:** León y Popular Poza Rica también salían con medianas de
 entrada raras (13:57, 14:36), pero no es huso ni turno equivocado — son las checadas de prueba
 del 31 de julio por la tarde, que con solo tres días de datos arrastran la mediana. Sus entradas
 reales van de 09:42 a 10:08. **Solo Hermosillo y Reynosa tenían problema de zona horaria.**
+
+> ⚠️ **Pendiente, y no es de estas ocho personas: el turno del sábado no refleja lo que se
+> trabaja.** Las 110 personas tienen cargado sábado 10:00-14:00, pero el sábado 1 de agosto
+> salieron **52 personas con mediana a las 17:59**, y solo 8 antes de las 14:30. Mientras el
+> turno diga 14:00: el cierre automático corta la jornada del sábado cuatro horas antes, el
+> recordatorio de salida suena a las 14:10, y cualquiera que se quede hasta las 18:00 dispara el
+> aviso de «salida anticipada» al revés. Decidir si el sábado es media jornada o completa es de
+> dirección, no del código.
 
 ### 2026-08-03 · El checador: el anti-spoofing llevaba toda su vida sin medir nada, y la cámara se quedaba en negro hablando sola
 

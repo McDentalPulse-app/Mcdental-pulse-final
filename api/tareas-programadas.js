@@ -296,7 +296,7 @@ const cerrarJornadasAbiertas = async (supabase) => {
 
   const { data: entradas, error: errEnt } = await supabase
     .from("asistencias")
-    .select("empleado_id, fecha")
+    .select("empleado_id, fecha, marcada_en")
     .eq("tipo", "entrada")
     .eq("anulada", false)
     .gte("fecha", hace7)
@@ -325,11 +325,14 @@ const cerrarJornadasAbiertas = async (supabase) => {
     .lt("fecha", hoy);
 
   const conSalida = new Set((salidas || []).map((s) => `${s.empleado_id}|${s.fecha}`));
-  // Dedup por si un día tuviera dos entradas: una sola salida basta para cerrarlo.
+  // Dedup por si un día tuviera dos entradas: la MÁS TEMPRANA es la que abre la jornada, y es
+  // contra ella contra la que hay que comprobar que la salida no quede antes.
   const huerfanas = new Map();
   for (const e of entradas) {
     const clave = `${e.empleado_id}|${e.fecha}`;
-    if (!conSalida.has(clave)) huerfanas.set(clave, e);
+    if (conSalida.has(clave)) continue;
+    const previa = huerfanas.get(clave);
+    if (!previa || new Date(e.marcada_en) < new Date(previa.marcada_en)) huerfanas.set(clave, e);
   }
   if (!huerfanas.size) return { cerradas: 0 };
 
@@ -353,14 +356,34 @@ const cerrarJornadasAbiertas = async (supabase) => {
     // Monterrey, que en Hermosillo son las 18:00: una hora trabajada menos, y encima a quien ya
     // se le habia olvidado marcar salida.
     const tz = zonas.get(e.empleado_id) || TZ_POR_DEFECTO;
+    let marcadaEn = new Date(`${e.fecha}T${horaSalida}${desfaseEn(tz, e.fecha)}`);
+
+    // LA SALIDA NUNCA PUEDE QUEDAR ANTES DE LA ENTRADA, y sin esta guarda quedaba.
+    //
+    // Quien ficha DESPUÉS de su hora de salida —pasó de verdad el 31 de julio, el día que se
+    // estrenó el checador y la gente lo probó por la tarde— recibía una salida automática a la
+    // hora de su turno, o sea ANTES de su propia entrada. Resultado medido: jornadas de −42,
+    // −40 y −11 minutos. `minutosTrabajados` devuelve null ante un negativo, así que no
+    // envenenaba las sumas, pero el día quedaba con una pareja entrada/salida imposible que
+    // nadie podía interpretar.
+    //
+    // En ese caso se cierra a la hora de la entrada más la jornada mínima: es lo más corto
+    // defendible, y deja claro que fue el sistema quien cerró, no la persona.
+    const entradaEn = new Date(e.marcada_en);
+    let nota = "Salida automática: no marcó salida.";
+    if (marcadaEn <= entradaEn) {
+      marcadaEn = new Date(entradaEn.getTime() + 30 * 60000);
+      nota = "Salida automática: no marcó salida, y fichó después de su hora de turno.";
+    }
+
     return {
       empleado_id: e.empleado_id,
       tipo: "salida",
       fecha: e.fecha,
-      marcada_en: `${e.fecha}T${horaSalida}${desfaseEn(tz, e.fecha)}`,
+      marcada_en: marcadaEn.toISOString(),
       ubicacion_estado: "sin_gps",
       origen: "sistema",
-      nota_rh: "Salida automática: no marcó salida.",
+      nota_rh: nota,
     };
   });
 
