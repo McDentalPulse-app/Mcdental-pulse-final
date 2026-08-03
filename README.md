@@ -115,6 +115,29 @@ lee nadie.
 
 ## Changelog
 
+### 2026-08-03 (noche, 12) · La subida al expediente fallaba por el tipo, y el error no lo decía
+
+Con el botón ya visible, la primera subida real falló. El registro del almacén dio el motivo
+exacto: `mime type application/octet-stream is not supported`, HTTP 415.
+
+- **🔴 No se declaraba el tipo del archivo.** Sin `contentType`, el cliente manda
+  `application/octet-stream`, que no está en la lista blanca que los buckets declaran desde el
+  arreglo de seguridad del 2026-08-02. El almacén lo rechaza aunque el archivo sea un PDF válido.
+- **🔴 No se saneaba el nombre en la ruta.** La ruta registrada quedó cortada a mitad del nombre.
+  El chat ya tenía `rutaSegura` para esto —y su comentario nombra el caso: un expediente con
+  espacios en el nombre reventó la subida al migrar el almacén— pero vivía **suelta dentro de
+  `mensajesService`**, así que protegía al chat y no al expediente.
+- `rutaSegura` pasa a `utils/archivo` y ahora la usan los dos. **Una defensa que solo protege a
+  quien se acordó de copiarla no es una defensa.**
+- Se añade `mimeDeArchivo`: usa el tipo del navegador y, cuando viene vacío —pasa con archivos
+  sin extensión reconocida y con algunos gestores de Android—, lo deduce de la extensión antes de
+  rendirse a octet-stream. Lo estrena también el chat.
+- **El error que se ve ahora dice el motivo**: «El expediente no acepta archivos .xyz. Se admiten
+  PDF, Word, Excel, texto e imágenes», en vez de «No se pudo subir el archivo». Averiguar la causa
+  del fallo anterior obligó a leer los registros del servidor; eso no puede ser el procedimiento.
+- 14 pruebas nuevas sobre las dos funciones, incluidos los casos que fallaron: nombre con espacios,
+  con acentos, con `#`/`?`, y PDF sin tipo declarado.
+
 ### 2026-08-03 (noche, 11) · Nunca se pudo subir un archivo al expediente, y Descuentos se quedó estrecho
 
 - **🔴 «Subir archivo» solo aparecía si el expediente ya tenía un archivo.** Una sección vacía no

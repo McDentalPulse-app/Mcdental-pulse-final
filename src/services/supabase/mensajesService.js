@@ -1,5 +1,8 @@
 import { supabase } from "../../config/supabase";
 import { fetchAll } from "./fetchAll";
+// rutaSegura vive en utils/archivo y NO aqui: tenerla suelta en este archivo dejo al
+// expediente sin ella, y su primera subida real fallo por eso mismo.
+import { rutaSegura, mimeDeArchivo } from "../../utils/archivo";
 import { comprimirImagen } from "../../utils/imagen";
 import { analizarAudio } from "../../utils/audio";
 
@@ -36,21 +39,6 @@ const mapMensaje = (row) => ({
     : null,
 });
 
-/**
- * Nombre apto para una RUTA de storage. El nombre bonito se guarda aparte, en
- * `adjunto_nombre`, y es el que se muestra y se descarga.
- *
- * Esto no es cosmética: al migrar el storage el 2026-07-27, un expediente llamado
- * "Actividades Erick Torres 29_04 Junio_Julio.pdf" reventó la subida porque el espacio no
- * puede ir en una URL sin escapar. Aquí el problema se corta de raíz.
- */
-const rutaSegura = (nombre) =>
-  (nombre || "archivo")
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")   // fuera acentos (combinantes)
-    .replace(/[^a-zA-Z0-9._-]/g, "-")
-    .replace(/-+/g, "-")
-    .slice(-80);                                        // conserva la extensión
-
 /** Ancho y alto reales, para reservar el hueco de la imagen y que el chat no dé un salto. */
 const medirImagen = (blob) =>
   new Promise((resolve) => {
@@ -79,7 +67,7 @@ export const subirAdjunto = async ({ miId, archivo }) => {
 
   const esImagen = (archivo.type || "").startsWith("image/");
   let cuerpo = archivo;
-  let mime = archivo.type || "application/octet-stream";
+  let mime = mimeDeArchivo(archivo);
   let meta = {};
 
   if (esImagen) {
