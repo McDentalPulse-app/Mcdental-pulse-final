@@ -84,11 +84,22 @@ encendidos pero congelados, como única vía de rollback.
 | Edge Functions | copiar a `/opt/pulse/pulse-supabase/supabase-project/volumes/functions/` y reiniciar `pulse-edge-functions` |
 | API | reconstruir la imagen `pulse-api` y recrear `pulse-api-server` |
 
-> ⚠️ **Sobre Vercel.** `mcdental-pulse-final.vercel.app` responde hoy un **307 hacia la VPS**,
-> pero ese redirect se desplegó a mano y **no está en git**: el `vercel.json` de este repo
-> sigue siendo el de la aplicación completa, con sus `crons`. Un despliegue de producción en
-> Vercel desde este repo se llevaría por delante el redirect y reactivaría las tareas
-> programadas. Si hay que redesplegar Vercel a propósito, revisar `vercel.json` antes.
+### Sobre Vercel
+
+`McDentalPulse-app/Mcdental-pulse-final` **despliega solo**: cada push a `main` dispara un
+deploy de producción de `vercel[bot]`. `mcdental-pulse-final.vercel.app` responde hoy un **307
+temporal hacia la VPS**, conservando la ruta (`/admin/ai` → `mcdentalpulse.duckdns.org/admin/ai`).
+
+Hasta el 2026-08-03 ese redirect se había desplegado **a mano** y no estaba en git: el
+`vercel.json` del repo seguía siendo el de la aplicación completa, con sus `crons`. Era una
+trampa — cualquier push a `main` habría reemplazado el redirect por la app y reactivado las
+tareas programadas por su cuenta. **Ahora `vercel.json` ES el redirect**, así que el repo dice
+lo que Vercel hace y un despliegue accidental ya no puede romperlo. En la VPS ese archivo no lo
+lee nadie.
+
+> **Para volver a Vercel de verdad** (rollback): recuperar el `vercel.json` completo — está en
+> el historial, `git log --oneline -- vercel.json` — y revisar antes las variables de entorno
+> del proyecto y los `crons`, que volverían a dispararse.
 
 ---
 
