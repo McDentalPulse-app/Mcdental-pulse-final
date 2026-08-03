@@ -145,9 +145,9 @@ lee nadie.
   en admin y psicóloga y ya se había ido separando; ahora es un componente con su propio
   selector, y RH lo estrena.
 
-**Dos fallos que solo aparecieron al dibujarlo.** El componente se renderizó a PNG con los datos
-reales de producción (20 sucursales de la semana W31) antes de desplegarlo, y salieron dos cosas
-que ninguna prueba habría cazado:
+**Dos fallos que solo aparecieron al dibujarlo.** El componente se renderizó con los datos reales
+de producción (20 sucursales de la semana W31) antes de desplegarlo, y salieron dos cosas que
+ninguna prueba habría cazado:
 
 1. **La línea punteada se desplomaba a cero** entre sucursales sin dato previo. La causa es un
    clásico de JavaScript: `Number(null)` es `0` y `Number.isFinite(0)` es `true`, así que la
@@ -155,6 +155,25 @@ que ninguna prueba habría cazado:
    gráfica inventaba caídas al suelo que nunca ocurrieron.
 2. **Una sucursal con dato previo aislado no dibujaba nada** — un punto suelto en una polilínea
    es invisible. Ahora se pinta como punto para que ese «veníamos de 83» no desaparezca.
+
+**La gráfica pasa a usar `recharts`.** La primera versión se dibujó a mano en SVG y se parecía al
+diseño de referencia, pero no era igual: ni la alineación de los ejes, ni el tooltip que sigue al
+ratón (un `<title>` de SVG lo pinta el sistema operativo, tarda un segundo y no se puede
+maquetar). El diseño de referencia es recharts, así que se instala. Pesa **368 KB**, pero:
+
+- va en **su propio chunk, cargado en diferido** (`lazy` + `Suspense`), así que solo lo descarga
+  quien abre un dashboard con gráfica. El layout de empleado sigue en 2,6 KB;
+- y en esta app el bundle ya carga **15 MB de OpenCV** para el reconocimiento facial: al lado de
+  eso es marginal.
+
+Las partes de Untitled UI del ejemplo (`charts-base`, `ChartTooltipContent`, las clases
+`text-utility-brand-*`) **no existen en este proyecto** — solo está su paquete de iconos, no su
+librería de componentes. Se sustituyen por un tooltip propio con los tokens de la app.
+
+> Las animaciones van **apagadas**, igual que en el diseño de referencia, y no es un descuido
+> suyo: recharts **reanima en cada re-render**, así que al cambiar de semana las 26 barras
+> volverían a crecer desde cero delante de quien esté leyéndolas. Es además la única versión que
+> se pudo verificar renderizada. Se encienden cambiando `isAnimationActive` en `WeeklyScoreChart`.
 
 ### 2026-08-03 (tarde) · No todas las clínicas están en la misma hora, y el sistema creía que sí
 

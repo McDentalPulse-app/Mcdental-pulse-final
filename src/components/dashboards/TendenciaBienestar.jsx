@@ -1,9 +1,17 @@
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
 import WeekSelect from "../common/WeekSelect";
 import EmptyState from "../common/EmptyState";
-import WeeklyScoreChart from "../common/WeeklyScoreChart";
+
+/**
+ * La gráfica se carga aparte, y no es una optimización de manual: arrastra recharts, que son
+ * ~360 KB. Sin el import diferido, esos kilobytes entran en el mismo paquete que la cabecera y
+ * los KPIs, así que la pantalla entera espera a la librería de gráficas para pintar el primer
+ * número — en un móvil de la clínica, con datos, eso se nota. Así se ven antes los KPIs y la
+ * gráfica llega cuando llega.
+ */
+const WeeklyScoreChart = lazy(() => import("../common/WeeklyScoreChart"));
 import { normalizeSucursal, formatSemanaDisplay } from "../../utils/constants";
 import { nivelColor } from "../../config/theme";
 
@@ -92,12 +100,16 @@ const TendenciaBienestar = ({ encuestas = [], usuarios = [] }) => {
         <EmptyState icon="trending" message="Todavía no hay encuestas contestadas para esta semana." />
       ) : (
         <>
-          <WeeklyScoreChart
-            datos={datos}
-            semanaLabel={semana}
-            semanaPreviaLabel={previa}
-            height={280}
-          />
+          {/* El hueco reserva la MISMA altura que la gráfica: sin eso, al llegar recharts la
+              leyenda y el pie saltan hacia abajo delante de quien esté leyéndolos. */}
+          <Suspense fallback={<div className="mc-chart-cargando" style={{ height: 300 }} />}>
+            <WeeklyScoreChart
+              datos={datos}
+              semanaLabel={semana}
+              semanaPreviaLabel={previa}
+              height={300}
+            />
+          </Suspense>
 
           <div className="psico-trend-legend">
             {LEYENDA.map((l) => (
