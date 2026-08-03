@@ -69,11 +69,13 @@ encendidos pero congelados, como única vía de rollback.
   Runbook completo en `/opt/pulse/HANDOFF.md`.
 - **Backup — `MCDentalSist/MCDentalPulseBackUp`** (remoto `origin`). La rama **`vps-docker`**
   es el espejo de lo que corre en producción; `main` quedó en el árbol previo al corte.
-- **Rollback — `McDentalPulse-app/Mcdental-pulse-final`** (remoto `prod`, rama `main`), el
-  repo que alimentaba Vercel.
+- **Rollback — `McDentalPulse-app/Mcdental-pulse-final`** (remoto `prod`), el repo que
+  alimentaba Vercel. Desde el 2026-08-03 su `main` vuelve a estar al día con la VPS, para que
+  la vía de rollback no arranque tres días atrás.
 
-> **La rama viva es `vps-docker`, no `main`.** `main` y la rama `develop` de `prod` son
-> historia anterior al corte y no despliegan nada.
+> **Dónde se trabaja: `vps-docker`.** Es la rama que existe en la VPS y la que se empuja a los
+> dos repos. `origin/main` quedó en el árbol previo al corte y la `develop` de `prod` es
+> historia más vieja todavía; ninguna de las dos despliega nada.
 
 ### Cómo se despliega en la VPS
 
@@ -100,6 +102,14 @@ lee nadie.
 > **Para volver a Vercel de verdad** (rollback): recuperar el `vercel.json` completo — está en
 > el historial, `git log --oneline -- vercel.json` — y revisar antes las variables de entorno
 > del proyecto y los `crons`, que volverían a dispararse.
+
+> 🔴 **La vía de rollback está rota hoy, y no por el redirect.** Los dos últimos despliegues de
+> Vercel fallaron: el del 2026-07-31 (`f1a27e7`) y el del 2026-08-03 (`f0985a0`). La causa más
+> probable es el **tope de funciones serverless del plan Hobby, que son 12**: el último
+> despliegue que sí funcionó —`29bc64e`, del 24 de julio— tenía exactamente 12, y hoy `api/` ya
+> lleva **19** (los archivos que empiezan por `_` son helpers y no cuentan). Es decir: mientras
+> el redirect siga en pie la clínica no lo nota, pero **si hiciera falta volver a Vercel, no
+> compilaría**. Salir de ahí pasa por subir de plan o por fusionar funciones hasta bajar de 12.
 
 ---
 
