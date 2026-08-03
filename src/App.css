@@ -1666,7 +1666,30 @@
   font-weight: 700;
   text-align: center;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
+
+/* Descargar desde la imagen ampliada. En el móvil es el único camino: la imagen ocupa la
+   pantalla y no hay dónde pulsar con el botón derecho. */
+.mc-foto-descargar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  min-height: 40px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: var(--mc-blanco);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  text-shadow: none;
+}
+.mc-foto-descargar:hover { background: rgba(255, 255, 255, 0.24); }
 
 .mc-foto-cerrar {
   position: absolute;
@@ -6125,13 +6148,26 @@
   color: var(--mc-texto-secundario);
 }
 
+/* Es un <button> desde que la imagen se amplía en la propia app en vez de abrirse en otra
+   pestaña, así que hay que quitarle el aspecto de botón: relleno, tipografía heredada y el
+   ancho que el navegador le da por su cuenta. */
 .chat-adjunto-imagen {
   display: block;
   max-width: 320px;
+  width: 100%;
+  padding: 0;
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid var(--mc-gris-suave);
   background: var(--mc-superficie-sutil);
+  font: inherit;
+  color: inherit;
+  cursor: zoom-in;
+}
+.chat-adjunto-imagen:disabled { cursor: default; }
+.chat-adjunto-imagen:focus-visible {
+  outline: 2px solid var(--mc-verde);
+  outline-offset: 2px;
 }
 
 .chat-adjunto-imagen img {

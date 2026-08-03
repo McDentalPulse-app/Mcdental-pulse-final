@@ -1,44 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import React, { useRef, useState } from "react";
 import { nivelColor, colorMarca } from "../../config/theme";
+// El visor vive ahora en su propio archivo: el chat necesitaba el mismo.
+import FotoAmpliada from "./FotoAmpliada";
 
 const getInitials = (name) =>
   name ? name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "";
-
-/**
- * La foto ampliada va en un portal a <body> a propósito. El avatar vive dentro de tablas, de
- * listas con `overflow-y: auto` y de tarjetas con `overflow: hidden`; un overlay `position:
- * fixed` dentro de un ancestro con `transform` u `overflow` se recorta y saldría a medias.
- * Además así el overlay nunca queda anidado dentro de la fila que lo abrió.
- */
-const FotoAmpliada = ({ photoUrl, name, onClose }) => {
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  return createPortal(
-    <div className="mc-modal-overlay mc-foto-overlay" onClick={onClose} role="presentation">
-      <div
-        className="mc-foto-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-label={name ? `Foto de ${name}` : "Foto de perfil"}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button type="button" className="mc-foto-cerrar" onClick={onClose} aria-label="Cerrar la foto">
-          &times;
-        </button>
-        <img className="mc-foto-img" src={photoUrl} alt={name ? `Foto de ${name}` : "Foto de perfil"} />
-        {name && <div className="mc-foto-pie">{name}</div>}
-      </div>
-    </div>,
-    document.body
-  );
-};
 
 /**
  * Acepta `slug` (un nivel de semáforo) igual que el resto de componentes, para que todos
@@ -128,7 +94,14 @@ const Avatar = ({ name, size = 36, slug, color, photoUrl, presente, zoom = true 
   return (
     <>
       {visible}
-      {ampliada && <FotoAmpliada photoUrl={photoUrl} name={name} onClose={cerrar} />}
+      {ampliada && (
+        <FotoAmpliada
+          src={photoUrl}
+          alt={name ? `Foto de ${name}` : "Foto de perfil"}
+          pie={name}
+          onClose={cerrar}
+        />
+      )}
     </>
   );
 };

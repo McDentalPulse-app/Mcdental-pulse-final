@@ -115,6 +115,26 @@ lee nadie.
 
 ## Changelog
 
+### 2026-08-03 (noche, 7) · Las imágenes del chat no se podían ampliar y los archivos no se descargaban
+
+- **🔴 Las imágenes abrían la URL firmada en otra pestaña.** Eso saca de la app —en el móvil, al
+  navegador— y encima **esa URL caduca a los diez minutos**, así que la pestaña que quedaba
+  abierta acababa con la imagen rota y sin explicación. Ahora se amplían **dentro de la app**,
+  con el mismo visor que ya usaban las fotos de perfil: fondo oscuro, cierre con Escape o
+  tocando fuera, y botón de descargar.
+- **🔴 Los archivos no se descargaban: se abrían.** El enlace llevaba `download`, pero ese
+  atributo **solo manda cuando el archivo es del mismo origen**, y aquí depende de cómo esté
+  servido el almacén. Resultado: el navegador enseñaba el PDF, o se quedaba en blanco con un
+  `.docx`. Ahora la URL firmada lleva `?download=<nombre real>`, que hace que **el propio
+  servidor** responda con `Content-Disposition: attachment`. Eso funciona siempre.
+- **🆕 El visor de imagen sale de `Avatar.jsx` a su propio archivo.** Estaba metido dentro del
+  avatar y solo servía para fotos de perfil; el chat necesitaba exactamente lo mismo.
+
+**Verificado en el contenedor de producción, no supuesto:** la ruta de objeto firmado de
+`storage-api` declara `download: { type: "string" }` y su renderizador emite
+`attachment; filename=…`. O sea que el parámetro existe y hace lo que se espera **en esta versión
+desplegada**, no solo en la documentación.
+
 ### 2026-08-03 (noche, 6) · El buzón de Soporte se quedaba con el aviso encendido para siempre
 
 - **🔴 El contador y el marcado como leído usaban condiciones distintas.** El contador incluye
