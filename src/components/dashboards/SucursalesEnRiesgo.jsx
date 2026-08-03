@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import SectionTitle from "../common/SectionTitle";
 import EmptyState from "../common/EmptyState";
@@ -60,55 +61,63 @@ const SucursalesEnRiesgo = ({ sucursales = [], vacio = "Ninguna sucursal con cas
         </div>
       )}
 
-      <AnimatePresence>
-        {detalle && (
-          <motion.div className="mc-modal-overlay" onClick={() => setDetalle(null)} {...overlayMotion}>
-            <motion.div
-              className="mc-modal psico-suc-modal"
-              onClick={(e) => e.stopPropagation()}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="suc-riesgo-modal-title"
-              {...modalMotion}
-            >
-              <div className="psico-suc-modal-head">
-                <div>
-                  <h2 id="suc-riesgo-modal-title" className="mc-modal-title">
-                    <Icon name="building" size={18} /> {detalle.suc}
-                  </h2>
-                  <p className="admin-page-subtitle psico-suc-modal-sub">
-                    {detalle.riesgo} de {detalle.total} colaboradores en riesgo
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="dashboard-sucursal-modal-close"
-                  onClick={() => setDetalle(null)}
-                  aria-label="Cerrar"
-                >
-                  <Icon name="xCircle" size={20} />
-                </button>
-              </div>
-              <div className="psico-suc-modal-list">
-                {detalle.emps.map(({ emp, score, nivel, tendencia }) => (
-                  <div key={emp.id} className={`psico-suc-emp psico-suc-emp--${nivel}`}>
-                    <div className="psico-suc-emp-info">
-                      <div className="psico-suc-emp-name">{emp.name}</div>
-                      <div className="psico-suc-emp-meta">{emp.puesto}</div>
-                    </div>
-                    <div className="psico-suc-emp-right">
-                      <span className="psico-suc-emp-score">
-                        Score {tieneScoreValido(score) ? score : "—"} {tendencia}
-                      </span>
-                      <Badge tipo={nivel} />
-                    </div>
+      {/* En un portal a <body> por el mismo motivo que el modal de Score por Sucursal: la
+          animación de entrada del dashboard deja un `transform: translateY(0)` en la sección
+          contenedora, y eso basta para que un `position: fixed` deje de referirse a la pantalla
+          y se dibuje encajado dentro de la tarjeta. Aquí no se notaba solo porque la lista suele
+          estar vacía y el modal casi nunca se abre. */}
+      {createPortal(
+        <AnimatePresence>
+          {detalle && (
+            <motion.div className="mc-modal-overlay" onClick={() => setDetalle(null)} {...overlayMotion}>
+              <motion.div
+                className="mc-modal psico-suc-modal"
+                onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="suc-riesgo-modal-title"
+                {...modalMotion}
+              >
+                <div className="psico-suc-modal-head">
+                  <div>
+                    <h2 id="suc-riesgo-modal-title" className="mc-modal-title">
+                      <Icon name="building" size={18} /> {detalle.suc}
+                    </h2>
+                    <p className="admin-page-subtitle psico-suc-modal-sub">
+                      {detalle.riesgo} de {detalle.total} colaboradores en riesgo
+                    </p>
                   </div>
-                ))}
-              </div>
+                  <button
+                    type="button"
+                    className="dashboard-sucursal-modal-close"
+                    onClick={() => setDetalle(null)}
+                    aria-label="Cerrar"
+                  >
+                    <Icon name="xCircle" size={20} />
+                  </button>
+                </div>
+                <div className="psico-suc-modal-list">
+                  {detalle.emps.map(({ emp, score, nivel, tendencia }) => (
+                    <div key={emp.id} className={`psico-suc-emp psico-suc-emp--${nivel}`}>
+                      <div className="psico-suc-emp-info">
+                        <div className="psico-suc-emp-name">{emp.name}</div>
+                        <div className="psico-suc-emp-meta">{emp.puesto}</div>
+                      </div>
+                      <div className="psico-suc-emp-right">
+                        <span className="psico-suc-emp-score">
+                          Score {tieneScoreValido(score) ? score : "—"} {tendencia}
+                        </span>
+                        <Badge tipo={nivel} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </>
   );
 };

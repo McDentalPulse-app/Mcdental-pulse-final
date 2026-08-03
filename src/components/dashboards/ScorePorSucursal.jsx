@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
@@ -140,141 +141,153 @@ const ScorePorSucursal = ({ porSucursal = [], empleados = [], pulsePorEmpleado =
         </div>
       </Card>
 
-      <AnimatePresence>
-        {detalle && (
-          <motion.div
-            className="mc-modal-overlay dashboard-sucursal-overlay"
-            onClick={() => setAbierta(null)}
-            role="presentation"
-            {...overlayMotion}
-          >
+      {/* EL MODAL VA EN UN PORTAL A <body>, NO AQUÍ DENTRO. El dashboard anima la entrada de
+          cada sección con `dashSectionIn`, y esa animación toca `transform`. Aunque el fotograma
+          final no lo declare, el valor calculado en reposo NO es `none` sino `translateY(0)` — un
+          transform de verdad, que convierte a esta sección en el marco de referencia de cualquier
+          `position: fixed` que cuelgue de ella. El overlay dejaba de cubrir la pantalla y se
+          dibujaba dentro de la tarjeta, a medias y descuadrado. Antes no pasaba porque el overlay
+          colgaba directo de `.dashboard-page`, que se excluye de la animación; al agrupar esta
+          sección en su propio contenedor quedó por debajo de esa exclusión.
+          Es el mismo motivo por el que FotoAmpliada vive en un portal. */}
+      {createPortal(
+        <AnimatePresence>
+          {detalle && (
             <motion.div
-              className="mc-modal dashboard-sucursal-modal"
-              onClick={(e) => e.stopPropagation()}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="dashboard-sucursal-modal-title"
-              {...modalMotion}
+              className="mc-modal-overlay dashboard-sucursal-overlay"
+              onClick={() => setAbierta(null)}
+              role="presentation"
+              {...overlayMotion}
             >
-              <div className="dashboard-sucursal-modal-head">
-                <div>
-                  <h2 id="dashboard-sucursal-modal-title" className="dashboard-sucursal-modal-title">
-                    {detalle.nombre}
-                  </h2>
-                  <p className="dashboard-sucursal-modal-sub">Detalle de colaboradores y Pulse Score.</p>
+              <motion.div
+                className="mc-modal dashboard-sucursal-modal"
+                onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="dashboard-sucursal-modal-title"
+                {...modalMotion}
+              >
+                <div className="dashboard-sucursal-modal-head">
+                  <div>
+                    <h2 id="dashboard-sucursal-modal-title" className="dashboard-sucursal-modal-title">
+                      {detalle.nombre}
+                    </h2>
+                    <p className="dashboard-sucursal-modal-sub">Detalle de colaboradores y Pulse Score.</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="dashboard-sucursal-modal-close"
+                    onClick={() => setAbierta(null)}
+                    aria-label="Cerrar"
+                  >
+                    <Icon name="xCircle" size={20} />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  className="dashboard-sucursal-modal-close"
-                  onClick={() => setAbierta(null)}
-                  aria-label="Cerrar"
-                >
-                  <Icon name="xCircle" size={20} />
-                </button>
-              </div>
 
-              <div className="dashboard-sucursal-kpis">
-                <div className="dashboard-sucursal-kpi-card">
-                  <span className="dashboard-sucursal-kpi-label">Total colaboradores</span>
-                  <span className="dashboard-sucursal-kpi-value">{detalle.total}</span>
-                  <span className="dashboard-sucursal-kpi-sub">Registrados en sucursal</span>
+                <div className="dashboard-sucursal-kpis">
+                  <div className="dashboard-sucursal-kpi-card">
+                    <span className="dashboard-sucursal-kpi-label">Total colaboradores</span>
+                    <span className="dashboard-sucursal-kpi-value">{detalle.total}</span>
+                    <span className="dashboard-sucursal-kpi-sub">Registrados en sucursal</span>
+                  </div>
+                  <div className="dashboard-sucursal-kpi-card">
+                    <span className="dashboard-sucursal-kpi-label">Contestaron</span>
+                    <span className="dashboard-sucursal-kpi-value">{detalle.contestaron}</span>
+                    <span className="dashboard-sucursal-kpi-sub">Encuesta de la semana</span>
+                  </div>
+                  <div className="dashboard-sucursal-kpi-card">
+                    <span className="dashboard-sucursal-kpi-label">Promedio Pulse</span>
+                    {detalle.promedio == null ? (
+                      <>
+                        <span className="dashboard-sucursal-kpi-value dashboard-sucursal-kpi-value--empty">—</span>
+                        <span className="dashboard-sucursal-kpi-sub">Sin datos</span>
+                      </>
+                    ) : (
+                      <>
+                        <span
+                          className="dashboard-sucursal-kpi-value"
+                          style={{ color: nivelColor(detalle.promedioStatus.nivel) }}
+                        >
+                          {detalle.promedio}
+                        </span>
+                        <span className="dashboard-sucursal-kpi-sub">Bienestar promedio</span>
+                      </>
+                    )}
+                  </div>
+                  <div className="dashboard-sucursal-kpi-card">
+                    <span className="dashboard-sucursal-kpi-label">Semáforo promedio</span>
+                    {detalle.promedio == null ? (
+                      <>
+                        <span className="dashboard-sucursal-kpi-value dashboard-sucursal-kpi-value--empty">—</span>
+                        <span className="dashboard-sucursal-kpi-sub">Sin datos</span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="dashboard-sucursal-kpi-value dashboard-sucursal-kpi-value--badge">
+                          {semaforoToBadge(detalle.promedioStatus.semaforo) ? (
+                            <Badge tipo={semaforoToBadge(detalle.promedioStatus.semaforo)} />
+                          ) : (
+                            <span className="dashboard-sucursal-kpi-value dashboard-sucursal-kpi-value--text">
+                              {detalle.promedioStatus.semaforo}
+                            </span>
+                          )}
+                        </div>
+                        <span className="dashboard-sucursal-kpi-sub">Clasificación</span>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <div className="dashboard-sucursal-kpi-card">
-                  <span className="dashboard-sucursal-kpi-label">Contestaron</span>
-                  <span className="dashboard-sucursal-kpi-value">{detalle.contestaron}</span>
-                  <span className="dashboard-sucursal-kpi-sub">Encuesta de la semana</span>
-                </div>
-                <div className="dashboard-sucursal-kpi-card">
-                  <span className="dashboard-sucursal-kpi-label">Promedio Pulse</span>
-                  {detalle.promedio == null ? (
-                    <>
-                      <span className="dashboard-sucursal-kpi-value dashboard-sucursal-kpi-value--empty">—</span>
-                      <span className="dashboard-sucursal-kpi-sub">Sin datos</span>
-                    </>
-                  ) : (
-                    <>
-                      <span
-                        className="dashboard-sucursal-kpi-value"
-                        style={{ color: nivelColor(detalle.promedioStatus.nivel) }}
-                      >
-                        {detalle.promedio}
-                      </span>
-                      <span className="dashboard-sucursal-kpi-sub">Bienestar promedio</span>
-                    </>
-                  )}
-                </div>
-                <div className="dashboard-sucursal-kpi-card">
-                  <span className="dashboard-sucursal-kpi-label">Semáforo promedio</span>
-                  {detalle.promedio == null ? (
-                    <>
-                      <span className="dashboard-sucursal-kpi-value dashboard-sucursal-kpi-value--empty">—</span>
-                      <span className="dashboard-sucursal-kpi-sub">Sin datos</span>
-                    </>
-                  ) : (
-                    <>
-                      <div className="dashboard-sucursal-kpi-value dashboard-sucursal-kpi-value--badge">
-                        {semaforoToBadge(detalle.promedioStatus.semaforo) ? (
-                          <Badge tipo={semaforoToBadge(detalle.promedioStatus.semaforo)} />
-                        ) : (
-                          <span className="dashboard-sucursal-kpi-value dashboard-sucursal-kpi-value--text">
-                            {detalle.promedioStatus.semaforo}
-                          </span>
-                        )}
-                      </div>
-                      <span className="dashboard-sucursal-kpi-sub">Clasificación</span>
-                    </>
-                  )}
-                </div>
-              </div>
 
-              <div className="dashboard-sucursal-list-wrap">
-                <h3 className="dashboard-sucursal-list-title">Colaboradores de la sucursal</h3>
-                {detalle.filas.length === 0 ? (
-                  <p className="dashboard-sucursal-empty">No hay colaboradores registrados en esta sucursal.</p>
-                ) : (
-                  <div className="dashboard-sucursal-list">
-                    {detalle.filas.map(({ empleado, score, color, sinDatos, status, contestoSemana }) => (
-                      <div key={empleado.id} className="dashboard-sucursal-emp-row">
-                        <div className="dashboard-sucursal-emp-info">
-                          <Avatar name={empleado.name} size={40} color={color} photoUrl={empleado.avatarUrl} />
-                          <div className="dashboard-sucursal-emp-text">
-                            <div className="dashboard-sucursal-emp-name">{empleado.name}</div>
-                            <div className="dashboard-sucursal-emp-puesto">{empleado.puesto || "Sin puesto"}</div>
+                <div className="dashboard-sucursal-list-wrap">
+                  <h3 className="dashboard-sucursal-list-title">Colaboradores de la sucursal</h3>
+                  {detalle.filas.length === 0 ? (
+                    <p className="dashboard-sucursal-empty">No hay colaboradores registrados en esta sucursal.</p>
+                  ) : (
+                    <div className="dashboard-sucursal-list">
+                      {detalle.filas.map(({ empleado, score, color, sinDatos, status, contestoSemana }) => (
+                        <div key={empleado.id} className="dashboard-sucursal-emp-row">
+                          <div className="dashboard-sucursal-emp-info">
+                            <Avatar name={empleado.name} size={40} color={color} photoUrl={empleado.avatarUrl} />
+                            <div className="dashboard-sucursal-emp-text">
+                              <div className="dashboard-sucursal-emp-name">{empleado.name}</div>
+                              <div className="dashboard-sucursal-emp-puesto">{empleado.puesto || "Sin puesto"}</div>
+                            </div>
+                          </div>
+                          <div className="dashboard-sucursal-emp-badges">
+                            <span className="dashboard-sucursal-tag dashboard-sucursal-tag--muted">
+                              Pulse: {sinDatos ? "Sin datos" : score}
+                            </span>
+                            <span className="dashboard-sucursal-tag dashboard-sucursal-tag--muted">
+                              Semáforo:{" "}
+                              {sinDatos
+                                ? "Sin evaluación"
+                                : semaforoToBadge(status.semaforo)
+                                  ? status.semaforo
+                                  : status.label}
+                            </span>
+                            <span
+                              className={`dashboard-sucursal-tag dashboard-sucursal-tag--${contestoSemana ? "ok" : "pending"}`}
+                            >
+                              Encuesta: {contestoSemana ? "Completada" : "Pendiente"}
+                            </span>
                           </div>
                         </div>
-                        <div className="dashboard-sucursal-emp-badges">
-                          <span className="dashboard-sucursal-tag dashboard-sucursal-tag--muted">
-                            Pulse: {sinDatos ? "Sin datos" : score}
-                          </span>
-                          <span className="dashboard-sucursal-tag dashboard-sucursal-tag--muted">
-                            Semáforo:{" "}
-                            {sinDatos
-                              ? "Sin evaluación"
-                              : semaforoToBadge(status.semaforo)
-                                ? status.semaforo
-                                : status.label}
-                          </span>
-                          <span
-                            className={`dashboard-sucursal-tag dashboard-sucursal-tag--${contestoSemana ? "ok" : "pending"}`}
-                          >
-                            Encuesta: {contestoSemana ? "Completada" : "Pendiente"}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-              <div className="dashboard-sucursal-modal-footer">
-                <button type="button" className="mc-btn-secondary" onClick={() => setAbierta(null)}>
-                  Cerrar
-                </button>
-              </div>
+                <div className="dashboard-sucursal-modal-footer">
+                  <button type="button" className="mc-btn-secondary" onClick={() => setAbierta(null)}>
+                    Cerrar
+                  </button>
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 };

@@ -7,8 +7,11 @@
 /* ── Entrada orquestada: stagger de secciones al montar ── */
 @keyframes dashSectionIn {
   from { opacity: 0; transform: translateY(18px); }
-  /* el frame final NO declara transform → en reposo no queda stacking context
-     (si quedara translateY(0), el dropdown del header se vería tras los widgets) */
+  /* OJO: omitir `transform` aquí NO lo deja en `none` al terminar. Con `animation-fill-mode:
+     both` la animación sigue aplicándose y el valor calculado en reposo es `translateY(0)` —
+     medido, no supuesto. Un transform de verdad, así que cada sección animada ES el marco de
+     referencia de los `position: fixed` que cuelguen de ella. Por eso los modales del dashboard
+     van en un portal a <body> (ver ScorePorSucursal) y no basta con excluir el overlay abajo. */
   to   { opacity: 1; }
 }
 
