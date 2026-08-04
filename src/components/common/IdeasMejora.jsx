@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import Select from "./Select";
 import Card from "./Card";
 import PageHeader from "./PageHeader";
 import EmptyState from "./EmptyState";
@@ -143,16 +144,15 @@ const IdeasMejora = ({ user }) => {
           </div>
           <div className="mc-form-group">
             <label className="mc-form-label" htmlFor="im-prioridad">¿Qué tanto urge?</label>
-            <select
+            <Select
               id="im-prioridad"
-              className="mc-form-select"
               value={prioridad}
-              onChange={(e) => setPrioridad(e.target.value)}
+              onChange={(valor) => setPrioridad(valor)}
             >
               {PRIORIDADES.map((p) => (
                 <option key={p.value} value={p.value}>{p.label}</option>
               ))}
-            </select>
+            </Select>
           </div>
           <button type="button" className="mc-btn-primary mc-btn-with-icon" disabled={enviando} onClick={enviar}>
             <Icon name="lightbulb" size={16} /> {enviando ? "Enviando…" : "Enviar idea"}

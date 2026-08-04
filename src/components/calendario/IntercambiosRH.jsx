@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import DateRangePicker from "../common/DateRangePicker";
 import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
@@ -106,12 +107,12 @@ const IntercambiosRH = ({ intercambios, festivos, onResolver, onAddFestivo, onDe
       <Card>
         <SectionTitle icon="calendar">Días festivos</SectionTitle>
         <div className="festivo-alta">
-          <input
-            type="date"
-            className="mc-form-input"
-            value={nuevaFecha}
-            onChange={(e) => setNuevaFecha(e.target.value)}
-            aria-label="Fecha del festivo"
+          <DateRangePicker
+            unico
+            desde={nuevaFecha}
+            onChange={setNuevaFecha}
+            placeholder="Fecha del festivo"
+            className="festivo-alta-fecha"
           />
           <input
             type="text"

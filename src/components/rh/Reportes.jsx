@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import Select from "../common/Select";
 import Card from "../common/Card";
 import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
@@ -571,45 +572,42 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
         <div className="reportes-periodo-panel">
           <div className="mc-form-group">
             <label className="mc-form-label" htmlFor="rep-que">¿Qué reporte?</label>
-            <select
+            <Select
               id="rep-que"
-              className="mc-form-select"
               value={tipoReporte}
-              onChange={(e) => { setTipoReporte(e.target.value); setPeriodoElegido(null); setMostrarSelectorSucursal(false); }}
+              onChange={(valor) => { setTipoReporte(valor); setPeriodoElegido(null); setMostrarSelectorSucursal(false); }}
             >
               {TIPOS_REPORTE.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
-            </select>
+            </Select>
           </div>
           <div className="mc-form-row-2">
             <div className="mc-form-group">
               <label className="mc-form-label" htmlFor="rep-tipo">Agrupar por</label>
-              <select
+              <Select
                 id="rep-tipo"
-                className="mc-form-select"
                 value={tipoPeriodo}
-                onChange={(e) => { setTipoPeriodo(e.target.value); setPeriodoElegido(null); }}
+                onChange={(valor) => { setTipoPeriodo(valor); setPeriodoElegido(null); }}
               >
                 {TIPOS.map((t) => (
                   <option key={t.value} value={t.value}>{t.label} · {t.pista}</option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div className="mc-form-group">
               <label className="mc-form-label" htmlFor="rep-periodo">
                 {tipoActual?.label || "Periodo"}
               </label>
-              <select
+              <Select
                 id="rep-periodo"
-                className="mc-form-select"
                 value={periodo?.id || ""}
-                onChange={(e) => setPeriodoElegido(e.target.value)}
+                onChange={(valor) => setPeriodoElegido(valor)}
               >
                 {periodos.map((p) => (
                   <option key={p.id} value={p.id}>{p.etiqueta}</option>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
         </div>
@@ -632,11 +630,11 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
           <div className="reportes-sucursal-panel">
             <div className="mc-form-group">
               <label className="mc-form-label" htmlFor="rep-sucursal">Selecciona la sucursal</label>
-              <select id="rep-sucursal" className="mc-form-select" value={sucursalReporte} onChange={(e) => setSucursalReporte(e.target.value)}>
+              <Select id="rep-sucursal" value={sucursalReporte} onChange={(valor) => setSucursalReporte(valor)}>
                 {sucursalesReporte.map((sucursal) => (
                   <option key={sucursal} value={sucursal}>{sucursal}</option>
                 ))}
-              </select>
+              </Select>
             </div>
             <button type="button" className="mc-btn-primary mc-btn-with-icon" onClick={conAviso(descargarReporteSucursal)}>
               <Icon name="fileDownload" size={16} /> Descargar reporte de sucursal

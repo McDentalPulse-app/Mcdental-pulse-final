@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Select from "../common/Select";
 import { useGlobal } from "../../contexts/GlobalContext";
 import { useNotification } from "../../contexts/NotificationContext";
 import Card from "../common/Card";
@@ -52,17 +53,17 @@ const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) 
           <div className="mc-form-grid">
             <div className="mc-form-group">
               <label className="mc-form-label" htmlFor="rg-empleado">Empleado</label>
-              <select id="rg-empleado" className="mc-form-select" value={empleadoId} onChange={(e) => setEmpleadoId(e.target.value)}>
+              <Select id="rg-empleado" value={empleadoId} onChange={(valor) => setEmpleadoId(valor)}>
                 {empleados.map(e => (
                   <option key={e.id} value={e.id}>{e.name} · {normalizeSucursal(e.sucursal)} · {e.puesto}</option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div className="mc-form-group">
               <label className="mc-form-label" htmlFor="rg-categoria">Categoría</label>
-              <select id="rg-categoria" className="mc-form-select" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+              <Select id="rg-categoria" value={categoria} onChange={(valor) => setCategoria(valor)}>
                 {CATEGORIAS_MEDALLA.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+              </Select>
             </div>
             <div className="mc-form-group">
               <label className="mc-form-label" htmlFor="rg-comentario">Comentario</label>

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Select from "../common/Select";
 import { useGlobal } from "../../contexts/GlobalContext";
 import { useNotification } from "../../contexts/NotificationContext";
 import Card from "../common/Card";
@@ -84,26 +85,24 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota, onDeleteNota }) 
         <SectionTitle icon="users">Semáforo por colaborador</SectionTitle>
 
         <FilterBar search={{ value: busqueda, onChange: setBusqueda, placeholder: "Buscar por nombre, puesto o sucursal..." }}>
-          <select
-            className="list-filter-select"
+          <Select
             value={filtroSucursal}
-            onChange={(e) => setFiltroSucursal(e.target.value)}
+            onChange={(valor) => setFiltroSucursal(valor)}
           >
             <option value="Todas">Todas las sucursales</option>
             {[...new Set(empleados.map((e) => normalizeSucursal(e.sucursal)))].sort().map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
-          </select>
-          <select
-            className="list-filter-select"
+          </Select>
+          <Select
             value={filtroSemaforo}
-            onChange={(e) => setFiltroSemaforo(e.target.value)}
+            onChange={(valor) => setFiltroSemaforo(valor)}
           >
             <option value="Todos">Todos los semáforos</option>
             <option value="verde">Verde</option>
             <option value="amarillo">Amarillo</option>
             <option value="rojo">Rojo</option>
-          </select>
+          </Select>
         </FilterBar>
         <div className="list-filter-count">
           Mostrando {filtered.length} de {empleados.length} colaboradores

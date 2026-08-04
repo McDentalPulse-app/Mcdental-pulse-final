@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import Select from "./Select";
 import Card from "./Card";
 import PageHeader from "./PageHeader";
 import EmptyState from "./EmptyState";
@@ -139,29 +140,27 @@ const SoporteTI = ({ user }) => {
           <div className="mc-form-row-2">
             <div className="mc-form-group">
               <label className="mc-form-label" htmlFor="st-categoria">Categoría</label>
-              <select
+              <Select
                 id="st-categoria"
-                className="mc-form-select"
                 value={categoria}
-                onChange={(e) => setCategoria(e.target.value)}
+                onChange={(valor) => setCategoria(valor)}
               >
                 {CATEGORIAS.map((c) => (
                   <option key={c.value} value={c.value}>{c.label}</option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div className="mc-form-group">
               <label className="mc-form-label" htmlFor="st-prioridad">Prioridad</label>
-              <select
+              <Select
                 id="st-prioridad"
-                className="mc-form-select"
                 value={prioridad}
-                onChange={(e) => setPrioridad(e.target.value)}
+                onChange={(valor) => setPrioridad(valor)}
               >
                 {PRIORIDADES.map((p) => (
                   <option key={p.value} value={p.value}>{p.label}</option>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
           <div className="mc-form-group">

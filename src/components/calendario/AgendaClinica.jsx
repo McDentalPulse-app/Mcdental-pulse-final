@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from "react";
+import Select from "../common/Select";
 import Icon from "../ui/Icon";
 import EventoModal from "./EventoModal";
 
@@ -95,11 +96,11 @@ export default function AgendaClinica({ overlay = [], citas = [], onGuardarEvent
             <button type="button" className="agenda-hoy" onClick={irHoy}>Hoy</button>
             <button type="button" className="cal-nav" onClick={() => mover(1)} aria-label="Siguiente">›</button>
           </div>
-          <select className="agenda-vista-select" value={vista} onChange={(e) => setVista(e.target.value)} aria-label="Vista">
+          <Select value={vista} onChange={(valor) => setVista(valor)} aria-label="Vista" className="mc-select--compacto">
             <option value="mes">Vista Mes</option>
             <option value="semana">Vista Semana</option>
             <option value="dia">Vista Día</option>
-          </select>
+          </Select>
           {puedeEditar && (
             <button type="button" className="agenda-add" onClick={() => abrirNuevo()}>
               <Icon name="plus" size={16} /> Agregar evento

@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import DateRangePicker from "../common/DateRangePicker";
+import Select from "../common/Select";
 import { useGlobal } from "../../contexts/GlobalContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNotification } from "../../contexts/NotificationContext";
@@ -247,27 +249,25 @@ const GestionUsuarios = () => {
         <FilterBar
           search={{ value: busqueda, onChange: setBusqueda, placeholder: "Buscar empleado por nombre..." }}
         >
-          <select
-            className="list-filter-select"
+          <Select
             value={filtroSucursal}
-            onChange={(e) => { setFiltroSucursal(e.target.value); setPagina(1); }}
+            onChange={(valor) => { setFiltroSucursal(valor); setPagina(1); }}
           >
             <option value="Todas">Todas las sucursales</option>
             {nombresSucursales.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
-          </select>
+          </Select>
 
-          <select
-            className="list-filter-select"
+          <Select
             value={filtroEstado}
-            onChange={(e) => { setFiltroEstado(e.target.value); setPagina(1); }}
+            onChange={(valor) => { setFiltroEstado(valor); setPagina(1); }}
           >
             <option value="vigentes">Vigentes (activos e inactivos)</option>
             <option value="activos">Solo activos</option>
             <option value="inactivos">Solo inactivos</option>
             <option value="archivados">Archivados{archivadosTotal ? ` (${archivadosTotal})` : ""}</option>
-          </select>
+          </Select>
         </FilterBar>
 
         <div className="list-filter-count">
@@ -521,13 +521,13 @@ const GestionUsuarios = () => {
 
               <div className="mc-form-row-2">
                 <Campo id="gu-fecha-ingreso" label="Fecha de ingreso" error={errores.fechaIngreso}>
-                  <input
-                    id="gu-fecha-ingreso"
-                    type="date"
+                  <DateRangePicker
+                    unico
                     max={hoyISO}
-                    className={`mc-form-input${errores.fechaIngreso ? " mc-form-input--error" : ""}`}
-                    value={formData.fechaIngreso}
-                    onChange={(e) => cambiarCampo("fechaIngreso", e.target.value)}
+                    desde={formData.fechaIngreso}
+                    onChange={(iso) => cambiarCampo("fechaIngreso", iso)}
+                    placeholder="Elige el día"
+                    className={errores.fechaIngreso ? "mc-daterange--error" : ""}
                   />
                 </Campo>
 
@@ -574,17 +574,16 @@ const GestionUsuarios = () => {
                 error={errores.role}
                 hint={rolBloqueado ? "Solo un administrador puede cambiar este rol." : undefined}
               >
-                <select
+                <Select
                   id="gu-role"
-                  className="mc-form-select"
                   value={formData.role}
                   disabled={rolBloqueado}
-                  onChange={(e) => cambiarCampo("role", e.target.value)}
+                  onChange={(valor) => cambiarCampo("role", valor)}
                 >
                   {rolesDisponibles.map((r) => (
                     <option key={r.valor} value={r.valor}>{r.etiqueta}</option>
                   ))}
-                </select>
+                </Select>
               </Campo>
 
               <SectionTitle icon="briefcase">Puesto y sucursal</SectionTitle>
@@ -602,16 +601,15 @@ const GestionUsuarios = () => {
                 </Campo>
 
                 <Campo id="gu-sucursal" label="Sucursal">
-                  <select
+                  <Select
                     id="gu-sucursal"
-                    className="mc-form-select"
                     value={formData.sucursal}
-                    onChange={(e) => cambiarCampo("sucursal", e.target.value)}
+                    onChange={(valor) => cambiarCampo("sucursal", valor)}
                   >
                     {nombresSucursales.map((s) => (
                       <option key={s} value={s}>{s}</option>
                     ))}
-                  </select>
+                  </Select>
                 </Campo>
               </div>
 

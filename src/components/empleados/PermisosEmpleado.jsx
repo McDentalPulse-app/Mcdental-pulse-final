@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Select from "../common/Select";
 import Card from "../common/Card";
 import EmptyState from "../common/EmptyState";
 import SectionTitle from "../common/SectionTitle";
@@ -231,19 +232,18 @@ export default function PermisosEmpleado({
           {tipoSeleccionado === "Permisos" && (
             <div className="mc-form-group">
               <label className="mc-form-label" htmlFor="pe-causa">Causa</label>
-              <select
+              <Select
                 id="pe-causa"
-                className="mc-form-input"
                 name="causa"
                 required
                 value={causaSeleccionada}
-                onChange={(e) => setCausaSeleccionada(e.target.value)}
+                onChange={(valor) => setCausaSeleccionada(valor)}
               >
                 <option value="">Selecciona una causa</option>
                 {CAUSAS_PERMISO.map((c) => (
                   <option key={c.valor} value={c.valor}>{c.label}</option>
                 ))}
-              </select>
+              </Select>
             </div>
           )}
 

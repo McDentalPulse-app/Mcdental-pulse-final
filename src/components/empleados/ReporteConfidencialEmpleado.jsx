@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Select from "../common/Select";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
 import PageHeader from "../common/PageHeader";
@@ -88,19 +89,19 @@ const ReporteConfidencialEmpleado = ({ user, onSubmit }) => {
           <div className="mc-form-grid">
             <div className="mc-form-group">
               <label className="mc-form-label" htmlFor="rc-tipo">Tipo de reporte</label>
-              <select id="rc-tipo" className="mc-form-select" value={tipo} onChange={(e) => setTipo(e.target.value)}>
+              <Select id="rc-tipo" value={tipo} onChange={(valor) => setTipo(valor)}>
                 {tipos.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
+              </Select>
             </div>
 
             <div className="mc-form-group">
               <label className="mc-form-label" htmlFor="rc-urgencia">Nivel de urgencia</label>
-              <select id="rc-urgencia" className="mc-form-select" value={urgencia} onChange={(e) => setUrgencia(e.target.value)}>
+              <Select id="rc-urgencia" value={urgencia} onChange={(valor) => setUrgencia(valor)}>
                 <option>Baja</option>
                 <option>Media</option>
                 <option>Alta</option>
                 <option>Crítica</option>
-              </select>
+              </Select>
             </div>
 
             <div className="mc-form-group">

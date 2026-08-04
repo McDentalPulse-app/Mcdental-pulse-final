@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import Select from "../common/Select";
 import { useGlobal } from "../../contexts/GlobalContext";
 import { useNotification } from "../../contexts/NotificationContext";
 import { useEscapeKey } from "../../hooks/useEscapeKey";
@@ -370,12 +371,11 @@ const GestionEncuestas = ({ encuestas = [] }) => {
 
                 <div className="mc-form-group">
                   <label className="mc-form-label" htmlFor="ge-bloque">Cuándo se pregunta</label>
-                  <select
+                  <Select
                     id="ge-bloque"
-                    className="mc-form-select"
                     value={form?.bloqueId || ""}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, bloqueId: e.target.value || null }))
+                    onChange={(valor) =>
+                      setForm((prev) => ({ ...prev, bloqueId: valor || null }))
                     }
                   >
                     <option value="">Núcleo · todas las semanas (cuenta para el Pulse Score)</option>
@@ -384,22 +384,21 @@ const GestionEncuestas = ({ encuestas = [] }) => {
                         {b.nombre} · solo su quincena (no cuenta para el score)
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
 
                 <div className="mc-form-row-2">
                   <div className="mc-form-group">
                     <label className="mc-form-label" htmlFor="ge-tipo">Tipo</label>
-                    <select
+                    <Select
                       id="ge-tipo"
-                      className="mc-form-select"
                       value={form?.tipo || "escala"}
-                      onChange={(e) => handleTipoChange(e.target.value)}
+                      onChange={(valor) => handleTipoChange(valor)}
                     >
                       {TIPOS.map((t) => (
                         <option key={t.value} value={t.value}>{t.label}</option>
                       ))}
-                    </select>
+                    </Select>
                   </div>
 
                   <div className="mc-form-group">
@@ -429,20 +428,19 @@ const GestionEncuestas = ({ encuestas = [] }) => {
 
                 <div className="mc-form-group">
                   <label className="mc-form-label" htmlFor="ge-estado">Estado</label>
-                  <select
+                  <Select
                     id="ge-estado"
-                    className="mc-form-select"
                     value={form?.activa === false ? "inactiva" : "activa"}
-                    onChange={(e) =>
+                    onChange={(valor) =>
                       setForm((prev) => ({
                         ...prev,
-                        activa: e.target.value === "activa",
+                        activa: valor === "activa",
                       }))
                     }
                   >
                     <option value="activa">Activa</option>
                     <option value="inactiva">Inactiva</option>
-                  </select>
+                  </Select>
                 </div>
 
                 {form?.tipo === "opcion" && (

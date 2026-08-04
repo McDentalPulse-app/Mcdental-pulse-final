@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import DateRangePicker from "../common/DateRangePicker";
+import Select from "../common/Select";
 import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
@@ -11,6 +13,11 @@ import { esEmpleadoActivo } from "../../utils/helpers";
 const DescuentosRH = ({ descuentos, empleados, user, onUpdateEstado, onAddDescuento }) => {
   const { toast } = useNotification();
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  // El empleado pasa a estado. El <select> era NO controlado y el formulario leía
+  // `form.empleadoId.value`; con el desplegable propio ese valor sale del campo oculto, que
+  // solo puede llevarlo si el componente lo conoce.
+  const [empleadoId, setEmpleadoId] = useState("");
+  const [fecha, setFecha] = useState("");
   const pendientes = descuentos.filter(d => d.estado === "pendiente").length;
   const activos = descuentos.filter(d => d.estado === "activo").length;
   const pagados = descuentos.filter(d => d.estado === "pagado").length;
@@ -59,6 +66,13 @@ const DescuentosRH = ({ descuentos, empleados, user, onUpdateEstado, onAddDescue
                 return;
               }
 
+              // El campo perdió el `required` del navegador al dejar de ser un <input type=date>:
+              // ahora es el calendario propio, y la comprobación la hace el formulario.
+              if (!fecha) {
+                toast.warning("Elige la fecha del descuento.");
+                return;
+              }
+
               const nuevoDescuento = {
                 empleadoId: empleadoSeleccionado.id,
                 empleado: empleadoSeleccionado.name,
@@ -67,7 +81,7 @@ const DescuentosRH = ({ descuentos, empleados, user, onUpdateEstado, onAddDescue
                 tipo: form.tipo.value,
                 motivo: form.motivo.value,
                 observaciones: form.observaciones.value,
-                fecha: form.fecha.value,
+                fecha,
                 monto: Number(form.monto.value),
                 responsable: user?.name || "RH"
               };
@@ -76,13 +90,14 @@ const DescuentosRH = ({ descuentos, empleados, user, onUpdateEstado, onAddDescue
 
               toast.success("Descuento agregado correctamente.");
               form.reset();
+              setEmpleadoId("");
+              setFecha("");
               setMostrarFormulario(false);
             }}
           >
             <div className="mc-form-group">
               <label className="mc-form-label" htmlFor="dr-empleado">Empleado</label>
-              <select id="dr-empleado" className="mc-form-select" name="empleadoId" required>
-                <option value="">Selecciona empleado</option>
+              <Select id="dr-empleado" name="empleadoId" value={empleadoId} onChange={setEmpleadoId} placeholder="Selecciona empleado">
                 {empleados
                   .filter(esEmpleadoActivo)
                   .map(emp => (
@@ -90,7 +105,7 @@ const DescuentosRH = ({ descuentos, empleados, user, onUpdateEstado, onAddDescue
                       {emp.name} - {normalizeSucursal(emp.sucursal)}
                     </option>
                   ))}
-              </select>
+              </Select>
             </div>
 
             <div className="mc-form-row-2">
@@ -107,7 +122,7 @@ const DescuentosRH = ({ descuentos, empleados, user, onUpdateEstado, onAddDescue
             <div className="mc-form-row-2">
               <div className="mc-form-group">
                 <label className="mc-form-label" htmlFor="dr-fecha">Fecha</label>
-                <input id="dr-fecha" className="mc-form-input" name="fecha" type="date" required />
+                <DateRangePicker unico desde={fecha} onChange={setFecha} placeholder="Elige el día" />
               </div>
               <div className="mc-form-group">
                 <label className="mc-form-label" htmlFor="dr-monto">Monto</label>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Select from "../common/Select";
 import PageHeader from "../common/PageHeader";
 import { useEscapeKey } from "../../hooks/useEscapeKey";
 import Card from "../common/Card";
@@ -393,12 +394,12 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
               <div className="asistencia-filtros-panel">
                 <label>
                   Sucursal
-                  <select className="list-filter-select" value={filtroSucursal} onChange={(e) => setFiltroSucursal(e.target.value)}>
+                  <Select value={filtroSucursal} onChange={(valor) => setFiltroSucursal(valor)}>
                     <option value="Todas">Todas las sucursales</option>
                     {nombresSucursales.map((s) => (
                       <option key={s} value={s}>{s}</option>
                     ))}
-                  </select>
+                  </Select>
                 </label>
               </div>
             )}

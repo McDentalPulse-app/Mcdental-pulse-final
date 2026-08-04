@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Select from "../common/Select";
 import PageHeader from "../common/PageHeader";
 import Card from "../common/Card";
 import Icon from "../ui/Icon";
@@ -243,17 +244,16 @@ export default function GestionSucursales() {
               </div>
               <div className="rh-data-row-meta">
                 <label className="rh-data-row-meta-secondary" htmlFor={`radio-${s.id}`}>Radio</label>
-                <select
+                <Select
                   id={`radio-${s.id}`}
-                  className="mc-form-select"
                   value={s.radioM}
-                  onChange={(e) => cambiarRadio(s, Number(e.target.value))}
+                  onChange={(valor) => cambiarRadio(s, Number(valor))}
                   disabled={!s.tieneGeocerca}
                 >
                   {[5, 10, 15, 20, 50, 100, 150, 250, 500].map((r) => (
                     <option key={r} value={r}>{r} m</option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div className="rh-data-row-status">
                 {s.tieneGeocerca ? (

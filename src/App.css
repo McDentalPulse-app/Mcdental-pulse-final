@@ -9286,6 +9286,7 @@
 }
 .week-select-caret--open { transform: rotate(180deg); }
 
+.mc-select-menu,
 .week-select-menu {
   position: absolute;
   top: calc(100% + 6px);
@@ -9305,6 +9306,7 @@
   animation: weekSelectIn 0.16s ease;
 }
 @keyframes weekSelectIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+.mc-select-option,
 .week-select-option {
   width: 100%;
   display: block;
@@ -9320,7 +9322,9 @@
   cursor: pointer;
   white-space: nowrap;
 }
+.mc-select-option:hover,
 .week-select-option:hover { background: var(--mc-gris-perla); }
+.mc-select-option--activa,
 .week-select-option--active { background: var(--mc-brand-suave); color: var(--mc-texto-titulo); font-weight: 800; }
 
 @media (max-width: 768px) {
@@ -13191,3 +13195,77 @@
     padding-left: 46px;
   }
 }
+
+
+/* ============================================================
+   <Select> — el desplegable propio de los formularios.
+
+   Existe porque la lista de un `<select>` nativo NO se puede maquetar: la pinta el sistema
+   operativo y ningún CSS la alcanza. Daba igual tener la caja cerrada perfectamente igualada
+   con los demás campos; al pulsarla salía la lista del navegador, apretada y con el resaltado
+   azul del sistema, encima de una app oscura.
+
+   CERRADO se ve como cualquier campo: hereda `--mc-control-*`, los mismos tokens que
+   `.mc-form-input`. ABIERTO reutiliza las MISMAS reglas del popover de <WeekSelect>
+   (ver arriba, `.mc-select-menu` y `.mc-select-option` van en el mismo selector): compartir
+   declaraciones es lo único que garantiza que no se separen con el tiempo.
+   ============================================================ */
+.mc-select { position: relative; width: 100%; min-width: 0; }
+
+.mc-select-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 14px;
+  border-radius: var(--mc-control-radio);
+  border: 1px solid var(--mc-control-borde);
+  background: var(--mc-control-fondo);
+  color: var(--mc-texto);
+  font-family: inherit;
+  font-size: var(--mc-control-letra);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.mc-select-trigger:focus-visible,
+.mc-select-trigger--abierto {
+  border-color: var(--mc-aqua);
+  box-shadow: 0 0 0 3px rgba(var(--mc-aqua-rgb) / 0.12);
+}
+.mc-select-trigger:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* El valor se recorta con puntos suspensivos y la flecha nunca se mueve: sin el `min-width: 0`
+   un nombre largo de sucursal empuja la flecha fuera de la caja. */
+.mc-select-valor { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.mc-select-valor--vacio { color: var(--mc-texto-apagado); font-weight: 500; }
+.mc-select-caret { flex-shrink: 0; color: var(--mc-texto-secundario); transition: transform 0.18s; }
+.mc-select-trigger--abierto .mc-select-caret { transform: rotate(180deg); }
+
+/* El menú se ancla a la IZQUIERDA y ocupa al menos el ancho del campo: el de WeekSelect va a la
+   derecha porque cuelga de una pastilla estrecha en la cabecera, pero aquí lo natural es que
+   caiga alineado con el campo del que sale. */
+.mc-select-menu {
+  /* FIJO y no absoluto: la lista vive en un portal a <body> y su sitio lo calcula el
+     componente en coordenadas de pantalla. Ver el comentario de `situar()` en Select.jsx. */
+  position: fixed;
+  left: 0;
+  right: auto;
+  max-width: min(420px, calc(100vw - 32px));
+  /* Con 26 sucursales la lista no cabe en pantalla: se hace scroll dentro del popover en vez
+     de estirarlo hasta salirse. */
+  max-height: 320px;
+}
+.mc-select-option { white-space: normal; }
+/* Resaltado del TECLADO, distinto del de la opción elegida: si fueran el mismo, al mover las
+   flechas parecería que ya se seleccionó lo que solo se está recorriendo. */
+.mc-select-option--resaltada { background: var(--mc-gris-perla); }
+.mc-select-option--activa.mc-select-option--resaltada { background: var(--mc-brand-suave); }
+.mc-select-option:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Variante compacta: la barra de la agenda tiene botones de 38px de alto y un campo de 40
+   desalinearía la fila entera. */
+.mc-select--compacto { width: auto; }
+.mc-select--compacto .mc-select-trigger { height: 38px; padding: 0 12px; }

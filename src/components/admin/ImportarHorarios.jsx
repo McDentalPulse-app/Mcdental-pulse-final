@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import Select from "../common/Select";
 import PageHeader from "../common/PageHeader";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
@@ -203,13 +204,12 @@ export default function ImportarHorarios({ usuarios = [], onImportado }) {
                 <span className="mc-form-label">
                   {campo.label} {campo.requerido && <em>·  obligatoria</em>}
                 </span>
-                <select
-                  className="mc-form-input"
+                <Select
                   value={mapeo[campo.clave] ?? ""}
-                  onChange={(e) =>
+                  onChange={(valor) =>
                     setMapeo((m) => ({
                       ...m,
-                      [campo.clave]: e.target.value === "" ? undefined : Number(e.target.value),
+                      [campo.clave]: valor === "" ? undefined : Number(valor),
                     }))
                   }
                 >
@@ -217,7 +217,7 @@ export default function ImportarHorarios({ usuarios = [], onImportado }) {
                   {cabeceras.map((c, i) => (
                     <option key={i} value={i}>{c}</option>
                   ))}
-                </select>
+                </Select>
               </label>
             ))}
           </Card>

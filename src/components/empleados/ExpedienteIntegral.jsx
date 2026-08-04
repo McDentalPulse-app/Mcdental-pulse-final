@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Select from "../common/Select";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import EmptyState from "../common/EmptyState";
@@ -218,17 +219,17 @@ const ExpedienteIntegral = ({
             />
           </div>
 
-          <select
-            className="mc-form-select expediente-listado-sucursal"
+          <Select
+            className="expediente-listado-sucursal"
             aria-label="Filtrar por sucursal"
             value={filtroSucursalExp}
-            onChange={(e) => setFiltroSucursalExp(e.target.value)}
+            onChange={(valor) => setFiltroSucursalExp(valor)}
           >
             <option value="Todas">Todas las sucursales</option>
             {[...new Set(empleados.map((emp) => normalizeSucursal(emp.sucursal)))].map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
-          </select>
+          </Select>
 
           <div className="expediente-listado-cuenta">
             {empleadosFiltrados.length} de {empleados.length} empleados
@@ -355,13 +356,13 @@ const ExpedienteIntegral = ({
                   <div className="expediente-upload-panel">
                     <div className="mc-form-group">
                       <label className="mc-form-label" htmlFor="exp-tipo-archivo">Tipo de archivo</label>
-                      <select id="exp-tipo-archivo" className="mc-form-select" value={tipoArchivoExpediente} onChange={(e) => setTipoArchivoExpediente(e.target.value)}>
+                      <Select id="exp-tipo-archivo" value={tipoArchivoExpediente} onChange={(valor) => setTipoArchivoExpediente(valor)}>
                         <option value="General">General</option>
                         <option value="Contrato">Contrato</option>
                         <option value="INE">INE</option>
                         <option value="Comprobante">Comprobante</option>
                         <option value="PDF">PDF</option>
-                      </select>
+                      </Select>
                     </div>
 
                     <div className="mc-form-group">

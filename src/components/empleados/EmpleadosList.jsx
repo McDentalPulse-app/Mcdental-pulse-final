@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Select from "../common/Select";
 import { createPortal } from "react-dom";
 import { useGlobal } from "../../contexts/GlobalContext";
 import { useEscapeKey } from "../../hooks/useEscapeKey";
@@ -499,27 +500,25 @@ const EmpleadosList = ({
 
       <Card className="list-page-sticky list-card-spaced">
         <FilterBar search={{ value: busqueda, onChange: setBusqueda, placeholder: "Buscar por nombre, puesto o sucursal..." }}>
-          <select
-            className="list-filter-select"
+          <Select
             value={filtroSucursal}
-            onChange={(e) => setFiltroSucursal(e.target.value)}
+            onChange={(valor) => setFiltroSucursal(valor)}
           >
             <option value="Todas">Todas las sucursales</option>
             {[...new Set(empleados.map((e) => normalizeSucursal(e.sucursal)))].map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
-          </select>
+          </Select>
 
-          <select
-            className="list-filter-select"
+          <Select
             value={filtroSemaforo}
-            onChange={(e) => setFiltroSemaforo(e.target.value)}
+            onChange={(valor) => setFiltroSemaforo(valor)}
           >
             <option value="Todos">Todos los semáforos</option>
             <option value="verde">Verde</option>
             <option value="amarillo">Amarillo</option>
             <option value="rojo">Rojo</option>
-          </select>
+          </Select>
         </FilterBar>
 
         <div className="list-filter-count">

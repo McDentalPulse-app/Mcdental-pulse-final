@@ -115,6 +115,38 @@ lee nadie.
 
 ## Changelog
 
+### 2026-08-04 (tarde) · Los desplegables y los calendarios dejan de ser los del navegador
+
+La ronda anterior igualó los controles **cerrados** — misma caja, mismo borde, mismo radio— y eso
+no resolvió lo que se veía mal. **Lo que se ve mal es la lista abierta**, y la de un `<select>`
+nativo NO se puede maquetar: la dibuja el sistema operativo y ningún CSS la alcanza. Daba igual
+tener la caja perfecta: al pulsarla salía una lista apretada, con el resaltado azul del sistema,
+encima de una app oscura. La única salida es sustituir el componente.
+
+- **Nuevo `<Select>`** (`src/components/common/Select.jsx`), que sustituye a los **30 `<select>`
+  nativos** de la app. Cerrado se ve como cualquier campo (hereda los `--mc-control-*` de la ronda
+  anterior); abierto reutiliza **las mismas reglas** del popover de `<WeekSelect>` — van en el
+  mismo selector de `App.css`, así que no pueden separarse por copiar mal un valor.
+- **Acepta los mismos `<option>` como hijos.** No es capricho: los 30 desplegables construyen sus
+  opciones de 30 maneras (listas fijas, `.map()` sobre empleados, `Set` de sucursales, filtros por
+  activo). Reescribir esa lógica 30 veces son 30 ocasiones de romper algo que ya funcionaba.
+- **El popover va en un portal a `<body>`.** Dentro del componente lo recortaba el primer ancestro
+  con `overflow: hidden`, y en esta app hay **81 reglas que recortan** — `.mc-card` la primera.
+  Medido: dentro de una tarjeta salía cortado a dos renglones. Se sitúa en coordenadas de pantalla
+  y se abre hacia arriba si no cabe debajo.
+- **Teclado conservado**: flechas, Enter, Escape, Inicio/Fin y escribir para buscar. Un `<select>`
+  nativo se maneja sin ratón y perder eso al cambiarlo habría sido un retroceso.
+- **Los 4 `<input type="date">` pasan al calendario propio** (`DateRangePicker` en modo `unico`,
+  que ya existía y ya se usaba en dos pantallas). **Los campos de hora se quedan como están**, por
+  decisión expresa.
+- Dos formularios se enviaban con `FormData`: `<Select name>` mantiene ese comportamiento con un
+  campo oculto. **Sin `required` en él** — un campo oculto obligatorio es infocusable y el
+  navegador aborta el envío sin decir nada; la validación pasa al propio formulario, que ya la
+  hacía para el resto de campos.
+
+Verificado: **0 `<select>` nativos** en el paquete desplegado, 512 pruebas en verde, y 92 avisos de
+lint antes y después — ninguno nuevo.
+
 ### 2026-08-04 · Respuestas repetidas, un solo selector de semana, controles unificados y bloques rotativos
 
 **🔴 El detalle de encuesta repetía la última respuesta varias veces.** Producción tenía 22

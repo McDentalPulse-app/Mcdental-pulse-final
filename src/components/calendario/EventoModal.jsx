@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import DateRangePicker from "../common/DateRangePicker";
 import Icon from "../ui/Icon";
 import { notify } from "../../utils/notify";
 
@@ -67,7 +68,7 @@ const EventoModal = ({ evento, fechaInicial, onGuardar, onEliminar, onCerrar }) 
         <div className="mc-form-row-2">
           <div className="mc-form-group">
             <label className="mc-form-label" htmlFor="ev-fecha">Fecha</label>
-            <input id="ev-fecha" type="date" className="mc-form-input" value={form.fecha} onChange={(e) => set("fecha", e.target.value)} />
+            <DateRangePicker unico desde={form.fecha} onChange={(iso) => set("fecha", iso)} placeholder="Elige el día" />
           </div>
           <div className="mc-form-group evento-todo-dia">
             <label className="mc-form-label">&nbsp;</label>
