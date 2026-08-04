@@ -31,19 +31,30 @@ const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados,
   const esNoLaborable = (f) => f.tipo !== "conmemorativo";
 
   const hoy = hoyIso();
-  // Solo los días NO laborables se pueden ceder en un intercambio.
-  const festivosFuturos = useMemo(
-    () => festivos.filter((f) => f.fecha >= hoy && esNoLaborable(f)).sort((a, b) => a.fecha.localeCompare(b.fecha)),
-    [festivos, hoy],
+  const mesActual = hoy.slice(0, 7); // "YYYY-MM"
+
+  // Solo los días NO laborables se pueden ceder, y solo los de ESTE MES: un festivo se pide
+  // durante el mes en que cae, no con medio año de anticipación.
+  //
+  // Ojo, esto tiene un efecto que parece un fallo y no lo es: HAY MESES SIN NINGÚN FESTIVO
+  // INTERCAMBIABLE. En 2026, agosto y octubre no tienen ninguno — lo que cae en esos meses
+  // (Día del Abuelo, Día de la Raza) es conmemorativo, y eso se trabaja. En esos meses la
+  // lista queda vacía a propósito, y por eso abajo se pinta un mensaje en lugar del
+  // formulario: sin él, la pantalla parece rota y acaba reportada como una falla.
+  const festivosDelMes = useMemo(
+    () => festivos
+      .filter((f) => f.fecha >= hoy && f.fecha.startsWith(mesActual) && esNoLaborable(f))
+      .sort((a, b) => a.fecha.localeCompare(b.fecha)),
+    [festivos, hoy, mesActual],
   );
 
   // <WeekSelect> no tiene opción vacía propia, así que el "sin elegir" va como primera opción.
   const opcionesFestivo = useMemo(
     () => [
       { value: "", label: "Selecciona un festivo…" },
-      ...festivosFuturos.map((f) => ({ value: f.fecha, label: `${legibleCorto(f.fecha)} · ${f.nombre}` })),
+      ...festivosDelMes.map((f) => ({ value: f.fecha, label: `${legibleCorto(f.fecha)} · ${f.nombre}` })),
     ],
-    [festivosFuturos],
+    [festivosDelMes],
   );
 
   const [festivoSel, setFestivoSel] = useState("");
@@ -110,9 +121,18 @@ const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados,
 
       <Card className="intercambio-card">
         <SectionTitle icon="calendar">Intercambiar un día</SectionTitle>
+        {festivosDelMes.length === 0 ? (
+          <p className="rh-data-row-muted">
+            Este mes no hay ningún festivo que puedas intercambiar. Los festivos se piden
+            durante el mes en que caen, así que vuelve a esta pantalla cuando llegue el mes
+            del festivo que te interese.
+          </p>
+        ) : (
+        <>
         <p className="intercambio-hint">
           Elige el día festivo que quieres trabajar y a cambio pide el día que prefieras libre.
-          Cada día destino lo puede tomar una sola persona de tu clínica.
+          Solo aparecen los festivos de este mes. Cada día destino lo puede tomar una sola
+          persona de tu clínica.
         </p>
 
         <div className="mc-form-grid">
@@ -144,6 +164,8 @@ const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados,
             <Icon name="check" size={15} /> {enviando ? "Enviando…" : "Solicitar intercambio"}
           </button>
         </div>
+        </>
+        )}
       </Card>
 
       <Card>
