@@ -112,7 +112,7 @@ const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados,
         <SectionTitle icon="calendar">Intercambiar un día</SectionTitle>
         <p className="intercambio-hint">
           Elige el día festivo que quieres trabajar y a cambio pide el día que prefieras libre.
-          Cada día destino lo puede tomar una sola persona.
+          Cada día destino lo puede tomar una sola persona de tu clínica.
         </p>
 
         <div className="mc-form-grid">
