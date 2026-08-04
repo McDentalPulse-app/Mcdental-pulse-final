@@ -568,7 +568,11 @@ const revisarGeocercas = async (supabase) => {
         ? `Nadie puede fichar en ${a.nombre}`
         : `Revisa la ubicación de ${a.nombre}`;
     if (yaAvisado.has(titulo)) continue;
-    await notificarGestion({ tipo: "geocerca", titulo, cuerpo: a.detalle, url: urlSucursales });
+    // "Muda" = nadie puede fichar en esa clínica. Eso no se arregla leyéndolo.
+    await notificarGestion({
+      tipo: "geocerca", titulo, cuerpo: a.detalle, url: urlSucursales,
+      critica: a.motivo === "muda",
+    });
     avisadas += 1;
   }
 
@@ -625,6 +629,20 @@ export default async function handler(req, res) {
     resultado.tickets = await revisarTickets(supabase);
   } else {
     resultado.motivo = "push no configurado";
+  }
+
+  // Retirar lo que ya no significa nada: encuestas contestadas o de semanas cerradas, avisos
+  // ya leídos, y "rostro por revisar" cuando no queda ninguno pendiente. Es DISTINTO de la
+  // purga de abajo: aquella borra por EDAD y esta por OBSOLESCENCIA.
+  //
+  // Importa porque una campana con cientos de pendientes falsos deja de leerse, y entonces el
+  // aviso que sí importa se pierde. Medido antes de estrenarlo: 583 sin leer, de las que 556
+  // no describían nada real.
+  const { data: retiradas, error: errorRetirar } = await supabase.rpc("limpiar_notificaciones_obsoletas");
+  if (errorRetirar) {
+    console.error("Error retirando notificaciones obsoletas:", errorRetirar);
+  } else {
+    resultado.notificacionesRetiradas = retiradas?.[0] || {};
   }
 
   // Purga de la bandeja: leídas > 30 días, no leídas > 90 días. Corre SIEMPRE, no depende del

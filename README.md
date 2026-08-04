@@ -115,6 +115,36 @@ lee nadie.
 
 ## Changelog
 
+### 2026-08-04 (noche, 3) · Avisos críticos, y 835 notificaciones que no decían nada
+
+Cierra lo que empezó la tarjeta de estado: que lo urgente no se entierre.
+
+**Avisos críticos** (migración `110`). Un aviso crítico va **siempre arriba** en la campana —no
+en orden cronológico— **sigue visible aunque esté leído**, y lleva la etiqueta «Sigue sin
+resolverse». Porque marcar como leído se confundía con haberlo resuelto: el aviso del respaldo se
+leyó tres días seguidos y el problema duró seis.
+
+Se piden en **dos consultas y no en una**: una crítica de hace tres días no entra en «las 20 más
+recientes» cuando ese día hubo cincuenta recordatorios de encuesta — que es exactamente cómo se
+enterró. Y no hay estado que mantener: un crítico se considera vigente si **se ha vuelto a
+emitir en 48 h**, porque las tareas de fondo lo reemiten mientras el problema exista. Cuando se
+arregla, se despega solo. Hoy son críticos el respaldo (≥4 días) y una geocerca «muda» —nadie
+puede fichar en esa clínica—, pero no un «revisa la ubicación», que sí puede esperar.
+
+**835 notificaciones retiradas** (migración `111`). La purga que había borraba por EDAD; esta
+borra por **obsolescencia**, que es otra cosa:
+
+| Qué | Cuántas | Por qué ya no decía nada |
+|---|---|---|
+| Recordatorios de encuesta | 345 | Ya contestada, o de una semana cerrada — `EncuestaEmpleado` guarda siempre la semana **en curso**, así que una de hace tres semanas no se puede contestar |
+| Notificaciones de avisos | 211 | Esa persona ya había leído todos los avisos |
+| «Rostro por revisar» | 279 | No queda ningún rostro pendiente de revisar |
+
+**De 1.194 notificaciones a 398, y de 583 sin leer a 197.** Lo que queda es real: los
+recordatorios de la encuesta de esta semana y los «Rostro verificado», que **no se tocan** — ese
+es el registro de un hecho, no una tarea pendiente. Solo se retiran recordatorios; nada que sea
+historial.
+
 ### 2026-08-04 (noche, 2) · «Estado del sistema»: lo que ESTÁ pasando, no lo que pasó
 
 Investigando qué le falta a la app apareció esto, y es incómodo:

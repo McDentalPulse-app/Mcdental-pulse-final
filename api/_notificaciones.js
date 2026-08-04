@@ -39,7 +39,7 @@ export const notificar = async (empleadoId, { tipo, titulo, cuerpo, url = "/" })
  * `url` puede ser un string o un objeto `{admin, rh, psicologa}`: cada rol tiene su prefijo de
  * ruta, así que un solo string no le sirve a los tres.
  */
-export const notificarGestion = async ({ tipo, titulo, cuerpo, url }) => {
+export const notificarGestion = async ({ tipo, titulo, cuerpo, url, critica = false }) => {
   const { data: gestion } = await admin()
     .from("usuarios")
     .select("id, role")
@@ -54,7 +54,7 @@ export const notificarGestion = async ({ tipo, titulo, cuerpo, url }) => {
     await admin()
       .from("notificaciones")
       .insert(
-        gestion.map((u) => ({ empleado_id: u.id, tipo, titulo, cuerpo, url: urlPara(u.role) }))
+        gestion.map((u) => ({ empleado_id: u.id, tipo, titulo, cuerpo, url: urlPara(u.role), critica }))
       );
   } catch (e) {
     console.error("Error guardando notificaciones de gestión:", e?.message || e);

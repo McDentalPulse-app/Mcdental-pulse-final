@@ -98,6 +98,9 @@ export default async function handler(req, res) {
       titulo,
       cuerpo: `La copia fuera del servidor no está llegando. ${cuanto} Revisa que la máquina de la oficina esté encendida y con red.${gravedad}`,
       url: { admin: "/admin/config", rh: "/rh", psicologa: "/psicologa" },
+      // Crítico a partir del cuarto día, o si NUNCA ha llegado una copia. Antes de eso puede
+      // ser un retraso de verdad y no merece fijarse arriba de la campana.
+      critica: dias === null || dias >= 4,
     });
 
     console.warn(`Respaldo externo en silencio: ${cuanto}`);

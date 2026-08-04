@@ -13345,3 +13345,35 @@
      detalle en una línea en vez de tres. */
   .estado-sistema-etiqueta { display: none; }
 }
+
+
+/* ============================================================
+   Avisos CRÍTICOS en la campana.
+
+   Van fijados arriba (lo hace el servicio) y se distinguen a la vista. La etiqueta "Sigue sin
+   resolverse" no es decorativa: el aviso del respaldo se leyó tres días seguidos y el problema
+   siguió ahí seis. Marcar como leído se confundía con haberlo resuelto.
+   ============================================================ */
+.campana-item--critica {
+  border-left: 3px solid var(--mc-semaforo-rojo);
+  background: color-mix(in srgb, var(--mc-semaforo-rojo) 7%, transparent);
+}
+.campana-item--critica:hover {
+  background: color-mix(in srgb, var(--mc-semaforo-rojo) 12%, transparent);
+}
+.campana-item--critica .campana-item-icono { color: var(--mc-semaforo-rojo); }
+.campana-item--critica .campana-item-titulo { color: var(--mc-texto-titulo); font-weight: 700; }
+
+.campana-item-critica-tag {
+  display: inline-block;
+  align-self: flex-start;
+  margin-bottom: 3px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--mc-semaforo-rojo);
+  color: var(--mc-blanco);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}

@@ -125,7 +125,7 @@ export default function CampanaNotificaciones({ user }) {
                 <li key={n.id}>
                   <button
                     type="button"
-                    className={`campana-item${n.leida ? "" : " campana-item--nueva"}`}
+                    className={`campana-item${n.leida ? "" : " campana-item--nueva"}${n.critica ? " campana-item--critica" : ""}`}
                     onClick={() => abrirNotificacion(n)}
                   >
                     <span className="campana-item-icono">
@@ -133,6 +133,9 @@ export default function CampanaNotificaciones({ user }) {
                     </span>
                     <span className="campana-item-texto">
                       <strong>{n.titulo}</strong>
+                      {/* La etiqueta dice explicitamente que marcarlo leido no lo resuelve: esa confusion
+                          es la que dejo el respaldo externo seis dias caido con los avisos leidos. */}
+                      {n.critica && <span className="campana-item-critica-tag">Sigue sin resolverse</span>}
                       {n.cuerpo && <span className="campana-item-cuerpo">{n.cuerpo}</span>}
                       <span className="campana-item-tiempo">{tiempoRelativo(n.creadaEn)}</span>
                     </span>
