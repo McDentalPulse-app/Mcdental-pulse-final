@@ -157,13 +157,28 @@ recortan**, empezando por `.mc-card`. Su posición se calcula en coordenadas de 
 
 | Capa | `z-index` | Qué vive ahí |
 |---|---|---|
-| Modales | `1000` | `.mc-modal-overlay` y todo lo que cuelga de él |
+| **Popovers** | **`10100`** | `.mc-select-menu`, `.mc-daterange-pop` — **por encima de TODO** |
+| Overlays altos | `9999`–`10010` | Editor y detalle de encuesta, detalle de psicología |
+| Bloqueo de notificaciones | `5000` | Modal obligatorio de activación |
+| Avisos y diálogos | `1050`–`1200` | Confirmar/preguntar, toasts, detalle de sucursal |
+| Modales | `1000` | `.mc-modal-overlay` |
 | Barra flotante del teléfono | `200` | `.mobile-tabbar` |
-| **Popovers** | **`250`** | `.mc-select-menu`, `.mc-daterange-pop` — **entre las dos** |
 | Cabecera y sus menús | `60`–`120` | `.topnav-menu`, `.week-select-menu` |
 
-Un popover que solo vive en la cabecera puede quedarse en `120`; en cuanto pueda abrirse cerca del
-pie de la pantalla necesita `250`, o la barra flotante le tapa las últimas opciones.
+**Un popover va por encima de todos los modales, no entre medias.** Primero se puso en `250`
+—por encima de la barra del teléfono y por debajo del modal— y eso **rompió cambiar de sucursal
+a un empleado**: ese formulario vive dentro de un modal, así que la lista se abría detrás de él.
+Medido con `elementFromPoint`: el menú no era clicable. El `<select>` nativo no tenía ese
+problema porque su lista la dibuja el sistema operativo, por encima de la página entera; al
+sustituirlo hay que reproducir esa garantía a mano.
+
+Y no basta con superar `1000`: hay overlays hasta `10010` y ahí dentro también hay desplegables.
+Estar por encima de todo no tapa nada que importe — un popover solo existe mientras su
+disparador es alcanzable.
+
+> El banco de pruebas (`npm run verificar`) lo comprueba **contra el overlay más alto que exista
+> en el CSS**, no contra un número escrito a mano: si mañana aparece uno más alto, la
+> comprobación sigue valiendo.
 
 Además: **el alto disponible descuenta la barra** (se mide con `querySelector(".mobile-tabbar")`,
 no se supone), el popover **voltea hacia arriba** si no cabe debajo, y su ancho máximo es lo que

@@ -11887,10 +11887,11 @@
   /* FIJO y en un portal a <body>: en absoluto lo recortaba el primer ancestro con
      `overflow: hidden` (medido dentro de una .mc-card: 237px del calendario quedaban fuera).
      Su sitio lo calcula `situar()` en DateRangePicker.jsx.
-     z-index 250 para quedar por encima de la barra flotante del teléfono (200) y por debajo
-     de los modales (1000). */
+     Por encima de TODOS los modales (el más alto es 10010): este calendario se usa dentro de
+     ellos —fecha de ingreso en Gestión de Personal, fecha de un evento— y con un z-index
+     intermedio se abriría por detrás. Mismo motivo que .mc-select-menu. */
   position: fixed;
-  z-index: 250;
+  z-index: 10100;
   width: 264px;
   padding: 12px;
   background: var(--mc-superficie);
@@ -13254,10 +13255,16 @@
   /* FIJO y no absoluto: la lista vive en un portal a <body> y su sitio lo calcula el
      componente en coordenadas de pantalla. Ver el comentario de `situar()` en Select.jsx. */
   position: fixed;
-  /* Por encima de la barra flotante del teléfono (200) y por debajo de los modales (1000).
-     Heredaba el 120 de <WeekSelect>, que vive en la cabecera y nunca se acerca al pie: un
-     desplegable abierto abajo del todo quedaba con sus últimas opciones bajo la barra. */
-  z-index: 250;
+  /* POR ENCIMA DE TODOS LOS MODALES, no entre la barra y el modal.
+     Primero fue 250 —por encima de la barra del teléfono (200) y por debajo del modal (1000)—
+     y eso rompió cambiar de sucursal a un empleado: ese formulario vive dentro de un modal, así
+     que la lista se abría DETRÁS de él. Medido con elementFromPoint: el menú no era clicable.
+     El <select> nativo no tenía este problema porque su lista la dibuja el sistema operativo,
+     por encima de la página entera.
+     Y no basta con superar 1000: hay overlays hasta 10010 (el editor de encuestas), y ahí
+     dentro también hay desplegables. Un desplegable solo existe mientras su disparador es
+     alcanzable, así que estar por encima de todo no tapa nada que importe. */
+  z-index: 10100;
   left: 0;
   right: auto;
   max-width: min(420px, calc(100vw - 32px));

@@ -53,13 +53,24 @@ for (const token of ["--mc-control-radio", "--mc-control-borde", "--mc-control-f
   comprobar(`Token ${token}`, css.includes(token));
 }
 
-// Los popovers por encima de la barra flotante del teléfono (200) y por debajo de los
-// modales (1000). Con el 120 que heredaban, la barra les tapaba las últimas opciones.
+// Los popovers por ENCIMA DE TODOS los overlays. No basta con superar la barra del teléfono
+// (200): con 250 quedaban detrás de los modales y no se podía cambiar de sucursal a nadie,
+// porque ese formulario vive dentro de uno. Se compara contra el overlay más alto que exista
+// en el propio CSS, para que la comprobación siga valiendo si mañana aparece uno más alto.
+const zetas = [...css.matchAll(/z-index:(\d+)/g)].map((m) => Number(m[1]));
+const overlayMasAlto = Math.max(
+  ...[...css.matchAll(/-overlay\{[^}]*z-index:(\d+)/g)].map((m) => Number(m[1])), 1000
+);
 for (const clase of ["mc-select-menu", "mc-daterange-pop"]) {
   const m = css.match(new RegExp(`${clase}\\{[^}]*z-index:(\\d+)`));
   const z = m ? Number(m[1]) : null;
-  comprobar(`z-index de .${clase}`, z !== null && z > 200 && z < 1000, z === null ? "no encontrado" : `es ${z}`);
+  comprobar(
+    `.${clase} por encima de los modales`,
+    z !== null && z > overlayMasAlto,
+    z === null ? "no encontrado" : `es ${z}, el overlay más alto es ${overlayMasAlto}`
+  );
 }
+void zetas;
 
 // ── 2. Lo que hay que medir en un navegador de verdad ─────────────────────────
 const chromium = ["chromium", "chromium-browser", "google-chrome"].find((c) => {
