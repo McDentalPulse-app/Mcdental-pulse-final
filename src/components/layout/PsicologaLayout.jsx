@@ -26,6 +26,7 @@ import ComisionesRH from '../comisiones/ComisionesRH';
 import EventosPersonal from '../empleados/EventosPersonal';
 import Reportes from '../rh/Reportes';
 import Config from '../settings/Config';
+import IntercambiosRH from '../calendario/IntercambiosRH';
 import Perfil from '../common/Perfil';
 import IdeasMejora from '../common/IdeasMejora';
 import SoporteTI from '../common/SoporteTI';
@@ -38,8 +39,8 @@ import { useAvisoUbicacion } from '../../hooks/useAvisoUbicacion';
 export default function PsicologaLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
-  const { encuestas, mensajes, notas, permisos, descuentos, comisiones, reconocimientos, reportesConfidenciales, vacaciones, horarios, setHorarios, archivosExpediente, avisos, checadasHoy } = globals;
-  const { restablecerPasswordUsuario, addNota, deleteNota, sendMensaje, marcarMensajesLeidos, addReconocimiento, subirArchivoExpediente, eliminarArchivoExpediente, addAviso, updateAviso, deleteAviso, justificarFalta, updatePermisoEstado, updateVacacionEstado, agendarPropio, revisarComision, registrarChecada } = actions;
+  const { encuestas, mensajes, notas, permisos, descuentos, comisiones, reconocimientos, reportesConfidenciales, vacaciones, horarios, setHorarios, archivosExpediente, avisos, checadasHoy, festivos, intercambios } = globals;
+  const { restablecerPasswordUsuario, addNota, deleteNota, sendMensaje, marcarMensajesLeidos, addReconocimiento, subirArchivoExpediente, eliminarArchivoExpediente, addAviso, updateAviso, deleteAviso, justificarFalta, updatePermisoEstado, updateVacacionEstado, agendarPropio, revisarComision, registrarChecada, resolverIntercambio, addFestivo, deleteFestivo } = actions;
   const { ofrecerPush, activarAvisos, cerrarOfertaPush } = useAvisoPush();
 
   const { ofrecerUbicacion, estadoUbicacion, activarUbicacion, cerrarAviso } = useAvisoUbicacion();
@@ -60,6 +61,7 @@ export default function PsicologaLayout({ user, globals, actions }) {
             {/* La psicóloga (jefa de RH) también aprueba permisos y vacaciones. */}
             <Route path="vacaciones" element={<VacacionesRH vacaciones={vacaciones} onUpdateEstado={updateVacacionEstado} />} />
             <Route path="permisos" element={<PermisosRH permisos={permisos} onUpdateEstado={updatePermisoEstado} horarios={horarios} />} />
+            <Route path="intercambios" element={<IntercambiosRH intercambios={intercambios} festivos={festivos} onResolver={resolverIntercambio} onAddFestivo={addFestivo} onDeleteFestivo={deleteFestivo} />} />
             <Route path="mispermisos" element={<PermisosEmpleado user={user} vacaciones={vacaciones} permisos={permisos} horarios={horarios} onEnviarSolicitudEmpleado={agendarPropio} autoAprobar />} />
             <Route path="comisiones" element={<ComisionesRH comisiones={comisiones} onRevisar={revisarComision} />} />
             <Route path="seguimiento" element={<PsicologaSeguimiento encuestas={encuestas} notas={notas} onUpdateNota={addNota} onDeleteNota={deleteNota}/>} />

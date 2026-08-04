@@ -19,6 +19,7 @@ import ImportarHorarios from '../admin/ImportarHorarios';
 import Calibracion from '../admin/Calibracion';
 import AsistenciaPanel from '../asistencia/AsistenciaPanel';
 import EnrolarRostros from '../asistencia/EnrolarRostros';
+import IntercambiosRH from '../calendario/IntercambiosRH';
 import Perfil from '../common/Perfil';
 import IdeasMejora from '../common/IdeasMejora';
 import Mensajes from '../comunicacion/Mensajes';
@@ -31,8 +32,8 @@ import { useAvisoUbicacion } from '../../hooks/useAvisoUbicacion';
 export default function AdminLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
-  const { encuestas, mensajes, notas, permisos, descuentos, reconocimientos, reportesConfidenciales, vacaciones, archivosExpediente, horarios, setHorarios, avisos } = globals;
-  const { restablecerPasswordUsuario, sendMensaje, marcarMensajesLeidos, subirArchivoExpediente, eliminarArchivoExpediente, addReconocimiento, addAviso, updateAviso, deleteAviso, justificarFalta } = actions;
+  const { encuestas, mensajes, notas, permisos, descuentos, reconocimientos, reportesConfidenciales, vacaciones, archivosExpediente, horarios, setHorarios, avisos, festivos, intercambios } = globals;
+  const { restablecerPasswordUsuario, sendMensaje, marcarMensajesLeidos, subirArchivoExpediente, eliminarArchivoExpediente, addReconocimiento, addAviso, updateAviso, deleteAviso, justificarFalta, resolverIntercambio, addFestivo, deleteFestivo } = actions;
   const { ofrecerPush, activarAvisos, cerrarOfertaPush } = useAvisoPush();
 
   const { ofrecerUbicacion, estadoUbicacion, activarUbicacion, cerrarAviso } = useAvisoUbicacion();
@@ -61,6 +62,7 @@ export default function AdminLayout({ user, globals, actions }) {
             <Route path="importar-horarios" element={<ImportarHorarios usuarios={USERS} />} />
             <Route path="calibracion" element={<Calibracion usuarios={USERS} />} />
             <Route path="rostros" element={<EnrolarRostros usuarios={USERS} />} />
+            <Route path="intercambios" element={<IntercambiosRH intercambios={intercambios} festivos={festivos} onResolver={resolverIntercambio} onAddFestivo={addFestivo} onDeleteFestivo={deleteFestivo} />} />
             <Route path="expedientes" element={<ExpedienteIntegral users={USERS} encuestas={encuestas} mensajes={mensajes} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} currentUser={user} archivosExpediente={archivosExpediente} onSubirArchivoExpediente={subirArchivoExpediente} onEliminarArchivoExpediente={eliminarArchivoExpediente} />} />
             <Route path="reconocimientos" element={<ReconocimientosGestion users={USERS} reconocimientos={reconocimientos} onAdd={addReconocimiento} currentUser={user} />} />
             <Route path="eventospersonal" element={<EventosPersonal users={USERS} />} />
