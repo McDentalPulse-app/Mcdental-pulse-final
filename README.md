@@ -115,6 +115,35 @@ lee nadie.
 
 ## Changelog
 
+### 2026-08-04 (noche, 4) · La tarea que vigila el estado, y el disco
+
+`?tarea=salud` en `api/tareas-programadas.js`, con su cron a las 11:52 de Monterrey. **No
+calcula nada**: pregunta a `estado_del_sistema()`, la misma función que pinta la tarjeta de
+Configuración. Si tuviera su propia lógica, la pantalla y el aviso podrían decir cosas distintas
+del mismo sistema, y el día que discreparan nadie sabría a cuál creer.
+
+La hora no es casual: la comprobación del checador solo tiene sentido pasadas las 11 de la
+mañana local — antes de eso, «nadie ha checado» es lo normal.
+
+- Se calca `revisarGeocercas`: filtrar a lo que está mal → **no repetir lo avisado en 48 h** →
+  notificar a gestión. Probado: primera pasada avisa, segunda no repite.
+- El **respaldo se excluye a propósito**: ya tiene su tarea con su escalado por días, y avisarlo
+  dos veces es la forma más rápida de que se ignore.
+- El título lleva **el dato**, no solo el asunto: «Personas que no pueden checar: 6 personas no
+  pueden registrar entrada». Se entiende sin abrir nada, y cambia cuando cambia el número — así
+  que el freno de 48 h no silencia una situación que empeora.
+- `critica` solo para lo que está en rojo. Hoy «6 personas no pueden checar» es naranja, así que
+  avisa pero no se fija arriba.
+
+**El disco** (`?tarea=disco`) lo mide `/opt/pulse/limpiar-docker.sh`, que ya corría a diario:
+desde dentro de un contenedor no se ve de forma fiable el disco del anfitrión, así que el dato
+entra en vez de calcularse. Avisa al 85% y es **crítico al 90** — por encima de ahí, una
+construcción de imagen puede dejar el servidor sin espacio, y sin espacio la base deja de
+guardar. Ahora mismo está al **8%**.
+
+Y `estado_del_sistema()` se abre a la llave de servicio (migración `112`): las tareas de fondo no
+son personas, no tienen fila en `usuarios`, y el candado por rol las rechazaba.
+
 ### 2026-08-04 (noche, 3) · Avisos críticos, y 835 notificaciones que no decían nada
 
 Cierra lo que empezó la tarjeta de estado: que lo urgente no se entierre.

@@ -583,6 +583,66 @@ const revisarGeocercas = async (supabase) => {
   };
 };
 
+/**
+ * Vigila el ESTADO del sistema y avisa solo de lo que empeoró.
+ *
+ * No calcula nada: pregunta a `estado_del_sistema()` (migraciones 109 y 112), la misma función
+ * que pinta la tarjeta de Configuración. Si esto tuviera su propia lógica, la pantalla y el
+ * aviso podrían decir cosas distintas del mismo sistema, y el día que discreparan nadie sabría
+ * a cuál creer.
+ *
+ * Se calca la forma de `revisarGeocercas`: filtrar a lo que de verdad está mal → no repetir lo
+ * ya avisado en 48 h → notificar a gestión. El freno importa tanto como la detección: una
+ * alarma que llega cada día se lee como ruido a la tercera.
+ */
+const OMITIR_EN_SALUD = new Set([
+  // El respaldo tiene su propia tarea (api/revisar-respaldos.js), con su escalado por días.
+  // Avisarlo también desde aquí sería mandar el mismo problema dos veces.
+  "respaldo_externo",
+]);
+
+const revisarSalud = async (supabase) => {
+  const { data, error } = await supabase.rpc("estado_del_sistema");
+  if (error) {
+    console.error("Error consultando el estado del sistema:", error);
+    return { error: "No se pudo consultar el estado del sistema." };
+  }
+
+  const malas = (data || []).filter(
+    (f) => !OMITIR_EN_SALUD.has(f.clave) && (f.estado === "critico" || f.estado === "atencion")
+  );
+  if (!malas.length) return { revisadas: (data || []).length, avisadas: 0 };
+
+  const hace48h = new Date(Date.now() - 48 * 3_600_000).toISOString();
+  const { data: recientes } = await supabase
+    .from("notificaciones")
+    .select("titulo")
+    .eq("tipo", "salud")
+    .gte("creada_en", hace48h);
+  const yaAvisado = new Set((recientes || []).map((n) => n.titulo));
+
+  const urlConfig = { admin: "/admin/config", rh: "/rh", psicologa: "/psicologa" };
+
+  let avisadas = 0;
+  for (const f of malas) {
+    // El título lleva el DATO, no solo el asunto: "7 personas no pueden checar" se entiende
+    // sin abrir nada, y además cambia cuando cambia el número — así que no lo frena el
+    // deduplicador cuando la situación empeora.
+    const titulo = `${f.titulo}: ${f.detalle}`;
+    if (yaAvisado.has(titulo)) continue;
+    await notificarGestion({
+      tipo: "salud",
+      titulo,
+      cuerpo: "Revisa el estado del sistema en Configuración.",
+      url: urlConfig,
+      critica: f.estado === "critico",
+    });
+    avisadas += 1;
+  }
+
+  return { revisadas: (data || []).length, malas: malas.map((m) => m.clave), avisadas };
+};
+
 export default async function handler(req, res) {
   if (!configOk()) {
     return res.status(500).json({ error: "Supabase no está configurado en el servidor." });
@@ -611,6 +671,36 @@ export default async function handler(req, res) {
   // bandeja dos veces al día.
   if ((req.query?.tarea || "") === "salidas") {
     resultado.salidasPendientes = await recordarSalidaPendiente(supabase);
+    return res.status(200).json(resultado);
+  }
+
+  // Igual que `salidas`: horario propio, mismo endpoint. Un archivo aparte en api/ sería otra
+  // Serverless Function y el plan Hobby admite 12 (ver la cabecera de este archivo).
+  if ((req.query?.tarea || "") === "salud") {
+    resultado.salud = await revisarSalud(supabase);
+    return res.status(200).json(resultado);
+  }
+
+  // El disco lo mide `/opt/pulse/limpiar-docker.sh`, que ya corre a diario en el propio
+  // servidor. Desde dentro de un contenedor no se ve de forma fiable el disco del anfitrión,
+  // así que el dato entra por aquí en vez de calcularse.
+  if ((req.query?.tarea || "") === "disco") {
+    const uso = Number(req.body?.uso);
+    if (!Number.isFinite(uso)) {
+      return res.status(400).json({ error: "Falta el porcentaje de uso." });
+    }
+    // Crítico a partir del 90: por encima de ahí una construcción de imagen puede dejar el
+    // servidor sin espacio, y sin espacio la base deja de aceptar escrituras.
+    await notificarGestion({
+      tipo: "salud",
+      titulo: `Disco del servidor al ${uso}%`,
+      cuerpo: uso >= 90
+        ? "Queda poco espacio. Si se llena, la base deja de guardar datos."
+        : "Conviene revisar qué está creciendo antes de que llegue al límite.",
+      url: { admin: "/admin/config", rh: "/rh", psicologa: "/psicologa" },
+      critica: uso >= 90,
+    });
+    resultado.disco = { uso, avisado: true };
     return res.status(200).json(resultado);
   }
 
