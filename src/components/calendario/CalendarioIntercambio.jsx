@@ -72,6 +72,23 @@ const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados,
   const [destino, setDestino] = useState("");
   const [enviando, setEnviando] = useState(false);
 
+  // El día que se pide a cambio tiene que caer en el MISMO MES que el festivo que se cede.
+  // Se puede solicitar con antelación (en agosto se aparta el 16 de septiembre), pero el día
+  // libre se toma dentro de septiembre: ni agosto ni octubre.
+  const rangoDestino = useMemo(() => {
+    if (!festivoSel) return { min: hoy, max: "" };
+    const mes = festivoSel.slice(0, 7);
+    const [anio, numMes] = festivoSel.split("-").map(Number);
+    // Día 0 del mes SIGUIENTE = último día de este. Así no hay que saberse cuántos días tiene
+    // cada mes ni acordarse de los años bisiestos.
+    const ultimo = new Date(anio, numMes, 0).getDate();
+    const primero = `${mes}-01`;
+    return {
+      min: primero > hoy ? primero : hoy, // nunca un día que ya pasó
+      max: `${mes}-${String(ultimo).padStart(2, "0")}`,
+    };
+  }, [festivoSel, hoy]);
+
   // Eventos del calendario: festivos no laborables (celda resaltada) + conmemorativos (chip, se
   // trabaja) + mis intercambios (por estado).
   const eventos = [
@@ -142,8 +159,9 @@ const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados,
         <>
         <p className="intercambio-hint">
           Elige el día festivo que quieres trabajar y a cambio pide el día que prefieras libre.
-          Solo aparecen los festivos de este mes y del siguiente. Cada día destino lo puede
-          tomar una sola persona de tu clínica.
+          Solo aparecen los festivos de este mes y del siguiente, y el día que pidas a cambio
+          tiene que ser del mismo mes que el festivo. Cada día destino lo puede tomar una sola
+          persona de tu clínica.
         </p>
 
         <div className="mc-form-grid">
@@ -153,7 +171,13 @@ const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados,
               className="intercambio-festivo"
               value={festivoSel}
               options={opcionesFestivo}
-              onChange={setFestivoSel}
+              onChange={(v) => {
+                setFestivoSel(v);
+                // Cambiar de festivo cambia el mes permitido, así que el día elegido deja de
+                // valer. Se limpia aquí, en el evento, y no en un efecto: dejarlo a la vista
+                // sería ofrecer un día que el servidor va a rechazar.
+                setDestino("");
+              }}
             />
           </div>
 
@@ -163,8 +187,9 @@ const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados,
               unico
               className="intercambio-dia"
               desde={destino}
-              min={hoy}
-              placeholder="Elige un día"
+              min={rangoDestino.min}
+              max={rangoDestino.max || undefined}
+              placeholder={festivoSel ? "Elige un día" : "Elige antes el festivo"}
               onChange={setDestino}
             />
             {ocupado && <span className="intercambio-error">Ese día ya está apartado por otra persona.</span>}
