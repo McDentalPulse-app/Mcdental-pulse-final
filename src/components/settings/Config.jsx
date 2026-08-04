@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import EstadoSistema from "./EstadoSistema";
 import { useNotification } from '../../contexts/NotificationContext';
 import Card from '../common/Card';
 import SectionTitle from '../common/SectionTitle';
@@ -113,6 +114,9 @@ const Config = () => {
         title="Configuración"
         subtitle="Parámetros generales de McDental Pulse, roles, privacidad y umbrales de bienestar."
       />
+
+      {/* Va lo PRIMERO: es la pregunta que trae aquí a alguien que sospecha que algo va mal. */}
+      <EstadoSistema />
 
       <Card>
         <SectionTitle icon="camera">Rostro obligatorio para checar</SectionTitle>

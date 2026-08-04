@@ -13276,3 +13276,72 @@
    desalinearía la fila entera. */
 .mc-select--compacto { width: auto; }
 .mc-select--compacto .mc-select-trigger { height: 38px; padding: 0 12px; }
+
+
+/* ============================================================
+   Estado del sistema (Configuración).
+
+   Los colores salen del semáforo que ya usa toda la app, para que "rojo" signifique aquí lo
+   mismo que en el bienestar: no es un lenguaje nuevo que haya que aprender.
+   ============================================================ */
+.estado-sistema-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 4px;
+}
+.estado-sistema-head .mc-section-title { margin-bottom: 0; }
+
+/* El veredicto va PRIMERO y en una línea: quien abre esto quiere saber si puede irse
+   tranquilo, no leer seis renglones para deducirlo. */
+.estado-sistema-resumen {
+  display: flex; align-items: center; gap: 9px;
+  margin: 14px 0 10px; padding: 11px 14px;
+  border-radius: var(--mc-control-radio);
+  font-size: 14px; font-weight: 700;
+}
+.estado-sistema-resumen--bien {
+  background: color-mix(in srgb, var(--mc-semaforo-verde) 12%, transparent);
+  color: var(--mc-semaforo-verde);
+}
+.estado-sistema-resumen--mal {
+  background: color-mix(in srgb, var(--mc-semaforo-amarillo) 14%, transparent);
+  color: var(--mc-semaforo-amarillo);
+}
+
+.estado-sistema-lista { display: flex; flex-direction: column; gap: 8px; }
+
+.estado-sistema-fila {
+  display: flex; align-items: center; gap: 11px;
+  padding: 11px 13px;
+  border: 1px solid var(--mc-control-borde);
+  border-radius: var(--mc-control-radio);
+  background: var(--mc-superficie);
+}
+/* Una franja de color a la izquierda en vez de teñir la fila entera: se distingue de un
+   vistazo sin que seis filas de colores parezcan una alarma general. */
+.estado-sistema-fila--critico  { border-left: 3px solid var(--mc-semaforo-rojo); }
+.estado-sistema-fila--atencion { border-left: 3px solid var(--mc-semaforo-amarillo); }
+.estado-sistema-fila--ok       { border-left: 3px solid var(--mc-semaforo-verde); }
+.estado-sistema-fila--sin_datos{ border-left: 3px solid var(--mc-texto-apagado); }
+
+.estado-sistema-punto { display: inline-flex; flex-shrink: 0; }
+.estado-sistema-fila--critico  .estado-sistema-punto { color: var(--mc-semaforo-rojo); }
+.estado-sistema-fila--atencion .estado-sistema-punto { color: var(--mc-semaforo-amarillo); }
+.estado-sistema-fila--ok       .estado-sistema-punto { color: var(--mc-semaforo-verde); }
+.estado-sistema-fila--sin_datos .estado-sistema-punto { color: var(--mc-texto-apagado); }
+
+.estado-sistema-texto { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.estado-sistema-titulo { font-size: 14px; font-weight: 600; color: var(--mc-texto-titulo); }
+.estado-sistema-detalle { font-size: 12.5px; color: var(--mc-texto-secundario); }
+
+.estado-sistema-etiqueta {
+  flex-shrink: 0; font-size: 12px; font-weight: 700;
+  color: var(--mc-texto-secundario); text-transform: uppercase; letter-spacing: 0.02em;
+}
+.estado-sistema-fila--critico  .estado-sistema-etiqueta { color: var(--mc-semaforo-rojo); }
+.estado-sistema-fila--atencion .estado-sistema-etiqueta { color: var(--mc-semaforo-amarillo); }
+
+@media (max-width: 560px) {
+  /* En el teléfono la etiqueta sobra: el color y el icono ya la dicen, y quitarla deja el
+     detalle en una línea en vez de tres. */
+  .estado-sistema-etiqueta { display: none; }
+}

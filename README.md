@@ -115,6 +115,42 @@ lee nadie.
 
 ## Changelog
 
+### 2026-08-04 (noche, 2) · «Estado del sistema»: lo que ESTÁ pasando, no lo que pasó
+
+Investigando qué le falta a la app apareció esto, y es incómodo:
+
+```
+Lic. Mario Ruiz   admin   "No hay respaldo externo desde hace días"   LEÍDA   04-ago
+Lic. Mario Ruiz   admin   "No hay respaldo externo desde hace días"   LEÍDA   03-ago
+Lic. Mario Ruiz   admin   "No hay respaldo externo desde hace días"   LEÍDA   02-ago
+```
+
+**El aviso funcionaba, llegaba, y se leía. El respaldo seguía roto.** No falta detección: falta
+que un aviso leído no se confunda con un problema resuelto. La campana enseña el pasado, y con
+**1.178 notificaciones y 272 recordatorios de encuesta sin leer**, lo importante se pierde.
+
+- **Nueva función `estado_del_sistema()`** (migración `109`) y una tarjeta **«Estado del
+  sistema»** al principio de Configuración. Enseña el estado **de ahora**, ordenado por
+  gravedad: respaldo externo, personas que no pueden checar, checador, cotejo de caras y
+  encuestas de la semana. No hay nada que marcar como leído — cuando algo se arregla, se pone
+  verde solo. Es lo que se estaba consultando a mano con SQL toda la semana.
+- La lógica vive en **la base y no en el cliente**, a propósito: la misma verdad la consultarán
+  la pantalla y la tarea de fondo. Dos cálculos separados acabarían discrepando.
+- **El aviso del respaldo sube de tono con los días.** Antes el título era idéntico siempre;
+  ahora es «**6 días sin copia de seguridad fuera del servidor**», y a partir del cuarto día el
+  cuerpo dice lo que de verdad significa: que la única copia está en el mismo disco que la base.
+  Un título que empeora no se confunde con el de ayer.
+
+**Un fallo que la propia pantalla destapó al construirla:** la primera versión contaba
+`cotejo_intentos` con `motivo is null` como acierto y anunciaba «0 de 17 reconocidos» con el
+checador funcionando perfectamente. Esa tabla es un **registro de fracasos** —un reconocimiento
+correcto no deja fila— y las filas antiguas tienen el motivo vacío solo porque esa columna se
+añadió el 2026-08-03. Los aciertos se cuentan donde están: en las checadas verificadas. Hoy dice
+«149 reconocidos y 17 reintentos fallidos».
+
+Verificado contra producción con una transacción deshecha, como admin real y como empleado (a
+quien la función le responde «No autorizado.»).
+
 ### 2026-08-04 (noche) · Revisión en móvil de los desplegables nuevos
 
 Dos fallos reales, encontrados midiendo en un viewport de 390×760 y no mirando por encima:

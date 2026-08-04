@@ -66,11 +66,38 @@ export default async function handler(req, res) {
           ? `El último fue hace ${dias} ${dias === 1 ? "día" : "días"}.`
           : `El último fue hace ${Math.floor(horas)} horas.`;
 
+    /**
+     * EL TÍTULO SUBE DE TONO CON LOS DÍAS, y no es cosmética.
+     *
+     * Hasta el 2026-08-04 el título era siempre el mismo: "No hay respaldo externo desde hace
+     * días". Se mandó seis días seguidos, llegó a admin, RH y psicóloga, y el admin lo leyó
+     * tres veces. El respaldo seguía sin funcionar. Un aviso idéntico repetido se lee como
+     * ruido —ya sé lo que dice— y marcarlo como leído se convierte en un gesto reflejo.
+     *
+     * Un título que EMPEORA no se puede confundir con el de ayer. Y el número va delante,
+     * porque en la campana el título se corta.
+     */
+    const titulo =
+      dias === null
+        ? "Nunca ha habido copia de seguridad fuera del servidor"
+        : dias >= 4
+          ? `${dias} días sin copia de seguridad fuera del servidor`
+          : dias >= 1
+            ? `Sin respaldo externo desde hace ${dias} ${dias === 1 ? "día" : "días"}`
+            : "El respaldo externo no está llegando";
+
+    // A partir de cuatro días esto deja de ser un retraso: si la VPS se pierde hoy, se pierde
+    // todo lo que no esté en ese disco. El cuerpo lo dice con esas palabras.
+    const gravedad =
+      dias !== null && dias >= 4
+        ? " Mientras tanto, la ÚNICA copia de los datos está en el mismo servidor que la base."
+        : "";
+
     await notificarGestion({
       tipo: "respaldo",
-      titulo: "No hay respaldo externo desde hace días",
-      cuerpo: `La copia fuera del servidor no está llegando. ${cuanto} Revisa que la máquina de la oficina esté encendida y con red.`,
-      url: { admin: "/admin", rh: "/rh", psicologa: "/psicologa" },
+      titulo,
+      cuerpo: `La copia fuera del servidor no está llegando. ${cuanto} Revisa que la máquina de la oficina esté encendida y con red.${gravedad}`,
+      url: { admin: "/admin/config", rh: "/rh", psicologa: "/psicologa" },
     });
 
     console.warn(`Respaldo externo en silencio: ${cuanto}`);
