@@ -56,7 +56,7 @@ export default function PsicologaLayout({ user, globals, actions }) {
           )}
           {ofrecerPush && <AvisoPush onActivar={activarAvisos} onCerrar={cerrarOfertaPush} />}
           <Routes>
-            <Route path="dashboard" element={<PsicologaDashboard encuestas={encuestas} mensajes={mensajes} reportesConfidenciales={reportesConfidenciales} />} />
+            <Route path="dashboard" element={<PsicologaDashboard encuestas={encuestas} mensajes={mensajes} reportesConfidenciales={reportesConfidenciales} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} />} />
             <Route path="ai" element={<AIEngine encuestas={encuestas} mensajes={mensajes} notas={notas} userRole="psicologa" permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>} />
             {/* La psicóloga (jefa de RH) también aprueba permisos y vacaciones. */}
             <Route path="vacaciones" element={<VacacionesRH vacaciones={vacaciones} onUpdateEstado={updateVacacionEstado} />} />

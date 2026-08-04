@@ -2325,6 +2325,29 @@
   font-size: 13px;
 }
 
+/* Las filas del historial de encuestas son <button> (abren el detalle), así que hay que
+   deshacer lo que el navegador le pone a un botón: fondo, borde, fuente y ancho. Sin esto la
+   fila se ve como un botón gris y estrecho en medio de una lista. */
+.detail-list-item--accion {
+  width: 100%;
+  gap: 10px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--mc-slate-100);
+  font: inherit;
+  font-size: 13px;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.detail-list-item--accion:hover {
+  background: var(--mc-slate-50, rgba(0, 0, 0, 0.03));
+}
+.detail-list-item-ojo {
+  color: var(--mc-verde-medio);
+  flex-shrink: 0;
+}
+
 .detail-list-item-block {
   padding: 8px 0;
   border-bottom: 1px solid var(--mc-slate-100);

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import { useAuth } from "../../contexts/AuthContext";
 import Card from "../common/Card";
@@ -11,6 +12,7 @@ import ScorePorSucursal from "./ScorePorSucursal";
 import WeekSelect from "../common/WeekSelect";
 import PageHeader from "../common/PageHeader";
 import EmptyState from "../common/EmptyState";
+import FichaEmpleado from "../empleados/FichaEmpleado";
 import { usePulseSemana } from "../../hooks/usePulseSemana";
 import { normalizeSucursal } from "../../utils/constants";
 import { tieneScoreValido } from "../../utils/pulseScore";
@@ -27,7 +29,20 @@ import { nivelColor } from "../../config/theme";
  * NO lleva «Empleados en Foco Rojo» aunque el de admin si: seria la misma gente dos veces en
  * la misma pantalla, y aqui ya se ve con mas detalle.
  */
-const PsicologaDashboard = ({ encuestas = [], mensajes = [], reportesConfidenciales = [] }) => {
+const PsicologaDashboard = ({
+  encuestas = [],
+  mensajes = [],
+  reportesConfidenciales = [],
+  notas = [],
+  vacaciones = [],
+  permisos = [],
+  descuentos = [],
+  reconocimientos = [],
+}) => {
+  // La ficha completa, sin salir del dashboard: esta pantalla es para decidir a quién
+  // llamar hoy, y tener que ir a Empleados y buscar a la persona a mano es justo la
+  // fricción que hace que no se mire.
+  const [fichaAbierta, setFichaAbierta] = useState(null);
   const { usuarios: USERS, nombresSucursales } = useGlobal();
   const { user } = useAuth();
 
@@ -129,7 +144,13 @@ const PsicologaDashboard = ({ encuestas = [], mensajes = [], reportesConfidencia
             ) : (
               <div className="psico-priority-grid">
                 {casosPrioritarios.map(({ emp, score, tendencia, nivel }) => (
-                  <div key={emp.id} className={`psico-priority-card psico-priority-card--${nivel}`}>
+                  <button
+                    type="button"
+                    key={emp.id}
+                    className={`psico-priority-card psico-priority-card--${nivel}`}
+                    onClick={() => setFichaAbierta(emp)}
+                    title={`Ver la ficha de ${emp.name}`}
+                  >
                     <div className="psico-priority-top">
                       <div>
                         <div className="psico-priority-name">{emp.name}</div>
@@ -147,7 +168,7 @@ const PsicologaDashboard = ({ encuestas = [], mensajes = [], reportesConfidencia
                         Tendencia {tendencia}
                       </span>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
@@ -160,6 +181,24 @@ const PsicologaDashboard = ({ encuestas = [], mensajes = [], reportesConfidencia
         empleados={empleados}
         pulsePorEmpleado={pulsePorEmpleado}
       />
+
+      {/* La misma ficha que en Empleados. Se monta en un portal a <body>, así que da igual
+          dónde esté escrita: no la recorta ninguna tarjeta de este dashboard. */}
+      {fichaAbierta && (
+        <FichaEmpleado
+          empleado={fichaAbierta}
+          encuestas={encuestas}
+          notas={notas}
+          vacaciones={vacaciones}
+          permisos={permisos}
+          descuentos={descuentos}
+          reconocimientos={reconocimientos}
+          reportesConfidenciales={reportesConfidenciales}
+          role="psicologa"
+          currentUser={user}
+          onClose={() => setFichaAbierta(null)}
+        />
+      )}
     </div>
   );
 };

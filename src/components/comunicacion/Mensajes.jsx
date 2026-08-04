@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, Fragment } from "react";
+import { useLocation } from "react-router-dom";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import PageHeader from "../common/PageHeader";
@@ -57,8 +58,12 @@ const CANAL_SOPORTE = {
 
 const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
   const { usuarios: USERS, setMensajes } = useGlobal();
+  const location = useLocation();
 
-  const [selectedId, setSelectedId] = useState(null);
+  // Se puede llegar aquí con una conversación ya elegida: la ficha de un empleado manda
+  // `conversarCon` con su id para que escribirle sea un clic y no "ir a Mensajes y buscarlo".
+  // Solo es el valor INICIAL: a partir de ahí manda lo que el usuario seleccione.
+  const [selectedId, setSelectedId] = useState(location.state?.conversarCon ?? null);
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [archivo, setArchivo] = useState(null);
