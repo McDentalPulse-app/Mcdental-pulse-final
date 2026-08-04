@@ -363,3 +363,80 @@ describe("fase 5: las respuestas de un bloque se leen en el detalle", () => {
     expect(resumen).not.toContain("Turnos");
   });
 });
+
+describe("preguntas abiertas de bloque: cada una es la suya", () => {
+  // El fallo del 2026-08-04: en el detalle salía la misma respuesta repetida cuatro veces.
+  // Producción tiene 22 preguntas activas y CUATRO de tipo abierta — la del núcleo más una
+  // por cada bloque rotatorio. `buildAbiertaItem` ponía a todas el enunciado de la del núcleo
+  // y, si no tenían respuesta propia, también su comentario. Cuatro filas idénticas.
+  const nucleoAbierta = {
+    id: "n-abi", tipo: "abierta", area: "Comentarios", bloqueId: null,
+    texto: "¿Quieres compartir algo más con el equipo de bienestar?",
+  };
+  const abiertaBloqueA = {
+    id: "b-abi-a", tipo: "abierta", area: "Ideas de comunicación", bloqueId: "b-1",
+    texto: "¿Qué cambiarías de cómo se comunican las cosas en tu sucursal?",
+  };
+  const abiertaBloqueB = {
+    id: "b-abi-b", tipo: "abierta", area: "Capacitación", bloqueId: "b-2",
+    texto: "¿Hay algo que te gustaría aprender?",
+  };
+  const abiertaBloqueC = {
+    id: "b-abi-c", tipo: "abierta", area: "Situación a comentar", bloqueId: "b-3",
+    texto: "¿Viviste alguna situación con un paciente que quieras comentar?",
+  };
+  const todas = [nucleoAbierta, abiertaBloqueA, abiertaBloqueB, abiertaBloqueC];
+
+  it("el comentario del núcleo NO se repite en las abiertas de los bloques", () => {
+    // El caso exacto de producción: solo se contestó la del núcleo.
+    const encuesta = { id: "e1", respuestas: { "n-abi": "Todo bien esta semana." } };
+    const items = buildEncuestaDetalleItems(encuesta, todas);
+
+    const conEseTexto = items.filter((i) => i.valor === "Todo bien esta semana.");
+    expect(conEseTexto).toHaveLength(1);
+    expect(items.filter((i) => i.esAbierta)).toHaveLength(1);
+  });
+
+  it("dos abiertas contestadas salen cada una con SU enunciado y SU respuesta", () => {
+    const encuesta = {
+      id: "e2",
+      respuestas: { "n-abi": "Sin novedad.", "b-abi-a": "Que avisen los cambios de turno antes." },
+    };
+    const items = buildEncuestaDetalleItems(encuesta, todas);
+
+    const delBloque = items.find((i) => i.area === "Ideas de comunicación");
+    expect(delBloque).toBeDefined();
+    expect(delBloque.pregunta).toBe(abiertaBloqueA.texto);
+    expect(delBloque.valor).toBe("Que avisen los cambios de turno antes.");
+
+    const delNucleo = items.find((i) => i.area === "Comentarios");
+    expect(delNucleo.pregunta).toBe(nucleoAbierta.texto);
+    expect(delNucleo.valor).toBe("Sin novedad.");
+  });
+
+  it("una abierta de bloque sin contestar no se pinta", () => {
+    const encuesta = { id: "e3", respuestas: { "b-abi-a": "Algo que decir." } };
+    const items = buildEncuestaDetalleItems(encuesta, todas);
+    expect(items.find((i) => i.area === "Capacitación")).toBeUndefined();
+    expect(items.find((i) => i.area === "Situación a comentar")).toBeUndefined();
+  });
+
+  it("el comentario del núcleo sigue apareciendo aunque nadie lo conteste", () => {
+    // Garantía que ya existía: la pregunta abierta del núcleo se muestra siempre, con
+    // "Sin respuesta.", porque su ausencia también dice algo.
+    const items = buildEncuestaDetalleItems({ id: "e4", respuestas: {} }, todas);
+    const abiertas = items.filter((i) => i.esAbierta);
+    expect(abiertas).toHaveLength(1);
+    expect(abiertas[0].display).toBe("Sin respuesta.");
+  });
+
+  it("sigue leyendo el comentario de los campos sueltos antiguos", () => {
+    // Filas viejas guardaban el comentario fuera de `respuestas`. Ese respaldo es solo
+    // para la abierta del núcleo, no para las de bloque.
+    const encuesta = { id: "e5", comentarioAbierto: "Comentario de una fila vieja.", respuestas: {} };
+    const items = buildEncuestaDetalleItems(encuesta, todas);
+    const abiertas = items.filter((i) => i.esAbierta);
+    expect(abiertas).toHaveLength(1);
+    expect(abiertas[0].valor).toBe("Comentario de una fila vieja.");
+  });
+});

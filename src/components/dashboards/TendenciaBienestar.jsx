@@ -1,7 +1,6 @@
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useMemo } from "react";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
-import WeekSelect from "../common/WeekSelect";
 import EmptyState from "../common/EmptyState";
 
 /**
@@ -20,9 +19,17 @@ import { nivelColor } from "../../config/theme";
  *
  * Vive aquí y no dentro de cada dashboard porque los tres —admin, RH y psicóloga— enseñaban lo
  * mismo con el código duplicado, y al duplicarlo se les fue separando: cualquier arreglo había
- * que acordarse de hacerlo dos veces. Ahora es un solo bloque con su propio selector de semana,
- * independiente del selector de la cabecera (ahí se elige el periodo de los KPIs; aquí, el de
- * la gráfica, y no tienen por qué ser el mismo).
+ * que acordarse de hacerlo dos veces.
+ *
+ * LA SEMANA LLEGA POR PROPS, del selector de la cabecera. Tuvo el suyo propio durante un tiempo,
+ * con el argumento de que el periodo de los KPIs y el de la gráfica no tenían por qué ser el
+ * mismo. En la pantalla eso se tradujo en dos desplegables de semana a un palmo de distancia,
+ * y en la duda de cuál manda: es más fácil no ver la incoherencia entre dos números que
+ * agradecer poder compararlos. Manda el de arriba, que es el de siempre.
+ *
+ * `semana` viene en el formato de PRESENTACIÓN (`formatSemanaDisplay`), que renumera desde el
+ * lanzamiento — no en el ISO que guardan las encuestas. Quien la pase desde un ISO tiene que
+ * convertirla, o aquí no encontrará datos para ninguna semana.
  */
 const LEYENDA = [
   { nivel: "verde", texto: "Estable (80 o más)" },
@@ -30,7 +37,7 @@ const LEYENDA = [
   { nivel: "rojo", texto: "Crítico (menos de 60)" },
 ];
 
-const TendenciaBienestar = ({ encuestas = [], usuarios = [] }) => {
+const TendenciaBienestar = ({ encuestas = [], usuarios = [], semana: semanaElegida }) => {
   // Sucursal de cada empleado, para poder agrupar sus encuestas.
   const sucursalDe = useMemo(() => {
     const m = new Map();
@@ -58,8 +65,11 @@ const TendenciaBienestar = ({ encuestas = [], usuarios = [] }) => {
   // Solo las semanas que TIENEN datos: ofrecer una semana vacía es hacer perder el tiempo.
   const semanas = useMemo(() => [...porSemana.keys()].sort((a, b) => a.localeCompare(b)), [porSemana]);
 
-  const [semanaSel, setSemanaSel] = useState(null);
-  const semana = semanaSel && porSemana.has(semanaSel) ? semanaSel : semanas[semanas.length - 1];
+  // Si la cabecera elige una semana SIN respuestas, aquí se ve el estado vacío — no se cae a
+  // otra semana con datos. Enseñar callado un periodo distinto del que pone arriba sería peor
+  // que decir que no hay nada. El respaldo a la última con datos es solo por si nadie pasa la
+  // prop, para que el bloque no aparezca vacío por un fallo de conexión entre componentes.
+  const semana = semanaElegida ?? semanas[semanas.length - 1];
 
   const previa = useMemo(() => {
     const i = semanas.indexOf(semana);
@@ -94,16 +104,6 @@ const TendenciaBienestar = ({ encuestas = [], usuarios = [] }) => {
     <Card>
       <div className="tendencia-head">
         <SectionTitle icon="trending">Tendencia del bienestar por oficina</SectionTitle>
-        {semanas.length > 1 && (
-          <WeekSelect
-            value={semana}
-            onChange={setSemanaSel}
-            options={semanas
-              .slice()
-              .reverse()
-              .map((s, i) => ({ value: s, label: i === 0 ? `${s} · más reciente` : s }))}
-          />
-        )}
       </div>
 
       {!datos.length ? (

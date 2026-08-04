@@ -121,6 +121,32 @@ color lo decide el CSS, que sí conoce el tema.
 | `font-sans` | **Inter** (estilo Untitled UI) |
 | `font-mono` | **Fira Code** |
 
+### Controles de formulario — un solo origen (2026-08-04)
+
+Campo de texto, desplegable, fecha, hora y área de texto **salen todos de estos cuatro tokens**.
+Si estás escribiendo `border-radius` o `border` en una regla que estiliza un `input` o un
+`select`, casi seguro te has equivocado: referencia el token.
+
+| Token | Valor | Nota |
+|---|---|---|
+| `--mc-control-radio` | `8px` | El mismo de los botones |
+| `--mc-control-borde` | `var(--mc-gris-suave)` | El `borde` neutro de la tabla de arriba |
+| `--mc-control-fondo` | `var(--mc-superficie-input)` | El que esta guía ya declaraba para «Campos de formulario» |
+| `--mc-control-letra` | `14px` | |
+
+Foco: borde `--mc-aqua` + anillo `0 0 0 3px rgba(aqua / .12)`.
+
+> **Por qué existen.** Había **ocho** definiciones distintas de «caja de control» repartidas por
+> `App.css`: radios de 8, 9, 10 y 12px, tres variables de borde y cuatro de fondo. Varias
+> llevaban un comentario que decía *«mismo estilo que la app»* mientras usaban valores propios —
+> el comentario describía la intención, no el resultado. Y `--mc-card-borde` vale lo **mismo**
+> que `--mc-gris-suave` en claro pero **distinto** en oscuro, así que parte de la diferencia solo
+> se veía con el tema oscuro puesto. Un token que hay que acordarse de copiar no dura.
+
+**Excepciones legítimas**, que no son campos y por eso no siguen esto: `.week-select-trigger`
+(pastilla de 999px, es un disparador, no un campo), `.week-select-menu` (superficie flotante) y
+`.mc-file-input-wrap` (zona de soltar archivos, borde discontinuo).
+
 ### Paleta categórica de eventos del calendario
 
 Colores de **identidad de categoría** (como los colores de evento de Google Calendar):

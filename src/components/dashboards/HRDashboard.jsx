@@ -15,7 +15,7 @@ import { usePulseSemana } from "../../hooks/usePulseSemana";
 import { getAsistencias } from "../../services/supabase/asistenciasService";
 import { construirDias, resumen, mapaZonas, zonaDe, hoyEnClinica } from "../../utils/asistencia";
 import { esEmpleadoActivo } from "../../utils/helpers";
-import { semanaActual, rangoDeSemana } from "../../utils/constants";
+import { semanaActual, rangoDeSemana, formatSemanaDisplay } from "../../utils/constants";
 import { getPulseStatus, tieneScoreValido } from "../../utils/pulseScore";
 import { nivelColor } from "../../config/theme";
 
@@ -222,7 +222,7 @@ const HRDashboard = () => {
         </Card>
       </div>
 
-      <TendenciaBienestar encuestas={encuestas} usuarios={usuarios} />
+      <TendenciaBienestar encuestas={encuestas} usuarios={usuarios} semana={formatSemanaDisplay(semana)} />
 
       <Card>
         <div className="admin-grid-2">

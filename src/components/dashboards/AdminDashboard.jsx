@@ -74,7 +74,7 @@ const AdminDashboard = ({ encuestas = [] }) => {
         </Card>
       </div>
 
-      <TendenciaBienestar encuestas={encuestas} usuarios={USERS} />
+      <TendenciaBienestar encuestas={encuestas} usuarios={USERS} semana={semana} />
 
       <Card>
         <div className="admin-grid-2">

@@ -149,8 +149,89 @@ export const NAV_ITEMS = {
  * buscador y botón de mensajes): repetir el filtro cuatro veces es garantizar que algún día uno
  * se quede sin él y el ítem se cuele donde no toca.
  */
+/**
+ * Una línea que dice QUÉ SE HACE en cada página, para el menú desplegable.
+ *
+ * Van por CLAVE y no repetidas dentro de cada rol: la mayoría de las páginas aparecen en tres o
+ * cuatro menús, y escribir la frase cuatro veces es garantizar que dentro de un mes digan cosas
+ * distintas. Se redactan en segunda persona y en presente («Revisa…», «Aprueba…»): el menú se lee
+ * para decidir a dónde ir, así que lo útil es el verbo, no una definición.
+ */
+const DESCRIPCIONES = {
+  dashboard: "Bienestar de toda la organización, semana a semana.",
+  inicio: "Tu resumen: pendientes, avisos y accesos rápidos.",
+  mensajes: "Conversaciones con el equipo y con Soporte TI.",
+
+  // Equipo / Personal
+  empleados: "Ficha rápida de cada persona y su Pulse Score.",
+  usuarios: "Alta, baja y permisos de las cuentas.",
+  expedientes: "El historial completo de una persona en un solo sitio.",
+  reconocimientos: "Reconoce a alguien del equipo y consulta los ya dados.",
+  eventospersonal: "Quién cumple años y quién cumple otro año en la empresa.",
+  bolsa: "Vacantes abiertas y candidatos en proceso.",
+
+  // Asistencia
+  checador: "Registra tu entrada y tu salida con la cámara.",
+  asistencia: "Entradas, salidas, retardos y faltas del periodo.",
+  historial: "Tus propias checadas y las horas que llevas.",
+  horarios: "El turno de cada persona, día por día.",
+  "importar-horarios": "Carga los turnos de muchas personas desde un archivo.",
+  sucursales: "Clínicas, su ubicación y su zona horaria.",
+  rostros: "Las caras registradas que usa el checador para reconocer.",
+  rostro: "Registra o actualiza tu cara para poder checar.",
+  miclinica: "Fija dónde está tu clínica para que el checador valide la ubicación.",
+  calibracion: "Qué tan exigente es el cotejo de caras, con datos reales.",
+
+  // Tiempo libre
+  vacaciones: "Aprueba o rechaza las solicitudes de vacaciones.",
+  permisos: "Aprueba o rechaza los permisos del equipo.",
+  mispermisos: "Tus solicitudes y en qué estado están.",
+  permisosempleado: "Pide vacaciones o un permiso y sigue tu solicitud.",
+  calendario: "Festivos, eventos y quién está fuera cada día.",
+  intercambios: "Cambios de día entre compañeros pendientes de resolver.",
+
+  // Bienestar
+  encuesta: "Contesta la encuesta de la semana. Es confidencial.",
+  encuestas: "Las preguntas que se hacen y los bloques que rotan.",
+  seguimiento: "Casos que necesitan atención y tus notas de cada uno.",
+  reportes: "Tendencias de bienestar por sucursal y por periodo.",
+  reportesrh: "Asistencia, permisos y descuentos en números.",
+  confidenciales: "Reportes que solo puede leer quien está autorizado.",
+  reporteconfidencial: "Cuenta algo delicado. Solo lo lee la psicóloga.",
+
+  // Dinero
+  descuentos: "Descuentos aplicados a nómina y su motivo.",
+  comisiones: "Lo que llevas ganado y el detalle de cada tratamiento.",
+
+  // Herramientas
+  ai: "Preguntale a la IA sobre el bienestar del equipo.",
+  config: "Umbrales, avisos y ajustes del sistema.",
+  avisos: "Comunicados para toda la empresa o para una sucursal.",
+  soporte: "Propón una mejora para la aplicación.",
+  soporteti: "Reporta un problema técnico al equipo de sistemas.",
+  perfil: "Tu foto, tu color y tu contraseña.",
+};
+
+/**
+ * La clave `soporte` significa DOS páginas distintas según el rol: "Ideas de mejora" en gestión y
+ * "Soporte TI" en plantilla (ver el comentario de arriba, donde se explica por qué conviven).
+ * Una descripción por clave se equivocaría en la mitad de los casos.
+ */
+const DESCRIPCIONES_POR_ROL = {
+  empleado: { soporte: "Reporta un problema técnico al equipo de sistemas." },
+  doctor: { soporte: "Reporta un problema técnico al equipo de sistemas." },
+};
+
+/** La descripción de una página, o cadena vacía si todavía no se ha escrito. */
+export const descripcionDe = (key, role) =>
+  DESCRIPCIONES_POR_ROL[role]?.[key] ?? DESCRIPCIONES[key] ?? "";
+
 export const navItemsPara = (user) =>
-  (NAV_ITEMS[user?.role] || []).filter((i) => !i.requiere || !!user?.[i.requiere]);
+  (NAV_ITEMS[user?.role] || [])
+    .filter((i) => !i.requiere || !!user?.[i.requiere])
+    // La descripción se pega aquí y no se escribe en cada ítem: NAV_ITEMS repite las mismas
+    // páginas en cinco roles, y el menú se lee desde cuatro sitios.
+    .map((i) => ({ ...i, desc: descripcionDe(i.key, user?.role) }));
 
 /**
  * Los 4 ítems que van en la barra inferior del teléfono; el resto cae en la hoja "Más".

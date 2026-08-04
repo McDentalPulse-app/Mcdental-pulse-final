@@ -316,6 +316,28 @@
   --mc-superficie: var(--mc-blanco);
   --mc-superficie-input: var(--mc-blanco);
 
+  /* ── Controles de formulario: UN SOLO ORIGEN ──────────────────────────────
+     Campo de texto, desplegable, fecha, hora y área de texto se ven igual en
+     toda la app porque salen todos de estos cuatro valores.
+
+     Se declaran aquí, y no en cada regla, porque el 2026-08-04 había OCHO
+     definiciones distintas de "caja de control" repartidas por App.css: radios
+     de 8, 9, 10 y 12px, tres variables de borde y cuatro de fondo. Varias
+     llevaban un comentario diciendo "mismo estilo que la app" mientras usaban
+     valores propios — el comentario era la intención, no el resultado.
+
+     Peor: `--mc-card-borde` y `--mc-gris-suave` valen lo MISMO en tema claro y
+     distinto en oscuro, así que media parte de la diferencia solo se veía de
+     noche. Un token que hay que recordar copiar no dura; uno que se referencia,
+     sí.
+
+     Van en referencias a los tokens semánticos, no a colores: así siguen al
+     tema y al color de marca del usuario sin duplicar nada. */
+  --mc-control-radio: 8px;
+  --mc-control-borde: var(--mc-gris-suave);
+  --mc-control-fondo: var(--mc-superficie-input);
+  --mc-control-letra: 14px;
+
   /* Badges/pills: los pasteles que App.css ya usaba a pelo (#dcfce7, #166534…). */
   --mc-badge-verde-bg: #DCFCE7;
   --mc-badge-verde-texto: #166534;

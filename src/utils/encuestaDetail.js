@@ -243,20 +243,38 @@ const readValorAbierto = (encuesta, preguntas = []) => {
 export const getComentarioAbierto = (encuesta, preguntas = []) =>
   readValorAbierto(encuesta, preguntas);
 
-const buildAbiertaItem = (encuesta, preguntas, numero, valor = "") => {
-  const preguntaAbierta = getPreguntaAbierta(preguntas);
-  const texto = valor || readValorAbierto(encuesta, preguntas);
+/**
+ * Una fila de respuesta abierta.
+ *
+ * `pregunta` es LA pregunta que se está pintando, y hay que pasarla. Antes no se pasaba: la
+ * fila se construía siempre con el enunciado y el área de la abierta del núcleo, daba igual
+ * cuál se estuviera procesando. Con un solo bloque rotatorio eso no se notaba; con los cuatro
+ * que hay hoy —cuatro preguntas de tipo abierta en total— el comentario del núcleo salía
+ * repetido cuatro veces, idéntico, en el detalle de cada encuesta.
+ *
+ * El respaldo a los campos sueltos (`comentarioAbierto`, `respuestaLibre`…) es SOLO de la
+ * abierta del núcleo: de ahí vienen esos datos, de filas anteriores al jsonb. Aplicarlo a una
+ * abierta de bloque es lo que hacía que heredara un comentario que no era suyo.
+ */
+const buildAbiertaItem = (encuesta, preguntas, numero, valor = "", pregunta = null) => {
+  const propia = pregunta || getPreguntaAbierta(preguntas);
+  const esNucleo = !propia?.bloqueId;
+  const texto = valor || (esNucleo ? readValorAbierto(encuesta, preguntas) : "");
   const trimmed = isEmpty(texto) ? "" : String(texto).trim();
 
   return {
     numero,
-    pregunta: getPreguntaAbiertaTexto(preguntas),
-    area: preguntaAbierta?.area || "Comentarios",
+    pregunta: propia?.texto || getPreguntaAbiertaTexto(preguntas),
+    area: propia?.area || "Comentarios",
     tipo: "abierta",
     valor: trimmed || null,
     display: trimmed || "Sin respuesta.",
     revisar: hasSensitiveContent(trimmed),
+    // Presentacional: el modal pinta el texto libre en su propia caja. Vale para todas.
     esAbierta: true,
+    // Cuál es LA de siempre. La usa la garantía del final, que no puede darse por
+    // satisfecha porque haya salido la abierta de un bloque.
+    esComentarioNucleo: esNucleo,
   };
 };
 
@@ -272,12 +290,15 @@ export const buildEncuestaDetalleItems = (encuesta, preguntas = []) => {
       const numero = index + 1;
 
       if (p.tipo === "abierta") {
-        const valor =
-          readRespuesta(raw, p.id) ??
-          readRespuesta(raw, `p${p.id}`) ??
-          readValorAbierto(encuesta, preguntas);
+        const propia = readRespuesta(raw, p.id) ?? readRespuesta(raw, `p${p.id}`);
 
-        items.push(buildAbiertaItem(encuesta, preguntas, numero, valor));
+        // Una abierta de BLOQUE sin responder no se pinta, igual que cualquier otra pregunta
+        // sin responder. Es la quincena la que decide qué bloque se pregunta, así que las de
+        // los otros tres bloques están vacías siempre — y antes cada una copiaba el
+        // comentario del núcleo.
+        if (p.bloqueId && isEmpty(propia)) return;
+
+        items.push(buildAbiertaItem(encuesta, preguntas, numero, propia ?? "", p));
         consumedKeys.add(String(p.id));
         consumedKeys.add(`p${p.id}`);
         return;
@@ -349,8 +370,11 @@ export const buildEncuestaDetalleItems = (encuesta, preguntas = []) => {
     });
   }
 
-  if (!items.some((item) => item.esAbierta)) {
-    const abiertaIdx = preguntas.findIndex((p) => p.tipo === "abierta");
+  // El comentario abierto del NÚCLEO se muestra siempre, aunque venga vacío: que alguien no
+  // haya escrito nada también es información. Se comprueba por `esComentarioNucleo` y no por
+  // `esAbierta`, porque la abierta de un bloque no sustituye a la de siempre.
+  if (!items.some((item) => item.esComentarioNucleo)) {
+    const abiertaIdx = preguntas.findIndex((p) => p.tipo === "abierta" && !p.bloqueId);
     const numero = abiertaIdx >= 0 ? abiertaIdx + 1 : preguntas.length || 10;
     items.push(buildAbiertaItem(encuesta, preguntas, numero));
   }

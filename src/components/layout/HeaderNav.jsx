@@ -95,14 +95,26 @@ export default function HeaderNav() {
               </button>
               {abierto === g.nombre && (
                 <div className="topnav-menu">
+                  {/* Icono + título + una línea de qué se hace ahí. El menú se lee para decidir
+                      a dónde ir, y "Calibración del cotejo" o "Intercambios de día" no dicen por
+                      sí solos si son lo que buscas. Un ítem sin `desc` se sigue viendo como
+                      antes: la clase --condesc solo se pone cuando hay algo que enseñar. */}
                   {g.items.map((item) => (
                     <button
                       key={item.key}
                       type="button"
-                      className={`topnav-menu-item${active === item.key ? " topnav-menu-item--activo" : ""}`}
+                      className={`topnav-menu-item${item.desc ? " topnav-menu-item--condesc" : ""}${active === item.key ? " topnav-menu-item--activo" : ""}`}
                       onClick={() => ir(item.key)}
                     >
-                      <Icon name={item.icon} size={16} /> {item.label}
+                      <Icon name={item.icon} size={16} />
+                      {item.desc ? (
+                        <span className="topnav-menu-texto">
+                          <span className="topnav-menu-titulo">{item.label}</span>
+                          <span className="topnav-menu-desc">{item.desc}</span>
+                        </span>
+                      ) : (
+                        item.label
+                      )}
                     </button>
                   ))}
                 </div>
