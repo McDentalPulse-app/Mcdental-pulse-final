@@ -115,6 +115,52 @@ lee nadie.
 
 ## Changelog
 
+### 2026-08-04 · Respuestas repetidas, un solo selector de semana, controles unificados y bloques rotativos
+
+**🔴 El detalle de encuesta repetía la última respuesta varias veces.** Producción tenía 22
+preguntas activas y **cuatro de tipo abierta**: la del núcleo y una por cada bloque rotatorio.
+`buildAbiertaItem` ponía a todas el enunciado de la del núcleo y, como las de bloque nunca se
+contestaron, les copiaba también su comentario. Medido con datos reales: **antes 13 filas con el
+mismo texto cuatro veces; ahora 10 filas y una sola.** Cada abierta se pinta ya con su enunciado y
+su área, y una abierta de bloque sin responder no se pinta. Se separa `esAbierta`
+(presentacional) de `esComentarioNucleo` (la garantía de que el comentario de siempre aparece).
+Las pruebas no lo cazaron porque cubrían preguntas de bloque **solo de tipo escala**; van 5 casos
+nuevos. *Arreglarlo antes de encender los bloques no fue casualidad: con los seis nuevos el
+comentario habría salido repetido **seis** veces.*
+
+**Un solo selector de semana en los dashboards.** `TendenciaBienestar` tenía el suyo a un palmo del
+de la cabecera. Manda el de arriba. Trampa que casi cuesta un fallo: **RH lleva la semana en ISO**
+(`2026-W32`) y la gráfica agrupa por el formato de presentación (`2026-W06`), que renumera desde el
+lanzamiento — sin convertir no habría encontrado datos de ninguna semana.
+
+**Controles de formulario: un solo origen.** Había **ocho** definiciones distintas de «caja de
+control» en `App.css` — radios de 8, 9, 10 y 12px, tres variables de borde y cuatro de fondo —, y
+varias llevaban un comentario que decía *«mismo estilo que la app»* mientras usaban valores
+propios. Peor: `--mc-card-borde` vale lo **mismo** que `--mc-gris-suave` en claro y **distinto** en
+oscuro, así que parte de la diferencia solo se veía de noche. Ahora todo sale de
+`--mc-control-radio/borde/fondo/letra`, y el fondo pasa a `--mc-superficie-input`, que es lo que
+`DESIGN.md` ya declaraba para campos y la regla base no usaba. **Medido en Chromium sobre el CSS
+compilado: 13 controles, una sola combinación, en los dos temas.**
+
+**Menú de navegación con descripciones.** Una línea de qué se hace en cada página, por clave y no
+repetida en los cinco roles. `soporte` significa dos páginas distintas según el rol y lleva
+excepción. El ancho lo pone el ítem y no el menú: con `:has()` los teléfonos anteriores a iOS 15.4
+descartarían la regla entera. El menú del teléfono se queda solo con etiquetas.
+
+**Bloques rotativos, encendidos por fin** (migración `108`). La rotación existía desde la `105` y
+funcionaba; lo que faltaba era contenido. Los cuatro bloques viejos llevaban apagados desde el
+2026-07-30 y **nadie había contestado nunca ninguna de sus preguntas** (0 sobre 121 encuestas), así
+que se retiran sin perder nada. Entran **seis bloques, ciclo de 12 semanas**, todos de bienestar:
+descanso, reconocimiento, confianza para hablar, cómo anda el cuerpo, la vida fuera del trabajo, y
+sentido y crecimiento. Una primera versión preguntaba por insumos, instalaciones y turnos: es
+operación, no bienestar, y mezclarlas cambia lo que la encuesta significa para quien la contesta.
+Las escalas van **todas en el mismo sentido** (más alto = mejor), por eso el bloque del cuerpo
+pregunta «¿qué tan bien se ha sentido tu cuerpo?» y no «¿cuántas molestias tuviste?».
+
+Verificado tras aplicar: el empleado ve **13 preguntas** esta quincena (10 del núcleo + 3 de
+«Confianza para hablar»), el Pulse Score sigue saliendo de las **6 escalas del núcleo**, y ninguna
+área de bloque pisa una del núcleo (la migración lo comprueba y aborta si ocurriera).
+
 ### 2026-08-03 (noche, 12) · La subida al expediente fallaba por el tipo, y el error no lo decía
 
 Con el botón ya visible, la primera subida real falló. El registro del almacén dio el motivo
