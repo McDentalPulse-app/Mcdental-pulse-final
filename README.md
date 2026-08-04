@@ -115,6 +115,29 @@ lee nadie.
 
 ## Changelog
 
+### 2026-08-04 (noche, 6) · El desplegable de Sucursal se abría fuera de la pantalla
+
+**🔴 No se podía cambiar de oficina a un empleado.** En la misma ventana, el desplegable de
+**Rol sí abría y el de Sucursal no** — y esa asimetría era la pista.
+
+Cuando no cabe debajo, el popover se abre hacia arriba y el componente fijaba **solo `bottom`**.
+Pero la regla que comparte con `<WeekSelect>` trae `top: calc(100% + 6px)`, y en un elemento
+`position: fixed` ese `100%` es **el alto de la pantalla**: el menú se iba a `100vh + 6px`, fuera
+de la vista, con la altura colapsada a 14px. Medido: menú en `y=619` con una pantalla de `613`.
+
+Rol está arriba del formulario y abre hacia abajo, así que nunca volteaba. Sucursal está más
+abajo. **Por eso uno funcionaba y el otro no.**
+
+- El componente fija ahora **`top` y `bottom` siempre**, uno de los dos en `auto`. Igual en
+  `DateRangePicker`, que tiene la misma regla base y el mismo fallo latente.
+- Y el CSS lleva `top: auto; bottom: auto` como cinturón, por si algún día el componente vuelve
+  a fijar solo uno.
+- El banco lo comprueba, aceptando también la forma corta `inset: auto auto auto 0` en que lo
+  fusiona el compilador. Contraprueba hecha: quitando el `top: auto`, falla.
+
+Antes de esto se corrigió otro fallo real del mismo día —el popover en `z-index: 250` quedaba
+**detrás de los modales**, y ese formulario vive dentro de uno— pero no era el que lo impedía.
+
 ### 2026-08-04 (noche, 5) · Banco de pruebas visual, y bloquea el despliegue
 
 `npm run verificar` (`scripts/verificar-visual.mjs`). Las 512 pruebas de este repo son de

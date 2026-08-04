@@ -72,6 +72,26 @@ for (const clase of ["mc-select-menu", "mc-daterange-pop"]) {
 }
 void zetas;
 
+// Ni `top` ni `bottom` heredados: los fija el componente al colocar el popover. Si la regla
+// base (compartida con <WeekSelect>) vuelve a filtrar su `top: calc(100% + 6px)`, en un
+// elemento `fixed` eso son 100vh y el menú se va fuera de la pantalla al abrir hacia arriba.
+// Fue justo lo que impidió cambiar de sucursal a un empleado: el campo está abajo del
+// formulario, así que era el que volteaba.
+for (const clase of ["mc-select-menu", "mc-daterange-pop"]) {
+  const m = css.match(new RegExp(`${clase}\\{([^}]*)`));
+  const cuerpo = m ? m[1] : "";
+  // El compilador puede fusionarlo en la forma corta: `inset: auto auto auto 0` es
+  // top/right/bottom/left, así que vale igual mientras el primer y el tercer valor sean `auto`.
+  const sueltos = /top:\s*auto/.test(cuerpo) && /bottom:\s*auto/.test(cuerpo);
+  const enInset = /inset:\s*auto\s+\S+\s+auto\b/.test(cuerpo);
+  const bien = sueltos || enInset;
+  comprobar(
+    `.${clase} no hereda top/bottom`,
+    bien,
+    bien ? "" : (m ? "no se ve top:auto ni un inset equivalente" : "no encontrado")
+  );
+}
+
 // ── 2. Lo que hay que medir en un navegador de verdad ─────────────────────────
 const chromium = ["chromium", "chromium-browser", "google-chrome"].find((c) => {
   try { execFileSync("which", [c], { stdio: "pipe" }); return true; } catch { return false; }

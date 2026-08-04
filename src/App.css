@@ -11890,6 +11890,9 @@
      Por encima de TODOS los modales (el más alto es 10010): este calendario se usa dentro de
      ellos —fecha de ingreso en Gestión de Personal, fecha de un evento— y con un z-index
      intermedio se abriría por detrás. Mismo motivo que .mc-select-menu. */
+  /* Mismo cinturón que .mc-select-menu: su regla base también trae `top: calc(100% + 6px)`. */
+  top: auto;
+  bottom: auto;
   position: fixed;
   z-index: 10100;
   width: 264px;
@@ -13255,6 +13258,13 @@
   /* FIJO y no absoluto: la lista vive en un portal a <body> y su sitio lo calcula el
      componente en coordenadas de pantalla. Ver el comentario de `situar()` en Select.jsx. */
   position: fixed;
+  /* El `top: calc(100% + 6px)` de la regla que se comparte con <WeekSelect> NO puede llegar
+     hasta aquí: en un elemento `fixed` ese 100% es el alto de la PANTALLA, así que mandaba el
+     menú a 100vh + 6px cuando el componente solo fijaba `bottom` para abrir hacia arriba —
+     fuera de la vista. El componente ahora fija los dos, y esto es el cinturón por si algún
+     día vuelve a fijar solo uno. */
+  top: auto;
+  bottom: auto;
   /* POR ENCIMA DE TODOS LOS MODALES, no entre la barra y el modal.
      Primero fue 250 —por encima de la barra del teléfono (200) y por debajo del modal (1000)—
      y eso rompió cambiar de sucursal a un empleado: ese formulario vive dentro de un modal, así

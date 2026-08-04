@@ -67,9 +67,12 @@ const DateRangePicker = ({ desde, hasta, onChange, max, min, unico = false, plac
     // Anclado a la derecha del campo cuando no cabe por la izquierda, para no salirse.
     const ancho = 260;
     const left = Math.max(8, Math.min(t.left, window.innerWidth - ancho - 8));
+    // Los DOS, `top` y `bottom`. Su regla base también trae `top: calc(100% + 6px)`, y en un
+    // elemento `fixed` eso son 100vh: al abrir hacia arriba el calendario se iba fuera de la
+    // pantalla. Mismo fallo que tuvo <Select>.
     setPos(arriba
-      ? { left, bottom: window.innerHeight - t.top + AIRE }
-      : { left, top: t.bottom + AIRE });
+      ? { left, top: "auto", bottom: window.innerHeight - t.top + AIRE }
+      : { left, top: t.bottom + AIRE, bottom: "auto" });
   }, []);
 
   useEffect(() => {

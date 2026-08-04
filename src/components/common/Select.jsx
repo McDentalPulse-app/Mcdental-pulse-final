@@ -98,9 +98,16 @@ const Select = ({
       left: t.left,
       width: t.width,
       maxWidth: anchoMax,
+      // SE FIJAN LOS DOS, `top` y `bottom`, siempre. Fijar solo uno deja vivo el otro, y la
+      // regla base que se comparte con <WeekSelect> trae `top: calc(100% + 6px)`: en un
+      // elemento `fixed` ese 100% es el alto de la PANTALLA, así que al abrir hacia arriba el
+      // menú se iba a 100vh + 6px — fuera de la vista por abajo, con la altura colapsada.
+      //
+      // No era un caso raro: pasaba en cuanto el campo quedaba cerca del pie. Por eso "Rol"
+      // funcionaba y "Sucursal" no en la misma ventana — el segundo está más abajo.
       ...(haciaArriba
-        ? { bottom: window.innerHeight - t.top + AIRE, maxHeight: Math.min(ALTO_MAX, encima) }
-        : { top: t.bottom + AIRE, maxHeight: Math.min(ALTO_MAX, debajo) }),
+        ? { top: "auto", bottom: window.innerHeight - t.top + AIRE, maxHeight: Math.min(ALTO_MAX, encima) }
+        : { top: t.bottom + AIRE, bottom: "auto", maxHeight: Math.min(ALTO_MAX, debajo) }),
     });
   }, []);
 
