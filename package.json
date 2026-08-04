@@ -10,7 +10,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "test": "vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "verificar": "node scripts/verificar-visual.mjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

@@ -115,6 +115,35 @@ lee nadie.
 
 ## Changelog
 
+### 2026-08-04 (noche, 5) · Banco de pruebas visual, y bloquea el despliegue
+
+`npm run verificar` (`scripts/verificar-visual.mjs`). Las 512 pruebas de este repo son de
+**lógica pura** y pasaban en verde con **todos** los fallos de estas dos semanas dentro: el modal
+que salía dentro de la tarjeta, la lista topada que enseñaba 6 clínicas de 26, el `:has()` que
+los teléfonos viejos descartaban, el desplegable recortado. Ninguno era de lógica; todos de
+pantalla, y cada vez hubo que montar un banco a mano para medirlo.
+
+Mide el **paquete desplegable**, no el código fuente: entre medias hay un compilador que
+reordena y fusiona reglas. Comprueba cero `:has()`, cero `<select>` nativos, que existan los
+cuatro tokens de los controles, que los popovers estén por encima de la barra del teléfono y por
+debajo de los modales, que nada se salga de la pantalla y que un campo resuelva a `8px|1px|14px`.
+
+**Bloquea el despliegue**, enganchado en `/opt/pulse/build-frontend.sh`. Tres decisiones que
+costaron un tropiezo cada una:
+
+- Va **después de construir la imagen y antes de cambiar el contenedor**. La primera versión
+  hacía `npm run build` en el anfitrión: allí no está `recharts` —la app se compila dentro de
+  Docker— y **rompió el despliegue**. Ahora se miden los ficheros extraídos de la imagen recién
+  construida, que es exactamente lo que se va a servir.
+- Si falla, **el contenedor que estaba sirviendo no se toca**. Comprobado introduciendo un
+  `:has()` a propósito: abortó y producción siguió en pie y limpia.
+- **Sin Chromium no falla, avisa.** El servidor no tiene navegador, y contarlo como fallo
+  bloquearía todos los despliegues — un guardián que impide desplegar siempre acaba desactivado,
+  y se perderían también las comprobaciones que sí funcionan. Las estáticas son las que
+  atraparon las regresiones reales, y esas corren en todas partes.
+
+Escape documentado para un arreglo urgente: `VERIFICAR=0 /opt/pulse/build-frontend.sh`.
+
 ### 2026-08-04 (noche, 4) · La tarea que vigila el estado, y el disco
 
 `?tarea=salud` en `api/tareas-programadas.js`, con su cron a las 11:52 de Monterrey. **No
