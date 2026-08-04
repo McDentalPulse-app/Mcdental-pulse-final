@@ -147,6 +147,34 @@ Foco: borde `--mc-aqua` + anillo `0 0 0 3px rgba(aqua / .12)`.
 (pastilla de 999px, es un disparador, no un campo), `.week-select-menu` (superficie flotante) y
 `.mc-file-input-wrap` (zona de soltar archivos, borde discontinuo).
 
+### Capas: todo lo que flota va en un portal (2026-08-04)
+
+**Cualquier cosa que se despliegue sobre el contenido —modal, desplegable, calendario, visor de
+imagen, menú— se renderiza con `createPortal` a `document.body`.** No es una preferencia: dentro
+del árbol la recorta el primer ancestro con `overflow: hidden`, y `App.css` tiene **81 reglas que
+recortan**, empezando por `.mc-card`. Su posición se calcula en coordenadas de pantalla
+(`position: fixed`) a partir del `getBoundingClientRect()` del disparador.
+
+| Capa | `z-index` | Qué vive ahí |
+|---|---|---|
+| Modales | `1000` | `.mc-modal-overlay` y todo lo que cuelga de él |
+| Barra flotante del teléfono | `200` | `.mobile-tabbar` |
+| **Popovers** | **`250`** | `.mc-select-menu`, `.mc-daterange-pop` — **entre las dos** |
+| Cabecera y sus menús | `60`–`120` | `.topnav-menu`, `.week-select-menu` |
+
+Un popover que solo vive en la cabecera puede quedarse en `120`; en cuanto pueda abrirse cerca del
+pie de la pantalla necesita `250`, o la barra flotante le tapa las últimas opciones.
+
+Además: **el alto disponible descuenta la barra** (se mide con `querySelector(".mobile-tabbar")`,
+no se supone), el popover **voltea hacia arriba** si no cabe debajo, y su ancho máximo es lo que
+queda hasta el borde derecho para que no se salga.
+
+> **Esto pasó cuatro veces en una semana** antes de escribirse aquí: el detalle de sucursal del
+> dashboard (atrapado además por un `transform` de la animación de entrada), las imágenes del
+> chat, el desplegable nuevo y el calendario. Siempre el mismo síntoma —algo que sale a medias o
+> descolocado— y siempre la misma causa. Si estás escribiendo un popover y no ves un
+> `createPortal`, es el quinto.
+
 ### Paleta categórica de eventos del calendario
 
 Colores de **identidad de categoría** (como los colores de evento de Google Calendar):
