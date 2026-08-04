@@ -83,12 +83,21 @@ const Select = ({
     const t = ref.current?.getBoundingClientRect();
     if (!t) return;
     const ALTO_MAX = 320, AIRE = 6;
-    const debajo = window.innerHeight - t.bottom - AIRE;
+    // En el teléfono hay una barra de navegación flotante sobre el contenido. Se mide en vez de
+    // suponerla: así el cálculo sigue siendo correcto si cambia de alto o si no está.
+    const barra = document.querySelector(".mobile-tabbar");
+    const suelo = barra ? window.innerHeight - barra.getBoundingClientRect().top + AIRE : 0;
+    const debajo = window.innerHeight - t.bottom - AIRE - suelo;
     const encima = t.top - AIRE;
     const haciaArriba = debajo < 180 && encima > debajo;
+    // El popover puede crecer más que el campo (etiquetas largas), y si el campo está escorado a
+    // la derecha eso lo sacaría de la pantalla. Se le da como tope lo que queda hasta el borde,
+    // que nunca es menor que el propio campo porque el campo ya cabe.
+    const anchoMax = Math.max(t.width, window.innerWidth - t.left - 8);
     setPos({
       left: t.left,
       width: t.width,
+      maxWidth: anchoMax,
       ...(haciaArriba
         ? { bottom: window.innerHeight - t.top + AIRE, maxHeight: Math.min(ALTO_MAX, encima) }
         : { top: t.bottom + AIRE, maxHeight: Math.min(ALTO_MAX, debajo) }),

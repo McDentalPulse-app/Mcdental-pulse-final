@@ -115,6 +115,26 @@ lee nadie.
 
 ## Changelog
 
+### 2026-08-04 (noche) · Revisión en móvil de los desplegables nuevos
+
+Dos fallos reales, encontrados midiendo en un viewport de 390×760 y no mirando por encima:
+
+- **🔴 La barra flotante del teléfono tapaba los desplegables.** Los dos popovers heredaban
+  `z-index: 120` de `<WeekSelect>`, que vive en la cabecera y nunca se acerca al pie; la barra
+  está en **200**. Un desplegable abierto abajo del todo perdía sus últimas opciones debajo de
+  ella. Ahora van en **250** — por encima de la barra y por debajo de los modales (1000). Y la
+  altura disponible **descuenta la barra**, midiéndola en vez de suponerla.
+- **🔴 El calendario se recortaba dentro de las tarjetas.** Seguía en `position: absolute`, así
+  que lo cortaba el primer ancestro con `overflow: hidden`. Medido dentro de una `.mc-card`:
+  **237px del calendario quedaban fuera**. No se notaba antes porque solo se usaba en dos
+  pantallas que no recortan; al llevarlo a los cuatro campos de fecha entró en tarjetas y
+  modales. Pasa a un portal a `<body>` con posición de pantalla, como el desplegable.
+- El desplegable no puede salirse por la derecha: su ancho máximo es lo que queda hasta el borde.
+  Los dos se abren **hacia arriba** cuando no caben debajo.
+
+Medido tras el arreglo, a 390×760: ambos dentro de la pantalla, sin desbordar por los lados, sin
+quedar bajo la barra, y volteando hacia arriba cerca del pie.
+
 ### 2026-08-04 (tarde) · Los desplegables y los calendarios dejan de ser los del navegador
 
 La ronda anterior igualó los controles **cerrados** — misma caja, mismo borde, mismo radio— y eso

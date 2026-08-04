@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import Icon from "../ui/Icon";
 
 const DOW = ["L", "M", "M", "J", "V", "S", "D"];
@@ -35,6 +36,8 @@ const DateRangePicker = ({ desde, hasta, onChange, max, min, unico = false, plac
   const [finTemp, setFinTemp] = useState(hasta);
   const [ancla, setAncla] = useState(() => (desde ? parseISO(desde) : new Date()));
   const ref = useRef(null);
+  const popRef = useRef(null);
+  const [pos, setPos] = useState(null);
 
   const abrir = () => {
     setInicioTemp(desde);
@@ -43,17 +46,52 @@ const DateRangePicker = ({ desde, hasta, onChange, max, min, unico = false, plac
     setOpen(true);
   };
 
+  /**
+   * Dónde cae el calendario, en coordenadas de PANTALLA.
+   *
+   * Va en un portal a <body> porque `position: absolute` lo recortaba el primer ancestro con
+   * `overflow: hidden`. Medido el 2026-08-04 dentro de una `.mc-card`: el popover terminaba
+   * 237px por debajo del borde de la tarjeta, así que se veía cortado por la mitad. No se
+   * notaba antes porque solo se usaba en dos pantallas que no recortan; al llevarlo a los
+   * cuatro campos de fecha entró en tarjetas y modales. Mismo remedio que <Select>.
+   */
+  const situar = useCallback(() => {
+    const t = ref.current?.getBoundingClientRect();
+    if (!t) return;
+    const ALTO = 300, AIRE = 6;
+    // La barra flotante del teléfono se mide, no se supone: así vale aunque cambie o no esté.
+    const barra = document.querySelector(".mobile-tabbar");
+    const suelo = barra ? window.innerHeight - barra.getBoundingClientRect().top + AIRE : 0;
+    const debajo = window.innerHeight - t.bottom - AIRE - suelo;
+    const arriba = debajo < ALTO && t.top - AIRE > debajo;
+    // Anclado a la derecha del campo cuando no cabe por la izquierda, para no salirse.
+    const ancho = 260;
+    const left = Math.max(8, Math.min(t.left, window.innerWidth - ancho - 8));
+    setPos(arriba
+      ? { left, bottom: window.innerHeight - t.top + AIRE }
+      : { left, top: t.bottom + AIRE });
+  }, []);
+
   useEffect(() => {
     if (!open) return;
-    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    situar();
+    const onDoc = (e) => {
+      if (ref.current?.contains(e.target)) return;
+      if (popRef.current?.contains(e.target)) return;   // el calendario ya no cuelga de `ref`
+      setOpen(false);
+    };
     const onEsc = (e) => { if (e.key === "Escape") setOpen(false); };
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onEsc);
+    window.addEventListener("scroll", situar, true);
+    window.addEventListener("resize", situar);
     return () => {
       document.removeEventListener("mousedown", onDoc);
       document.removeEventListener("keydown", onEsc);
+      window.removeEventListener("scroll", situar, true);
+      window.removeEventListener("resize", situar);
     };
-  }, [open]);
+  }, [open, situar]);
 
   const fueraDeRango = (iso) => (!!max && iso > max) || (!!min && iso < min);
 
@@ -101,8 +139,9 @@ const DateRangePicker = ({ desde, hasta, onChange, max, min, unico = false, plac
         <span>{etiquetaTrigger}</span>
       </button>
 
-      {open && (
-        <div className="mc-daterange-pop" role="dialog" aria-label={unico ? "Elegir un día" : "Elegir rango de fechas"}>
+      {open && pos && createPortal(
+        <div className="mc-daterange-pop" role="dialog" ref={popRef} style={pos || undefined}
+             aria-label={unico ? "Elegir un día" : "Elegir rango de fechas"}>
           <div className="mc-daterange-nav">
             <button type="button" className="mc-daterange-nav-btn" onClick={() => setAncla(new Date(y, m - 1, 1))} disabled={mesAnteriorBloqueado} aria-label="Mes anterior">‹</button>
             <strong>{MESES[m]} {y}</strong>
@@ -132,7 +171,8 @@ const DateRangePicker = ({ desde, hasta, onChange, max, min, unico = false, plac
               );
             })}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -11884,10 +11884,13 @@
 .mc-daterange-trigger:hover { border-color: var(--mc-aqua); }
 
 .mc-daterange-pop {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  z-index: 120;
+  /* FIJO y en un portal a <body>: en absoluto lo recortaba el primer ancestro con
+     `overflow: hidden` (medido dentro de una .mc-card: 237px del calendario quedaban fuera).
+     Su sitio lo calcula `situar()` en DateRangePicker.jsx.
+     z-index 250 para quedar por encima de la barra flotante del teléfono (200) y por debajo
+     de los modales (1000). */
+  position: fixed;
+  z-index: 250;
   width: 264px;
   padding: 12px;
   background: var(--mc-superficie);
@@ -13251,6 +13254,10 @@
   /* FIJO y no absoluto: la lista vive en un portal a <body> y su sitio lo calcula el
      componente en coordenadas de pantalla. Ver el comentario de `situar()` en Select.jsx. */
   position: fixed;
+  /* Por encima de la barra flotante del teléfono (200) y por debajo de los modales (1000).
+     Heredaba el 120 de <WeekSelect>, que vive en la cabecera y nunca se acerca al pie: un
+     desplegable abierto abajo del todo quedaba con sus últimas opciones bajo la barra. */
+  z-index: 250;
   left: 0;
   right: auto;
   max-width: min(420px, calc(100vw - 32px));
