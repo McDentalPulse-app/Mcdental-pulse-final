@@ -65,6 +65,13 @@ export default function FichaEmpleado({
   const puedeRestablecer =
     currentUser?.role === "admin" && typeof onRestablecerPassword === "function";
 
+  // Solo la psicóloga. Para admin y RH, Mensajes NO es un chat general: es el buzón de Soporte
+  // TI más su propia conversación con la psicóloga, así que ahí no existe un hilo con un
+  // empleado que abrir. Ponerles el botón sería mandarlos a una pantalla donde el chat que se
+  // abriría no es el de esa persona. Si algún día se quiere que admin o RH escriban al
+  // personal, es una capacidad nueva y hay que decidirla, no colarla por este botón.
+  const puedeEscribirle = currentUser?.role === "psicologa";
+
   // Sin ninguna encuesta contestada no es "verde" (estable) — es que no hay dato. Antes
   // caía a verde por defecto y se veía igual que alguien que de verdad está bien.
   const getUltimoSemaforo = (empId) => {
@@ -146,13 +153,15 @@ export default function FichaEmpleado({
                 )}
               </div>
 
-              <button
-                type="button"
-                className="mc-btn-outline mc-btn-with-icon detail-emp-header-accion"
-                onClick={escribirle}
-              >
-                <Icon name="message" size={16} /> Enviar mensaje
-              </button>
+              {puedeEscribirle && (
+                <button
+                  type="button"
+                  className="mc-btn-outline mc-btn-with-icon detail-emp-header-accion"
+                  onClick={escribirle}
+                >
+                  <Icon name="message" size={16} /> Enviar mensaje
+                </button>
+              )}
 
               {puedeRestablecer && (
                 <button className="mc-btn-warning mc-btn-with-icon detail-emp-header-accion" onClick={() => onRestablecerPassword(empleado)}>

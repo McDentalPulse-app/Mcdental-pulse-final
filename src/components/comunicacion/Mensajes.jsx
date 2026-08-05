@@ -189,9 +189,28 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
         ]
       : conversaciones;
 
+  // Una conversación NUEVA no está en `conversacionesActivas`: esa lista filtra por las que ya
+  // tienen mensajes. Y hasta ahora, en la práctica, la psicóloga solo podía responder — la
+  // conversación aparecía cuando el empleado escribía primero.
+  //
+  // Con el botón «Enviar mensaje» de la ficha se puede llegar aquí para escribirle a alguien
+  // que nunca ha escrito. Sin buscarlo también entre TODAS, el `find` fallaba y caía en
+  // `conversacionesActivas[0]`: la psicóloga creía escribirle a quien abrió y le escribía a la
+  // primera persona de la lista. Peor que no funcionar.
+  const conversacionNueva =
+    selectedId && !conversacionesActivas.some(c => c.usuario.id === selectedId)
+      ? conversaciones.find(c => c.usuario.id === selectedId) || null
+      : null;
+
+  // La conversación recién abierta se pone al principio de la lista aunque esté vacía: si no,
+  // el hilo se ve abierto a la derecha y a la izquierda no hay nada seleccionado.
+  const conversacionesVisibles = conversacionNueva
+    ? [conversacionNueva, ...conversacionesActivas]
+    : conversacionesActivas;
+
   const selected =
-    conversacionesActivas.find(c => c.usuario.id === selectedId) ||
-    conversacionesActivas[0] ||
+    conversacionesVisibles.find(c => c.usuario.id === selectedId) ||
+    conversacionesVisibles[0] ||
     null;
 
   const mensajesChat = selected?.mensajes || [];
@@ -393,7 +412,7 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
     return { autor, extracto };
   };
 
-  const sinConversacionesActivas = conversacionesActivas.length === 0;
+  const sinConversacionesActivas = conversacionesVisibles.length === 0;
 
   if (enSala) return <SalaJitsi reunion={enSala} onSalir={salirDeLaSala} />;
 
@@ -449,7 +468,7 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
         // el teléfono siempre había un chat abierto y la lista quedaba aplastada a 72px — cabía
         // una conversación y media, y Soporte TI se quedaba fuera de la vista. En escritorio la
         // clase no cambia nada: allí caben las dos columnas.
-        <div className={`mensajes-layout${conversacionesActivas.length === 1 ? " mensajes-layout--single" : ""}${selectedId ? " mensajes-layout--detalle" : ""}`}>
+        <div className={`mensajes-layout${conversacionesVisibles.length === 1 ? " mensajes-layout--single" : ""}${selectedId ? " mensajes-layout--detalle" : ""}`}>
           <Card className="mensajes-sidebar-card">
             <div className="mensajes-sidebar-head">
               <span className="mensajes-sidebar-head-main">
@@ -457,12 +476,12 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
                 Conversaciones privadas
               </span>
               <span className="mensajes-active-badge">
-                {conversacionesActivas.length} activa{conversacionesActivas.length === 1 ? "" : "s"}
+                {conversacionesVisibles.length} activa{conversacionesVisibles.length === 1 ? "" : "s"}
               </span>
             </div>
 
             <div className="mensajes-conv-list">
-              {conversacionesActivas.map(c => {
+              {conversacionesVisibles.map(c => {
                 const activo = selected?.usuario.id === c.usuario.id;
                 const badgeCount = activo ? 0 : c.noLeidos;
                 const preview = c.ultimo
@@ -508,7 +527,7 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
                   y nada más — justo debajo de una cabecera que promete "el buzón de Soporte
                   TI que atiendes". Parecía roto sin estarlo. Este renglón dice que el buzón
                   está ahí y que simplemente no hay nada. */}
-              {atiendeSoporte && !conversacionesActivas.some(c => c.canal === "soporte") && (
+              {atiendeSoporte && !conversacionesVisibles.some(c => c.canal === "soporte") && (
                 <p className="mensajes-conv-vacio">
                   <Icon name="wrench" size={14} />
                   Buzón de Soporte TI · nadie ha escrito todavía
