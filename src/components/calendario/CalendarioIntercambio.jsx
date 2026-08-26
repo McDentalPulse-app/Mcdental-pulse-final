@@ -31,24 +31,63 @@ const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados,
   const esNoLaborable = (f) => f.tipo !== "conmemorativo";
 
   const hoy = hoyIso();
-  // Solo los días NO laborables se pueden ceder en un intercambio.
-  const festivosFuturos = useMemo(
-    () => festivos.filter((f) => f.fecha >= hoy && esNoLaborable(f)).sort((a, b) => a.fecha.localeCompare(b.fecha)),
-    [festivos, hoy],
+  const mesActual = hoy.slice(0, 7); // "YYYY-MM"
+
+  // Un mes de anticipación: se pueden apartar los festivos de ESTE mes y los del SIGUIENTE.
+  //
+  // Son meses de calendario completos, NO una ventana de 30 días corridos. La diferencia no
+  // es cosmética: el 4 de agosto, 30 días caen el 3 de septiembre, así que el 16 de
+  // septiembre —el único festivo intercambiable del mes— quedaría fuera y en agosto no se
+  // podría apartar nada. Con meses completos, desde el 1 de agosto ya se ve.
+  const mesSiguiente = useMemo(() => {
+    const [anio, mes] = mesActual.split("-").map(Number);
+    // `mes` es 1-based y el constructor es 0-based, así que este Date YA es el mes siguiente.
+    // Pasar de diciembre a enero del año próximo lo resuelve él solo.
+    const d = new Date(anio, mes, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  }, [mesActual]);
+
+  // Solo los días NO laborables se pueden ceder. Aun con dos meses de ventana la lista puede
+  // quedar vacía —solo los festivos `oficial` son intercambiables, y hay tramos sin ninguno—,
+  // así que abajo se pinta un mensaje en lugar del formulario: un desplegable vacío sin
+  // explicación acaba reportado como una falla.
+  const festivosDelMes = useMemo(
+    () => festivos
+      .filter((f) => f.fecha >= hoy && esNoLaborable(f)
+        && (f.fecha.startsWith(mesActual) || f.fecha.startsWith(mesSiguiente)))
+      .sort((a, b) => a.fecha.localeCompare(b.fecha)),
+    [festivos, hoy, mesActual, mesSiguiente],
   );
 
   // <WeekSelect> no tiene opción vacía propia, así que el "sin elegir" va como primera opción.
   const opcionesFestivo = useMemo(
     () => [
       { value: "", label: "Selecciona un festivo…" },
-      ...festivosFuturos.map((f) => ({ value: f.fecha, label: `${legibleCorto(f.fecha)} · ${f.nombre}` })),
+      ...festivosDelMes.map((f) => ({ value: f.fecha, label: `${legibleCorto(f.fecha)} · ${f.nombre}` })),
     ],
-    [festivosFuturos],
+    [festivosDelMes],
   );
 
   const [festivoSel, setFestivoSel] = useState("");
   const [destino, setDestino] = useState("");
   const [enviando, setEnviando] = useState(false);
+
+  // El día que se pide a cambio tiene que caer en el MISMO MES que el festivo que se cede.
+  // Se puede solicitar con antelación (en agosto se aparta el 16 de septiembre), pero el día
+  // libre se toma dentro de septiembre: ni agosto ni octubre.
+  const rangoDestino = useMemo(() => {
+    if (!festivoSel) return { min: hoy, max: "" };
+    const mes = festivoSel.slice(0, 7);
+    const [anio, numMes] = festivoSel.split("-").map(Number);
+    // Día 0 del mes SIGUIENTE = último día de este. Así no hay que saberse cuántos días tiene
+    // cada mes ni acordarse de los años bisiestos.
+    const ultimo = new Date(anio, numMes, 0).getDate();
+    const primero = `${mes}-01`;
+    return {
+      min: primero > hoy ? primero : hoy, // nunca un día que ya pasó
+      max: `${mes}-${String(ultimo).padStart(2, "0")}`,
+    };
+  }, [festivoSel, hoy]);
 
   // Eventos del calendario: festivos no laborables (celda resaltada) + conmemorativos (chip, se
   // trabaja) + mis intercambios (por estado).
@@ -110,9 +149,19 @@ const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados,
 
       <Card className="intercambio-card">
         <SectionTitle icon="calendar">Intercambiar un día</SectionTitle>
+        {festivosDelMes.length === 0 ? (
+          <p className="rh-data-row-muted">
+            Ahora mismo no hay ningún festivo que puedas intercambiar. Se pueden apartar con
+            un mes de anticipación, así que vuelve a esta pantalla cuando se acerque el
+            festivo que te interese.
+          </p>
+        ) : (
+        <>
         <p className="intercambio-hint">
           Elige el día festivo que quieres trabajar y a cambio pide el día que prefieras libre.
-          Cada día destino lo puede tomar una sola persona.
+          Solo aparecen los festivos de este mes y del siguiente, y el día que pidas a cambio
+          tiene que ser del mismo mes que el festivo. Cada día destino lo puede tomar una sola
+          persona de tu clínica.
         </p>
 
         <div className="mc-form-grid">
@@ -122,7 +171,13 @@ const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados,
               className="intercambio-festivo"
               value={festivoSel}
               options={opcionesFestivo}
-              onChange={setFestivoSel}
+              onChange={(v) => {
+                setFestivoSel(v);
+                // Cambiar de festivo cambia el mes permitido, así que el día elegido deja de
+                // valer. Se limpia aquí, en el evento, y no en un efecto: dejarlo a la vista
+                // sería ofrecer un día que el servidor va a rechazar.
+                setDestino("");
+              }}
             />
           </div>
 
@@ -132,8 +187,9 @@ const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados,
               unico
               className="intercambio-dia"
               desde={destino}
-              min={hoy}
-              placeholder="Elige un día"
+              min={rangoDestino.min}
+              max={rangoDestino.max || undefined}
+              placeholder={festivoSel ? "Elige un día" : "Elige antes el festivo"}
               onChange={setDestino}
             />
             {ocupado && <span className="intercambio-error">Ese día ya está apartado por otra persona.</span>}
@@ -144,6 +200,8 @@ const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados,
             <Icon name="check" size={15} /> {enviando ? "Enviando…" : "Solicitar intercambio"}
           </button>
         </div>
+        </>
+        )}
       </Card>
 
       <Card>

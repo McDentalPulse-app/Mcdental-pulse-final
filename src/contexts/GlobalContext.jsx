@@ -14,6 +14,7 @@ import { notify } from "../utils/notify";
 import { getEncuestas, subscribeEncuestas } from "../services/supabase/encuestasService";
 import { getAvisos, getAvisosLeidos, subscribeAvisos } from "../services/supabase/avisosService";
 import { getMensajes } from "../services/supabase/mensajesService";
+import { getReuniones, subscribeReuniones } from "../services/supabase/reunionesService";
 import { getReportesConfidenciales } from "../services/supabase/reportesService";
 import { getReconocimientos } from "../services/supabase/reconocimientosService";
 import { getVacaciones } from "../services/supabase/vacacionesService";
@@ -50,6 +51,11 @@ export const GlobalProvider = ({ children }) => {
   // de historial los necesitan todos, a diferencia del resto de recursos que sí están
   // gateados por rol más abajo).
   const [avisos, setAvisos] = useState([]);
+  // Las reuniones viven aquí y no solo en su pantalla porque el icono de la cabecera las
+  // necesita en TODAS las pantallas. Con la pantalla trayéndoselas por su cuenta habría dos
+  // fuentes y dos suscripciones realtime por persona, y el icono podría decir una cosa
+  // mientras la lista dice otra.
+  const [reuniones, setReuniones] = useState([]);
   const [avisosLeidos, setAvisosLeidos] = useState([]);
   const [mensajes, setMensajes] = useState(MENSAJES_INIT);
   const [reportesConfidenciales, setReportesConfidenciales] = useState(REPORTES_CONFIDENCIALES_INIT);
@@ -124,6 +130,7 @@ export const GlobalProvider = ({ children }) => {
         let dbHorarios = null;
         let dbChecadasHoy = null;
         let dbAvisos = null;
+        let dbReuniones = null;
         let dbAvisosLeidos = null;
 
         // Base data for everyone.
@@ -147,6 +154,10 @@ export const GlobalProvider = ({ children }) => {
         // pantalla de historial son de la app entera, no de un rol en particular.
         promises.push(getAvisos().then(res => dbAvisos = res).catch(() => { huboError = true; }));
         promises.push(getAvisosLeidos().then(res => dbAvisosLeidos = res).catch(() => { huboError = true; }));
+
+        // Reuniones: para todos, porque el icono de la cabecera está en todas las pantallas.
+        // La RLS ya acota lo que cada quien ve (solo si es anfitrión o invitado).
+        promises.push(getReuniones().then(res => dbReuniones = res).catch(() => { huboError = true; }));
 
         // Encuestas y mensajes y reconocimientos: admin, rh, psicologa, empleado, doctor
         // (el doctor es un empleado con extras: consume lo mismo que el empleado)
@@ -245,6 +256,7 @@ export const GlobalProvider = ({ children }) => {
         if (dbHorarios) setHorarios(dbHorarios);
         if (dbChecadasHoy) setChecadasHoy(dbChecadasHoy);
         if (dbAvisos) setAvisos(dbAvisos);
+        if (dbReuniones) setReuniones(dbReuniones);
         if (dbAvisosLeidos) setAvisosLeidos(dbAvisosLeidos);
 
         if (huboError) {
@@ -337,6 +349,32 @@ export const GlobalProvider = ({ children }) => {
     };
   }, [user, refreshAvisos]);
 
+  const refreshReuniones = useCallback(async () => {
+    try {
+      setReuniones(await getReuniones());
+    } catch (error) {
+      console.error("Error refrescando reuniones:", error);
+    }
+  }, []);
+
+  // En vivo, para los 5 roles: una reunión convocada para dentro de diez minutos tiene que
+  // aparecer sin que nadie recargue, que es justo el caso en que sirve de algo. La RLS ya
+  // acota lo que cada quien ve (anfitrión o invitado), así que no hay que filtrar aquí.
+  useEffect(() => {
+    if (!user) return undefined;
+    // Sin refetch aquí: la primera carga la hace el Promise.all de arriba. Llamarlo también
+    // desde el cuerpo del efecto es lo que dispara renders en cascada.
+    const desuscribir = subscribeReuniones(user.id, refreshReuniones);
+    const alVolver = () => {
+      if (document.visibilityState === "visible") refreshReuniones();
+    };
+    document.addEventListener("visibilitychange", alVolver);
+    return () => {
+      desuscribir();
+      document.removeEventListener("visibilitychange", alVolver);
+    };
+  }, [user, refreshReuniones]);
+
   // Nombres de sucursal para los desplegables de toda la app: solo las activas, desde la BD.
   // Si la carga falló o aún no hay datos, cae al array fijo de constants para no dejar los
   // selects vacíos.
@@ -357,6 +395,7 @@ export const GlobalProvider = ({ children }) => {
         avisos, setAvisos,
         avisosLeidos, setAvisosLeidos,
         mensajes, setMensajes,
+        reuniones, refreshReuniones,
         reportesConfidenciales, setReportesConfidenciales,
         reconocimientos, setReconocimientos,
         archivosExpediente, setArchivosExpediente,

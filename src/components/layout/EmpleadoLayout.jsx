@@ -12,11 +12,14 @@ import ReconocimientosEmpleado from '../empleados/ReconocimientosEmpleado';
 import ReporteConfidencialEmpleado from '../empleados/ReporteConfidencialEmpleado';
 import SoporteTI from '../common/SoporteTI';
 import Mensajes from '../comunicacion/Mensajes';
+import PaginaReuniones from '../comunicacion/PaginaReuniones';
 import Perfil from '../common/Perfil';
 import AvisosPanel from '../avisos/AvisosPanel';
 import CalendarioIntercambio from '../calendario/CalendarioIntercambio';
 
 
+import InventarioClinica from '../inventario/InventarioClinica';
+import BodegaPanel from '../inventario/BodegaPanel';
 import AvisoUbicacion from '../asistencia/AvisoUbicacion';
 import { useAvisoUbicacion } from '../../hooks/useAvisoUbicacion';
 import AvisoGeocerca from '../asistencia/AvisoGeocerca';
@@ -53,6 +56,10 @@ export default function EmpleadoLayout({ user, globals, actions }) {
             {/* Solo recepción. La ruta se monta igual para todos, pero el menú solo la ofrece
                 a quien tenga el permiso y el servidor la rechaza a quien no (mig. 103). */}
             <Route path="miclinica" element={<MiClinica user={user} />} />
+            {/* Igual que miclinica: la ruta se monta para todos, el menú y la RLS deciden
+                quién de verdad puede usarla (mig. 120/114/115). */}
+            <Route path="inventario" element={<InventarioClinica user={user} />} />
+            <Route path="bodega" element={<BodegaPanel />} />
             <Route path="encuesta" element={<EncuestaEmpleado user={user} encuestas={encuestas} onSubmit={addEncuesta}/>} />
             <Route path="historial" element={<HistorialEmpleado user={user} encuestas={encuestas} />} />
             <Route path="permisosempleado" element={<PermisosEmpleado user={user} vacaciones={vacaciones} permisos={permisos} horarios={horarios} onEnviarSolicitudEmpleado={addSolicitudEmpleadoRH}/>} />
@@ -64,6 +71,7 @@ export default function EmpleadoLayout({ user, globals, actions }) {
                 dos conversaciones y solo Mensajes sabe cuál está abierta — en la de soporte va
                 sin destinatario, porque el buzón no es una persona. */}
             <Route path="mensajes" element={<Mensajes user={user} mensajes={userMensajes} onSend={sendMensaje} onMarkRead={marcarMensajesLeidos}/>} />
+            <Route path="reuniones" element={<PaginaReuniones user={user} />} />
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} />} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="/empleado/inicio" replace />} />

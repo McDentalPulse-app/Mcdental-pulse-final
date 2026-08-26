@@ -1,0 +1,713 @@
+<html>
+<head>
+<meta charset="utf-8">
+<title>Anteproyecto de Residencias Profesionales — Ecosistema McDental (Pulse)</title>
+<style>
+  @page { size: Letter; margin: 2.5cm 3cm 2.5cm 3cm; }
+  body { font-family: "Arial", sans-serif; font-size: 12pt; line-height: 1.5; text-align: justify; color: #000; }
+  h1 { font-family: Arial, sans-serif; font-size: 14pt; font-weight: bold; text-align: center; text-transform: uppercase; margin: 18pt 0 12pt 0; }
+  h2 { font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; text-transform: uppercase; margin: 18pt 0 8pt 0; text-align: left; }
+  h3 { font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; margin: 12pt 0 6pt 0; text-align: left; }
+  p { margin: 0 0 8pt 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 10pt; margin: 6pt 0 12pt 0; }
+  th, td { border: 1px solid #000; padding: 4pt 6pt; vertical-align: top; text-align: left; }
+  th { background-color: #d9d9d9; font-weight: bold; }
+  .portada { text-align: center; }
+  .portada p { text-align: center; margin: 6pt 0; }
+  .esp { margin: 10pt 0; }
+  .ph { background-color: #ffff00; }
+  .centro { text-align: center; }
+  .firma { text-align: center; font-size: 11pt; }
+  ul, ol { margin: 0 0 8pt 0; padding-left: 20pt; }
+  li { margin-bottom: 4pt; text-align: justify; }
+  .peq { font-size: 9pt; }
+  table.peq td, table.peq th { line-height: 1; padding: 2pt 3pt; }
+  .nopagebreak { page-break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<!-- ===================== PORTADA ===================== -->
+<div class="portada">
+<table class="logos" border="0" cellspacing="0" cellpadding="0" width="100%" style="border:none">
+<tr>
+  <td width="33%" align="left" style="border:none" class="logobox">
+    <span class="ph">[LOGO TecNM]</span>
+  </td>
+  <td width="34%" style="border:none"></td>
+  <td width="33%" align="right" style="border:none" class="logobox">
+    <span class="ph">[LOGO ITA]</span>
+  </td>
+</tr>
+</table>
+
+<p><b>TECNOLÓGICO NACIONAL DE MÉXICO</b></p>
+<p><b>INSTITUTO TECNOLÓGICO DE ALTAMIRA</b></p>
+<p class="esp">&nbsp;</p>
+<p><b>DIVISIÓN DE ESTUDIOS PROFESIONALES</b></p>
+<p><b>ANTEPROYECTO DE RESIDENCIAS PROFESIONALES</b></p>
+<p class="esp">&nbsp;</p>
+<p><b>&ldquo;ECOSISTEMA McDENTAL (PULSE)&rdquo;</b></p>
+<p>Plataforma web integral para la gestión del capital humano, el control de asistencia
+con verificación biométrica y el monitoreo del clima laboral en una red de clínicas dentales</p>
+<p class="esp">&nbsp;</p>
+<p><b>CARRERA:</b> Ingeniería en Sistemas Computacionales</p>
+<p class="esp">&nbsp;</p>
+<p><b>PRESENTAN:</b></p>
+<p>Erick Joseph Torres Suárez &mdash; No. de control 20820020</p>
+<p><span class="ph">[NOMBRE COMPLETO DEL SEGUNDO RESIDENTE]</span> &mdash; No. de control
+<span class="ph">[NÚMERO DE CONTROL 2]</span></p>
+<p class="esp">&nbsp;</p>
+<p><b>EMPRESA:</b> DEMARU, S.A. de C.V. &mdash; McDental</p>
+<p><b>ASESOR INTERNO:</b> <span class="ph">[NOMBRE DEL ASESOR INTERNO]</span></p>
+<p><b>ASESOR EXTERNO:</b> Alfredo Eduardo Burgos Reyes</p>
+<p class="esp">&nbsp;</p>
+<p>Altamira, Tamaulipas, a <span class="ph">[FECHA DE ENTREGA]</span></p>
+</div>
+
+<h2 style="page-break-before: always" class="sintoc">ÍNDICE</h2>
+<table border="0" cellspacing="0" cellpadding="2" width="100%" style="border:none">
+<tr><td style="border:none">1. Datos generales</td><td width="10%" align="right" style="border:none">##S1##</td></tr>
+<tr><td style="border:none">2. Nombre del proyecto</td><td width="10%" align="right" style="border:none">##S2##</td></tr>
+<tr><td style="border:none">3. Objetivos</td><td width="10%" align="right" style="border:none">##S3##</td></tr>
+<tr><td style="border:none">4. Justificación</td><td width="10%" align="right" style="border:none">##S4##</td></tr>
+<tr><td style="border:none">5. Caracterización del área en que se participó</td><td width="10%" align="right" style="border:none">##S5##</td></tr>
+<tr><td style="border:none">6. Problemas a resolver, priorizados</td><td width="10%" align="right" style="border:none">##S6##</td></tr>
+<tr><td style="border:none">7. Alcances y limitaciones</td><td width="10%" align="right" style="border:none">##S7##</td></tr>
+<tr><td style="border:none">8. Fundamento teórico</td><td width="10%" align="right" style="border:none">##S8##</td></tr>
+<tr><td style="border:none">9. Procedimiento y descripción de las actividades a realizar</td><td width="10%" align="right" style="border:none">##S9##</td></tr>
+<tr><td style="border:none">10. Cronograma de actividades</td><td width="10%" align="right" style="border:none">##S10##</td></tr>
+<tr><td style="border:none">11. Recursos requeridos</td><td width="10%" align="right" style="border:none">##S11##</td></tr>
+<tr><td style="border:none">12. Resultados esperados</td><td width="10%" align="right" style="border:none">##S12##</td></tr>
+<tr><td style="border:none">13. Referencias bibliográficas</td><td width="10%" align="right" style="border:none">##S13##</td></tr>
+<tr><td style="border:none">14. Firmas de conformidad</td><td width="10%" align="right" style="border:none">##S14##</td></tr>
+</table>
+<!-- ===================== 1. DATOS GENERALES ===================== -->
+<h2 style="page-break-before: always">1. Datos generales</h2>
+
+<h3>1.1 Datos de los residentes</h3>
+<p>El proyecto se desarrolla de manera conjunta por dos residentes de la carrera de Ingeniería en
+Sistemas Computacionales, con la distribución de responsabilidades descrita en el apartado 9.7.</p>
+
+<p><b>Residente 1</b></p>
+<table border="1" cellspacing="0" cellpadding="4">
+<tr><th style="width:35%">Nombre completo</th><td>Erick Joseph Torres Suárez</td></tr>
+<tr><th>Número de control</th><td>20820020</td></tr>
+<tr><th>Carrera</th><td>Ingeniería en Sistemas Computacionales</td></tr>
+<tr><th>Semestre</th><td>13.º</td></tr>
+<tr><th>Créditos acumulados</th><td><span class="ph">[CRÉDITOS]</span></td></tr>
+<tr><th>Teléfono / correo</th><td>561 467 9792 / joseph62937@gmail.com</td></tr>
+</table>
+
+<p><b>Residente 2</b></p>
+<table border="1" cellspacing="0" cellpadding="4">
+<tr><th style="width:35%">Nombre completo</th><td><span class="ph">[NOMBRE COMPLETO DEL SEGUNDO RESIDENTE]</span></td></tr>
+<tr><th>Número de control</th><td><span class="ph">[NÚMERO DE CONTROL 2]</span></td></tr>
+<tr><th>Carrera</th><td><span class="ph">[CARRERA, si es distinta]</span></td></tr>
+<tr><th>Semestre</th><td><span class="ph">[SEMESTRE 2]</span></td></tr>
+<tr><th>Créditos acumulados</th><td><span class="ph">[CRÉDITOS 2]</span></td></tr>
+<tr><th>Teléfono / correo</th><td><span class="ph">[TELÉFONO 2]</span> / <span class="ph">[CORREO 2]</span></td></tr>
+</table>
+
+<h3>1.2 Datos de la empresa</h3>
+<table border="1" cellspacing="0" cellpadding="4">
+<tr><th style="width:35%">Denominación o razón social</th><td>DEMARU, S.A. de C.V.</td></tr>
+<tr><th>Régimen de capital</th><td>Sociedad Anónima de Capital Variable</td></tr>
+<tr><th>Nombre comercial</th><td>McDental</td></tr>
+<tr><th>R.F.C.</th><td>DEM0907154P7</td></tr>
+<tr><th>Fecha de inicio de operaciones</th><td>15 de julio de 2009</td></tr>
+<tr><th>Giro / actividad económica</th><td>Consultorios dentales del sector privado que cuenten con título de médico conforme a las leyes (70&nbsp;%); comercio al por mayor de mobiliario, equipo e instrumental médico y de laboratorio (20&nbsp;%); comercio al por menor de lentes (10&nbsp;%).</td></tr>
+<tr><th>Domicilio fiscal</th><td>Calle Diagonal Palmas, número exterior Local 11&nbsp;D, colonia Petrolera, C.P. 89110, Tampico, Tamaulipas. Entre calle Agua Dulce y avenida Hidalgo.</td></tr>
+<tr><th>Área de desarrollo del proyecto</th><td>Departamento de Sistemas / Tecnologías de la Información</td></tr>
+<tr><th>Asesor externo</th><td>Alfredo Eduardo Burgos Reyes &mdash; <span class="ph">[puesto, teléfono y correo]</span></td></tr>
+</table>
+
+<h3>1.3 Datos del proyecto</h3>
+<table border="1" cellspacing="0" cellpadding="4">
+<tr><th style="width:35%">Nombre del proyecto</th><td>Ecosistema McDental (Pulse)</td></tr>
+<tr><th>Periodo de realización</th><td>Del 24 de agosto al 11 de diciembre de 2026</td></tr>
+<tr><th>Duración</th><td>16 semanas / 480 horas</td></tr>
+<tr><th>Horario</th><td><span class="ph">[HORARIO]</span> (30 horas semanales)</td></tr>
+<tr><th>Asesor interno</th><td><span class="ph">[NOMBRE DEL ASESOR INTERNO]</span></td></tr>
+</table>
+
+<!-- ===================== 2. NOMBRE DEL PROYECTO ===================== -->
+<h2>2. Nombre del proyecto</h2>
+<p><b>Ecosistema McDental (Pulse):</b> plataforma web progresiva multi&ndash;rol para la gestión
+del capital humano, el control de asistencia con verificación biométrica facial y geocerca, y el
+monitoreo del clima laboral en una red de clínicas dentales.</p>
+
+<!-- ===================== 3. OBJETIVOS ===================== -->
+<h2>3. Objetivos</h2>
+
+<h3>3.1 Objetivo general</h3>
+<p>Desarrollar e implantar el Ecosistema McDental (Pulse), una aplicación web progresiva (PWA)
+con control de acceso por roles, que integre en una sola plataforma el registro de asistencia con
+verificación de identidad por reconocimiento facial y validación por geocerca, la medición
+periódica del clima laboral mediante encuestas con puntaje automatizado, la gestión de expedientes
+y trámites de Recursos Humanos, y un motor de análisis de riesgo del personal; desplegada sobre
+infraestructura propia bajo contenedores, para dar servicio a las sucursales de McDental y sustituir
+los controles manuales que hoy se realizan en papel y por mensajería instantánea.</p>
+
+<h3>3.2 Objetivos específicos</h3>
+<ol>
+<li>Analizar y documentar los procesos vigentes de registro de asistencia, aplicación de encuestas
+de clima laboral y trámites de Recursos Humanos en las sucursales, obteniendo el catálogo de
+requerimientos funcionales y no funcionales del sistema.</li>
+
+<li>Diseñar el modelo de datos relacional en PostgreSQL y las políticas de seguridad a nivel de
+fila (<i>Row Level Security</i>) que garanticen que cada uno de los cinco perfiles de usuario
+&mdash;administrador, recursos humanos, psicología, doctor y empleado&mdash; acceda únicamente a
+la información que le corresponde.</li>
+
+<li>Desarrollar el módulo de asistencia (checador) con verificación de identidad por comparación
+de rasgos faciales ejecutada en el servidor, prueba de vitalidad, validación de la ubicación del
+empleado contra la geocerca de su sucursal y manejo de zonas horarias diferenciadas por plaza.</li>
+
+<li>Implementar el módulo de bienestar organizacional: encuesta periódica con bloques de preguntas
+de rotación quincenal, cálculo automatizado del <i>Pulse Score</i> en escala de 0 a 100, semáforo
+de estado y canal de reportes confidenciales dirigido al área de psicología.</li>
+
+<li>Construir los módulos de Recursos Humanos: expedientes digitales con almacenamiento de
+documentos, vacaciones y permisos, descuentos, comisiones, reconocimientos, calendario laboral,
+intercambios de día y bolsa de trabajo.</li>
+
+<li>Integrar un motor de análisis que derive indicadores de riesgo del personal &mdash;rotación,
+desgaste laboral, conflicto y estado emocional&mdash; a partir del historial de encuestas,
+permisos, descuentos y reportes, complementado con un asistente de inteligencia artificial
+generativa consumido a través de un intermediario en el servidor que resguarde las credenciales.</li>
+
+<li>Desarrollar los canales de comunicación interna: mensajería entre usuarios, tablero de avisos,
+notificaciones push del navegador y videollamadas integradas.</li>
+
+<li>Desplegar la plataforma en un servidor privado virtual mediante contenedores Docker, con base
+de datos, autenticación y almacenamiento autoalojados, migrando la información desde el proveedor
+en la nube y estableciendo una rutina de respaldo verificable.</li>
+
+<li>Validar el sistema mediante pruebas unitarias automatizadas sobre la lógica de negocio, un
+banco de verificación del paquete desplegable y una revisión de seguridad orientada al OWASP Top
+10, corrigiendo los hallazgos detectados antes de la liberación.</li>
+
+<li>Elaborar la documentación técnica y de operación del sistema, y capacitar al personal usuario
+de cada perfil.</li>
+</ol>
+
+<!-- ===================== 4. JUSTIFICACIÓN ===================== -->
+<h2>4. Justificación</h2>
+
+<p>McDental opera una red de clínicas dentales distribuidas en distintas ciudades y estados del
+país. Al crecer el número de sucursales, los controles administrativos que funcionaban para un
+consultorio dejaron de escalar: la asistencia se registra en listas de papel o por mensajes de
+WhatsApp que nadie concentra, los expedientes del personal viven en carpetas físicas repartidas
+entre plazas, las solicitudes de vacaciones y permisos se autorizan verbalmente sin dejar rastro, y
+el clima laboral &mdash;determinante en un servicio donde el trato al paciente depende del ánimo
+del equipo&mdash; simplemente no se mide.</p>
+
+<p>Esta dispersión produce tres consecuencias medibles. <b>Primera:</b> no existe una fuente única
+y confiable de horas trabajadas, lo que dificulta el cálculo de nómina, la detección de
+impuntualidad y la comprobación ante una eventual inspección. <b>Segunda:</b> la rotación de
+personal se detecta cuando ya ocurrió, no antes; no hay ningún indicador que anticipe la renuncia
+de un colaborador. <b>Tercera:</b> la NOM&ndash;035&ndash;STPS&ndash;2018 obliga a los centros de
+trabajo a identificar y analizar los factores de riesgo psicosocial y a conservar los registros
+correspondientes, obligación que hoy no puede acreditarse por falta de un instrumento sistemático
+de medición.</p>
+
+<p><b>Justificación técnica.</b> Las soluciones comerciales de control de asistencia y clima
+laboral se cotizan por usuario y por mes, no contemplan la operación multisucursal con horarios
+rotativos propia del giro dental, y obligan a alojar información sensible del personal en servidores
+de terceros. Un desarrollo propio permite ajustar las reglas de negocio reales de la empresa
+&mdash;turnos partidos, comisiones por doctor, periodos de prueba, sucursales en husos horarios
+distintos&mdash; y conservar los datos bajo control de la organización.</p>
+
+<p><b>Justificación económica.</b> Sustituir el reloj checador físico por sucursal y la suscripción
+a servicios de nómina y encuestas por una plataforma propia alojada en un único servidor privado
+virtual elimina el costo por usuario, que crece con cada contratación, y lo convierte en un costo
+fijo de infraestructura independiente del tamaño de la plantilla.</p>
+
+<p><b>Justificación social.</b> El módulo de bienestar y el canal de reportes confidenciales dan al
+personal una vía directa y anónima para expresar inconformidades ante el área de psicología, sin
+pasar por su jefe inmediato. La medición periódica convierte el malestar en un dato que la
+organización puede atender antes de que se traduzca en renuncia o en un conflicto laboral.</p>
+
+<p><b>Pertinencia con el perfil profesional.</b> El proyecto ejercita de manera directa las
+competencias del plan de estudios de Ingeniería en Sistemas Computacionales: análisis y modelado de
+requerimientos, diseño de bases de datos relacionales y normalización, programación web cliente y
+servidor, consumo y publicación de servicios, procesamiento digital de imágenes aplicado al
+reconocimiento facial, seguridad informática y control de acceso, administración de servidores
+Linux y virtualización por contenedores, e integración de servicios de inteligencia artificial.</p>
+
+<!-- ===================== 5. CARACTERIZACIÓN DEL ÁREA ===================== -->
+<h2>5. Caracterización del área en que se participó</h2>
+
+<p>DEMARU, S.A. de C.V., que opera comercialmente bajo la marca <b>McDental</b>, es una empresa del sector salud constituida en julio de 2009, con domicilio fiscal en Tampico, Tamaulipas. Su actividad económica preponderante son los consultorios dentales del sector privado, complementada con el comercio de mobiliario, equipo e instrumental médico. Se dedica a la prestación de servicios de odontología
+general y especializada, que opera una red de clínicas y consultorios en distintas plazas de la
+República Mexicana. Su plantilla se compone de personal clínico &mdash;odontólogos generales y
+especialistas&mdash; y personal administrativo y de recepción, distribuido en sucursales que operan
+con horarios propios y, en algunos casos, en husos horarios distintos.</p>
+
+<p>El proyecto se desarrolla en el <b>Departamento de Sistemas / Tecnologías de la Información</b>,
+área responsable de la infraestructura de cómputo, la administración de los servicios digitales de
+la empresa y el soporte técnico a las sucursales. El departamento opera además un sistema propio de
+gestión de tickets de soporte, con el cual la plataforma desarrollada debe integrarse para el
+levantamiento de incidencias y propuestas de mejora del propio personal.</p>
+
+<p>Las funciones de los residentes dentro del área comprenden el levantamiento de requerimientos con las
+áreas usuarias (Dirección, Recursos Humanos y Psicología), el diseño y construcción de la
+plataforma, la administración del servidor donde se aloja, y el acompañamiento a los usuarios
+durante la puesta en marcha.</p>
+
+<!-- ===================== 6. PROBLEMAS A RESOLVER ===================== -->
+<h2>6. Problemas a resolver, priorizados</h2>
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tr>
+  <th style="width:8%">Prioridad</th>
+  <th style="width:32%">Problema detectado</th>
+  <th>Solución propuesta dentro del proyecto</th>
+</tr>
+<tr>
+  <td class="centro">1</td>
+  <td>No existe un registro confiable de entradas y salidas. El personal reporta su asistencia por
+  mensajería y nadie la concentra; no hay forma de comprobar que quien registra la entrada sea la
+  persona correcta ni que se encuentre en su sucursal.</td>
+  <td>Módulo de checador con verificación de identidad por comparación de rasgos faciales ejecutada
+  en el servidor, prueba de vitalidad para impedir el uso de fotografías, y validación de la
+  posición del dispositivo contra la geocerca registrada de cada sucursal.</td>
+</tr>
+<tr>
+  <td class="centro">2</td>
+  <td>El clima laboral no se mide. La organización se entera de la insatisfacción de un colaborador
+  cuando presenta su renuncia, y no puede acreditar el cumplimiento de la
+  NOM&ndash;035&ndash;STPS&ndash;2018.</td>
+  <td>Encuesta periódica con bloques de preguntas de rotación quincenal, cálculo automatizado del
+  <i>Pulse Score</i> (0&ndash;100) por colaborador y por sucursal, semáforo de estado e historial de
+  tendencia.</td>
+</tr>
+<tr>
+  <td class="centro">3</td>
+  <td>Los expedientes del personal son carpetas físicas repartidas entre sucursales. Consultar un
+  contrato o un comprobante implica trasladarse o solicitarlo por teléfono.</td>
+  <td>Expedientes digitales con carga de documentos a un almacén de archivos con permisos por rol,
+  y vista consolidada por colaborador.</td>
+</tr>
+<tr>
+  <td class="centro">4</td>
+  <td>Vacaciones, permisos, descuentos y comisiones se autorizan de palabra. No queda constancia de
+  quién autorizó qué ni cuándo, y los saldos se llevan en hojas de cálculo personales.</td>
+  <td>Módulos de vacaciones, permisos, descuentos, comisiones e intercambios de día, con flujo de
+  solicitud, autorización y bitácora de quién resolvió cada caso.</td>
+</tr>
+<tr>
+  <td class="centro">5</td>
+  <td>No hay ningún indicador anticipado de riesgo de rotación o desgaste del personal.</td>
+  <td>Motor de análisis que cruza el historial de encuestas, permisos, descuentos, reconocimientos y
+  reportes confidenciales para derivar niveles de riesgo y prioridad de atención, complementado con
+  un asistente de inteligencia artificial generativa.</td>
+</tr>
+<tr>
+  <td class="centro">6</td>
+  <td>Los avisos internos se difunden por grupos de mensajería, donde se pierden entre conversaciones
+  y no hay constancia de quién los leyó.</td>
+  <td>Tablero de avisos con acuse de lectura, mensajería interna, notificaciones push del navegador
+  y videollamadas integradas para reuniones entre sucursales.</td>
+</tr>
+<tr>
+  <td class="centro">7</td>
+  <td>La información del personal residiría en servidores de terceros, con costo creciente por
+  usuario y sin control directo sobre los respaldos.</td>
+  <td>Despliegue en servidor privado virtual bajo contenedores Docker, con base de datos,
+  autenticación y almacenamiento autoalojados, y rutina de respaldo externo verificada
+  automáticamente.</td>
+</tr>
+<tr>
+  <td class="centro">8</td>
+  <td>Un sistema que concentra datos personales, biométricos y de salud laboral es un objetivo
+  sensible; un error de permisos expondría información confidencial de toda la plantilla.</td>
+  <td>Control de acceso por roles con políticas de seguridad a nivel de fila en la base de datos,
+  revisión de seguridad orientada al OWASP Top 10, limitación de intentos y pruebas automatizadas
+  como condición previa a cada liberación.</td>
+</tr>
+</table>
+
+<!-- ===================== 7. ALCANCES Y LIMITACIONES ===================== -->
+<h2>7. Alcances y limitaciones</h2>
+
+<h3>7.1 Alcances</h3>
+<ul>
+<li>El sistema abarca la totalidad de las sucursales de McDental y los cinco perfiles de usuario
+definidos: administrador, recursos humanos, psicología, doctor y empleado.</li>
+<li>Se entrega una aplicación web progresiva (PWA), instalable en teléfonos y computadoras, en
+idioma español, con modo claro y oscuro y diseño adaptable a pantalla de teléfono.</li>
+<li>Se entregan los módulos de: asistencia y checador, sucursales y geocercas, horarios,
+rostros y calibración del cotejo, encuestas de bienestar y Pulse Score, reportes confidenciales,
+expedientes, gestión de personal, vacaciones y permisos, descuentos, comisiones, reconocimientos,
+calendario, intercambios de día, bolsa de trabajo, avisos, mensajería, videollamadas, motor de
+análisis de riesgo y asistente de inteligencia artificial.</li>
+<li>Se entrega la plataforma desplegada y en operación real en el servidor de la empresa, con la
+información histórica migrada, junto con la documentación técnica, el manual de despliegue y la
+capacitación al personal usuario.</li>
+</ul>
+
+<h3>7.2 Limitaciones</h3>
+<ul>
+<li>El proyecto <b>no</b> incluye el expediente clínico de pacientes, la agenda de citas ni la
+facturación de los servicios dentales: se limita a la gestión del capital humano y del clima
+laboral.</li>
+<li><b>No</b> se desarrolla el cálculo ni la dispersión de la nómina. El sistema produce la
+información de asistencia, descuentos y comisiones que alimenta ese proceso, pero el cálculo
+permanece en el sistema contable de la empresa.</li>
+<li>No se desarrollan aplicaciones nativas para Android ni iOS; la instalación en el teléfono se
+resuelve mediante las capacidades de aplicación web progresiva del navegador.</li>
+<li>El reconocimiento facial funciona como <b>verificación</b> uno a uno &mdash;confirma que quien
+registra la asistencia es el titular de la cuenta&mdash; y no como identificación uno contra muchos.
+Depende de que el dispositivo cuente con cámara y de condiciones mínimas de iluminación; ante un
+resultado dudoso el sistema conserva el registro para cotejo manual en lugar de rechazarlo.</li>
+<li>La validación por geocerca depende de la precisión del GPS del dispositivo del usuario, que en
+interiores puede degradarse; el sistema registra la distancia medida en lugar de asumir exactitud
+absoluta.</li>
+<li>El asistente de inteligencia artificial generativa depende de un servicio externo y de su
+disponibilidad; el motor de indicadores de riesgo, en cambio, opera con reglas locales y funciona
+aun sin conexión a ese servicio.</li>
+<li>La disponibilidad del sistema queda sujeta a la del servidor privado virtual contratado y a la
+del enlace a Internet de cada sucursal.</li>
+</ul>
+
+<!-- ===================== 8. FUNDAMENTO TEÓRICO ===================== -->
+<h2>8. Fundamento teórico</h2>
+
+<h3>8.1 Aplicaciones web progresivas (PWA)</h3>
+<p>Una aplicación web progresiva es una aplicación construida con tecnologías web que, mediante un
+<i>service worker</i> y un archivo de manifiesto, puede instalarse en el dispositivo, operar con
+conectividad intermitente y recibir notificaciones push, aproximándose a la experiencia de una
+aplicación nativa sin requerir distribución por tiendas de aplicaciones. Este enfoque resulta
+pertinente para una red de sucursales con equipos heterogéneos, pues elimina el ciclo de
+publicación y actualización manual en cada dispositivo.</p>
+
+<h3>8.2 Arquitectura de aplicación de página única y componentes</h3>
+<p>El cliente se construye bajo el paradigma de componentes reutilizables con estado, sobre una
+arquitectura de página única (SPA) en la que la navegación se resuelve en el navegador y el
+servidor entrega datos y no documentos completos. El estado compartido entre módulos se administra
+mediante contextos, evitando el acoplamiento por paso encadenado de propiedades.</p>
+
+<h3>8.3 Bases de datos relacionales y seguridad a nivel de fila</h3>
+<p>PostgreSQL es un sistema gestor de bases de datos relacional de código abierto que implementa
+<i>Row Level Security</i>: políticas declarativas, evaluadas por el propio motor, que restringen qué
+filas puede leer o modificar cada usuario en función de su identidad. Trasladar la autorización al
+gestor de datos &mdash;y no dejarla únicamente en la interfaz&mdash; evita que una omisión en el
+cliente exponga información, principio conocido como defensa en profundidad.</p>
+
+<h3>8.4 Autenticación basada en tokens</h3>
+<p>La identidad del usuario se transporta mediante <i>JSON Web Tokens</i> (JWT), estructuras
+firmadas criptográficamente que el servidor verifica sin necesidad de mantener sesión en memoria.
+El token permite que la base de datos resuelva las políticas de acceso a partir de la identidad
+contenida en él.</p>
+
+<h3>8.5 Reconocimiento facial y prueba de vitalidad</h3>
+<p>La verificación facial se apoya en redes neuronales convolucionales que transforman el rostro
+en un vector numérico de características o <i>embedding</i>. La comparación entre dos rostros se
+reduce entonces a una medida de distancia entre vectores &mdash;típicamente la distancia
+coseno&mdash; contrastada contra un umbral que equilibra la tasa de falsos positivos frente a la de
+falsos negativos. La <i>prueba de vitalidad</i> (<i>anti&ndash;spoofing</i>) es el conjunto de
+técnicas que distinguen a una persona presente de una fotografía o una pantalla, mediante análisis
+de textura, nitidez y respuesta a instrucciones de movimiento.</p>
+
+<h3>8.6 Geolocalización y geocercas</h3>
+<p>Una geocerca es un perímetro virtual definido por un punto geográfico y un radio. La
+determinación de si un dispositivo se encuentra dentro de ella se resuelve calculando la distancia
+entre coordenadas sobre la superficie terrestre mediante la fórmula de Haversine, contrastada
+contra el radio configurado.</p>
+
+<h3>8.7 Virtualización por contenedores</h3>
+<p>Docker empaqueta cada servicio junto con sus dependencias en una imagen ejecutable e
+independiente del anfitrión, lo que garantiza que el comportamiento observado en desarrollo se
+reproduzca en producción y permite alojar en un solo servidor la base de datos, la autenticación,
+el almacenamiento de archivos y el servicio de videollamadas de forma aislada.</p>
+
+<h3>8.8 Seguridad en aplicaciones web</h3>
+<p>El proyecto adopta como marco de referencia el <i>OWASP Top 10</i>, catálogo de los riesgos de
+seguridad más críticos en aplicaciones web, con particular atención al control de acceso roto, la
+exposición de datos sensibles y las fallas de identificación y autenticación, por tratarse de un
+sistema que concentra datos personales y biométricos.</p>
+
+<h3>8.9 Clima laboral y factores de riesgo psicosocial</h3>
+<p>La medición del compromiso mediante encuestas breves y frecuentes &mdash;conocidas como
+<i>pulse surveys</i>&mdash; permite observar tendencias que una encuesta anual no alcanza a
+detectar. El instrumento se relaciona con los factores de riesgo psicosocial que la
+NOM&ndash;035&ndash;STPS&ndash;2018 obliga a identificar, analizar y registrar en los centros de
+trabajo, y con el concepto de desgaste ocupacional (<i>burnout</i>) definido por sus dimensiones de
+agotamiento, despersonalización y baja realización personal.</p>
+
+<h3>8.10 Metodología de desarrollo incremental</h3>
+<p>El desarrollo se conduce bajo un modelo iterativo e incremental: el sistema se construye por
+módulos funcionales que se liberan y validan con el usuario antes de abordar el siguiente,
+reduciendo el riesgo de descubrir tardíamente un requerimiento mal interpretado. Cada incremento
+atraviesa las fases de análisis, diseño, construcción, prueba y liberación.</p>
+
+<h3>8.11 Calidad del producto de software</h3>
+<p>Las características de calidad del sistema se evalúan conforme al modelo de la norma
+ISO/IEC 25010, con énfasis en adecuación funcional, seguridad, usabilidad y mantenibilidad, esta
+última sostenida mediante pruebas unitarias automatizadas sobre la lógica de negocio.</p>
+
+<!-- ===================== 9. PROCEDIMIENTO ===================== -->
+<h2>9. Procedimiento y descripción de las actividades a realizar</h2>
+
+<p>El proyecto se conduce bajo un modelo de desarrollo iterativo e incremental organizado en seis
+fases. Cada fase concluye con un entregable verificable, revisado con el asesor externo antes de
+iniciar la siguiente.</p>
+
+<h3>Fase 1. Análisis y levantamiento de requerimientos (semanas 1 a 2)</h3>
+<ol>
+<li>Entrevistar a la Dirección, a Recursos Humanos y al área de Psicología para identificar los
+procesos actuales y sus puntos de dolor.</li>
+<li>Observar y documentar en sitio el procedimiento vigente de registro de asistencia y de
+autorización de permisos.</li>
+<li>Elaborar el catálogo de requerimientos funcionales y no funcionales, y definir los cinco
+perfiles de usuario con sus permisos.</li>
+<li>Establecer los criterios de aceptación de cada módulo con el asesor externo.</li>
+</ol>
+
+<h3>Fase 2. Diseño del sistema (semanas 3 a 4)</h3>
+<ol>
+<li>Diseñar el modelo entidad&ndash;relación y normalizar el esquema de la base de datos.</li>
+<li>Definir la matriz de permisos por rol y traducirla a políticas de seguridad a nivel de fila.</li>
+<li>Diseñar la arquitectura de la solución: cliente web progresivo, servicios de datos,
+autenticación, almacenamiento de archivos y funciones de servidor.</li>
+<li>Elaborar el sistema de diseño de la interfaz &mdash;tipografía, paleta, componentes base&mdash;
+y los prototipos de las pantallas principales para validación con el usuario.</li>
+</ol>
+
+<h3>Fase 3. Construcción del núcleo (semanas 5 a 8)</h3>
+<ol>
+<li>Implementar el esquema de base de datos mediante migraciones versionadas y sus políticas de
+acceso.</li>
+<li>Desarrollar la autenticación, el enrutamiento por rol y la estructura de navegación.</li>
+<li>Construir el módulo de gestión de personal, expedientes digitales y sucursales.</li>
+<li>Construir el módulo de asistencia: registro de entradas y salidas, horarios, turnos, zonas
+horarias por sucursal y cierre automático de jornada.</li>
+<li>Incorporar la verificación por geocerca y el procedimiento de registro de la ubicación de cada
+sucursal por el propio personal de recepción.</li>
+</ol>
+
+<h3>Fase 4. Construcción de módulos especializados (semanas 9 a 12)</h3>
+<ol>
+<li>Desarrollar el servicio de verificación facial: enrolamiento del rostro, extracción de
+características, comparación contra el registro y prueba de vitalidad, con panel de calibración de
+umbrales.</li>
+<li>Desarrollar el módulo de bienestar: encuesta con bloques rotativos, cálculo del <i>Pulse
+Score</i>, semáforo, historial y reportes confidenciales.</li>
+<li>Desarrollar los módulos de vacaciones, permisos, descuentos, comisiones, reconocimientos,
+calendario e intercambios de día.</li>
+<li>Desarrollar los canales de comunicación: avisos, mensajería interna, notificaciones push y
+videollamadas.</li>
+<li>Integrar el motor de indicadores de riesgo y el asistente de inteligencia artificial
+generativa a través del intermediario de servidor.</li>
+</ol>
+
+<h3>Fase 5. Despliegue y migración (semanas 13 a 14)</h3>
+<ol>
+<li>Aprovisionar el servidor privado virtual y levantar los servicios en contenedores: base de
+datos, autenticación, almacenamiento, funciones y videollamadas.</li>
+<li>Configurar el nombre de dominio, el certificado de seguridad y el servidor web intermediario.</li>
+<li>Migrar la información histórica desde el proveedor en la nube y verificar su integridad.</li>
+<li>Establecer las tareas programadas de mantenimiento y la rutina de respaldo externo con
+verificación automática de su ejecución.</li>
+</ol>
+
+<h3>Fase 6. Pruebas, liberación y documentación (semanas 15 a 16)</h3>
+<ol>
+<li>Ejecutar y ampliar la batería de pruebas unitarias automatizadas sobre la lógica de negocio, y
+el banco de verificación del paquete desplegable.</li>
+<li>Realizar la revisión de seguridad orientada al OWASP Top 10 y corregir los hallazgos
+detectados.</li>
+<li>Conducir pruebas de aceptación con usuarios reales de cada perfil en sucursal.</li>
+<li>Elaborar la documentación técnica, el manual de despliegue y los manuales de usuario por
+rol.</li>
+<li>Capacitar al personal e integrar el reporte final de residencias profesionales.</li>
+</ol>
+
+<!-- ===================== 10. CRONOGRAMA ===================== -->
+<h3>9.7 Distribución de responsabilidades entre residentes</h3>
+<p>El trabajo se reparte por áreas técnicas, de modo que cada residente sea responsable de un
+conjunto de módulos identificable y evaluable por separado. Las actividades de análisis, diseño,
+pruebas de aceptación y documentación se realizan de forma conjunta.</p>
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tr><th style="width:30%">Responsable</th><th>Actividades a su cargo</th></tr>
+<tr>
+  <td>Erick Joseph Torres Suárez</td>
+  <td>Modelo de datos y políticas de seguridad a nivel de fila; autenticación y control de acceso
+  por roles; módulo de asistencia, horarios y zonas horarias; geocercas; servicio de verificación
+  facial y prueba de vitalidad; despliegue en el servidor privado virtual, contenedores, migración
+  de datos y respaldos.</td>
+</tr>
+<tr>
+  <td><span class="ph">[NOMBRE DEL SEGUNDO RESIDENTE]</span></td>
+  <td>Módulo de bienestar organizacional, encuestas y Pulse Score; reportes confidenciales;
+  módulos de Recursos Humanos (expedientes, vacaciones, permisos, descuentos, comisiones,
+  reconocimientos y calendario); canales de comunicación (avisos, mensajería, notificaciones push
+  y videollamadas); motor de indicadores de riesgo y asistente de inteligencia artificial.</td>
+</tr>
+<tr>
+  <td>Ambos residentes</td>
+  <td>Levantamiento de requerimientos; diseño de la arquitectura y de la interfaz; pruebas
+  unitarias automatizadas; revisión de seguridad; pruebas de aceptación con usuarios;
+  documentación técnica y capacitación al personal.</td>
+</tr>
+</table>
+
+<h2 style="page-break-before: always">10. Cronograma de actividades</h2>
+
+<p class="peq">Periodo: 16 semanas, 30 horas semanales, 480 horas en total. La marca
+<b>X</b> indica las semanas en que se desarrolla cada actividad.</p>
+
+<table class="peq" border="1" cellspacing="0" cellpadding="1" style="line-height:1">
+<tr>
+  <th style="width:36%">Actividad</th>
+  <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th>
+  <th>9</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th><th>16</th>
+</tr>
+<tr><td>1. Levantamiento de requisitos</td>
+<td>X</td><td>X</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>2. Diseño de base de datos</td>
+<td></td><td>X</td><td>X</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>3. Arquitectura e interfaz</td>
+<td></td><td></td><td>X</td><td>X</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>4. Autenticación y roles</td>
+<td></td><td></td><td></td><td>X</td><td>X</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>5. Personal y expedientes</td>
+<td></td><td></td><td></td><td></td><td>X</td><td>X</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>6. Asistencia y horarios</td>
+<td></td><td></td><td></td><td></td><td></td><td>X</td><td>X</td><td>X</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>7. Geocercas y sucursales</td>
+<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>X</td><td>X</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>8. Verificación facial</td>
+<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>X</td><td>X</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>9. Encuestas y Pulse Score</td>
+<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>X</td><td>X</td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>10. Permisos y comisiones</td>
+<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>X</td><td>X</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>11. Avisos y mensajería</td>
+<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>X</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>12. Motor de riesgo e IA</td>
+<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>X</td><td>X</td><td></td><td></td><td></td></tr>
+<tr><td>13. Despliegue y migración</td>
+<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>X</td><td>X</td><td></td><td></td></tr>
+<tr><td>14. Respaldos y tareas</td>
+<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>X</td><td></td><td></td></tr>
+<tr><td>15. Pruebas y seguridad</td>
+<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>X</td><td>X</td><td></td></tr>
+<tr><td>16. Aceptación y capacitación</td>
+<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>X</td><td>X</td></tr>
+<tr><td>17. Documentación y reporte</td>
+<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>X</td><td>X</td></tr>
+</table>
+
+<!-- ===================== 11. RECURSOS ===================== -->
+<h2>11. Recursos requeridos</h2>
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tr><th style="width:22%">Tipo</th><th>Descripción</th></tr>
+<tr><td><b>Humanos</b></td><td>Dos residentes (desarrolladores); asesor externo por parte de la empresa;
+asesor interno por parte del instituto; personal de Recursos Humanos, Psicología y recepción como
+usuarios de validación.</td></tr>
+<tr><td><b>Materiales</b></td><td>Equipo de cómputo para desarrollo; dispositivos móviles con cámara
+para las pruebas de verificación facial y geocerca; conexión a Internet.</td></tr>
+<tr><td><b>Tecnológicos</b></td><td>React y Vite para el cliente; PostgreSQL como gestor de base de
+datos; plataforma Supabase autoalojada para autenticación, almacenamiento y funciones de servidor;
+Node.js para los servicios de verificación facial; Docker para la virtualización por contenedores;
+servidor privado virtual con sistema operativo Linux; servicio de videollamadas Jitsi; interfaz de
+inteligencia artificial generativa Google Gemini; Git y GitHub para el control de versiones.</td></tr>
+<tr><td><b>Financieros</b></td><td>Costo de arrendamiento mensual del servidor privado virtual y del
+nombre de dominio, cubiertos por la empresa.</td></tr>
+</table>
+
+<!-- ===================== 12. RESULTADOS ESPERADOS ===================== -->
+<h2>12. Resultados esperados</h2>
+<ul>
+<li>Plataforma en operación real, utilizada diariamente por el personal de todas las sucursales,
+alojada en infraestructura propia de la empresa.</li>
+<li>Registro de asistencia verificable, con identidad confirmada y ubicación validada, como fuente
+única para el cálculo de nómina.</li>
+<li>Indicador cuantitativo y periódico del clima laboral por colaborador y por sucursal, con
+histórico de tendencia, que sustenta el cumplimiento de la
+NOM&ndash;035&ndash;STPS&ndash;2018.</li>
+<li>Expedientes y trámites de Recursos Humanos digitalizados, con bitácora de autorizaciones.</li>
+<li>Documentación técnica, manual de despliegue y manuales de usuario por rol.</li>
+<li>Personal capacitado en el uso del sistema conforme a su perfil.</li>
+</ul>
+
+<!-- ===================== 13. REFERENCIAS ===================== -->
+<h2>13. Referencias bibliográficas</h2>
+
+<p>Diario Oficial de la Federación. (2018). <i>NOM&ndash;035&ndash;STPS&ndash;2018, Factores de
+riesgo psicosocial en el trabajo&mdash;Identificación, análisis y prevención</i>. Secretaría del
+Trabajo y Previsión Social.</p>
+
+<p>Elmasri, R., y Navathe, S. B. (2016). <i>Fundamentals of Database Systems</i> (7.ª ed.).
+Pearson.</p>
+
+<p>Maslach, C., y Leiter, M. P. (2016). Understanding the burnout experience: Recent research and
+its implications for psychiatry. <i>World Psychiatry, 15</i>(2), 103&ndash;111.</p>
+
+<p>Organización Internacional de Normalización. (2011). <i>ISO/IEC 25010: Systems and software
+engineering&mdash;Systems and software Quality Requirements and Evaluation (SQuaRE)&mdash;System
+and software quality models</i>.</p>
+
+<p>OWASP Foundation. (2021). <i>OWASP Top 10: The Ten Most Critical Web Application Security
+Risks</i>. https://owasp.org/Top10/</p>
+
+<p>PostgreSQL Global Development Group. (2025). <i>PostgreSQL Documentation: Row Security
+Policies</i>. https://www.postgresql.org/docs/current/ddl-rowsecurity.html</p>
+
+<p>Pressman, R. S., y Maxim, B. R. (2020). <i>Ingeniería del software: un enfoque práctico</i>
+(9.ª ed.). McGraw&ndash;Hill.</p>
+
+<p>Schroff, F., Kalenichenko, D., y Philbin, J. (2015). FaceNet: A unified embedding for face
+recognition and clustering. <i>Proceedings of the IEEE Conference on Computer Vision and Pattern
+Recognition</i>, 815&ndash;823.</p>
+
+<p>Sommerville, I. (2016). <i>Ingeniería de software</i> (10.ª ed.). Pearson.</p>
+
+<p>Tecnológico Nacional de México. (2015). <i>Lineamiento para la operación y cumplimiento de las
+Residencias Profesionales</i>. TecNM.</p>
+
+<!-- ===================== FIRMAS ===================== -->
+<h2 style="page-break-before: always">14. Firmas de conformidad</h2>
+
+<p class="esp">&nbsp;</p>
+<table border="0" cellspacing="0" cellpadding="0" width="100%" style="border: none">
+<tr>
+  <td style="border:none; width:50%" class="firma">
+    <p>__________________________________</p>
+    <p>Erick Joseph Torres Suárez<br>Residente</p>
+  </td>
+  <td style="border:none; width:50%" class="firma">
+    <p>__________________________________</p>
+    <p><span class="ph">[NOMBRE DEL SEGUNDO RESIDENTE]</span><br>Residente</p>
+  </td>
+</tr>
+<tr><td colspan="2" style="border:none" class="firma"><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p></td></tr>
+<tr>
+  <td style="border:none" class="firma">
+    <p>__________________________________</p>
+    <p><span class="ph">[NOMBRE DEL ASESOR INTERNO]</span><br>Asesor interno<br>
+    Instituto Tecnológico de Altamira</p>
+  </td>
+  <td style="border:none" class="firma">
+    <p>__________________________________</p>
+    <p>Alfredo Eduardo Burgos Reyes<br>Asesor externo<br>DEMARU, S.A. de C.V. &mdash; McDental</p>
+  </td>
+</tr>
+<tr><td colspan="2" style="border:none" class="firma"><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p></td></tr>
+<tr>
+  <td colspan="2" style="border:none" class="firma">
+    <p>__________________________________</p>
+    <p><span class="ph">[NOMBRE DEL JEFE DE DIVISIÓN]</span><br>
+    Jefe de la División de Estudios Profesionales<br>
+    Instituto Tecnológico de Altamira</p>
+  </td>
+</tr>
+</table>
+
+</body>
+</html>

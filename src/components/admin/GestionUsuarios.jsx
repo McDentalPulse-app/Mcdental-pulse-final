@@ -34,11 +34,15 @@ const GestionUsuarios = () => {
   const { usuarios, setUsuarios, nombresSucursales } = useGlobal();
   const { user, restablecerPasswordUsuario } = useAuth();
   const { toast } = useNotification();
-  const { pedirBaja, restaurar, activar } = useBajaUsuario();
+  const { pedirBaja, restaurar, activar, eliminarDefinitivo } = useBajaUsuario();
   // Antes era `esAdmin` y valía solo para 'admin'. Con la paridad rh/psicologa = admin
   // (decisión del dueño, 2026-07-30; ver migración 099) los tres roles de gestión pueden
   // lo mismo, así que el nombre pasa a decir lo que de verdad comprueba.
   const esGestion = ["admin", "rh", "psicologa"].includes(user?.role);
+  // El borrado definitivo se queda FUERA de esa paridad: "rh y psico solo archivan, admin borra
+  // definitivamente" (dueño, 2026-08-07). Esconder el botón no basta como seguridad — la Edge
+  // Function admin-delete-usuario comprueba lo mismo—, pero es donde se ve la regla.
+  const esAdmin = user?.role === "admin";
 
   const [busqueda, setBusqueda] = useState("");
   const [filtroSucursal, setFiltroSucursal] = useState("Todas");
@@ -70,6 +74,10 @@ const GestionUsuarios = () => {
     telefono: "",
     fechaIngreso: "",
     fechaCumpleanos: "",
+    puedeGestionarBodega: false,
+    puedeGestionarInventario: false,
+    puedeMarcarEnCualquierClinica: false,
+    puedeMarcarSalidaSinGeocerca: false,
   });
 
   // Gestión (admin/rh/psicologa) puede asignar cualquier rol; el resto solo "empleado".
@@ -148,6 +156,10 @@ const GestionUsuarios = () => {
         telefono: empleado.telefono || "",
         fechaIngreso: resolveFechaIngreso(empleado),
         fechaCumpleanos: resolveFechaCumpleanos(empleado),
+        puedeGestionarBodega: !!empleado.puedeGestionarBodega,
+        puedeGestionarInventario: !!empleado.puedeGestionarInventario,
+        puedeMarcarEnCualquierClinica: !!empleado.puedeMarcarEnCualquierClinica,
+        puedeMarcarSalidaSinGeocerca: !!empleado.puedeMarcarSalidaSinGeocerca,
       });
     } else {
       setUsuarioEditando(null);
@@ -161,6 +173,10 @@ const GestionUsuarios = () => {
         telefono: "",
         fechaIngreso: "",
         fechaCumpleanos: "",
+        puedeGestionarBodega: false,
+        puedeGestionarInventario: false,
+        puedeMarcarEnCualquierClinica: false,
+        puedeMarcarSalidaSinGeocerca: false,
       });
     }
     setMostrarModal(true);
@@ -333,15 +349,30 @@ const GestionUsuarios = () => {
                         </button>
                       )}
                       {emp.archivado ? (
-                        <button
-                          type="button"
-                          className="emp-table-icon-btn emp-table-icon-btn--ok"
-                          title="Restaurar"
-                          aria-label={`Restaurar a ${emp.name}`}
-                          onClick={() => restaurar(emp)}
-                        >
-                          <Icon name="refresh" size={15} />
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            className="emp-table-icon-btn emp-table-icon-btn--ok"
+                            title="Restaurar"
+                            aria-label={`Restaurar a ${emp.name}`}
+                            onClick={() => restaurar(emp)}
+                          >
+                            <Icon name="refresh" size={15} />
+                          </button>
+                          {esAdmin && (
+                            // Icono distinto al de "dar de baja" a propósito: ese trash significa
+                            // algo reversible, y quien lo tenga aprendido no debe leer lo mismo aquí.
+                            <button
+                              type="button"
+                              className="emp-table-icon-btn emp-table-icon-btn--danger"
+                              title="Borrar definitivamente"
+                              aria-label={`Borrar definitivamente a ${emp.name}`}
+                              onClick={() => eliminarDefinitivo(emp)}
+                            >
+                              <Icon name="xCircle" size={15} />
+                            </button>
+                          )}
+                        </>
                       ) : (
                         <>
                           {emp.inactivo && (
@@ -416,13 +447,24 @@ const GestionUsuarios = () => {
                     </button>
                   )}
                   {emp.archivado ? (
-                    <button
-                      type="button"
-                      className="mc-btn-outline mc-btn-outline--edit"
-                      onClick={() => restaurar(emp)}
-                    >
-                      Restaurar
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        className="mc-btn-outline mc-btn-outline--edit"
+                        onClick={() => restaurar(emp)}
+                      >
+                        Restaurar
+                      </button>
+                      {esAdmin && (
+                        <button
+                          type="button"
+                          className="mc-btn-outline mc-btn-outline--danger"
+                          onClick={() => eliminarDefinitivo(emp)}
+                        >
+                          Borrar
+                        </button>
+                      )}
+                    </>
                   ) : (
                     <>
                       {emp.inactivo && (
@@ -612,6 +654,69 @@ const GestionUsuarios = () => {
                   </Select>
                 </Campo>
               </div>
+
+              {/* Accesos de inventario (mig. 120): permisos aparte del rol, activables persona
+                  por persona. Solo tienen sentido sobre una cuenta que ya existe. */}
+              {usuarioEditando && esGestion && (
+                <>
+                  <SectionTitle icon="package">Inventario</SectionTitle>
+                  <div className="mc-form-row-2">
+                    <label className="mc-form-check">
+                      <input
+                        type="checkbox"
+                        checked={formData.puedeGestionarInventario}
+                        onChange={(e) => cambiarCampo("puedeGestionarInventario", e.target.checked)}
+                      />
+                      Ve y pide el inventario de su clínica (recepción)
+                    </label>
+                    <label className="mc-form-check">
+                      <input
+                        type="checkbox"
+                        checked={formData.puedeGestionarBodega}
+                        onChange={(e) => cambiarCampo("puedeGestionarBodega", e.target.checked)}
+                      />
+                      Procesa pedidos de todas las clínicas (bodega)
+                    </label>
+                  </div>
+                </>
+              )}
+              {usuarioEditando && (
+                // Solo al editar: quien se da de alta nace sin el permiso, y esto se enciende
+                // después, cuando de verdad va a andar rodando entre clínicas.
+                <div className="mc-form-group">
+                  <label className="mc-form-check" htmlFor="gu-cualquier-clinica">
+                    <input
+                      id="gu-cualquier-clinica"
+                      type="checkbox"
+                      checked={formData.puedeMarcarEnCualquierClinica}
+                      onChange={(e) => cambiarCampo("puedeMarcarEnCualquierClinica", e.target.checked)}
+                    />
+                    <span>Permitir marcar desde cualquier clínica</span>
+                  </label>
+                  <p className="mc-form-hint">
+                    Para quien va a apoyar a otras clínicas. Seguirá necesitando estar dentro del
+                    área de alguna clínica para poder checar, y su horario se sigue midiendo con
+                    el de {formData.sucursal || "su sucursal"}.
+                  </p>
+                </div>
+              )}
+              {usuarioEditando && (
+                <div className="mc-form-group">
+                  <label className="mc-form-check" htmlFor="gu-salida-libre">
+                    <input
+                      id="gu-salida-libre"
+                      type="checkbox"
+                      checked={formData.puedeMarcarSalidaSinGeocerca}
+                      onChange={(e) => cambiarCampo("puedeMarcarSalidaSinGeocerca", e.target.checked)}
+                    />
+                    <span>Permitir marcar salida sin importar dónde esté</span>
+                  </label>
+                  <p className="mc-form-hint">
+                    Solo afecta su salida — la entrada sigue exigiendo estar en una clínica. Su
+                    horario se sigue midiendo con el de {formData.sucursal || "su sucursal"}.
+                  </p>
+                </div>
+              )}
 
               {!usuarioEditando && (
                 <p className="mc-form-hint mc-form-hint--warn">

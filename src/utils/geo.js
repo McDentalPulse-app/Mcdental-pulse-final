@@ -82,6 +82,38 @@ export const evaluarUbicacion = (ubicacion, sucursal) => {
   return { estado, distanciaM };
 };
 
+/**
+ * El mismo veredicto, pero contra VARIAS clínicas: es lo que ve quien tiene el permiso
+ * `puede_marcar_en_cualquier_clinica` (migración 118), porque apoya en otras sucursales y
+ * evaluarlo solo contra la suya lo dejaba siempre 'fuera'.
+ *
+ * Gemelo del `sucursal_para_checada` de la SQL, y con su mismo orden de preferencia: gana
+ * cualquier clínica que dé 'dentro' y, si ninguna, la MÁS CERCANA — su distancia es la única
+ * cifra que le dice algo a quien está lejos de todo.
+ *
+ * @param {{lat:number,lng:number,precision:number}|null} ubicacion
+ * @param {Array<{lat:number|null,lng:number|null,radioM:number}>} sucursales
+ */
+export const evaluarUbicacionEnVarias = (ubicacion, sucursales) => {
+  if (!Array.isArray(sucursales) || sucursales.length === 0) {
+    return evaluarUbicacion(ubicacion, null);
+  }
+
+  let mejor = null;
+  for (const sucursal of sucursales) {
+    const r = evaluarUbicacion(ubicacion, sucursal);
+    if (r.estado === "dentro") return r;
+    // sin_gps es de la persona, no de la clínica: no hay nada mejor que buscar en la lista.
+    if (r.estado === "sin_gps") return r;
+    if (r.estado === "fuera" && (mejor?.distanciaM == null || r.distanciaM < mejor.distanciaM)) {
+      mejor = r;
+    }
+  }
+  // Ninguna dio 'dentro'. Si hubo alguna 'fuera', esa (la más cercana); si todas eran
+  // 'sin_geocerca', ese es el veredicto — y no bloquea, igual que con una sola clínica.
+  return mejor ?? { estado: "sin_geocerca", distanciaM: null };
+};
+
 /** Texto del candado EN VIVO, antes de fichar (no confundir con textoUbicacion, que es tras la checada). */
 export const textoCandado = (estado, distanciaM, sucursal) => {
   switch (estado) {

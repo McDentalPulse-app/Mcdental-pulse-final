@@ -1894,6 +1894,44 @@
   gap: 12px;
 }
 
+/* Grid de materiales (catálogo, stock) — calcado de .emp-grid pero sin cursor: pointer,
+   estas tarjetas no abren una ficha al hacer clic. */
+.mat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.mat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  min-width: 0;
+}
+
+.mat-card .mc-card {
+  padding: 14px 12px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.mat-card-nombre {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--mc-texto-fuerte);
+  line-height: 1.3;
+}
+
+.mat-card-sub {
+  font-size: 12px;
+  color: var(--mc-texto-secundario);
+}
+
 .emp-card-wrap {
   cursor: pointer;
   min-width: 0;
@@ -2852,6 +2890,16 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+/* Checkbox suelto dentro de un formulario (permisos booleanos: bodega, inventario…). */
+.mc-form-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--mc-texto);
+  cursor: pointer;
 }
 
 .mc-form-input,
@@ -10217,6 +10265,39 @@
   gap: 4px;
 }
 
+/* Barra de nivel de stock (inventario): reemplaza el pill binario "Stock bajo" por una
+   lectura de un vistazo, con umbral/material.js como referencia. Colorea con los mismos
+   --mc-semaforo-* que ya usa el resto de la app, no un rojo/verde inventado aparte. */
+.mc-stock-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  min-width: 84px;
+}
+.mc-stock-bar-track {
+  width: 84px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--mc-superficie-sutil);
+  overflow: hidden;
+}
+.mc-stock-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+.mc-stock-bar-fill--bajo { background: var(--mc-semaforo-rojo); }
+.mc-stock-bar-fill--medio { background: var(--mc-semaforo-amarillo); }
+.mc-stock-bar-fill--alto { background: var(--mc-semaforo-verde); }
+.mc-stock-bar-fill--neutral { background: var(--mc-texto-apagado); }
+.mc-stock-bar-texto {
+  font-size: 12px;
+  color: var(--mc-texto-secundario);
+  white-space: nowrap;
+}
+.mc-stock-bar-alerta { color: var(--mc-semaforo-rojo); }
+
 /* El <details>/<summary> de cada empleado: el summary ES el rh-data-row (clicable, sin el
    marcador nativo del navegador), y el chevron gira 180° cuando está abierto. */
 .asistencia-empleado-row summary.rh-data-row {
@@ -11657,11 +11738,19 @@
 .app-main { height: auto; flex: 1 1 auto; min-height: 0; }
 
 .topnav { flex: none; background: var(--mc-superficie); border-bottom: 1px solid var(--mc-borde-suave); z-index: 50; }
-.topnav-inner { display: flex; align-items: center; gap: 10px; height: 60px; padding: 0 18px; }
+.topnav-inner { display: flex; align-items: center; gap: 10px; min-height: 60px; padding: 0 18px; }
 .topnav-brand { display: flex; align-items: center; gap: 8px; border: none; background: none; cursor: pointer; padding: 0; flex: none; }
 .topnav-logo { width: 30px; height: 30px; border-radius: 7px; }
 .topnav-brand-text { font-weight: 700; color: var(--mc-texto-titulo); font-size: 15px; white-space: nowrap; }
-.topnav-links { display: flex; align-items: center; gap: 2px; flex: 1; margin-left: 10px; }
+/* min-width: 0 deja que este flex:1 se encoja de verdad — sin él, un grupo más en el menú
+   (Inventario, Reuniones, Festivos...) que ya no entra empuja TODO el header (y la página
+   entera) fuera del viewport en vez de quedarse contenido. flex-wrap (no overflow-x: auto,
+   que se probó primero) es lo que de verdad lo resuelve: overflow-x fuerza a overflow-y a
+   "auto" también —regla de la spec, no se puede separar—, y eso RECORTABA los submenús que
+   se abren hacia abajo (`.topnav-menu`, position: absolute, vive dentro de este contenedor).
+   Envolver a una segunda línea no recorta nada: .topnav-inner solo crece de alto
+   (min-height, ya no height fija). */
+.topnav-links { display: flex; align-items: center; flex-wrap: wrap; row-gap: 6px; column-gap: 2px; flex: 1; min-width: 0; margin-left: 10px; }
 .topnav-link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px; border: none; background: none; color: var(--mc-texto-secundario); font-size: 14px; font-weight: 600; border-radius: 8px; cursor: pointer; white-space: nowrap; font-family: inherit; }
 .topnav-link:hover { background: var(--mc-superficie-sutil); color: var(--mc-texto-titulo); }
 .topnav-link--activo { color: var(--mc-aqua); background: var(--mc-brand-suave); }
@@ -11720,6 +11809,43 @@
 /* Mismos valores que .campana-badge: los dos contadores viven pegados y cualquier diferencia
    de tamaño o color se nota como un descuido. */
 .topnav-mensajes-badge { position: absolute; top: -4px; right: -4px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--mc-rojo-apagado); color: var(--mc-blanco); font-size: 10px; font-weight: 800; line-height: 17px; text-align: center; }
+
+/* Botón de Reuniones — mismo aspecto que .topnav-mensajes (gemelos, ver BotonReuniones.jsx):
+   nunca tuvo su CSS propia y se veía con el botón crudo del navegador (gris, sin redondear). */
+.topnav-reuniones { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: none; width: 38px; height: 38px; border: 1px solid var(--mc-borde-suave); border-radius: 9px; background: var(--mc-superficie); color: var(--mc-texto-secundario); cursor: pointer; }
+.topnav-reuniones:hover { background: var(--mc-superficie-sutil); color: var(--mc-texto-titulo); }
+.topnav-reuniones--activo { color: var(--mc-aqua); background: var(--mc-brand-suave); }
+/* El punto no es un contador (no hay número que mostrar), así que va más chico que el badge de
+   mensajes y sin fondo propio en su estado suave — "hoy" se nota, "en curso" pulsa y no deja duda. */
+.topnav-reuniones-punto { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: var(--mc-texto-secundario); border: 1.5px solid var(--mc-superficie); }
+.topnav-reuniones-punto--encurso { background: var(--mc-badge-rojo-texto, #d92d20); animation: chat-pulso 1.4s ease-in-out infinite; }
+
+/* Reuniones flotante del TELÉFONO — mismo patrón que .mensajes-flotante, un carril más a la
+   izquierda (24 de campana + 42+10 de mensajes + 42+10 de este). */
+.reuniones-flotante { display: none; }
+
+@media (max-width: 768px) {
+  .reuniones-flotante {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 12px);
+    right: 128px;
+    z-index: 300;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid var(--mc-borde-suave);
+    background: var(--mc-superficie);
+    color: var(--mc-texto-titulo);
+    box-shadow: var(--mc-sombra-card);
+    cursor: pointer;
+  }
+  .reuniones-flotante:active { transform: scale(0.94); }
+  .reuniones-flotante-punto { position: absolute; top: 3px; right: 3px; width: 9px; height: 9px; border-radius: 50%; background: var(--mc-texto-secundario); border: 1.5px solid var(--mc-superficie); }
+  .reuniones-flotante-punto--encurso { background: var(--mc-badge-rojo-texto, #d92d20); animation: chat-pulso 1.4s ease-in-out infinite; }
+}
 
 /* Mensajes flotante del TELÉFONO. En móvil no se pinta el header (Navegacion monta Sidebar), así
    que el botón de arriba no existe ahí: este ocupa su lugar, a la izquierda de la campana y con

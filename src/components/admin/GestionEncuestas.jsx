@@ -8,7 +8,8 @@ import SectionTitle from "../common/SectionTitle";
 import PageHeader from "../common/PageHeader";
 import GestionBloques from "./GestionBloques";
 import Icon from "../ui/Icon";
-import { semanaDisplay, isSemanaActual, getISOWeek } from "../../utils/constants";
+import { periodoActual, esPeriodoActual, getISOWeek } from "../../utils/constants";
+import { etiquetaDePeriodo } from "../../utils/periodos";
 import {
   bloqueDeLaSemana,
   preguntasDeLaSemana,
@@ -57,7 +58,7 @@ const GestionEncuestas = ({ encuestas = [] }) => {
   );
 
   const respuestasSemana = new Set(
-    encuestas.filter((e) => isSemanaActual(e.semana)).map((e) => e.empleadoId)
+    encuestas.filter((e) => esPeriodoActual(e.semana)).map((e) => e.empleadoId)
   ).size;
 
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -231,7 +232,7 @@ const GestionEncuestas = ({ encuestas = [] }) => {
         <SectionTitle icon="clipboard">Encuesta semanal activa</SectionTitle>
         <div className="encuesta-meta">
           <span className="encuesta-meta-item">
-            <Icon name="calendar" size={14} /> Semana {semanaDisplay}
+            <Icon name="calendar" size={14} /> {etiquetaDePeriodo(periodoActual)}
           </span>
           <span className="encuesta-meta-item">
             <Icon name="clipboard" size={14} /> {preguntasDeEstaSemana.length} preguntas esta semana
@@ -305,7 +306,7 @@ const GestionEncuestas = ({ encuestas = [] }) => {
               <div>
                 <h2 id="encuesta-edit-title" className="mc-modal-title">Editar preguntas</h2>
                 <p className="admin-page-subtitle encuesta-edit-sub">
-                  Semana {semanaDisplay} · {draftPreguntas.length} preguntas
+                  {etiquetaDePeriodo(periodoActual)} · {draftPreguntas.length} preguntas
                 </p>
               </div>
               <button type="button" className="encuesta-edit-close" onClick={cerrarEditor} aria-label="Cerrar">

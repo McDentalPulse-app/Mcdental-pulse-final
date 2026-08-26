@@ -103,6 +103,7 @@ export default async function handler(req, res) {
     p_lat: lat ?? null,
     p_lng: lng ?? null,
     p_precision: precision ?? null,
+    p_tipo: tipo,
   });
 
   if (errorUbic) {

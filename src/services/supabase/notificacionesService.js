@@ -54,7 +54,26 @@ export const getNotificaciones = async (limite = 20) => {
     return true;
   });
 
-  return unicas.map(map).sort((a, b) => {
+  // Y de cada TIPO de crítica, solo la más reciente.
+  //
+  // Las críticas se fijan arriba del todo, estén leídas o no —a propósito: marcar leída no
+  // resuelve el problema—. Pero la tarea de fondo las reemite mientras el problema exista, y
+  // sin esto se apilan: en producción había SEIS avisos del mismo respaldo caído ocupando los
+  // seis primeros lugares del panel. Todo lo que llegaba después quedaba debajo, así que la
+  // campana parecía congelada aunque las notificaciones nuevas entraban bien.
+  //
+  // Una es la señal; seis son un tapón. Se conserva la más reciente porque es la que trae el
+  // dato al día ("6 días sin copia" en vez de "desde hace días"). Van ordenadas de más nueva a
+  // más vieja, así que la primera de cada tipo es la que se queda.
+  const tiposCriticos = new Set();
+  const sinRepetir = unicas.filter((n) => {
+    if (!n.critica) return true;
+    if (tiposCriticos.has(n.tipo)) return false;
+    tiposCriticos.add(n.tipo);
+    return true;
+  });
+
+  return sinRepetir.map(map).sort((a, b) => {
     if (a.critica !== b.critica) return a.critica ? -1 : 1;
     return String(b.creadaEn).localeCompare(String(a.creadaEn));
   });
@@ -75,6 +94,26 @@ export const marcarLeida = async (id) => {
 
 export const marcarTodasLeidas = async () => {
   await supabase.from("notificaciones").update({ leida: true }).eq("leida", false);
+};
+
+/**
+ * Vacía la bandeja del usuario, PERO conserva las críticas vigentes.
+ *
+ * Esa excepción es el punto: una alerta de un problema sin resolver no debe poder despacharse
+ * con un botón. Es exactamente lo que dejó el respaldo externo seis días caído con los avisos
+ * leídos. Las críticas viejas (>48 h) sí se van; si el problema sigue, la tarea de fondo las
+ * vuelve a emitir en menos de un día.
+ *
+ * La RLS (migración 114) limita el borrado a las filas propias, así que no hace falta filtrar
+ * por empleado_id: la base no dejaría borrar las de otro aunque se pidiera.
+ */
+export const limpiarNotificaciones = async () => {
+  const desde = new Date(Date.now() - HORAS_CRITICA_VIGENTE * 3_600_000).toISOString();
+  const { error } = await supabase
+    .from("notificaciones")
+    .delete()
+    .or(`critica.eq.false,creada_en.lt.${desde}`);
+  if (error) throw new Error("No se pudieron limpiar las notificaciones.");
 };
 
 /**

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { semanaActual, normalizeSucursal, formatSemanaDisplay } from "../utils/constants";
+import { periodoActual, normalizeSucursal, formatSemanaDisplay } from "../utils/constants";
 import { getPulseStatus, tieneScoreValido } from "../utils/pulseScore";
 import { nivelColor } from "../config/theme";
 import { esEmpleadoActivo } from "../utils/helpers";
@@ -26,7 +26,7 @@ export const usePulseSemana = (encuestas = [], usuarios = [], nombresSucursales 
     )];
     const buckets = {};
     semanasRaw.forEach((w) => { (buckets[formatSemanaDisplay(w)] ||= []).push(w); });
-    const actual = formatSemanaDisplay(semanaActual);
+    const actual = formatSemanaDisplay(periodoActual);
     return {
       bucketWeeks: buckets,
       labelActual: actual,
@@ -47,7 +47,7 @@ export const usePulseSemana = (encuestas = [], usuarios = [], nombresSucursales 
   // grande de abajo se recalcularia siempre — con ~100 empleados y todas sus encuestas, eso es
   // trabajo real en cada pulsacion de tecla de cualquier otra parte de la pantalla.
   const selRawWeeks = useMemo(
-    () => bucketWeeks[semana] || (semana === labelActual ? [semanaActual] : []),
+    () => bucketWeeks[semana] || (semana === labelActual ? [periodoActual] : []),
     [bucketWeeks, semana, labelActual]
   );
 

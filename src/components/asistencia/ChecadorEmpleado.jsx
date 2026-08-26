@@ -7,7 +7,7 @@ import CapturaSelfie from "./CapturaSelfie";
 import ModalChecada from "./ModalChecada";
 import AvisoPush from "./AvisoPush";
 import { useNotification } from "../../contexts/NotificationContext";
-import { obtenerUbicacion, textoUbicacion, evaluarUbicacion, textoCandado } from "../../utils/geo";
+import { obtenerUbicacion, textoUbicacion, evaluarUbicacion, evaluarUbicacionEnVarias, textoCandado } from "../../utils/geo";
 import { useNavigate } from "react-router-dom";
 import { getDeviceId } from "../../utils/dispositivo";
 import { marcarChecadaEnCurso } from "../../utils/actualizacion";
@@ -19,7 +19,7 @@ import { getAjustes } from "../../services/supabase/ajustesService";
 import { RESULTADO, MENSAJE } from "../../utils/rostro";
 import { emparejarChecadas, diaISO, puedeRegistrarSalida, horaSalidaAutorizada, minutosRetardo, TZ_CLINICA } from "../../utils/asistencia";
 import { useVoz, construirFraseChecada } from "../../utils/voz";
-import { semanaActual } from "../../utils/constants";
+import { esPeriodoActual } from "../../utils/constants";
 
 const horaCorta = (timestamp, tz = TZ_CLINICA) =>
   new Intl.DateTimeFormat("es-MX", {
@@ -85,14 +85,21 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
   const [sucursal, setSucursal] = useState(undefined);
   const [ubicacion, setUbicacion] = useState(null); // último fix del GPS
 
+  // Quien apoya en otras clínicas puede fichar dentro del área de CUALQUIERA de ellas
+  // (permiso `puede_marcar_en_cualquier_clinica`, migración 118). Solo para esas personas se
+  // guarda la lista completa; para el resto queda vacía y nadie la mira.
+  const enCualquierClinica = !!user?.puedeMarcarEnCualquierClinica;
+  const [clinicas, setClinicas] = useState([]);
+
   useEffect(() => {
     let vivo = true;
     getSucursales()
       .then((lista) => {
         if (!vivo) return;
         setSucursal(lista.find((s) => s.nombre === user?.sucursal) ?? null);
+        setClinicas(lista.filter((s) => s.activa !== false));
       })
-      .catch(() => { if (vivo) setSucursal(null); }); // ante la duda, no bloquear por geocerca
+      .catch(() => { if (vivo) { setSucursal(null); setClinicas([]); } }); // ante la duda, no bloquear por geocerca
     return () => { vivo = false; };
   }, [user?.sucursal]);
 
@@ -123,11 +130,31 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
   // quien en Hermosillo llegaba puntual.
   const tz = sucursal?.zonaHoraria || TZ_CLINICA;
 
-  const candado = useMemo(
-    // sucursal aún cargando: se fuerza "sin_gps" para que el botón espere y muestre "buscando".
-    () => (sucursal === undefined ? { estado: "sin_gps", distanciaM: null } : evaluarUbicacion(ubicacion, sucursal)),
-    [ubicacion, sucursal]
+  const misChecadas = useMemo(
+    () => checadasHoy.filter((c) => c.empleadoId === user?.id),
+    [checadasHoy, user?.id]
   );
+
+  const { entrada, salida } = useMemo(() => emparejarChecadas(misChecadas), [misChecadas]);
+
+  // Qué toca ahora. Si ya entró y ya salió, el día está cerrado: no se ofrece otro botón,
+  // porque una tercera checada solo confundiría el registro. Se calcula ANTES del candado
+  // porque el candado necesita saber si lo que sigue es la salida (permiso 127).
+  const siguiente = !entrada ? "entrada" : !salida ? "salida" : null;
+
+  // Salida sin geocerca (permiso `puede_marcar_salida_sin_geocerca`, migración 127): solo
+  // afecta la salida, nunca la entrada. Con el permiso y tocando salida, no se evalúa GPS en
+  // absoluto — el servidor hace exactamente lo mismo en `sucursal_para_checada`.
+  const salidaLibre = siguiente === "salida" && !!user?.puedeMarcarSalidaSinGeocerca;
+
+  const candado = useMemo(() => {
+    if (salidaLibre) return { estado: "dentro", distanciaM: null };
+    // sucursal aún cargando: se fuerza "sin_gps" para que el botón espere y muestre "buscando".
+    if (sucursal === undefined) return { estado: "sin_gps", distanciaM: null };
+    return enCualquierClinica
+      ? evaluarUbicacionEnVarias(ubicacion, clinicas)
+      : evaluarUbicacion(ubicacion, sucursal);
+  }, [ubicacion, sucursal, clinicas, enCualquierClinica, salidaLibre]);
 
   const fueraDeArea = candado.estado === "fuera" || candado.estado === "sin_gps";
 
@@ -220,13 +247,6 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
     resolver?.(null);
   }, []);
 
-  const misChecadas = useMemo(
-    () => checadasHoy.filter((c) => c.empleadoId === user?.id),
-    [checadasHoy, user?.id]
-  );
-
-  const { entrada, salida } = useMemo(() => emparejarChecadas(misChecadas), [misChecadas]);
-
   // El horario de HOY, por día ISO. La zona horaria es la de la clínica, no la del
   // navegador: si no, un móvil mal configurado le enseñaría al empleado el turno de otro
   // día.
@@ -235,10 +255,6 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
     const dia = diaISO(hoy);
     return horarios.find((h) => h.empleadoId === user?.id && h.diaSemana === dia) || null;
   }, [horarios, user?.id, tz]);
-
-  // Qué toca ahora. Si ya entró y ya salió, el día está cerrado: no se ofrece otro botón,
-  // porque una tercera checada solo confundiría el registro.
-  const siguiente = !entrada ? "entrada" : !salida ? "salida" : null;
 
   // La salida se habilita 10 min antes de la hora de su turno (migración 039). Quien
   // manda es el servidor; esto solo existe para no ofrecerle un botón que va a fallar.
@@ -267,7 +283,7 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
     const hoy = hoyEn(tz);
     const esSabado = diaISO(hoy) === 6;
     if (!esSabado) return false;
-    return !encuestas.some((e) => e.empleadoId === user?.id && e.semana === semanaActual);
+    return !encuestas.some((e) => e.empleadoId === user?.id && esPeriodoActual(e.semana));
   }, [siguiente, encuestas, user?.id, tz]);
 
   const handleChecar = async () => {
@@ -364,6 +380,13 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
   };
 
   const pill = ultima ? PILL_UBICACION[ultima.ubicacionEstado] : null;
+
+  // La clínica que confirma la checada es la que quedó GUARDADA en ella, no la asignada: quien
+  // apoya en otra sucursal (mig. 118) fichó ahí, y decirle "Ubicación confirmada · <su clínica>"
+  // sería nombrarle un sitio en el que no está. Sin coincidencia se cae a la suya, que es lo que
+  // se enseñaba antes de esto.
+  const clinicaDeLaUltima =
+    clinicas.find((s) => s.id === ultima?.sucursalId)?.nombre ?? user?.sucursal;
 
   if (puerta && !puerta.abierta) {
     return (
@@ -506,7 +529,13 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
               // selfie/reto para rebotar al final. Se auto-actualiza con cada fix del GPS.
               <p className={`checador-pill ${candado.estado === "fuera" ? "checador-pill--alerta" : "checador-pill--aviso"}`}>
                 <Icon name={candado.estado === "fuera" ? "alert" : "mapPin"} size={15} />
-                {textoCandado(candado.estado, candado.distanciaM, user?.sucursal)}
+                {textoCandado(
+                  candado.estado,
+                  candado.distanciaM,
+                  // A quien puede fichar en cualquier clínica no se le manda a la suya: la
+                  // distancia que ve es a la más cercana, y ahí es donde tiene que acercarse.
+                  enCualquierClinica ? "una clínica McDental" : user?.sucursal
+                )}
               </p>
             )}
 
@@ -554,7 +583,7 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
         {ultima && (
           <p className={`checador-pill ${pill?.clase || ""}`}>
             <Icon name={pill?.icono || "mapPin"} size={15} />
-            {textoUbicacion(ultima.ubicacionEstado, ultima.distanciaM, user?.sucursal)}
+            {textoUbicacion(ultima.ubicacionEstado, ultima.distanciaM, clinicaDeLaUltima)}
           </p>
         )}
       </Card>

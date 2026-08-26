@@ -105,7 +105,7 @@ const NuevaReunion = ({ usuarios, miId, onCrear, onCancelar, creando }) => {
       </div>
 
       <div className="reunion-form-acciones">
-        <button type="button" className="mc-btn-secundario" onClick={onCancelar} disabled={creando}>
+        <button type="button" className="mc-btn-outline" onClick={onCancelar} disabled={creando}>
           Cancelar
         </button>
         <button

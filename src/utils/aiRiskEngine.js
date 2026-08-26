@@ -51,7 +51,7 @@ export const analyzeEmployeeAI = (empleado, encuestas, permisos = [], descuentos
       riesgos,
       recomendacion: encuestasEmpleado.length
         ? "Encuesta registrada sin score válido. Pendiente de evaluación."
-        : "Sin encuestas registradas. Pendiente de evaluación semanal."
+        : "Sin encuestas registradas. Pendiente de evaluación."
     };
   }
 
@@ -122,7 +122,7 @@ export const analyzeEmployeeAI = (empleado, encuestas, permisos = [], descuentos
   const recomendacion =
     prioridad === "Crítica" ? "Agendar intervención inmediata con psicóloga y seguimiento directivo." :
     prioridad === "Alta" ? "Programar conversación individual y revisar expediente integral." :
-    prioridad === "Media" ? "Monitorear semanalmente y aplicar intervención preventiva." :
+    prioridad === "Media" ? "Monitorear de cerca y aplicar intervención preventiva." :
     "Mantener seguimiento regular y reforzar reconocimiento positivo.";
 
   return {

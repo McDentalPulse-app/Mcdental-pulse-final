@@ -54,7 +54,7 @@ const IntercambiosRH = ({ intercambios, festivos, onResolver, onAddFestivo, onDe
     <div className="admin-page">
       <PageHeader
         icon="calendar"
-        title="Intercambios de día"
+        title="Festivos"
         subtitle="Aprueba o rechaza las solicitudes de intercambio y administra los días festivos de la empresa."
       />
 

@@ -3,12 +3,13 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { notify } from "../../utils/notify";
-import { navItemsPara, GROUP_ICONS, agruparPorCampo } from "../../config/navItems";
+import { navItemsPara, GROUP_ICONS, agruparPorCampo, tieneBotonPropio } from "../../config/navItems";
 import logoSmall from "../../assets/logos/logo-small.png";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
 import BuscadorGlobal from "./BuscadorGlobal";
 import BotonMensajes from "./BotonMensajes";
+import BotonReuniones from "./BotonReuniones";
 import CampanaNotificaciones from "../notificaciones/CampanaNotificaciones";
 
 // Navegación en HEADER horizontal (reemplaza el sidebar). Los ítems sueltos son enlaces directos;
@@ -26,18 +27,18 @@ export default function HeaderNav() {
   const navRef = useRef(null);
 
   const items = navItemsPara(user);
-  // Mensajes se saca de la barra y del panel móvil: lo representa SOLO el botón permanente de
-  // la derecha (junto a la campana). Pintarlo también como enlace daría dos entradas para lo
-  // mismo en escritorio, y el icono con badge se reconoce mejor que un enlace de texto —
-  // además de ser lo único que sigue visible por debajo de 1100 px, donde la barra se oculta.
-  const esMensajes = (i) => i.key === "mensajes";
-  const sueltos = items.filter((i) => !i.group && !esMensajes(i));
+  // Mensajes y Reuniones se sacan de la barra y del panel móvil: los representan SOLO sus botones
+  // permanentes de la derecha (junto a la campana). Pintarlos también como enlace daría dos
+  // entradas para lo mismo en escritorio, y el icono con su indicador se reconoce mejor que un
+  // enlace de texto — además de ser lo único que sigue visible por debajo de 1100 px, donde la
+  // barra se oculta. La lista de cuáles vive en navItems.js, junto a los ítems.
+  const sueltos = items.filter((i) => !i.group && !tieneBotonPropio(i));
   const gruposBarra = agruparPorCampo(items.filter((i) => i.group && i.group !== "Cuenta"));
   const cuenta = items.filter((i) => i.group === "Cuenta");
   // El menu del usuario tambien ofrece soporte: el rotulo sale del item, no fijo, porque
   // segun el rol es "Soporte TI" (empleado/doctor) o "Ideas de mejora" (gestion).
   const soporte = items.find((i) => i.key === "soporte");
-  const gruposMovil = agruparPorCampo(items.filter((i) => i.group !== "Cuenta" && !esMensajes(i)));
+  const gruposMovil = agruparPorCampo(items.filter((i) => i.group !== "Cuenta" && !tieneBotonPropio(i)));
 
   // Cerrar dropdown al hacer clic fuera.
   useEffect(() => {
@@ -127,6 +128,8 @@ export default function HeaderNav() {
           <BuscadorGlobal />
 
           <BotonMensajes activo={active === "mensajes"} />
+
+          <BotonReuniones activo={active === "reuniones"} />
 
           <CampanaNotificaciones user={user} />
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, Fragment } from "react";
+import { useLocation } from "react-router-dom";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import PageHeader from "../common/PageHeader";
@@ -6,8 +7,6 @@ import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
 import MensajeItem from "./MensajeItem";
 import Composer from "./Composer";
-import Reuniones from "./Reuniones";
-import SalaJitsi from "./SalaJitsi";
 import { getPsicologaPrincipal, formatUsuarioMensajesMeta } from "../../utils/psicologa";
 import { esEmpleadoActivo } from "../../utils/helpers";
 import { horaCorta, claveDia, etiquetaDia, continuaGrupo } from "../../utils/fechaChat";
@@ -57,30 +56,27 @@ const CANAL_SOPORTE = {
 
 const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
   const { usuarios: USERS, setMensajes } = useGlobal();
+  const location = useLocation();
 
-  const [selectedId, setSelectedId] = useState(null);
+  // Se puede llegar aquí con una conversación ya elegida: la ficha de un empleado manda
+  // `conversarCon` con su id para que escribirle sea un clic y no "ir a Mensajes y buscarlo".
+  // Solo es el valor INICIAL: a partir de ahí manda lo que el usuario seleccione.
+  const [selectedId, setSelectedId] = useState(location.state?.conversarCon ?? null);
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [archivo, setArchivo] = useState(null);
   const [respondiendo, setRespondiendo] = useState(null);
   const [reacciones, setReacciones] = useState({});
   const [otro, setOtro] = useState({ presente: false, escribiendo: false });
-  // Todos los roles ven el chat. Admin y RH estaban fuera porque la única conversación que
-  // había era la confidencial con la psicóloga; con el canal de Soporte TI (mig. 094) ya hay
-  // algo que sí les toca, y eran los únicos del organigrama que no podían reportar una falla
-  // de TI por aquí. Lo que ven está acotado abajo, en `soloSoporte`.
-  const veChat = true;
+  // Todos los roles ven el chat, admin y RH incluidos: estaban fuera cuando la única
+  // conversación era la confidencial con la psicóloga, y con el canal de Soporte TI (mig. 094)
+  // ya hay algo que sí les toca. Lo que ven está acotado abajo, en `soloSoporte`.
   // Admin y RH: SOLO el buzón de Soporte TI. La conversación con la psicóloga sigue siendo
   // del empleado y de ella. Esto es la mitad de la garantía; la otra mitad — la que de verdad
   // cuenta — vive en la policy mensajes_select_participant, que no deja leer un mensaje a
   // quien no lo escribió ni lo recibió.
   const soloSoporte = ["admin", "rh"].includes(user?.role);
-  const [pestana, setPestana] = useState(veChat ? "chat" : "reuniones");
-  // La sala ocupa la pantalla entera: una videollamada en un recuadro de la esquina no la
-  // usa nadie, y compartir pantalla dentro de un panel pequeño no se lee.
-  const [enSala, setEnSala] = useState(null);
   // Estable entre renders: pasarla como arrow inline la recreaba en cada repintado.
-  const salirDeLaSala = useCallback(() => setEnSala(null), []);
   const bodyRef = useRef(null);
   const canalRef = useRef(null);
   const pausaRef = useRef(null);
@@ -184,9 +180,28 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
         ]
       : conversaciones;
 
+  // Una conversación NUEVA no está en `conversacionesActivas`: esa lista filtra por las que ya
+  // tienen mensajes. Y hasta ahora, en la práctica, la psicóloga solo podía responder — la
+  // conversación aparecía cuando el empleado escribía primero.
+  //
+  // Con el botón «Enviar mensaje» de la ficha se puede llegar aquí para escribirle a alguien
+  // que nunca ha escrito. Sin buscarlo también entre TODAS, el `find` fallaba y caía en
+  // `conversacionesActivas[0]`: la psicóloga creía escribirle a quien abrió y le escribía a la
+  // primera persona de la lista. Peor que no funcionar.
+  const conversacionNueva =
+    selectedId && !conversacionesActivas.some(c => c.usuario.id === selectedId)
+      ? conversaciones.find(c => c.usuario.id === selectedId) || null
+      : null;
+
+  // La conversación recién abierta se pone al principio de la lista aunque esté vacía: si no,
+  // el hilo se ve abierto a la derecha y a la izquierda no hay nada seleccionado.
+  const conversacionesVisibles = conversacionNueva
+    ? [conversacionNueva, ...conversacionesActivas]
+    : conversacionesActivas;
+
   const selected =
-    conversacionesActivas.find(c => c.usuario.id === selectedId) ||
-    conversacionesActivas[0] ||
+    conversacionesVisibles.find(c => c.usuario.id === selectedId) ||
+    conversacionesVisibles[0] ||
     null;
 
   const mensajesChat = selected?.mensajes || [];
@@ -388,9 +403,7 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
     return { autor, extracto };
   };
 
-  const sinConversacionesActivas = conversacionesActivas.length === 0;
-
-  if (enSala) return <SalaJitsi reunion={enSala} onSalir={salirDeLaSala} />;
+  const sinConversacionesActivas = conversacionesVisibles.length === 0;
 
   return (
     <div className="admin-page mensajes-page">
@@ -398,37 +411,14 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
         className="mensajes-page-header"
         icon="message"
         title="Mensajes"
-        subtitle={!veChat
-          ? "Convoca reuniones por vídeo con el personal."
-          : atiendeSoporte
+        subtitle={atiendeSoporte
             ? "Tu canal con la psicóloga y el buzón de Soporte TI que atiendes."
             : user.role === "psicologa"
               ? "Canal privado de comunicación con el personal."
               : "Canal privado con la psicóloga, y Soporte TI para problemas del sistema."}
       />
 
-      <div className="mensajes-pestanas" role="tablist">
-        {veChat && (
-          <button
-            type="button" role="tab" aria-selected={pestana === "chat"}
-            className={`mensajes-pestana${pestana === "chat" ? " mensajes-pestana--activa" : ""}`}
-            onClick={() => setPestana("chat")}
-          >
-            <Icon name="message" size={16} /> Conversaciones
-          </button>
-        )}
-        <button
-          type="button" role="tab" aria-selected={pestana === "reuniones"}
-          className={`mensajes-pestana${pestana === "reuniones" ? " mensajes-pestana--activa" : ""}`}
-          onClick={() => setPestana("reuniones")}
-        >
-          <Icon name="camera" size={16} /> Reuniones
-        </button>
-      </div>
-
-      {pestana === "reuniones" || !veChat ? (
-        <Reuniones user={user} onEntrar={setEnSala} />
-      ) : sinConversacionesActivas ? (
+      {sinConversacionesActivas ? (
         <Card className="mensajes-inbox-empty-card">
           <div className="mensajes-inbox-empty-icon">
             <Icon name="message" size={28} />
@@ -444,7 +434,7 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
         // el teléfono siempre había un chat abierto y la lista quedaba aplastada a 72px — cabía
         // una conversación y media, y Soporte TI se quedaba fuera de la vista. En escritorio la
         // clase no cambia nada: allí caben las dos columnas.
-        <div className={`mensajes-layout${conversacionesActivas.length === 1 ? " mensajes-layout--single" : ""}${selectedId ? " mensajes-layout--detalle" : ""}`}>
+        <div className={`mensajes-layout${conversacionesVisibles.length === 1 ? " mensajes-layout--single" : ""}${selectedId ? " mensajes-layout--detalle" : ""}`}>
           <Card className="mensajes-sidebar-card">
             <div className="mensajes-sidebar-head">
               <span className="mensajes-sidebar-head-main">
@@ -452,12 +442,12 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
                 Conversaciones privadas
               </span>
               <span className="mensajes-active-badge">
-                {conversacionesActivas.length} activa{conversacionesActivas.length === 1 ? "" : "s"}
+                {conversacionesVisibles.length} activa{conversacionesVisibles.length === 1 ? "" : "s"}
               </span>
             </div>
 
             <div className="mensajes-conv-list">
-              {conversacionesActivas.map(c => {
+              {conversacionesVisibles.map(c => {
                 const activo = selected?.usuario.id === c.usuario.id;
                 const badgeCount = activo ? 0 : c.noLeidos;
                 const preview = c.ultimo
@@ -503,7 +493,7 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
                   y nada más — justo debajo de una cabecera que promete "el buzón de Soporte
                   TI que atiendes". Parecía roto sin estarlo. Este renglón dice que el buzón
                   está ahí y que simplemente no hay nada. */}
-              {atiendeSoporte && !conversacionesActivas.some(c => c.canal === "soporte") && (
+              {atiendeSoporte && !conversacionesVisibles.some(c => c.canal === "soporte") && (
                 <p className="mensajes-conv-vacio">
                   <Icon name="wrench" size={14} />
                   Buzón de Soporte TI · nadie ha escrito todavía

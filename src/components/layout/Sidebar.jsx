@@ -7,7 +7,7 @@ import { notify } from "../../utils/notify";
 import logoSmall from "../../assets/logos/logo-small.png";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
-import { navItemsPara, TABS_MOVIL, agruparPorCampo } from "../../config/navItems";
+import { navItemsPara, TABS_MOVIL, agruparPorCampo, tieneBotonPropio } from "../../config/navItems";
 import "./Sidebar.css";
 
 const RAIL_KEY = "mcdental_sidebar_rail";
@@ -66,9 +66,10 @@ const Sidebar = () => {
   const tabsPrincipales = clavesTab
     .map((k) => items.find((i) => i.key === k))
     .filter(Boolean);
-  // Mensajes queda fuera de la hoja "Más": en el teléfono es el botón flotante junto a la campana.
+  // Mensajes y Reuniones quedan fuera de la hoja "Más": en el teléfono son los botones flotantes
+  // junto a la campana. Ver `tieneBotonPropio` en navItems.js.
   const tabsExtra = items.filter(
-    (i) => !clavesTab.includes(i.key) && i.key !== "mensajes",
+    (i) => !clavesTab.includes(i.key) && !tieneBotonPropio(i),
   );
   const irA = (key) => { setMasOpen(false); navigate(`/${user.role}/${key}`); };
   const extraActivo = tabsExtra.some((i) => i.key === active);

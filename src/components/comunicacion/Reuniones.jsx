@@ -1,13 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
 import NuevaReunion from "./NuevaReunion";
 import { notify } from "../../utils/notify";
-import {
-  getReuniones, crearReunion, responderInvitacion, subscribeReuniones,
-} from "../../services/supabase/reunionesService";
+import { enCurso } from "../../utils/reuniones";
+import { crearReunion, responderInvitacion } from "../../services/supabase/reunionesService";
 
 const PUEDE_CONVOCAR = ["admin", "rh", "psicologa"];
 
@@ -16,14 +15,10 @@ const fmt = new Intl.DateTimeFormat("es-MX", {
   weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
 });
 
-// Margen para entrar antes de la hora, y cuánto sigue siendo "de ahora" después. Una reunión
-// a la que solo se puede entrar al segundo exacto es una reunión a la que se llega tarde.
-const ANTES_MIN = 15;
-const DESPUES_MIN = 120;
-
 const Reuniones = ({ user, onEntrar }) => {
-  const { usuarios: USERS } = useGlobal();
-  const [reuniones, setReuniones] = useState([]);
+  // Las reuniones y su refresco vienen del contexto: el icono de la cabecera las necesita en
+  // todas las pantallas, y tenerlas también aquí serían dos fuentes que pueden discrepar.
+  const { usuarios: USERS, reuniones, refreshReuniones } = useGlobal();
   const [creando, setCreando] = useState(false);
   const [formAbierto, setFormAbierto] = useState(false);
   // El "ahora" vive en estado y avanza solo. Calcularlo en el render sería impuro (lo marca
@@ -35,13 +30,6 @@ const Reuniones = ({ user, onEntrar }) => {
     return () => clearInterval(t);
   }, []);
 
-  const recargar = useCallback(() => { getReuniones().then(setReuniones); }, []);
-
-  useEffect(() => {
-    recargar();
-    return subscribeReuniones(user?.id, recargar);
-  }, [user?.id, recargar]);
-
   const puedeConvocar = PUEDE_CONVOCAR.includes(user?.role);
   const nombreDe = (id) => USERS.find((u) => u.id === id)?.name || "Alguien";
 
@@ -50,7 +38,7 @@ const Reuniones = ({ user, onEntrar }) => {
     try {
       await crearReunion(datos);
       setFormAbierto(false);
-      recargar();
+      refreshReuniones();
       notify.toast.success("Reunión convocada. Ya les llegó el aviso.");
     } catch (e) {
       notify.toast.error(e?.message || "No se pudo crear la reunión.");
@@ -62,7 +50,7 @@ const Reuniones = ({ user, onEntrar }) => {
   const responder = async (r, estado) => {
     try {
       await responderInvitacion({ reunionId: r.id, usuarioId: user.id, estado });
-      recargar();
+      refreshReuniones();
     } catch (e) {
       notify.toast.error(e?.message || "No se pudo responder.");
     }
@@ -109,14 +97,13 @@ const Reuniones = ({ user, onEntrar }) => {
         <div className="reuniones-lista">
           {reuniones.map((r) => {
             const inicio = new Date(r.inicio);
-            const minutos = (ahora - inicio.getTime()) / 60000;
-            const enCurso = minutos >= -ANTES_MIN && minutos <= DESPUES_MIN;
+            const abierta = enCurso(r, ahora);
             const cancelada = r.estado === "cancelada";
             const miInvitacion = r.invitados.find((i) => i.usuarioId === user.id);
             const soyAnfitrion = r.creadoPor === user.id;
 
             return (
-              <Card key={r.id} className={`reunion-item${enCurso && !cancelada ? " reunion-item--activa" : ""}`}>
+              <Card key={r.id} className={`reunion-item${abierta ? " reunion-item--activa" : ""}`}>
                 <div className="reunion-item-cabecera">
                   <div>
                     <div className="reunion-item-titulo">{r.titulo}</div>
@@ -130,7 +117,7 @@ const Reuniones = ({ user, onEntrar }) => {
 
                   {cancelada ? (
                     <span className="reunion-etiqueta reunion-etiqueta--cancelada">Cancelada</span>
-                  ) : enCurso ? (
+                  ) : abierta ? (
                     <button type="button" className="mc-btn-primary mc-btn-with-icon" onClick={() => onEntrar(r)}>
                       <Icon name="camera" size={16} /> Entrar
                     </button>
@@ -138,7 +125,7 @@ const Reuniones = ({ user, onEntrar }) => {
                     // Fuera de su horario no se ofrece entrar: una sala vacía a la que se puede
                     // pasar en cualquier momento deja de ser una reunión convocada.
                     <span className="reunion-etiqueta">
-                      {minutos < 0 ? "Programada" : "Terminada"}
+                      {inicio.getTime() > ahora ? "Programada" : "Terminada"}
                     </span>
                   )}
                 </div>
@@ -165,7 +152,7 @@ const Reuniones = ({ user, onEntrar }) => {
                 {!soyAnfitrion && !cancelada && miInvitacion?.estado === "invitado" && (
                   <div className="reunion-item-respuesta">
                     <span>¿Vas a asistir?</span>
-                    <button type="button" className="mc-btn-secundario" onClick={() => responder(r, "rechaza")}>
+                    <button type="button" className="mc-btn-outline" onClick={() => responder(r, "rechaza")}>
                       No puedo
                     </button>
                     <button type="button" className="mc-btn-primary" onClick={() => responder(r, "acepta")}>

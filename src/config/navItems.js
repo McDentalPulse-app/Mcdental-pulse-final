@@ -18,13 +18,16 @@ export const NAV_ITEMS = {
     { key: "sucursales", icon: "mapPin", label: "Sucursales", group: "Asistencia y rostros" },
     { key: "horarios", icon: "calendarDays", label: "Horarios", group: "Asistencia y rostros" },
     { key: "rostros", icon: "camera", label: "Rostros", group: "Asistencia y rostros" },
+    { key: "intercambios", icon: "calendarDays", label: "Festivos", group: "Asistencia y rostros" },
     { key: "encuestas", icon: "clipboard", label: "Encuestas", group: "Encuestas y reportes" },
     { key: "reportes", icon: "trending", label: "Reportes", group: "Encuestas y reportes" },
     { key: "confidenciales", icon: "lock", label: "Reportes Confidenciales", group: "Encuestas y reportes" },
+    { key: "inventario", icon: "package", label: "Inventario", group: "Inventario" },
     { key: "ai", icon: "ai", label: "AI Engine", group: "Herramientas" },
     { key: "config", icon: "settings", label: "Config", group: "Herramientas" },
     { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
     { key: "mensajes", icon: "message", label: "Mensajes" },
+    { key: "reuniones", icon: "camera", label: "Reuniones" },
     { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
     { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
   ],
@@ -35,6 +38,7 @@ export const NAV_ITEMS = {
     { key: "vacaciones", icon: "vacation", label: "Vacaciones", group: "Vacaciones y permisos" },
     { key: "permisos", icon: "clipboardCheck", label: "Permisos", group: "Vacaciones y permisos" },
     { key: "mispermisos", icon: "vacation", label: "Mis vacaciones/permisos", group: "Vacaciones y permisos" },
+    { key: "intercambios", icon: "calendarDays", label: "Festivos", group: "Vacaciones y permisos" },
     { key: "comisiones", icon: "dollar", label: "Comisiones", group: "Vacaciones y permisos" },
     { key: "empleados", icon: "users", label: "Empleados", group: "Equipo" },
     { key: "usuarios", icon: "userCog", label: "Gestión de Personal", group: "Equipo" },
@@ -53,6 +57,7 @@ export const NAV_ITEMS = {
     { key: "ai", icon: "ai", label: "AI Engine", group: "Herramientas" },
     { key: "config", icon: "settings", label: "Config", group: "Herramientas" },
     { key: "mensajes", icon: "message", label: "Mensajes" },
+    { key: "reuniones", icon: "camera", label: "Reuniones" },
     { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
     { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
     // Clave distinta de "soporte" a propósito: en gestión esa clave ya está tomada por
@@ -72,10 +77,13 @@ export const NAV_ITEMS = {
     { key: "vacaciones", icon: "vacation", label: "Vacaciones", group: "Vacaciones y permisos" },
     { key: "permisos", icon: "clipboardCheck", label: "Permisos", group: "Vacaciones y permisos" },
     { key: "mispermisos", icon: "vacation", label: "Mis vacaciones/permisos", group: "Vacaciones y permisos" },
+    // Festivos y Comisiones vivian en el grupo "RH", entre Descuentos y Reportes: para mirar un
+    // cambio de dia festivo habia que abrir un menu que no habla de dias libres. Mismo grupo y
+    // mismo orden que la psicologa, que ya tiene estas cinco paginas juntas.
+    { key: "intercambios", icon: "calendarDays", label: "Festivos", group: "Vacaciones y permisos" },
+    { key: "comisiones", icon: "dollar", label: "Comisiones", group: "Vacaciones y permisos" },
     { key: "descuentos", icon: "dollar", label: "Descuentos", group: "RH" },
-    { key: "comisiones", icon: "dollar", label: "Comisiones", group: "RH" },
     { key: "calendario", icon: "calendar", label: "Calendario", group: "RH" },
-    { key: "intercambios", icon: "calendarDays", label: "Intercambios de día", group: "RH" },
     { key: "reportesrh", icon: "trending", label: "Reportes RH", group: "RH" },
     { key: "checador", icon: "clock", label: "Checador", group: "Asistencia y rostros" },
     { key: "asistencia", icon: "clock", label: "Asistencia", group: "Asistencia y rostros" },
@@ -89,6 +97,7 @@ export const NAV_ITEMS = {
     { key: "config", icon: "settings", label: "Config", group: "Herramientas" },
     { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
     { key: "mensajes", icon: "message", label: "Mensajes" },
+    { key: "reuniones", icon: "camera", label: "Reuniones" },
     { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
     { key: "soporteti", icon: "wrench", label: "Soporte TI", group: "Herramientas" },
     { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
@@ -99,12 +108,17 @@ export const NAV_ITEMS = {
   empleado: [
     { key: "inicio", icon: "home", label: "Inicio" },
     { key: "mensajes", icon: "message", label: "Mensajes" },
+    { key: "reuniones", icon: "camera", label: "Reuniones" },
     // "Mi rostro" vive en Asistencia porque solo existe para que el checador te reconozca.
     { key: "checador", icon: "clock", label: "Checador", group: "Asistencia" },
     { key: "historial", icon: "history", label: "Historial", group: "Asistencia" },
     { key: "rostro", icon: "camera", label: "Mi rostro", group: "Asistencia" },
     // Solo para quien tenga el permiso (recepción). Ver `requiere` y navItemsPara() abajo.
     { key: "miclinica", icon: "mapPin", label: "Ubicación de mi clínica", group: "Asistencia", requiere: "puedeUbicarSucursal" },
+    // Inventario y bodega son permisos independientes de `puedeUbicarSucursal` — una persona
+    // puede tener uno, otro, los dos o ninguno (mig. 120).
+    { key: "inventario", icon: "package", label: "Inventario de mi clínica", group: "Asistencia", requiere: "puedeGestionarInventario" },
+    { key: "bodega", icon: "truck", label: "Pedidos (Bodega)", group: "Asistencia", requiere: "puedeGestionarBodega" },
     { key: "permisosempleado", icon: "vacation", label: "Vacaciones", group: "Tiempo libre" },
     { key: "calendario", icon: "calendar", label: "Calendario", group: "Tiempo libre" },
     { key: "encuesta", icon: "clipboardCheck", label: "Mi Encuesta", group: "Bienestar" },
@@ -117,6 +131,7 @@ export const NAV_ITEMS = {
   doctor: [
     { key: "inicio", icon: "home", label: "Inicio" },
     { key: "mensajes", icon: "message", label: "Mensajes" },
+    { key: "reuniones", icon: "camera", label: "Reuniones" },
     // Comisiones va suelto y no dentro de un grupo: es lo que un doctor abre a diario, y
     // enterrarlo a dos clics es justo lo contrario de lo que se buscaba al reordenar esto.
     { key: "comisiones", icon: "dollar", label: "Comisiones" },
@@ -136,6 +151,20 @@ export const NAV_ITEMS = {
     { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
   ],
 };
+
+/**
+ * Las claves que NO se pintan como enlace en ningún menú, porque ya tienen su propio botón
+ * permanente junto a la campana.
+ *
+ * SIGUEN EN NAV_ITEMS y eso es lo importante: de ahí salen el permiso por rol, la ruta, la entrada
+ * del buscador global — y los propios botones preguntan aquí si deben existir. Quitar el ítem para
+ * sacarlo de la barra apagaría también su botón.
+ *
+ * Estaba resuelto a mano para `mensajes` en HeaderNav y en Sidebar. Al aparecer el tercer caso
+ * (`reuniones`), la regla vive aquí: dos filtros copiados son dos sitios donde olvidarse del
+ * siguiente.
+ */
+export const tieneBotonPropio = (item) => ["mensajes", "reuniones"].includes(item?.key);
 
 /**
  * Los ítems que ESTA persona debe ver.
@@ -161,6 +190,7 @@ const DESCRIPCIONES = {
   dashboard: "Bienestar de toda la organización, semana a semana.",
   inicio: "Tu resumen: pendientes, avisos y accesos rápidos.",
   mensajes: "Conversaciones con el equipo y con Soporte TI.",
+  reuniones: "Convoca una reunión por vídeo o entra a la que te toca.",
 
   // Equipo / Personal
   empleados: "Ficha rápida de cada persona y su Pulse Score.",
@@ -181,6 +211,8 @@ const DESCRIPCIONES = {
   rostro: "Registra o actualiza tu cara para poder checar.",
   miclinica: "Fija dónde está tu clínica para que el checador valide la ubicación.",
   calibracion: "Qué tan exigente es el cotejo de caras, con datos reales.",
+  inventario: "El stock de tu clínica, registra consumo y pide material.",
+  bodega: "Pedidos pendientes de todas las clínicas y su comparación contra el stock.",
 
   // Tiempo libre
   vacaciones: "Aprueba o rechaza las solicitudes de vacaciones.",
@@ -188,7 +220,7 @@ const DESCRIPCIONES = {
   mispermisos: "Tus solicitudes y en qué estado están.",
   permisosempleado: "Pide vacaciones o un permiso y sigue tu solicitud.",
   calendario: "Festivos, eventos y quién está fuera cada día.",
-  intercambios: "Cambios de día entre compañeros pendientes de resolver.",
+  intercambios: "Los días festivos de la empresa y los cambios de día que pide el equipo.",
 
   // Bienestar
   encuesta: "Contesta la encuesta de la semana. Es confidencial.",
@@ -220,6 +252,7 @@ const DESCRIPCIONES = {
 const DESCRIPCIONES_POR_ROL = {
   empleado: { soporte: "Reporta un problema técnico al equipo de sistemas." },
   doctor: { soporte: "Reporta un problema técnico al equipo de sistemas." },
+  admin: { inventario: "El stock de las 26 clínicas y los pedidos especiales que hagas." },
 };
 
 /** La descripción de una página, o cadena vacía si todavía no se ha escrito. */
@@ -272,6 +305,7 @@ export const GROUP_ICONS = {
   "Encuestas y reportes": "clipboard",
   "Herramientas": "wrench",
   "Cuenta": "user",
+  "Inventario": "package",
 };
 
 // Agrupa una lista de ítems por su campo `group`, preservando el orden de aparición del grupo.

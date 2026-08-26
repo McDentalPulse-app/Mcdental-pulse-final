@@ -6,7 +6,8 @@ import Icon from "../ui/Icon";
 import { useNotification } from "../../contexts/NotificationContext";
 import { getPreguntasActivas, DEFAULT_OPCIONES_RIESGO } from "../../utils/encuestaPreguntas";
 import { bloqueDeLaSemana, preguntasDeLaSemana, repartirPreguntas } from "../../utils/encuestaBloques";
-import { getISOWeek, semanaDisplay, isSemanaActual } from "../../utils/constants";
+import { getISOWeek, periodoActual, esPeriodoActual, claveDelPeriodo } from "../../utils/constants";
+import { etiquetaDePeriodo } from "../../utils/periodos";
 import { calcularScoreEncuesta } from "../../utils/pulseScore";
 
 const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
@@ -14,7 +15,7 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
   const { toast, confirm } = useNotification();
 
   const yaContesto = encuestas.some(
-    (e) => e.empleadoId === user.id && isSemanaActual(e.semana)
+    (e) => e.empleadoId === user.id && esPeriodoActual(e.semana)
   );
 
   const [respuestas, setRespuestas] = useState({});
@@ -74,7 +75,7 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
 
     const ok = await onSubmit({
       empleadoId: user.id,
-      semana: getISOWeek(),
+      semana: claveDelPeriodo(),
       respuestas,
       score: resultado.score,
       semaforo: resultado.semaforo,
@@ -93,7 +94,7 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
           </div>
           <h2 className="empleado-success-title">Encuesta completada</h2>
           <p className="admin-page-subtitle empleado-success-text">
-            Tu encuesta fue registrada para {semanaDisplay}.
+            Tu encuesta fue registrada para la {etiquetaDePeriodo(periodoActual)}.
           </p>
         </Card>
       </div>
@@ -107,8 +108,8 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
         title="Mi encuesta"
         subtitle={
           bloqueActivo
-            ? `Semana ${semanaDisplay} · Esta quincena: ${bloqueActivo.nombre} · Tus respuestas son confidenciales.`
-            : `Semana ${semanaDisplay} · Tus respuestas son confidenciales.`
+            ? `${etiquetaDePeriodo(periodoActual)} · Esta quincena: ${bloqueActivo.nombre} · Tus respuestas son confidenciales.`
+            : `${etiquetaDePeriodo(periodoActual)} · Tus respuestas son confidenciales.`
         }
       />
 

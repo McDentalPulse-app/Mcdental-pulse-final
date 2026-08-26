@@ -9,7 +9,7 @@ import {
   FolderSearch, Lightbulb01, Tool01, TrendDown01, Eye, Sun, Moon01, Briefcase01, Camera01,
   MarkerPin01, ChevronDown, AlertCircle, VolumeMax, VolumeX, Trash01, Edit05,
   Send01, FaceHappy, Microphone01, Image01, CornerUpLeft, CheckDone01, Check,
-  Play, PauseCircle, Download01, XClose, Table, FileDownload03,
+  Play, PauseCircle, Download01, XClose, Table, FileDownload03, Package, Truck01,
 } from "@untitledui/icons";
 
 // Iconos de la app con el set de Untitled UI (@untitledui/icons, MIT). Un único punto: cambiar
@@ -117,6 +117,8 @@ const ICON_MAP = {
   pause: PauseCircle,
   download: Download01,
   close: XClose,
+  package: Package,
+  truck: Truck01,
 };
 
 const Icon = ({ name, size = 18, className = "", strokeWidth = 1.75, color }) => {

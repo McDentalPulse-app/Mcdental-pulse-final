@@ -1,4 +1,8 @@
-import { LAUNCH_WEEK, formatSemanaDisplay, getISOWeek, isoWeekToMonday } from "./constants";
+import {
+  LAUNCH_WEEK, formatSemanaDisplay, getISOWeek, isoWeekToMonday,
+  claveDePeriodo, claveDelPeriodo, esPeriodoQuincenal,
+} from "./constants";
+import { quincenaNumero } from "./encuestaBloques";
 import { FIN_PERIODO_PRUEBA } from "./asistencia";
 
 /**
@@ -66,15 +70,49 @@ const diaMes = (iso) => {
   return `${f.getUTCDate()} ${MESES[f.getUTCMonth()].slice(0, 3)}`;
 };
 
+/**
+ * Cómo se llama un periodo cuando va SOLO en un encabezado.
+ *
+ * Distinta de la del selector (`periodoDe`) porque el problema es distinto: en una lista de
+ * opciones lo que hace falta es distinguirlas de un vistazo, y en un encabezado lo que hace falta
+ * es que se entienda sin contexto. De ahí que esta diga «Semana» o «Quincena» dentro del texto:
+ * quien la use no tiene que anteponer nada, y así no salen cosas como «Semana Quincena 4».
+ */
+export const etiquetaDePeriodo = (clave) => {
+  const id = claveDePeriodo(String(clave ?? "").trim());
+  if (!id) return "";
+  if (esPeriodoQuincenal(id)) {
+    return `Quincena ${quincenaNumero(id)} · ${diaMes(inicioDePeriodo("semana", id))} – ${diaMes(finDePeriodo("semana", id))}`;
+  }
+  return `Semana ${formatSemanaDisplay(id)}`;
+};
+
 /** El periodo al que pertenece una encuesta, con su etiqueta para el selector. */
 export const periodoDe = (encuesta, tipo) => {
   if (tipo === "semana") {
-    const id = String(encuesta?.semana || "").trim();
+    // NORMALIZAR AQUÍ ES LO QUE ARREGLA TRES COSAS A LA VEZ. Desde el corte quincenal, la
+    // segunda semana del par apunta a la primera, que es la clave con la que se guardan las
+    // encuestas. Sin esto: `periodosDisponibles` ofrecía un «periodo actual» (la semana cruda)
+    // que no empataba con ninguna encuesta guardada, y `periodosEnRango` partía cada quincena en
+    // dos opciones del selector. Los dos llaman aquí, así que los dos quedan arreglados.
+    const id = claveDePeriodo(String(encuesta?.semana || "").trim());
     if (!id) return null;
+    // Desde el corte el periodo son DOS semanas, y llamarlo «2026-W07» invita a leer un número
+    // de quincena como si fuera de semana. Se dice lo que es y cuándo empieza y acaba.
+    if (esPeriodoQuincenal(id)) {
+      const q = quincenaNumero(id);
+      return {
+        id,
+        etiqueta: `Quincena ${q} · ${diaMes(inicioDePeriodo("semana", id))} – ${diaMes(finDePeriodo("semana", id))}`,
+      };
+    }
     const etiqueta = formatSemanaDisplay(id);
     // formatSemanaDisplay junta TODAS las semanas anteriores al lanzamiento bajo una sola
     // etiqueta "W00": en un selector eso son dos opciones escritas igual, imposible de
     // distinguir a ciegas. Para esas se muestra además la semana ISO real, que sí las separa.
+    //
+    // Las semanas normales conservan su etiqueta corta a propósito (hay un test que lo fija):
+    // son historial ya leído, y reescribirlo ahora cambiaría lo que RH lleva semanas viendo.
     return { id, etiqueta: etiqueta.endsWith("W00") ? `${etiqueta} (${id})` : etiqueta };
   }
   if (tipo === "quincena") {
@@ -97,7 +135,10 @@ export const encuestaEnPeriodo = (encuesta, tipo, id) => periodoDe(encuesta, tip
  * añade siempre aunque nadie haya contestado todavía — ahí la hoja vacía sí informa.
  */
 export const periodosDisponibles = (encuestas = [], tipo = "semana") => {
-  const hoy = { semana: getISOWeek(), fecha: aISO(new Date()) };
+  // `claveDelPeriodo()` y no `getISOWeek()`: es la misma clave con la que se GUARDA una encuesta
+  // nueva, así que la opción «periodo en curso» empata con lo que hay en la base. Con la semana
+  // cruda, en la segunda semana de la quincena esa opción salía vacía.
+  const hoy = { semana: claveDelPeriodo(), fecha: aISO(new Date()) };
   const porId = new Map();
   for (const e of [hoy, ...encuestas]) {
     const p = periodoDe(e, tipo);
@@ -125,7 +166,12 @@ export const finDePeriodo = (tipo, id) => {
     return anio && mes ? aISO(new Date(Date.UTC(anio, mes, 0))) : null;
   }
   const lunes = isoWeekToMonday(id);
-  return lunes ? aISO(new Date(lunes.getTime() + 6 * DIA)) : null;
+  if (!lunes) return null;
+  // 13 días más cuando la clave es quincenal: el periodo llega hasta el domingo de la SEGUNDA
+  // semana. Devolver lunes+6 para una quincena no era solo una etiqueta corta — este valor acota
+  // el rango del reporte de asistencia, así que la segunda semana se quedaba fuera de la hoja.
+  const dias = esPeriodoQuincenal(id) ? 13 : 6;
+  return aISO(new Date(lunes.getTime() + dias * DIA));
 };
 
 /**

@@ -5,12 +5,13 @@ import Badge from "../common/Badge";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
 import PulseScoreBadge from "../common/PulseScoreBadge";
-import { semanaDisplay, normalizeSucursal, isSemanaActual, formatSemanaDisplay } from "../../utils/constants";
+import { periodoActual, normalizeSucursal, esPeriodoActual, formatSemanaDisplay } from "../../utils/constants";
+import { etiquetaDePeriodo } from "../../utils/periodos";
 import { calcPulseScore, tieneScoreValido } from "../../utils/pulseScore";
 
 const InicioEmpleado = ({ user, encuestas, mensajes, setActive }) => {
   const mis = encuestas.filter(e => e.empleadoId === user.id);
-  const yaContesto = mis.some(e => isSemanaActual(e.semana));
+  const yaContesto = mis.some(e => esPeriodoActual(e.semana));
   const ultimo = mis.sort((a, b) => b.semana.localeCompare(a.semana))[0];
   const noLeidos = mensajes.filter(m => m.para === user.id && !m.leido).length;
   const ps = calcPulseScore(user.id, encuestas);
@@ -21,7 +22,7 @@ const InicioEmpleado = ({ user, encuestas, mensajes, setActive }) => {
       key: "encuesta",
       icon: yaContesto ? "check" : "clipboard",
       title: yaContesto ? "Encuesta completada" : "Encuesta pendiente",
-      meta: `Semana ${semanaDisplay}`,
+      meta: etiquetaDePeriodo(periodoActual),
       variant: yaContesto ? "ok" : "pending",
       action: !yaContesto ? "Contestar ahora" : null,
       onClick: () => setActive("encuesta"),
@@ -64,7 +65,7 @@ const InicioEmpleado = ({ user, encuestas, mensajes, setActive }) => {
           <p className="admin-page-subtitle">{normalizeSucursal(user.sucursal)} · {user.puesto}</p>
         </div>
         <span className="dashboard-week-badge">
-          <Icon name="calendar" size={14} /> Semana {semanaDisplay}
+          <Icon name="calendar" size={14} /> {etiquetaDePeriodo(periodoActual)}
         </span>
       </header>
 

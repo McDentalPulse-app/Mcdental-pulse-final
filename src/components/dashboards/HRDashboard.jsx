@@ -15,7 +15,7 @@ import { usePulseSemana } from "../../hooks/usePulseSemana";
 import { getAsistencias } from "../../services/supabase/asistenciasService";
 import { construirDias, resumen, mapaZonas, zonaDe, hoyEnClinica } from "../../utils/asistencia";
 import { esEmpleadoActivo } from "../../utils/helpers";
-import { semanaActual, rangoDeSemana, formatSemanaDisplay } from "../../utils/constants";
+import { periodoActual, rangoDePeriodo, formatSemanaDisplay } from "../../utils/constants";
 import { getPulseStatus, tieneScoreValido } from "../../utils/pulseScore";
 import { nivelColor } from "../../config/theme";
 
@@ -51,12 +51,12 @@ const HRDashboard = () => {
   // ── Semana en curso y selector ────────────────────────────────────────────
   const semanasConDatos = useMemo(() => {
     const s = new Set(encuestas.map((e) => String(e.semana)).filter((x) => /^\d{4}-W\d{2}$/.test(x)));
-    s.add(semanaActual);
+    s.add(periodoActual);
     return [...s].sort((a, b) => b.localeCompare(a));
   }, [encuestas]);
 
-  const [semana, setSemana] = useState(semanaActual);
-  const rango = useMemo(() => rangoDeSemana(semana), [semana]);
+  const [semana, setSemana] = useState(periodoActual);
+  const rango = useMemo(() => rangoDePeriodo(semana), [semana]);
 
   // ── Asistencia de la semana elegida ───────────────────────────────────────
   // Se pide al abrir y al cambiar de semana, no se guarda en el contexto: son miles de filas y
@@ -161,7 +161,7 @@ const HRDashboard = () => {
           onChange={setSemana}
           options={semanasConDatos.map((w) => ({
             value: w,
-            label: `${w}${w === semanaActual ? " · actual" : ""}`,
+            label: `${w}${w === periodoActual ? " · actual" : ""}`,
           }))}
         />
         <span className="dashboard-participation-badge">

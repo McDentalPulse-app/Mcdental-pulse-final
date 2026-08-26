@@ -1,6 +1,10 @@
 import { useGlobal } from "../contexts/GlobalContext";
 import { useNotification } from "../contexts/NotificationContext";
-import { updateUsuario } from "../services/supabase/usuariosService";
+import {
+  updateUsuario,
+  eliminarUsuario,
+  contarHistorialUsuario,
+} from "../services/supabase/usuariosService";
 
 /**
  * Baja de un empleado, con los dos niveles que se usan en la clínica.
@@ -9,9 +13,12 @@ import { updateUsuario } from "../services/supabase/usuariosService";
  *                  (AuthContext cierra la sesión de quien tenga `inactivo`).
  *   Archivar    -> desaparece de la lista. Tampoco entra. NADA se borra: checadas,
  *                  encuestas y fotos de rostro quedan intactas, y se puede restaurar.
+ *   Borrar      -> ya no existe. Cascada a 23 tablas, sin papelera y sin vuelta atrás.
  *
- * Deliberadamente no hay borrado en cascada detrás de ningún botón: archivar es
- * reversible y un despido mal tecleado no debería destruir el historial de nadie.
+ * Los dos primeros los pueden los tres roles de gestión. El tercero SOLO el admin, y solo
+ * sobre alguien ya archivado: "rh y psico solo archivan, admin borra definitivamente"
+ * (decisión del dueño, 2026-08-07). Archivar sigue siendo el camino normal de una baja —
+ * un despido mal tecleado no debe destruir el historial de nadie.
  *
  * Vive como hook y no dentro de una pantalla porque lo comparten Gestión de Personal
  * y el listado de Empleados, y el flujo de confirmaciones tiene que ser el mismo en
@@ -19,7 +26,7 @@ import { updateUsuario } from "../services/supabase/usuariosService";
  */
 export const useBajaUsuario = () => {
   const { setUsuarios } = useGlobal();
-  const { toast, confirm } = useNotification();
+  const { toast, confirm, prompt } = useNotification();
 
   const aplicar = async (empleado, cambios, mensajeOk) => {
     try {
@@ -87,5 +94,81 @@ export const useBajaUsuario = () => {
   const activar = async (empleado) =>
     aplicar(empleado, { inactivo: false }, `${empleado.name} fue activado.`);
 
-  return { pedirBaja, restaurar, activar };
+  /**
+   * Borrado DEFINITIVO. Solo lo llama la papelera del admin sobre una fila archivada; quien
+   * decide si ese botón existe es la pantalla, y la Edge Function lo vuelve a comprobar.
+   *
+   * Dos puertas, y la segunda obliga a teclear:
+   *   1. Los números de lo que se pierde. Un "¿seguro?" a secas no informa; "412 checadas y 38
+   *      encuestas" sí, y es justo el dato que hace recular a tiempo.
+   *   2. Escribir el nombre exacto. Es lo que separa esto de un clic mal dado en la fila de al
+   *      lado — la única acción de la app que no se puede deshacer merece esa fricción.
+   */
+  const eliminarDefinitivo = async (empleado) => {
+    // Se cuenta ANTES de preguntar: preguntar y luego contar dejaría al admin decidiendo a
+    // ciegas mientras carga. Si el conteo falla se sigue adelante, pero diciéndolo.
+    const historial = await contarHistorialUsuario(empleado.id);
+
+    const piezas = historial
+      ? [
+          [historial.checadas, "checadas"],
+          [historial.encuestas, "encuestas"],
+          [historial.notas, "notas psicológicas"],
+          [historial.archivos, "archivos de expediente"],
+          [historial.comisiones, "comisiones"],
+          [historial.reconocimientos, "reconocimientos"],
+        ].filter(([n]) => n > 0)
+      : null;
+
+    let queSePierde;
+    if (piezas === null) {
+      queSePierde = "No se pudo calcular qué historial tiene, así que puede haber más de lo que parece.";
+    } else if (piezas.length === 0) {
+      queSePierde = "No tiene historial registrado: no hay checadas, encuestas ni notas que perder.";
+    } else {
+      queSePierde =
+        "Se borrarán también " +
+        piezas.map(([n, etiqueta]) => `${n} ${etiqueta}`).join(", ") +
+        ".";
+    }
+
+    const seguro = await confirm({
+      title: `Borrar definitivamente a ${empleado.name}`,
+      description:
+        `${queSePierde} Esto NO se puede deshacer: no queda en «Archivados» ni en ninguna ` +
+        `papelera. Si solo quieres que deje de aparecer, restaurar y archivar ya hacen eso.`,
+      variant: "danger",
+      confirmText: "Entiendo, continuar",
+      cancelText: "Cancelar",
+    });
+    if (!seguro) return false;
+
+    const tecleado = await prompt({
+      title: "Escribe el nombre para confirmar",
+      description: `Para borrar a esta persona, escribe exactamente: ${empleado.name}`,
+      placeholder: empleado.name,
+      confirmText: "Borrar definitivamente",
+    });
+    if (tecleado === null) return false;
+
+    // Se comparan sin espacios sobrantes ni mayúsculas: el objetivo de teclear el nombre es
+    // frenar el clic automático, no examinar de mecanografía.
+    if (tecleado.trim().toLocaleLowerCase() !== empleado.name.trim().toLocaleLowerCase()) {
+      toast.error("El nombre no coincide. No se borró nada.");
+      return false;
+    }
+
+    try {
+      await eliminarUsuario(empleado.id);
+      setUsuarios((prev) => prev.filter((u) => u.id !== empleado.id));
+      toast.success(`${empleado.name} fue borrado definitivamente.`);
+      return true;
+    } catch (error) {
+      console.error("Error borrando al usuario:", error);
+      toast.error(error?.message || "No se pudo borrar al usuario.");
+      return false;
+    }
+  };
+
+  return { pedirBaja, restaurar, activar, eliminarDefinitivo };
 };

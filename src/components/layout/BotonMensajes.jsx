@@ -22,8 +22,11 @@ export default function BotonMensajes({ variante = "header", activo = false }) {
   // sin Mensajes, el botón desaparece con él y no hay que acordarse de este archivo.
   if (!navItemsPara(user).some((i) => i.key === "mensajes")) return null;
 
-  // Admin y RH no ven el chat (Mensajes les abre Reuniones): contarles "no leídos" señalaría una
-  // conversación que no pueden atender.
+  // Admin y RH no reciben cuenta de no leídos. OJO: el motivo original —que Mensajes les abría
+  // Reuniones— ya no aplica; Reuniones tiene su propio icono y su propia ruta, y Mensajes.jsx
+  // tiene veChat=true para todos, así que sí ven chat (el buzón de Soporte TI). Que no se les
+  // cuenten los no leídos es hoy una decisión sin justificar, no una consecuencia. Pendiente de
+  // decidir con el dueño; no se cambia aquí para no alterar de paso lo que ve gestión.
   const veChat = ["psicologa", "empleado", "doctor"].includes(user?.role);
   const noLeidos = veChat
     ? (mensajes || []).filter((m) => m.para === user?.id && !m.leido && !m.eliminado).length

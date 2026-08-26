@@ -277,6 +277,12 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
   useEffect(() => {
     if (!filtrosAbiertos) return;
     const onDoc = (e) => {
+      // El desplegable de Sucursal dibuja su lista en un portal a <body> (ver common/Select.jsx),
+      // asi que un clic en una opcion cae FUERA de `filtrosRef`. Sin esta linea ese clic cerraba
+      // el panel en el mousedown, el <Select> se desmontaba antes de que llegara el click, y la
+      // sucursal no se llegaba a elegir NUNCA: el filtro quedo muerto al pasar del <select>
+      // nativo al propio. El Select ya se excluye a si mismo igual en su handler.
+      if (e.target?.closest?.(".mc-select-menu")) return;
       if (filtrosRef.current && !filtrosRef.current.contains(e.target)) setFiltrosAbiertos(false);
     };
     document.addEventListener("mousedown", onDoc);

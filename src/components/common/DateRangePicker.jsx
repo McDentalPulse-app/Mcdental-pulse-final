@@ -34,7 +34,8 @@ const DateRangePicker = ({ desde, hasta, onChange, max, min, unico = false, plac
   const [open, setOpen] = useState(false);
   const [inicioTemp, setInicioTemp] = useState(desde);
   const [finTemp, setFinTemp] = useState(hasta);
-  const [ancla, setAncla] = useState(() => (desde ? parseISO(desde) : new Date()));
+  const anclaInicial = () => (desde ? parseISO(desde) : min ? parseISO(min) : new Date());
+  const [ancla, setAncla] = useState(anclaInicial);
   const ref = useRef(null);
   const popRef = useRef(null);
   const [pos, setPos] = useState(null);
@@ -42,7 +43,7 @@ const DateRangePicker = ({ desde, hasta, onChange, max, min, unico = false, plac
   const abrir = () => {
     setInicioTemp(desde);
     setFinTemp(hasta);
-    setAncla(desde ? parseISO(desde) : new Date());
+    setAncla(anclaInicial());
     setOpen(true);
   };
 

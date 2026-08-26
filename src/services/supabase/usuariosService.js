@@ -19,6 +19,14 @@ const mapUsuario = (row) =>
     debeCambiarPassword: row.debe_cambiar_password,
     avatarUrl: row.avatar_url,
     bannerUrl: row.banner_url,
+    // Inventario por clínica (mig. 120): ver el checkbox gemelo en GestionUsuarios.jsx.
+    puedeGestionarBodega: !!row.puede_gestionar_bodega,
+    puedeGestionarInventario: !!row.puede_gestionar_inventario,
+    // Permiso de fichar en cualquier clínica (mig. 118). Ausente en el directorio sin PII,
+    // donde queda undefined como el resto de campos que ahí no viajan.
+    puedeMarcarEnCualquierClinica: !!row.puede_marcar_en_cualquier_clinica,
+    // Permiso de marcar SALIDA sin geocerca (mig. 127). Independiente del de arriba.
+    puedeMarcarSalidaSinGeocerca: !!row.puede_marcar_salida_sin_geocerca,
   };
 
 // Fila completa, con PII (teléfono, email, fechas). El RLS de la migración 030 solo
@@ -63,6 +71,14 @@ export const updateUsuario = async (id, updates) => {
   if (updates.fechaCumpleanos !== undefined) payload.fecha_cumpleanos = updates.fechaCumpleanos || null;
   if (updates.inactivo !== undefined) payload.inactivo = updates.inactivo;
   if (updates.archivado !== undefined) payload.archivado = updates.archivado;
+  if (updates.puedeGestionarBodega !== undefined) payload.puede_gestionar_bodega = updates.puedeGestionarBodega;
+  if (updates.puedeGestionarInventario !== undefined) payload.puede_gestionar_inventario = updates.puedeGestionarInventario;
+  if (updates.puedeMarcarEnCualquierClinica !== undefined) {
+    payload.puede_marcar_en_cualquier_clinica = !!updates.puedeMarcarEnCualquierClinica;
+  }
+  if (updates.puedeMarcarSalidaSinGeocerca !== undefined) {
+    payload.puede_marcar_salida_sin_geocerca = !!updates.puedeMarcarSalidaSinGeocerca;
+  }
 
   const { data, error } = await supabase
     .from("usuarios")
@@ -78,13 +94,55 @@ export const updateUsuario = async (id, updates) => {
   return mapUsuario(data);
 };
 
-// Baja definitiva. OJO: hoy NINGÚN botón de la app llama a esto — la baja de
-// personal es `archivado` (reversible, ver migración 083). Se conserva solo para
-// una supresión real de datos pedida a mano. Pasa por la Edge Function
-// admin-delete-usuario (solo admin). Borra
-// auth.users, que en cascada se lleva la fila de usuarios y TODO lo que cuelga de
-// ella (asistencias, encuestas, rostros, permisos, vacaciones...) — irreversible. El
-// llamador ya tiene que haber confirmado dos veces antes de llegar acá.
+/**
+ * Qué se va a perder si se borra a esta persona. Se le enseña al admin ANTES de confirmar, con
+ * números reales: "412 checadas, 38 encuestas" pesa distinto que un "¿seguro?" a secas.
+ *
+ * Cuenta con `head: true` (solo el contador, sin traer filas) y en paralelo. Son las seis tablas
+ * que un humano reconoce; las otras 17 que cascadean son técnicas (dispositivos, suscripciones
+ * push, intentos de cotejo…) y enumerarlas solo taparía las que importan.
+ *
+ * Las tres tablas sensibles son legibles por admin (notas_psicologicas y archivos_expediente por
+ * `..._gestion`), así que estos números no mienten por RLS. Si alguna consulta falla, se devuelve
+ * null en vez de un cero: mejor decir "no se pudo calcular" que jurar que no había nada.
+ */
+export const contarHistorialUsuario = async (usuarioId) => {
+  const contar = async (tabla, columna = "empleado_id") => {
+    const { count, error } = await supabase
+      .from(tabla)
+      .select("id", { count: "exact", head: true })
+      .eq(columna, usuarioId);
+    if (error) throw error;
+    return count || 0;
+  };
+
+  try {
+    const [checadas, encuestas, notas, archivos, comisiones, reconocimientos] = await Promise.all([
+      contar("asistencias"),
+      contar("encuestas"),
+      contar("notas_psicologicas"),
+      contar("archivos_expediente"),
+      contar("comisiones", "doctor_id"), // esta cuelga del doctor, no de `empleado_id`
+
+      contar("reconocimientos"),
+    ]);
+    return { checadas, encuestas, notas, archivos, comisiones, reconocimientos };
+  } catch (error) {
+    console.error("No se pudo contar el historial del usuario:", error);
+    return null;
+  }
+};
+
+// Baja definitiva. La baja NORMAL de personal sigue siendo `archivado` (reversible, migración
+// 083); esto es el escalón de después, para limpiar cuentas de prueba y bajas que ya no deben
+// existir. Desde el 2026-08-07 hay un botón que llama aquí: la papelera que solo ve el ADMIN
+// sobre una fila archivada (useBajaUsuario.eliminarDefinitivo).
+//
+// Pasa por la Edge Function admin-delete-usuario, que vuelve a comprobar que quien llama es
+// admin — esconder el botón no impide llamar a la función. Borra auth.users, que en cascada se
+// lleva la fila de usuarios y TODO lo que cuelga de ella (asistencias, encuestas, rostros,
+// permisos, vacaciones...) — irreversible. El llamador ya tiene que haberle enseñado al admin
+// los números de lo que se pierde y haberle hecho teclear el nombre antes de llegar acá.
 export const eliminarUsuario = async (usuarioId) => {
   const { data: sessionData } = await supabase.auth.getSession();
   const token = sessionData?.session?.access_token;

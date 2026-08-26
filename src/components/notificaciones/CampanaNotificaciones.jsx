@@ -6,6 +6,7 @@ import {
   contarNoLeidas,
   marcarLeida,
   marcarTodasLeidas,
+  limpiarNotificaciones,
   subscribeNotificaciones,
 } from "../../services/supabase/notificacionesService";
 
@@ -22,6 +23,8 @@ const ICONO_TIPO = {
   ticket: "wrench",
   confidencial: "lock",
   aviso: "bell",
+  intercambio: "calendarDays",
+  respaldo: "shieldAlert",
 };
 
 const tiempoRelativo = (iso) => {
@@ -83,6 +86,19 @@ export default function CampanaNotificaciones({ user }) {
     if (n.url && n.url !== "/") navigate(n.url);
   };
 
+  const limpiar = async () => {
+    // Optimista, como marcarTodas: la campana responde al instante y el realtime confirma.
+    // Las críticas vigentes se quedan, así que no se vacía la lista a ciegas.
+    const desde = new Date(Date.now() - 48 * 3_600_000).toISOString();
+    setItems((prev) => prev.filter((n) => n.critica && n.creadaEn >= desde));
+    setNoLeidas(0);
+    try {
+      await limpiarNotificaciones();
+    } finally {
+      refrescar();
+    }
+  };
+
   const marcarTodas = async () => {
     setNoLeidas(0);
     setItems((prev) => prev.map((n) => ({ ...n, leida: true })));
@@ -107,11 +123,18 @@ export default function CampanaNotificaciones({ user }) {
         <div className="campana-panel" role="menu">
           <header className="campana-panel-head">
             <strong>Notificaciones</strong>
-            {noLeidas > 0 && (
-              <button type="button" className="campana-marcar" onClick={marcarTodas}>
-                Marcar todas leídas
-              </button>
-            )}
+            <span className="campana-panel-acciones">
+              {noLeidas > 0 && (
+                <button type="button" className="campana-marcar" onClick={marcarTodas}>
+                  Marcar todas leídas
+                </button>
+              )}
+              {items.length > 0 && (
+                <button type="button" className="campana-marcar" onClick={limpiar}>
+                  Limpiar
+                </button>
+              )}
+            </span>
           </header>
 
           {items.length === 0 ? (

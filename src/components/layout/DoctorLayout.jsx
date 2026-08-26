@@ -12,6 +12,7 @@ import ReconocimientosEmpleado from '../empleados/ReconocimientosEmpleado';
 import ReporteConfidencialEmpleado from '../empleados/ReporteConfidencialEmpleado';
 import SoporteTI from '../common/SoporteTI';
 import Mensajes from '../comunicacion/Mensajes';
+import PaginaReuniones from '../comunicacion/PaginaReuniones';
 import Perfil from '../common/Perfil';
 import AvisosPanel from '../avisos/AvisosPanel';
 import ComisionesDoctor from '../comisiones/ComisionesDoctor';
@@ -68,6 +69,7 @@ export default function DoctorLayout({ user, globals, actions }) {
             {/* Igual que en EmpleadoLayout: el destinatario lo decide Mensajes, porque desde la
                 mig. 094 hay dos conversaciones y la de Soporte TI va sin destinatario. */}
             <Route path="mensajes" element={<Mensajes user={user} mensajes={userMensajes} onSend={sendMensaje} onMarkRead={marcarMensajesLeidos}/>} />
+            <Route path="reuniones" element={<PaginaReuniones user={user} />} />
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} />} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="/doctor/inicio" replace />} />

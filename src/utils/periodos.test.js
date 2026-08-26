@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { quincenaDe, mesDeSemana, periodoDe, encuestaEnPeriodo, periodosDisponibles, finDePeriodo, esPeriodoDePrueba } from "./periodos";
+import { quincenaDe, mesDeSemana, periodoDe, encuestaEnPeriodo, periodosDisponibles, inicioDePeriodo, finDePeriodo, esPeriodoDePrueba } from "./periodos";
 
 // Las quincenas van de sábado a viernes ancladas al sábado de la semana de lanzamiento
 // (2026-07-04), que es como se trabaja y se paga aquí: lunes a sábado.
@@ -91,5 +91,54 @@ describe("periodo de prueba", () => {
     // contestar, asi que ahi el silencio si es "no contesto".
     expect(esPeriodoDePrueba("semana", "2026-W31")).toBe(false);
     expect(esPeriodoDePrueba("mes", "2026-08")).toBe(false);
+  });
+});
+
+/**
+ * El periodo del reporte es la SEMANA.
+ *
+ * Este bloque fijaba lo contrario del 6 al 17 de agosto de 2026, mientras la encuesta fue
+ * quincenal por un requisito mal entendido (lo que rota cada 15 días son las PREGUNTAS del
+ * bloque, no la encuesta). Se reescribe en vez de borrarse porque los casos que mide siguen
+ * siendo los mismos —id, etiqueta, duración y selector—, solo que con la respuesta de siempre.
+ */
+describe("el periodo del reporte es la SEMANA", () => {
+  it("cada semana es su propio periodo", () => {
+    const a = periodoDe({ semana: "2026-W33" }, "semana");
+    const b = periodoDe({ semana: "2026-W34" }, "semana");
+    expect(a.id).toBe("2026-W33");
+    expect(b.id).toBe("2026-W34");
+    expect(a.etiqueta).not.toBe(b.etiqueta);
+  });
+
+  it("una encuesta de otra semana NO cuenta en este periodo", () => {
+    expect(encuestaEnPeriodo({ semana: "2026-W34" }, "semana", "2026-W33")).toBe(false);
+    expect(encuestaEnPeriodo({ semana: "2026-W33" }, "semana", "2026-W33")).toBe(true);
+  });
+
+  it("la etiqueta es el numero de semana, sin hablar de quincenas", () => {
+    const p = periodoDe({ semana: "2026-W33" }, "semana");
+    expect(p.etiqueta).toBe("2026-W07");
+    expect(p.etiqueta).not.toContain("Quincena");
+  });
+
+  it("el periodo dura 7 dias", () => {
+    // Este valor acota el rango del reporte de asistencia, asi que no es solo una etiqueta:
+    // devolver 14 dias metia en la hoja una semana que no toca.
+    expect(inicioDePeriodo("semana", "2026-W33")).toBe("2026-08-10");
+    expect(finDePeriodo("semana", "2026-W33")).toBe("2026-08-16");
+    expect(finDePeriodo("semana", "2026-W31")).toBe("2026-08-02");
+    expect(periodoDe({ semana: "2026-W31" }, "semana").etiqueta).toBe("2026-W05");
+  });
+
+  it("el selector ofrece las dos semanas por separado, sin repetir ninguna", () => {
+    const periodos = periodosDisponibles(
+      [{ semana: "2026-W33" }, { semana: "2026-W34" }, { semana: "2026-W31" }],
+      "semana"
+    );
+    const ids = periodos.map((p) => p.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).toContain("2026-W33");
+    expect(ids).toContain("2026-W34");
   });
 });

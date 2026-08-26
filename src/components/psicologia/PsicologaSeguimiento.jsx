@@ -13,7 +13,7 @@ import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
 import { nivelColor, nivelBadgeBg, nivelTinte } from "../../config/theme";
-import { semanaActual, normalizeSucursal, sucursalMatches, isSemanaActual, formatSemanaDisplay } from "../../utils/constants";
+import { normalizeSucursal, sucursalMatches, esPeriodoActual, formatSemanaDisplay } from "../../utils/constants";
 import { calcPulseScore, getPulseStatus, tieneScoreValido } from "../../utils/pulseScore";
 import { esEmpleadoActivo } from "../../utils/helpers";
 
@@ -35,7 +35,7 @@ const PsicologaSeguimiento = ({ encuestas, notas, onUpdateNota, onDeleteNota }) 
   };
 
   const empleados = USERS.filter(esEmpleadoActivo);
-  const semanaEnc = encuestas.filter(e => isSemanaActual(e.semana));
+  const semanaEnc = encuestas.filter(e => esPeriodoActual(e.semana));
   const [nuevaNota, setNuevaNota] = useState({ empId: null, texto: "" });
   const [empleadoDetalle, setEmpleadoDetalle] = useState(null);
   useEscapeKey(() => setEmpleadoDetalle(null), !!empleadoDetalle);

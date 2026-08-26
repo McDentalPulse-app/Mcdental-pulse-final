@@ -32,6 +32,17 @@ const mapUsuarioRow = (row) =>
     // Puede fijar la geocerca de su clínica (recepción, mig. 103). Igual que soporteTi, es un
     // permiso aparte del rol: quienes lo tienen son rol `empleado` como todos los demás.
     puedeUbicarSucursal: !!row.puede_ubicar_sucursal,
+    // Inventario por clínica (mig. 120): dos permisos aparte del rol, activables persona por
+    // persona desde GestionUsuarios. Bodega ve/procesa pedidos de todas las clínicas;
+    // inventario ve/pide solo la suya. Una persona puede tener uno, otro, los dos o ninguno.
+    puedeGestionarBodega: !!row.puede_gestionar_bodega,
+    puedeGestionarInventario: !!row.puede_gestionar_inventario,
+    // Puede fichar dentro del área de cualquier clínica, no solo la suya (mig. 118). Para quien
+    // va a apoyar a otras sucursales y se quedaba sin poder marcar.
+    puedeMarcarEnCualquierClinica: !!row.puede_marcar_en_cualquier_clinica,
+    // Puede marcar SALIDA sin geocerca — solo la salida, la entrada sigue exigiendo estar en
+    // una clínica (mig. 127). Independiente del permiso de arriba.
+    puedeMarcarSalidaSinGeocerca: !!row.puede_marcar_salida_sin_geocerca,
     debeCambiarPassword: row.debe_cambiar_password,
     avatarUrl: row.avatar_url,
     bannerUrl: row.banner_url,

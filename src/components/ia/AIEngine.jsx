@@ -12,7 +12,7 @@ import PulseScoreBadge from "../common/PulseScoreBadge";
 import RiskBar from "../common/RiskBar";
 import { semaforoLabel, nivelColor, nivelTinte } from "../../config/theme";
 
-import { semanaActual, normalizeSucursal, formatSemanaDisplay } from "../../utils/constants";
+import { periodoActual, normalizeSucursal, formatSemanaDisplay } from "../../utils/constants";
 import { calcularAntiguedad, resolveFechaIngreso } from "../../utils/helpers";
 import { calcPulseScore, getPulseStatus, calcRiesgos, tieneScoreValido } from "../../utils/pulseScore";
 import { resumenEscalas } from "../../utils/encuestaDetail";
@@ -93,11 +93,11 @@ const AIEngine = ({ encuestas, mensajes, notas, userRole, permisos = [], descuen
   )];
   const bucketWeeks = {};
   semanasRaw.forEach(w => { (bucketWeeks[formatSemanaDisplay(w)] ||= []).push(w); });
-  const labelActual = formatSemanaDisplay(semanaActual);
+  const labelActual = formatSemanaDisplay(periodoActual);
   const opcionesSemana = [...new Set([labelActual, ...Object.keys(bucketWeeks)])].sort((a, b) => b.localeCompare(a));
   const defaultWeek = bucketWeeks[labelActual] ? labelActual : (opcionesSemana.find(o => bucketWeeks[o]) || labelActual);
   const [weekSel, setWeekSel] = useState(defaultWeek);
-  const selRawWeeks = bucketWeeks[weekSel] || (weekSel === labelActual ? [semanaActual] : []);
+  const selRawWeeks = bucketWeeks[weekSel] || (weekSel === labelActual ? [periodoActual] : []);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- selRawWeeks deriva de encuestas+weekSel
   const encuestasSemana = useMemo(
     () => encuestas.filter(e => selRawWeeks.includes(String(e.semana))),
@@ -169,7 +169,7 @@ const RESUMEN_LIMITE = 8;
     // (respuestas.emocional / .estres / .motivacion), que no existen en un jsonb indexado
     // por UUID: el prompt salía con "emocional=undefined, estres=undefined, mot=undefined".
     const escalas = (e) => resumenEscalas(e, encuestaPreguntas) || "sin detalle";
-    return `EXPEDIENTE: ${emp.name} | ${normalizeSucursal(emp.sucursal)} | ${emp.puesto} | Antigüedad: ${calcularAntiguedad(resolveFechaIngreso(emp))}Tendencia: ${pulse.tendencia}\nRiesgos: Renuncia ${riesgos.renuncia}%, Burnout ${riesgos.burnout}%, Emocional ${riesgos.emocional}%\nEncuestas (${enc.length} semanas): ${enc.slice(0,5).map(e=>`${e.semana}: ${escalas(e)}, score=${e.score}`).join(" | ")}\nNotas psicóloga: ${notasEmp.map(n=>n.texto).join(" | ") || "Ninguna"}\nMensajes: ${msgsEmp.map(m=>{const u=USERS.find(x=>x.id===m.de);return `${u?.name}: "${m.texto.slice(0,60)}"`;}).join(" | ") || "Ninguno"}`;
+    return `EXPEDIENTE: ${emp.name} | ${normalizeSucursal(emp.sucursal)} | ${emp.puesto} | Antigüedad: ${calcularAntiguedad(resolveFechaIngreso(emp))}Tendencia: ${pulse.tendencia}\nRiesgos: Renuncia ${riesgos.renuncia}%, Burnout ${riesgos.burnout}%, Emocional ${riesgos.emocional}%\nEncuestas (${enc.length} periodos): ${enc.slice(0,5).map(e=>`${e.semana}: ${escalas(e)}, score=${e.score}`).join(" | ")}\nNotas psicóloga: ${notasEmp.map(n=>n.texto).join(" | ") || "Ninguna"}\nMensajes: ${msgsEmp.map(m=>{const u=USERS.find(x=>x.id===m.de);return `${u?.name}: "${m.texto.slice(0,60)}"`;}).join(" | ") || "Ninguno"}`;
   };
 
   const generarResumen = async () => {
@@ -351,7 +351,7 @@ const RESUMEN_LIMITE = 8;
           icon={tab === "resumen" ? "clipboard" : tab === "alertas" ? "shieldAlert" : "wand"}
           title={tab === "resumen" ? "Resumen ejecutivo IA" : tab === "alertas" ? "Alertas inteligentes IA" : "Predicciones organizacionales IA"}
           desc={
-            tab === "resumen" ? "Síntesis semanal del clima organizacional redactada por Gemini."
+            tab === "resumen" ? "Síntesis del clima organizacional redactada por Gemini."
             : tab === "alertas" ? "Alertas priorizadas con acción recomendada, redactadas por Gemini."
             : "Proyección de renuncia, burnout y ausentismo por Gemini."
           }
@@ -509,7 +509,7 @@ const RESUMEN_LIMITE = 8;
               valor: tieneEmocional ? "Elevado" : a.pulse < 75 ? "Moderado" : "Bajo",
               detalle: tieneEmocional
                 ? "El Pulse Score y las señales recientes sugieren necesidad de seguimiento emocional."
-                : "No se observan señales críticas, mantener monitoreo semanal."
+                : "No se observan señales críticas, mantener el monitoreo."
             },
             {
               nombre: "Riesgo de ausentismo",
