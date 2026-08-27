@@ -196,18 +196,18 @@
   "weekStart": "2026-08-24",
   "weekEnd": "2026-08-28",
   "entorno": "pulse-db (VPS, producción)",
-  "lastUpdate": "jue 27 ago, 11:43",
+  "lastUpdate": "jue 27 ago, 12:25",
   "stats": [
-    {"id":"s1","value":"4","label":"migraciones de inventario aplicadas"},
+    {"id":"s1","value":"5","label":"migraciones de inventario aplicadas"},
     {"id":"s2","value":"33/33","label":"materiales con foto en catálogo"},
-    {"id":"s3","value":"9","label":"redeploys a producción"},
-    {"id":"s4","value":"6","label":"bugs corregidos"}
+    {"id":"s3","value":"10","label":"redeploys a producción"},
+    {"id":"s4","value":"8","label":"bugs corregidos"}
   ],
   "dayTags": {
     "2026-08-24": "Cimientos",
     "2026-08-25": "Catálogo real + UI",
     "2026-08-26": "Producción",
-    "2026-08-27": "Checador"
+    "2026-08-27": "Despliegue"
   },
   "entries": [
     {"id":"e1","date":"2026-08-24","category":"BACKEND","title":"Esquema de base de datos del inventario","desc":"Cuatro migraciones que arman todo el modelo: permisos de quién puede gestionar inventario o bodega, stock por sucursal, pedidos de material entre clínica y bodega, y ajustes manuales de stock.","refs":"migraciones 120–123 · permisos_inventario · inventario_por_sucursal · pedidos_material · ajuste_inventario"},
@@ -228,13 +228,17 @@
     {"id":"e16","date":"2026-08-26","category":"CORRECCION","title":"Pasada de auditoría: bug de permisos en bodega","desc":"bodega_procesar_pedido no dejaba pasar a admin (solo revisaba el flag de bodega), inconsistente con su función hermana ajustar_inventario. Corregido con el mismo patrón. Además: auditoría GRANT-vs-RLS en las 36 tablas (limpia) y recorrido de 38 rutas sin errores de consola.","refs":"migración 126"},
     {"id":"e17","date":"2026-08-26","category":"CORRECCION","title":"Bug: los submenús del menú de arriba desaparecían","desc":"El arreglo del desbordamiento horizontal (más arriba) tenía un efecto secundario: al usar overflow-x para que el menú no empujara la página, el navegador obliga a overflow-y a comportarse igual —y eso recortaba los submenús que se abren hacia abajo, dejándolos invisibles. Corregido con un enfoque distinto: el menú se envuelve a una segunda línea cuando no cabe, en vez de recortarse. Arregla las dos cosas a la vez.","refs":""},
     {"id":"e18","date":"2026-08-26","category":"UI","title":"Catálogo de materiales, paginado de 10 en 10","desc":"La tabla de Inventario ya no obliga a hacer tanto scroll — mismo patrón de paginación que ya usa Gestión de Personal (Anterior/Siguiente, \"Página X de Y\").","refs":""},
-    {"id":"e19","date":"2026-08-27","category":"FEATURE","title":"Bloqueo de entrada el viernes sin encuesta","desc":"A pedido del dueño: la encuesta semanal de bienestar se contesta sí o sí el viernes, antes de arrancar el día. Reemplaza (no se suma) al bloqueo que ya existía para el sábado en la salida — mismo mecanismo, mismo guard en la función de Postgres que registra la checada (es la única puerta real; el cliente solo evita el trámite de foto/ubicación para avisar antes). Verificado con SQL aislado en transacción con rollback contra la base real de la VPS: sin encuesta bloquea, con encuesta no bloquea, entre semana nunca bloquea. 573/573 tests, sin desplegar todavía.","refs":"migración 128 · ChecadorEmpleado.jsx · registrar_checada"}
+    {"id":"e19","date":"2026-08-27","category":"FEATURE","title":"Bloqueo de entrada el viernes sin encuesta","desc":"A pedido del dueño: la encuesta semanal de bienestar se contesta sí o sí el viernes, antes de arrancar el día. Reemplaza (no se suma) al bloqueo que ya existía para el sábado en la salida — mismo mecanismo, mismo guard en la función de Postgres que registra la checada (es la única puerta real; el cliente solo evita el trámite de foto/ubicación para avisar antes). Verificado con SQL aislado en transacción con rollback contra la base real de la VPS: sin encuesta bloquea, con encuesta no bloquea, entre semana nunca bloquea. 573/573 tests.","refs":"migración 128 · ChecadorEmpleado.jsx · registrar_checada"},
+    {"id":"e20","date":"2026-08-27","category":"CORRECCION","title":"Bodega: cola de pedidos en el orden equivocado","desc":"Los pedidos pendientes se mostraban con el más nuevo arriba (mismo orden que le sirve a Admin/Clínica para su propio historial) — en una cola de trabajo eso hunde un pedido viejo al fondo cada vez que entra uno nuevo. Se ordena por antigüedad solo en la pantalla de Bodega.","refs":"BodegaPanel.jsx"},
+    {"id":"e21","date":"2026-08-27","category":"UI","title":"Pedido rápido desde la fila de stock","desc":"\"Hacer pedido\" en Inventario de mi clínica era un formulario en blanco, sin importar si venías de ver un material en rojo en la tabla. Cada fila tiene ahora un botón \"+\" que abre el modal con ese material ya elegido, cantidad lista para escribir.","refs":"InventarioClinica.jsx"},
+    {"id":"e22","date":"2026-08-27","category":"CORRECCION","title":"Hallazgo al desplegar: columna de acciones se salía de la tabla","desc":"El guardián visual (build-frontend.sh) abortó el primer intento de despliegue: encontró que la columna de acciones de Gestión de Personal se salía de la vista en pantallas angostas (una fila con 4 botones —editar/contraseña/restaurar/borrar— solo enseñaba 2 al desplazar la tabla). El arreglo de CSS y la comprobación que lo vigila llevaban semanas escritos en la VPS sin comitear, de una sesión anterior — se sincronizaron al repo y se completó el CSS que faltaba (ancla la columna al borde derecho con su propio fondo). 20/20 comprobaciones visuales en verde.","refs":"App.css · scripts/verificar-visual.mjs"},
+    {"id":"e23","date":"2026-08-27","category":"VERIFICACION","title":"Desplegado a producción","desc":"Migración 128 aplicada de verdad contra pulse-db (confirmada leyendo la función ya instalada), frontend reconstruido y cambiado con el guardián en verde, bundle servido confirmado con el mensaje nuevo del checador. Antes de tocar nada se encontró que el git de la VPS lleva semanas divergido del repo local (historial distinto, ~16 archivos sin comitear ahí) — se verificó archivo por archivo (md5sum) que lo que se iba a sobrescribir coincidía exactamente antes de mandar nada, así que no se perdió ni se pisó trabajo de nadie. Push a GitHub falló (token de gh vencido) — pendiente correr gh auth login a mano.","refs":"migración 128 · pulse-frontend · ChecadorEmpleado.jsx · BodegaPanel.jsx · InventarioClinica.jsx · App.css"}
   ],
   "pendings": [
     {"id":"p1","text":"Cantidades reales de stock por clínica — el Excel no las traía.","owner":"dueño"},
     {"id":"p2","text":"Umbrales de aviso reales por material — hoy los 33 en 5 parejo.","owner":"dueño"},
     {"id":"p3","text":"Fotos reales de los materiales que quedaron con imagen genérica.","owner":"dueño"},
-    {"id":"p4","text":"Configurar identidad de git para poder comitear el trabajo de esta semana.","owner":"dueño"}
+    {"id":"p5","text":"Renovar el token de gh en la PC — el push a GitHub de respaldo falló por credenciales vencidas.","owner":"usuario"}
   ]
 }
 </script>
