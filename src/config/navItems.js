@@ -27,6 +27,7 @@ export const NAV_ITEMS = {
     { key: "config", icon: "settings", label: "Config", group: "Herramientas" },
     { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
     { key: "mensajes", icon: "message", label: "Mensajes" },
+    { key: "notas", icon: "note", label: "Notas" },
     { key: "reuniones", icon: "camera", label: "Reuniones" },
     { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
     { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
@@ -57,6 +58,7 @@ export const NAV_ITEMS = {
     { key: "ai", icon: "ai", label: "AI Engine", group: "Herramientas" },
     { key: "config", icon: "settings", label: "Config", group: "Herramientas" },
     { key: "mensajes", icon: "message", label: "Mensajes" },
+    { key: "notas", icon: "note", label: "Notas" },
     { key: "reuniones", icon: "camera", label: "Reuniones" },
     { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
     { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
@@ -97,6 +99,7 @@ export const NAV_ITEMS = {
     { key: "config", icon: "settings", label: "Config", group: "Herramientas" },
     { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
     { key: "mensajes", icon: "message", label: "Mensajes" },
+    { key: "notas", icon: "note", label: "Notas" },
     { key: "reuniones", icon: "camera", label: "Reuniones" },
     { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
     { key: "soporteti", icon: "wrench", label: "Soporte TI", group: "Herramientas" },
@@ -108,6 +111,7 @@ export const NAV_ITEMS = {
   empleado: [
     { key: "inicio", icon: "home", label: "Inicio" },
     { key: "mensajes", icon: "message", label: "Mensajes" },
+    { key: "notas", icon: "note", label: "Notas" },
     { key: "reuniones", icon: "camera", label: "Reuniones" },
     // "Mi rostro" vive en Asistencia porque solo existe para que el checador te reconozca.
     { key: "checador", icon: "clock", label: "Checador", group: "Asistencia" },
@@ -131,6 +135,7 @@ export const NAV_ITEMS = {
   doctor: [
     { key: "inicio", icon: "home", label: "Inicio" },
     { key: "mensajes", icon: "message", label: "Mensajes" },
+    { key: "notas", icon: "note", label: "Notas" },
     { key: "reuniones", icon: "camera", label: "Reuniones" },
     // Comisiones va suelto y no dentro de un grupo: es lo que un doctor abre a diario, y
     // enterrarlo a dos clics es justo lo contrario de lo que se buscaba al reordenar esto.

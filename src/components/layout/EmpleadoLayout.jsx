@@ -15,6 +15,7 @@ import Mensajes from '../comunicacion/Mensajes';
 import PaginaReuniones from '../comunicacion/PaginaReuniones';
 import Perfil from '../common/Perfil';
 import AvisosPanel from '../avisos/AvisosPanel';
+import NotasPanel from '../notas/NotasPanel';
 import CalendarioIntercambio from '../calendario/CalendarioIntercambio';
 
 
@@ -73,6 +74,7 @@ export default function EmpleadoLayout({ user, globals, actions }) {
             <Route path="mensajes" element={<Mensajes user={user} mensajes={userMensajes} onSend={sendMensaje} onMarkRead={marcarMensajesLeidos}/>} />
             <Route path="reuniones" element={<PaginaReuniones user={user} />} />
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} />} />
+            <Route path="notas" element={<NotasPanel user={user} />} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="/empleado/inicio" replace />} />
           </Routes>

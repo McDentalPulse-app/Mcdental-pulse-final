@@ -28,6 +28,7 @@ import PaginaReuniones from '../comunicacion/PaginaReuniones';
 import AvisoPush from '../asistencia/AvisoPush';
 import { useAvisoPush } from '../../hooks/useAvisoPush';
 import AvisosPanel from '../avisos/AvisosPanel';
+import NotasPanel from '../notas/NotasPanel';
 
 import AvisoUbicacion from '../asistencia/AvisoUbicacion';
 import { useAvisoUbicacion } from '../../hooks/useAvisoUbicacion';
@@ -77,6 +78,7 @@ export default function AdminLayout({ user, globals, actions }) {
             <Route path="reuniones" element={<PaginaReuniones user={user} />} />
             <Route path="soporte" element={<IdeasMejora user={user} />} />
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} />} />
+            <Route path="notas" element={<NotasPanel user={user} />} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
           </Routes>
