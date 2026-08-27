@@ -119,9 +119,9 @@ const EsperaAviso = ({ userId }) => {
  * botón que de todos modos le rechazaría la base. El formulario vive en un panel deslizante
  * para que la pantalla abra con los avisos y no con un formulario de tres cuartos de alto.
  */
-// MP4 y 50 MB: mismo tope que hace cumplir el bucket (migración 129). Se valida acá
+// MP4 y 200 MB: mismo tope que hace cumplir el bucket (migraciones 129/130). Se valida acá
 // también para avisar de inmediato, sin esperar a que la subida entera falle al final.
-const VIDEO_TAM_MAX = 52428800;
+const VIDEO_TAM_MAX = 209715200;
 
 const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete, onSubirVideo, onQuitarVideo }) => {
   const { toast, confirm } = useNotification();
@@ -164,7 +164,7 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete, onSubirVide
       return;
     }
     if (archivo.size > VIDEO_TAM_MAX) {
-      toast.warning("El video pesa más de 50 MB. Comprímelo o recórtalo antes de subirlo.");
+      toast.warning("El video pesa más de 200 MB. Comprímelo o recórtalo antes de subirlo.");
       return;
     }
     setVideoFile(archivo);
@@ -324,7 +324,7 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete, onSubirVide
 
               <div className="mc-form-group">
                 <label className="mc-form-label" htmlFor="aviso-video">Video (opcional)</label>
-                <p className="mc-hint">MP4, máx. 50 MB. Se reproduce junto con el aviso.</p>
+                <p className="mc-hint">MP4, máx. 200 MB. Se reproduce junto con el aviso.</p>
                 {videoPreviewUrl ? (
                   <div className="aviso-video-preview">
                     <video controls src={videoPreviewUrl} className="aviso-video" />

@@ -2,7 +2,7 @@ import { supabase } from "../../config/supabase";
 import { fetchAll } from "./fetchAll";
 
 const BUCKET_VIDEOS = "avisos-videos";
-const VIDEO_TAM_MAX = 52428800; // 50 MB, mismo tope que el bucket (migración 129)
+const VIDEO_TAM_MAX = 209715200; // 200 MB, mismo tope que el bucket (migraciones 129/130)
 
 // La firma del autor vive en columnas de `avisos` (autor_nombre/autor_rol, migración 084) y
 // no en un join a `usuarios`: la RLS de esa tabla solo deja a cada quien leer su propia fila,
@@ -109,14 +109,14 @@ export const deleteAviso = async (id) => {
 
 // Video adjunto (migración 129). Mismo patrón de dos pasos que subirImagenMaterial: el
 // aviso ya existe (necesitamos su id para nombrar el archivo), acá solo se le pone el
-// video. Solo MP4 y 50 MB — el bucket lo hace cumplir igual del lado del servidor, esto
+// video. Solo MP4 y 200 MB — el bucket lo hace cumplir igual del lado del servidor, esto
 // evita hacer esperar la subida entera para enterarse de que iba a fallar.
 export const subirVideoAviso = async (avisoId, archivo) => {
   if (archivo.type !== "video/mp4") {
     throw new Error("Solo se aceptan videos en formato MP4.");
   }
   if (archivo.size > VIDEO_TAM_MAX) {
-    throw new Error("El video pesa más de 50 MB. Comprímelo o recórtalo antes de subirlo.");
+    throw new Error("El video pesa más de 200 MB. Comprímelo o recórtalo antes de subirlo.");
   }
 
   const ruta = `${avisoId}.mp4`;
