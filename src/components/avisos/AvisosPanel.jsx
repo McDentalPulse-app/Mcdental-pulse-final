@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import Card from "../common/Card";
 import EmptyState from "../common/EmptyState";
@@ -144,14 +144,18 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete, onSubirVide
   const [videoUrlActual, setVideoUrlActual] = useState(null);
   const [subiendoVideo, setSubiendoVideo] = useState(false);
 
-  const videoPreviewUrl = videoFile ? URL.createObjectURL(videoFile) : videoUrlActual;
-  // Libera el object URL del archivo elegido al desmontar/cambiar — si no, cada selección
-  // deja una URL blob viva colgada de memoria hasta que se recargue la página.
+  // useMemo, no una expresión suelta: sin esto, cada render (había uno de más por CADA
+  // tecla del título/cuerpo, por compartir componente) creaba una URL de blob nueva sin
+  // liberar la anterior. Con memo solo se crea una vez por archivo, y el efecto de abajo
+  // libera esa única URL al cambiar o desmontar.
+  const videoPreviewUrl = useMemo(
+    () => (videoFile ? URL.createObjectURL(videoFile) : videoUrlActual),
+    [videoFile, videoUrlActual]
+  );
   useEffect(() => {
     if (!videoFile) return undefined;
-    const url = videoPreviewUrl;
-    return () => URL.revokeObjectURL(url);
-  }, [videoFile]); // eslint-disable-line react-hooks/exhaustive-deps
+    return () => URL.revokeObjectURL(videoPreviewUrl);
+  }, [videoFile, videoPreviewUrl]);
 
   const elegirVideo = (archivo) => {
     if (!archivo) return;
@@ -164,6 +168,9 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete, onSubirVide
       return;
     }
     setVideoFile(archivo);
+    // Confirmación visible y distinta de cualquier otro aviso — así se sabe que el archivo
+    // sí quedó elegido, sin depender de fijarse en la vista previa.
+    toast.success(`Video listo para publicar: ${archivo.name}`);
   };
 
   const quitarVideo = async () => {
@@ -237,10 +244,19 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete, onSubirVide
     const avisoId = editandoId || resultado?.id;
     const ok = editandoId ? resultado : !!resultado;
 
-    if (ok && videoFile && avisoId) {
-      setSubiendoVideo(true);
-      await onSubirVideo(avisoId, videoFile);
-      setSubiendoVideo(false);
+    // Nada de esto queda callado: si eligieron un video, alguna de las tres ramas de abajo
+    // avisa qué pasó — antes, si `avisoId` salía vacío por lo que fuera, esto no hacía nada
+    // y el video se perdía sin ningún mensaje.
+    if (videoFile) {
+      if (ok && avisoId) {
+        setSubiendoVideo(true);
+        const subido = await onSubirVideo(avisoId, videoFile);
+        setSubiendoVideo(false);
+        if (subido) toast.success("Video subido.");
+        // Si falló, onSubirVideo ya mostró su propio aviso de error.
+      } else if (ok) {
+        toast.error("El aviso se guardó, pero no se pudo subir el video (no se encontró su id). Editalo para volver a intentarlo.");
+      }
     }
     setEnviando(false);
 
