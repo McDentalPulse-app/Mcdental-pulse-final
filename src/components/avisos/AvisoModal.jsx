@@ -43,6 +43,11 @@ const ContenidoAviso = ({ aviso, segundosEspera, onAceptar }) => {
       </div>
       <h2 id="aviso-modal-title" className="mc-notify-modal-title">{aviso.titulo}</h2>
       <HtmlSeguro className="mc-notify-modal-desc aviso-modal-cuerpo aviso-html" html={aviso.cuerpo} />
+      {aviso.videoUrl && (
+        // Sin autoplay: el modal ya es bloqueante de por sí, que además arranque sonido o
+        // gaste datos móviles solo sería de más.
+        <video controls src={aviso.videoUrl} className="aviso-video aviso-modal-video" />
+      )}
       {aviso.autor && (
         <p className="aviso-modal-autor">
           <span>— {aviso.autor}{rol ? ` · ${rol}` : ""}</span>

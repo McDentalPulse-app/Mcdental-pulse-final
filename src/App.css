@@ -3100,6 +3100,13 @@
 .aviso-modal-cuerpo { text-align: left; max-height: 40vh; overflow-y: auto; }
 .aviso-modal-autor { margin: 0 0 22px; color: var(--mc-texto-apagado); font-size: 13px; font-style: italic; }
 
+/* Video adjunto (migración 129): mismo look en el modal bloqueante, la tarjeta del
+   historial y la vista previa del formulario — un solo selector para los tres. */
+.aviso-video { display: block; width: 100%; max-width: 100%; border-radius: var(--mc-radio); margin: 4px 0 16px; background: #000; }
+.aviso-modal-video { max-height: 40vh; }
+.aviso-video-preview { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.aviso-video-preview .aviso-video { margin-bottom: 0; max-height: 220px; width: auto; max-width: 100%; }
+
 /* Historial de avisos (AvisosPanel.jsx): una tarjeta por comunicado, con el texto COMPLETO.
    Antes se recortaba a 2 líneas y el empleado — a quien va dirigido — no podía leerlo entero
    más que en el modal bloqueante del momento. */

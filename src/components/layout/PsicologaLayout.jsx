@@ -41,7 +41,7 @@ export default function PsicologaLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
   const { encuestas, mensajes, notas, permisos, descuentos, comisiones, reconocimientos, reportesConfidenciales, vacaciones, horarios, setHorarios, archivosExpediente, avisos, checadasHoy, festivos, intercambios } = globals;
-  const { restablecerPasswordUsuario, addNota, deleteNota, sendMensaje, marcarMensajesLeidos, addReconocimiento, subirArchivoExpediente, eliminarArchivoExpediente, addAviso, updateAviso, deleteAviso, justificarFalta, updatePermisoEstado, updateVacacionEstado, agendarPropio, revisarComision, registrarChecada, resolverIntercambio, addFestivo, deleteFestivo } = actions;
+  const { restablecerPasswordUsuario, addNota, deleteNota, sendMensaje, marcarMensajesLeidos, addReconocimiento, subirArchivoExpediente, eliminarArchivoExpediente, addAviso, updateAviso, deleteAviso, subirVideoAviso, quitarVideoAviso, justificarFalta, updatePermisoEstado, updateVacacionEstado, agendarPropio, revisarComision, registrarChecada, resolverIntercambio, addFestivo, deleteFestivo } = actions;
   const { ofrecerPush, activarAvisos, cerrarOfertaPush } = useAvisoPush();
 
   const { ofrecerUbicacion, estadoUbicacion, activarUbicacion, cerrarAviso } = useAvisoUbicacion();
@@ -86,7 +86,7 @@ export default function PsicologaLayout({ user, globals, actions }) {
             <Route path="config" element={<Config />} />
             <Route path="soporte" element={<IdeasMejora user={user} />} />
             <Route path="soporteti" element={<SoporteTI user={user} />} />
-            <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} />} />
+            <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} onSubirVideo={subirVideoAviso} onQuitarVideo={quitarVideoAviso} />} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="/psicologa/dashboard" replace />} />
           </Routes>

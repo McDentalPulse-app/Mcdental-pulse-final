@@ -23,6 +23,8 @@ import {
   updateAviso as updateAvisoDb,
   deleteAviso as deleteAvisoDb,
   marcarAvisoLeido as marcarAvisoLeidoDb,
+  subirVideoAviso as subirVideoAvisoDb,
+  quitarVideoAviso as quitarVideoAvisoDb,
 } from "../services/supabase/avisosService";
 
 export const useAppActions = () => {
@@ -517,16 +519,44 @@ export const useAppActions = () => {
     }
   };
 
+  // Devuelve el aviso creado (no solo true/false): AvisosPanel necesita su id para poder
+  // subirle el video justo después, en el mismo flujo de "Publicar aviso".
   const addAviso = async ({ titulo, cuerpo, sucursales }) => {
     try {
       const nuevo = await addAvisoDb({ titulo, cuerpo, creadoPor: user?.id, sucursales });
       setAvisos(prev => [nuevo, ...prev]);
       // La notificación a la plantilla (fila en la campana de cada quien) la dispara un trigger
       // de BD al insertarse el aviso (migración 065), no el cliente.
-      return true;
+      return nuevo;
     } catch (error) {
       console.error("Error guardando aviso:", error);
       notify.toast.error(error?.message || "No se pudo guardar el aviso.");
+      return null;
+    }
+  };
+
+  const subirVideoAviso = async (avisoId, archivo) => {
+    try {
+      const videoUrl = await subirVideoAvisoDb(avisoId, archivo);
+      setAvisos(prev => prev.map(a => a.id === avisoId ? { ...a, videoUrl } : a));
+      return true;
+    } catch (error) {
+      console.error("Error subiendo video de aviso:", error);
+      notify.toast.error(error?.message || "No se pudo subir el video.");
+      return false;
+    }
+  };
+
+  const quitarVideoAviso = async (avisoId, videoUrl) => {
+    const previo = avisos.find(a => a.id === avisoId);
+    setAvisos(prev => prev.map(a => a.id === avisoId ? { ...a, videoUrl: null } : a));
+    try {
+      await quitarVideoAvisoDb(avisoId, videoUrl);
+      return true;
+    } catch (error) {
+      console.error("Error quitando video de aviso:", error);
+      if (previo) setAvisos(prev => prev.map(a => a.id === avisoId ? previo : a));
+      notify.toast.error(error?.message || "No se pudo quitar el video.");
       return false;
     }
   };
@@ -606,6 +636,8 @@ export const useAppActions = () => {
     addAviso,
     updateAviso,
     deleteAviso,
+    subirVideoAviso,
+    quitarVideoAviso,
     marcarAvisoLeido,
   };
 };

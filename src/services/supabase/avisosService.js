@@ -1,6 +1,9 @@
 import { supabase } from "../../config/supabase";
 import { fetchAll } from "./fetchAll";
 
+const BUCKET_VIDEOS = "avisos-videos";
+const VIDEO_TAM_MAX = 52428800; // 50 MB, mismo tope que el bucket (migración 129)
+
 // La firma del autor vive en columnas de `avisos` (autor_nombre/autor_rol, migración 084) y
 // no en un join a `usuarios`: la RLS de esa tabla solo deja a cada quien leer su propia fila,
 // así que al empleado — justo a quien va dirigido el aviso — el join le volvía vacío y la
@@ -16,6 +19,7 @@ const mapAviso = (row) => ({
   autor: row.autor_nombre,
   autorRol: row.autor_rol,
   sucursales: row.sucursales || [],
+  videoUrl: row.video_url,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -100,6 +104,62 @@ export const deleteAviso = async (id) => {
   if (error) {
     console.error("Error eliminando el aviso:", error);
     throw new Error("No se pudo eliminar el aviso.");
+  }
+};
+
+// Video adjunto (migración 129). Mismo patrón de dos pasos que subirImagenMaterial: el
+// aviso ya existe (necesitamos su id para nombrar el archivo), acá solo se le pone el
+// video. Solo MP4 y 50 MB — el bucket lo hace cumplir igual del lado del servidor, esto
+// evita hacer esperar la subida entera para enterarse de que iba a fallar.
+export const subirVideoAviso = async (avisoId, archivo) => {
+  if (archivo.type !== "video/mp4") {
+    throw new Error("Solo se aceptan videos en formato MP4.");
+  }
+  if (archivo.size > VIDEO_TAM_MAX) {
+    throw new Error("El video pesa más de 50 MB. Comprímelo o recórtalo antes de subirlo.");
+  }
+
+  const ruta = `${avisoId}.mp4`;
+  const { error: uploadError } = await supabase.storage
+    .from(BUCKET_VIDEOS)
+    .upload(ruta, archivo, { upsert: true, contentType: "video/mp4" });
+  if (uploadError) {
+    console.error("Error subiendo video de aviso:", uploadError);
+    throw new Error("No se pudo subir el video.");
+  }
+
+  const { data } = supabase.storage.from(BUCKET_VIDEOS).getPublicUrl(ruta);
+  const videoUrl = `${data.publicUrl}?v=${Date.now()}`;
+
+  const { error: dbError } = await supabase
+    .from("avisos")
+    .update({ video_url: videoUrl })
+    .eq("id", avisoId);
+  if (dbError) {
+    console.error("Error guardando video_url:", dbError);
+    throw new Error("El video se subió pero no se pudo guardar en el aviso.");
+  }
+
+  return videoUrl;
+};
+
+// Quita el video de un aviso sin tocar el resto. Borrar el objeto del bucket es
+// best-effort: si falla (ya no existía, red, lo que sea) igual se limpia la columna — un
+// archivo huérfano en Storage no es un problema, un aviso que sigue enseñando un video que
+// ya nadie quiere ahí, sí.
+export const quitarVideoAviso = async (avisoId, videoUrl) => {
+  if (videoUrl) {
+    const ruta = `${avisoId}.mp4`;
+    await supabase.storage.from(BUCKET_VIDEOS).remove([ruta]).catch(() => {});
+  }
+
+  const { error } = await supabase
+    .from("avisos")
+    .update({ video_url: null })
+    .eq("id", avisoId);
+  if (error) {
+    console.error("Error quitando el video del aviso:", error);
+    throw new Error("No se pudo quitar el video.");
   }
 };
 

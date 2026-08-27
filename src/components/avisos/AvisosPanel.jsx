@@ -119,7 +119,11 @@ const EsperaAviso = ({ userId }) => {
  * botón que de todos modos le rechazaría la base. El formulario vive en un panel deslizante
  * para que la pantalla abra con los avisos y no con un formulario de tres cuartos de alto.
  */
-const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
+// MP4 y 50 MB: mismo tope que hace cumplir el bucket (migración 129). Se valida acá
+// también para avisar de inmediato, sin esperar a que la subida entera falle al final.
+const VIDEO_TAM_MAX = 52428800;
+
+const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete, onSubirVideo, onQuitarVideo }) => {
   const { toast, confirm } = useNotification();
   const { nombresSucursales } = useGlobal();
   const puedeGestionar = ROLES_GESTION.includes(user?.role);
@@ -131,6 +135,46 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
   const [buscarSuc, setBuscarSuc] = useState("");
   const [editandoId, setEditandoId] = useState(null);
   const [enviando, setEnviando] = useState(false);
+
+  // Video adjunto: `videoFile` es lo recién elegido en el <input>, todavía sin subir (se
+  // sube junto con el resto al enviar el formulario); `videoUrlActual` es el que ya estaba
+  // guardado al editar. Nunca los dos "compiten": elegir uno nuevo reemplaza la vista previa
+  // del guardado, y "Quitar video" borra cualquiera de los dos.
+  const [videoFile, setVideoFile] = useState(null);
+  const [videoUrlActual, setVideoUrlActual] = useState(null);
+  const [subiendoVideo, setSubiendoVideo] = useState(false);
+
+  const videoPreviewUrl = videoFile ? URL.createObjectURL(videoFile) : videoUrlActual;
+  // Libera el object URL del archivo elegido al desmontar/cambiar — si no, cada selección
+  // deja una URL blob viva colgada de memoria hasta que se recargue la página.
+  useEffect(() => {
+    if (!videoFile) return undefined;
+    const url = videoPreviewUrl;
+    return () => URL.revokeObjectURL(url);
+  }, [videoFile]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const elegirVideo = (archivo) => {
+    if (!archivo) return;
+    if (archivo.type !== "video/mp4") {
+      toast.warning("Solo se aceptan videos en formato MP4.");
+      return;
+    }
+    if (archivo.size > VIDEO_TAM_MAX) {
+      toast.warning("El video pesa más de 50 MB. Comprímelo o recórtalo antes de subirlo.");
+      return;
+    }
+    setVideoFile(archivo);
+  };
+
+  const quitarVideo = async () => {
+    if (editandoId && videoUrlActual && !videoFile) {
+      // Ya estaba guardado: hay que avisarle a la base, no solo limpiar la vista.
+      const ok = await onQuitarVideo(editandoId, videoUrlActual);
+      if (!ok) return;
+    }
+    setVideoFile(null);
+    setVideoUrlActual(null);
+  };
 
   const toggleSucursal = (s) =>
     setSucursalesSel((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
@@ -145,6 +189,8 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
     setSucursalesSel([]);
     setBuscarSuc("");
     setEditandoId(null);
+    setVideoFile(null);
+    setVideoUrlActual(null);
   };
 
   // Mientras se guarda no se cierra con Escape ni con clic fuera: irse a media petición
@@ -157,6 +203,8 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
     setSucursalesSel([]);
     setBuscarSuc("");
     setEditandoId(null);
+    setVideoFile(null);
+    setVideoUrlActual(null);
     setAbierto(true);
   };
 
@@ -166,6 +214,8 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
     setSucursalesSel(aviso.sucursales || []);
     setBuscarSuc("");
     setEditandoId(aviso.id);
+    setVideoFile(null);
+    setVideoUrlActual(aviso.videoUrl || null);
     setAbierto(true);
   };
 
@@ -180,9 +230,18 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
     }
 
     setEnviando(true);
-    const ok = editandoId
-      ? await onUpdate(editandoId, { titulo: titulo.trim(), cuerpo: cuerpo.trim(), sucursales: sucursalesSel })
-      : await onAdd({ titulo: titulo.trim(), cuerpo: cuerpo.trim(), sucursales: sucursalesSel });
+    const datos = { titulo: titulo.trim(), cuerpo: cuerpo.trim(), sucursales: sucursalesSel };
+    // onAdd devuelve el aviso creado (o null); onUpdate sigue devolviendo true/false — en
+    // los dos casos se necesita saber a qué id subirle el video, si eligieron uno.
+    const resultado = editandoId ? await onUpdate(editandoId, datos) : await onAdd(datos);
+    const avisoId = editandoId || resultado?.id;
+    const ok = editandoId ? resultado : !!resultado;
+
+    if (ok && videoFile && avisoId) {
+      setSubiendoVideo(true);
+      await onSubirVideo(avisoId, videoFile);
+      setSubiendoVideo(false);
+    }
     setEnviando(false);
 
     if (ok) {
@@ -245,6 +304,34 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
                 <Suspense fallback={<div className="editor-cargando">Cargando editor…</div>}>
                   <EditorTexto value={cuerpo} onChange={setCuerpo} placeholder="Escribe el comunicado completo." />
                 </Suspense>
+              </div>
+
+              <div className="mc-form-group">
+                <label className="mc-form-label" htmlFor="aviso-video">Video (opcional)</label>
+                <p className="mc-hint">MP4, máx. 50 MB. Se reproduce junto con el aviso.</p>
+                {videoPreviewUrl ? (
+                  <div className="aviso-video-preview">
+                    <video controls src={videoPreviewUrl} className="aviso-video" />
+                    <button
+                      type="button"
+                      className="mc-btn-outline"
+                      disabled={enviando || subiendoVideo}
+                      onClick={quitarVideo}
+                    >
+                      Quitar video
+                    </button>
+                  </div>
+                ) : (
+                  <input
+                    id="aviso-video"
+                    className="mc-form-input"
+                    type="file"
+                    accept="video/mp4"
+                    disabled={enviando || subiendoVideo}
+                    onChange={(e) => elegirVideo(e.target.files?.[0])}
+                  />
+                )}
+                {subiendoVideo && <p className="mc-hint">Subiendo video…</p>}
               </div>
 
               <div className="mc-form-group">
@@ -359,6 +446,8 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
                 </div>
 
                 <HtmlSeguro className="aviso-card-cuerpo aviso-html" html={a.cuerpo} />
+
+                {a.videoUrl && <video controls src={a.videoUrl} className="aviso-video" />}
 
                 {a.sucursales?.length > 0 && (
                   <div className="aviso-row-sucursales">
