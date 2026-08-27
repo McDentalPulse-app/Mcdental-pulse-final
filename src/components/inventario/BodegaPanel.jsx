@@ -43,7 +43,12 @@ export default function BodegaPanel() {
     setCargando(true);
     try {
       const [peds, stock, mats] = await Promise.all([getPedidos(), getInventarioTodasSucursales(), getMateriales()]);
-      const pendientes = peds.filter((p) => p.estado === "pendiente");
+      // Más viejo primero: getPedidos() trae todo con lo más reciente arriba (le conviene a
+      // Admin/Clínica ver su propio historial así), pero acá es una cola de trabajo — un
+      // pedido viejo no se puede quedar hundido al fondo cada vez que entra uno nuevo.
+      const pendientes = peds
+        .filter((p) => p.estado === "pendiente")
+        .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
       setPedidos(pendientes);
       setMateriales(mats.filter((m) => m.activo));
       setStockPorClave(new Map(stock.map((s) => [`${s.sucursalId}:${s.materialId}`, s.cantidadActual])));

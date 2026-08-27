@@ -55,6 +55,13 @@ export default function InventarioClinica({ user }) {
   const [comentarioPedido, setComentarioPedido] = useState("");
   const [guardandoPedido, setGuardandoPedido] = useState(false);
 
+  // "Pedir" desde una fila de la tabla: abre el modal con ese material ya elegido, en vez de
+  // mandar a buscarlo otra vez en el <select> del formulario en blanco.
+  const abrirPedido = (materialId = "") => {
+    setLineasPedido([{ materialId, cantidad: "" }]);
+    setModalPedido(true);
+  };
+
   useEscapeKey(() => { setModalMovimiento(false); setModalPedido(false); }, modalMovimiento || modalPedido);
 
   useEffect(() => {
@@ -169,7 +176,7 @@ export default function InventarioClinica({ user }) {
         <button type="button" className="mc-btn-outline mc-btn-with-icon" onClick={() => setModalMovimiento(true)}>
           <Icon name="minus" size={16} /> Registrar movimiento
         </button>
-        <button type="button" className="mc-btn-primary mc-btn-with-icon" onClick={() => setModalPedido(true)}>
+        <button type="button" className="mc-btn-primary mc-btn-with-icon" onClick={() => abrirPedido()}>
           <Icon name="package" size={16} /> Hacer pedido
         </button>
       </PageHeader>
@@ -187,6 +194,7 @@ export default function InventarioClinica({ user }) {
                   <tr>
                     <th className="emp-table-th emp-table-th--nombre">Material</th>
                     <th className="emp-table-th">Stock</th>
+                    <th className="emp-table-th emp-table-th--acciones" />
                   </tr>
                 </thead>
                 <tbody>
@@ -205,11 +213,22 @@ export default function InventarioClinica({ user }) {
                       <td>
                         <StockBar actual={it.cantidadActual} umbral={it.umbralStockBajo} unidad={it.unidadMedida} />
                       </td>
+                      <td className="emp-table-acciones">
+                        <button
+                          type="button"
+                          className="emp-table-icon-btn"
+                          title="Pedir este material"
+                          aria-label={`Pedir ${it.material}`}
+                          onClick={() => abrirPedido(it.materialId)}
+                        >
+                          <Icon name="plus" size={15} />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                   {inventarioFiltrado.length === 0 && (
                     <tr>
-                      <td colSpan="2" className="emp-table-vacio">
+                      <td colSpan="3" className="emp-table-vacio">
                         {inventario.length === 0 ? "Todavía no hay movimientos registrados." : "No se encontraron materiales."}
                       </td>
                     </tr>
