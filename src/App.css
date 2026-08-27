@@ -11750,7 +11750,14 @@
    se abren hacia abajo (`.topnav-menu`, position: absolute, vive dentro de este contenedor).
    Envolver a una segunda línea no recorta nada: .topnav-inner solo crece de alto
    (min-height, ya no height fija). */
-.topnav-links { display: flex; align-items: center; flex-wrap: wrap; row-gap: 6px; column-gap: 2px; flex: 1; min-width: 0; margin-left: 10px; }
+.topnav-links { display: flex; align-items: center; flex-wrap: nowrap; overflow: hidden; column-gap: 2px; flex: 1; min-width: 0; margin-left: 10px; }
+
+/* Fila gemela para medir el ancho real de cada entrada (JS decide con esto cuántas caben
+   antes de juntar el resto en "Más") — invisible, fuera de flujo, nunca se pinta. */
+/* width/height 0 + overflow hidden en vez de mandarla fuera de pantalla con un offset
+   negativo: así no hay riesgo de que sume scroll horizontal a la página por accidente
+   (justo el tipo de bug que ya mordió a esta barra antes). */
+.topnav-medidor { position: absolute; width: 0; height: 0; overflow: hidden; display: flex; flex-wrap: nowrap; visibility: hidden; pointer-events: none; }
 .topnav-link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px; border: none; background: none; color: var(--mc-texto-secundario); font-size: 14px; font-weight: 600; border-radius: 8px; cursor: pointer; white-space: nowrap; font-family: inherit; }
 .topnav-link:hover { background: var(--mc-superficie-sutil); color: var(--mc-texto-titulo); }
 .topnav-link--activo { color: var(--mc-aqua); background: var(--mc-brand-suave); }
