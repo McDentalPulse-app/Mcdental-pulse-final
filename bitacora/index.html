@@ -196,12 +196,12 @@
   "weekStart": "2026-08-24",
   "weekEnd": "2026-08-28",
   "entorno": "pulse-db (VPS, producción)",
-  "lastUpdate": "jue 27 ago, 14:24",
+  "lastUpdate": "jue 27 ago, 15:27",
   "stats": [
-    {"id":"s1","value":"6","label":"migraciones aplicadas"},
+    {"id":"s1","value":"7","label":"migraciones aplicadas"},
     {"id":"s2","value":"33/33","label":"materiales con foto en catálogo"},
-    {"id":"s3","value":"13","label":"redeploys a producción"},
-    {"id":"s4","value":"9","label":"bugs corregidos"}
+    {"id":"s3","value":"15","label":"redeploys a producción"},
+    {"id":"s4","value":"10","label":"bugs corregidos"}
   ],
   "dayTags": {
     "2026-08-24": "Cimientos",
@@ -235,13 +235,16 @@
     {"id":"e23","date":"2026-08-27","category":"VERIFICACION","title":"Desplegado a producción","desc":"Migración 128 aplicada de verdad contra pulse-db (confirmada leyendo la función ya instalada), frontend reconstruido y cambiado con el guardián en verde, bundle servido confirmado con el mensaje nuevo del checador. Antes de tocar nada se encontró que el git de la VPS lleva semanas divergido del repo local (historial distinto, ~16 archivos sin comitear ahí) — se verificó archivo por archivo (md5sum) que lo que se iba a sobrescribir coincidía exactamente antes de mandar nada, así que no se perdió ni se pisó trabajo de nadie. Push a GitHub falló (token de gh vencido) — pendiente correr gh auth login a mano.","refs":"migración 128 · pulse-frontend · ChecadorEmpleado.jsx · BodegaPanel.jsx · InventarioClinica.jsx · App.css"},
     {"id":"e24","date":"2026-08-27","category":"UI","title":"Barra de arriba: menú \"Más\" en vez de partirse en dos líneas","desc":"A pedido del dueño (pantallazo de la psicóloga con la barra en dos pisos). El envolver-a-segunda-línea de hace unas semanas seguía siendo correcto para no recortar submenús, pero con 7 grupos (el caso de psicóloga) se veía como dos filas de navegación permanentes. Ahora una fila invisible mide cuánto ocupa cada grupo y JS decide cuántos caben antes de juntar el resto en un \"Más\" al final — sirve para los 5 roles, se ajusta solo si mañana se agregan más grupos. Se encontró y corrigió un bug de cálculo antes de tocar el componente real (reservar el espacio de \"Más\" en todos los pasos cortaba de más aunque al final todo cupiera) — verificado con 5 casos sintéticos.","refs":"HeaderNav.jsx · App.css"},
     {"id":"e25","date":"2026-08-27","category":"CORRECCION","title":"El despliegue del \"Más\" tapó los submenús","desc":"El overflow:hidden agregado para cubrir un desborde de 1px en el cálculo también recortaba los submenús (position:absolute, cuelgan del mismo contenedor) — ninguno se abría. Se quitó: el cálculo corre antes de pintar (useLayoutEffect), no debería sobrar nada que tapar. Redeploy inmediato tras el aviso del dueño.","refs":"App.css"},
-    {"id":"e26","date":"2026-08-27","category":"FEATURE","title":"Video adjunto en los avisos","desc":"A pedido del dueño: admin/RH/psicología ya pueden incluir un video en el aviso, que le aparece listo para reproducir a quien lo recibe. No se metió dentro del cuerpo del aviso (HTML enriquecido saneado con DOMPurify) — esa lista blanca excluye <video>/<iframe> a propósito, es la defensa anti-XSS del comunicado, y abrirla debilitaría esa defensa para todos los avisos. Se hizo igual que la foto de material: campo aparte, Storage propio, reproductor de React directo. Tope 50 MB, solo MP4 (confirmado con el dueño) para que se vea bien en cualquier teléfono, iPhone incluido. Migración probada en transacción con rollback contra la base real antes de aplicarla de verdad: el bucket, el límite de tamaño/formato y los permisos (solo admin/rh/psicología pueden subir) quedaron confirmados sin tocar producción en la prueba.","refs":"migración 129 · avisosService.js · AvisosPanel.jsx · AvisoModal.jsx"}
+    {"id":"e26","date":"2026-08-27","category":"FEATURE","title":"Video adjunto en los avisos","desc":"A pedido del dueño: admin/RH/psicología ya pueden incluir un video en el aviso, que le aparece listo para reproducir a quien lo recibe. No se metió dentro del cuerpo del aviso (HTML enriquecido saneado con DOMPurify) — esa lista blanca excluye <video>/<iframe> a propósito, es la defensa anti-XSS del comunicado, y abrirla debilitaría esa defensa para todos los avisos. Se hizo igual que la foto de material: campo aparte, Storage propio, reproductor de React directo. Tope 50 MB, solo MP4 (confirmado con el dueño) para que se vea bien en cualquier teléfono, iPhone incluido. Migración probada en transacción con rollback contra la base real antes de aplicarla de verdad: el bucket, el límite de tamaño/formato y los permisos (solo admin/rh/psicología pueden subir) quedaron confirmados sin tocar producción en la prueba.","refs":"migración 129 · avisosService.js · AvisosPanel.jsx · AvisoModal.jsx"},
+    {"id":"e27","date":"2026-08-27","category":"CORRECCION","title":"El video no se subía y nada avisaba por qué","desc":"Reporte real del dueño: publicó un aviso con video elegido, no salió ningún error, y el video nunca llegó. Revisado infra (subida directa al bucket, funciona), permisos (RLS por rol con JWT real, funciona) y el código del formulario tres veces — sin poder abrir un navegador esta sesión no se pudo reproducir en vivo para dar con la causa exacta. Se volvió el flujo a prueba de fallos silenciosos en vez de seguir adivinando: elegir el archivo confirma con su propio aviso, subir el video tiene su propio aviso de éxito separado del de \"Aviso publicado\", y si el aviso se guarda pero el video no se puede subir por lo que sea, ahora avisa en vez de perderlo callado. De paso, una fuga real: la vista previa creaba una URL de blob nueva en cada tecla del formulario sin liberar la anterior — pasa a useMemo.","refs":"AvisosPanel.jsx"},
+    {"id":"e28","date":"2026-08-27","category":"DATOS","title":"Tope del video sube a 200 MB","desc":"Pedido del dueño. Migración 130, solo cambia el límite del bucket — mismo formato (MP4), mismas políticas de la 129. Quedó anotado (sin construir todavía): en algún momento va a hacer falta borrar avisos viejos, ahora que pueden pesar hasta 200 MB cada uno.","refs":"migración 130"}
   ],
   "pendings": [
     {"id":"p1","text":"Cantidades reales de stock por clínica — el Excel no las traía.","owner":"dueño"},
     {"id":"p2","text":"Umbrales de aviso reales por material — hoy los 33 en 5 parejo.","owner":"dueño"},
     {"id":"p3","text":"Fotos reales de los materiales que quedaron con imagen genérica.","owner":"dueño"},
-    {"id":"p5","text":"Renovar el token de gh en la PC — el push a GitHub de respaldo falló por credenciales vencidas.","owner":"usuario"}
+    {"id":"p5","text":"Renovar el token de gh en la PC — el push a GitHub de respaldo falló por credenciales vencidas.","owner":"usuario"},
+    {"id":"p6","text":"Definir borrado de avisos viejos (cada cuánto, aviso completo o solo el video, automático o manual) — ahora que un video puede pesar hasta 200 MB, no es solo cosmético.","owner":"dueño"}
   ]
 }
 </script>
