@@ -275,14 +275,14 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
 
   const bloqueado = siguiente === "salida" && !ventanaSalida.permitido;
 
-  // Sábado sin encuesta semanal contestada: no se deja marcar salida hasta que la conteste
-  // (la entrada no se toca). El servidor es quien de verdad bloquea (registrar_checada,
-  // migración 082); esto solo evita el trámite de foto/ubicación para enterarse al final.
+  // Viernes sin encuesta semanal contestada: no se deja marcar entrada hasta que la conteste
+  // (la salida no se toca). El servidor es quien de verdad bloquea (registrar_checada,
+  // migración 128); esto solo evita el trámite de foto/ubicación para enterarse al final.
   const encuestaPendiente = useMemo(() => {
-    if (siguiente !== "salida") return false;
+    if (siguiente !== "entrada") return false;
     const hoy = hoyEn(tz);
-    const esSabado = diaISO(hoy) === 6;
-    if (!esSabado) return false;
+    const esViernes = diaISO(hoy) === 5;
+    if (!esViernes) return false;
     return !encuestas.some((e) => e.empleadoId === user?.id && esPeriodoActual(e.semana));
   }, [siguiente, encuestas, user?.id, tz]);
 
@@ -556,7 +556,7 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
               <>
                 <p className="checador-pill checador-pill--aviso">
                   <Icon name="clipboardCheck" size={15} />
-                  Antes de marcar tu salida hoy, contesta la encuesta semanal.
+                  Antes de marcar tu entrada hoy (es viernes), contesta la encuesta semanal.
                 </p>
                 <button type="button" className="mc-btn-outline" onClick={() => navigate(`/${user?.role}/encuesta`)}>
                   Contestar encuesta

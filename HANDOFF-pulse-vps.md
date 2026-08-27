@@ -1,8 +1,26 @@
 # HANDOFF — McDental Pulse en VPS propia
 
-> Para la próxima sesión de Claude. Última actualización: **2026-08-25**.
+> Para la próxima sesión de Claude. Última actualización: **2026-08-27**.
 > Este archivo vive en dos lados y hay que mantenerlos iguales: `/opt/pulse/HANDOFF.md`
 > (en la VPS) y `HANDOFF-pulse-vps.md` (en el repo del usuario, **sin versionar**).
+
+> ## 🟡 SESIÓN DEL 2026-08-27 — bloqueo de entrada el viernes sin encuesta (sin deploy)
+>
+> Pedido del dueño, confirmado antes de tocar código: reemplaza el bloqueo de SALIDA el
+> sábado (migración 082) por bloqueo de ENTRADA el viernes. Detalle completo en
+> `contexto.md`, sesión 2026-08-27.
+>
+> - **Migración 128** (`bloqueo_entrada_viernes_sin_encuesta.sql`) — redefine
+>   `registrar_checada` completa. **NO aplicada todavía a `pulse-db`** (VPS). Antes de
+>   aplicarla: revisar que no haya quedado nadie a medio checar un sábado con la lógica
+>   vieja (no debería, el guard viejo solo bloqueaba, nunca dejaba una fila a medias).
+> - Cliente `src/components/asistencia/ChecadorEmpleado.jsx` tocado (`encuestaPendiente`
+>   ahora mira viernes/entrada en vez de sábado/salida) — **NO reconstruido/desplegado**.
+> - Para desplegar: seguir §4 (build + `docker compose up -d --build pulse-frontend`) y
+>   aplicar la migración 128 contra `pulse-db` (ver §4 para el método con Python +
+>   `str.replace` si hace falta, o `psql` directo dado que es una migración nueva y simple).
+> - No probado en vivo contra un viernes real (se verificó el diff de la función letra por
+>   letra contra la 127, pero no una checada real bloqueada/desbloqueada en producción).
 
 > ## 🟡 SESIÓN DEL 2026-08-25 — catálogo de inventario cargado + mejoras UI (sin deploy)
 >

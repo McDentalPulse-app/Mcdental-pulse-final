@@ -453,3 +453,29 @@ de validación, preview del login, flujo completo de archivar → filtro → res
 El **service worker (PWA) cachea el bundle**. Tras cada `docker build` + `docker run`, el
 navegador muestra "Hay una versión nueva de la app · **Actualizar**" y **hay que hacer clic
 ahí**: un F5 normal sigue mostrando la versión vieja.
+
+---
+
+## 🚀 Sesión 2026-08-27 — Bloqueo de ENTRADA el viernes reemplaza al de salida del sábado
+
+Pedido del dueño: la encuesta semanal de bienestar se conteste "sí o sí" el viernes, antes
+de arrancar el día — no al cerrarlo como hasta ahora.
+
+### Decisión (confirmada con el dueño antes de tocar código)
+Ya existía la misma regla pero para sábado+salida (migración 082, ver §2 de la sesión
+2026-07-24/25 más arriba). Se **reemplaza**, no se agrega: se quita el guard de
+sábado/salida y queda solo el de viernes/entrada. Misma tabla `encuestas`, misma clave ISO.
+
+- **Migración 128** (`bloqueo_entrada_viernes_sin_encuesta.sql`): redefine
+  `registrar_checada` completa (mismo patrón que 082→107→127, `create or replace` exige el
+  cuerpo entero). Se movió el guard de `if p_tipo = 'salida'` + `isodow=6` a
+  `if p_tipo = 'entrada' and isodow=5`. Diff contra la 127 confirmado línea por línea: solo
+  se movió/cambió ese bloque, el resto de la función (candado de 90s, geocerca, jornada
+  mínima, salida anticipada, dispositivos, aviso de salida temprano) intacto.
+- Cliente (`ChecadorEmpleado.jsx`): `encuestaPendiente` ahora mira `siguiente === "entrada"`
+  y `diaISO(hoy) === 5`, mensaje actualizado. No hizo falta tocar `EmpleadoLayout.jsx` ni
+  `DoctorLayout.jsx` — el prop `encuestas` ya estaba cableado desde la migración 082.
+
+### Pendiente
+Sin desplegar todavía (ver `HANDOFF-pulse-vps.md`). No se pudo probar en vivo contra un
+viernes real en esta sesión.
