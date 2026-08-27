@@ -69,10 +69,10 @@ export const subscribeAvisos = (onInsert) => {
   return () => supabase.removeChannel(channel);
 };
 
-export const addAviso = async ({ titulo, cuerpo, creadoPor, sucursales }) => {
+export const addAviso = async ({ titulo, cuerpo, creadoPor, sucursales, videoUrl }) => {
   const { data, error } = await supabase
     .from("avisos")
-    .insert({ titulo, cuerpo, creado_por: creadoPor, sucursales })
+    .insert({ titulo, cuerpo, creado_por: creadoPor, sucursales, video_url: videoUrl || null })
     .select(SELECT_AVISO)
     .single();
 
@@ -83,10 +83,10 @@ export const addAviso = async ({ titulo, cuerpo, creadoPor, sucursales }) => {
   return mapAviso(data);
 };
 
-export const updateAviso = async ({ id, titulo, cuerpo, sucursales }) => {
+export const updateAviso = async ({ id, titulo, cuerpo, sucursales, videoUrl }) => {
   const { data, error } = await supabase
     .from("avisos")
-    .update({ titulo, cuerpo, sucursales })
+    .update({ titulo, cuerpo, sucursales, video_url: videoUrl || null })
     .eq("id", id)
     .select(SELECT_AVISO)
     .single();
@@ -107,60 +107,79 @@ export const deleteAviso = async (id) => {
   }
 };
 
-// Video adjunto (migración 129). Mismo patrón de dos pasos que subirImagenMaterial: el
-// aviso ya existe (necesitamos su id para nombrar el archivo), acá solo se le pone el
-// video. Solo MP4 y 200 MB — el bucket lo hace cumplir igual del lado del servidor, esto
-// evita hacer esperar la subida entera para enterarse de que iba a fallar.
-export const subirVideoAviso = async (avisoId, archivo) => {
-  if (archivo.type !== "video/mp4") {
-    throw new Error("Solo se aceptan videos en formato MP4.");
-  }
-  if (archivo.size > VIDEO_TAM_MAX) {
-    throw new Error("El video pesa más de 200 MB. Comprímelo o recórtalo antes de subirlo.");
-  }
+// Video adjunto (migración 129/130). Se sube al TOCAR EL ARCHIVO, no al publicar — el path
+// es un id propio (crypto.randomUUID()), no el del aviso, porque un aviso nuevo todavía no
+// tiene id en ese momento. Publicar/Guardar solo escribe la URL ya subida, así que es
+// instantáneo. El nombre de archivo real no importa para nada más — nadie lo vuelve a
+// necesitar salvo para poder borrarlo si se aprieta "Quitar video".
+//
+// Con XMLHttpRequest, no fetch: el cliente de Storage usa fetch() por dentro, y fetch NO
+// da progreso de subida en el navegador (ninguno, ni con trucos de stream) — así que ni
+// se podía enseñar un avance real ni, más grave, se podía asegurar que un error de verdad
+// (413 por pasarse del tope, por ejemplo) llegara a mostrarse: xhr.onerror/onload siempre
+// disparan, no hay forma de que esto se quede pensando para siempre sin avisar.
+export const subirVideoAviso = (archivo, onProgreso) =>
+  new Promise((resolve, reject) => {
+    if (archivo.type !== "video/mp4") {
+      reject(new Error("Solo se aceptan videos en formato MP4."));
+      return;
+    }
+    if (archivo.size > VIDEO_TAM_MAX) {
+      reject(new Error("El video pesa más de 200 MB. Comprímelo o recórtalo antes de subirlo."));
+      return;
+    }
 
-  const ruta = `${avisoId}.mp4`;
-  const { error: uploadError } = await supabase.storage
-    .from(BUCKET_VIDEOS)
-    .upload(ruta, archivo, { upsert: true, contentType: "video/mp4" });
-  if (uploadError) {
-    console.error("Error subiendo video de aviso:", uploadError);
-    throw new Error("No se pudo subir el video.");
-  }
+    supabase.auth.getSession().then(({ data: sesion }) => {
+      const token = sesion?.session?.access_token;
+      if (!token) {
+        reject(new Error("Tu sesión expiró. Vuelve a iniciar sesión e inténtalo de nuevo."));
+        return;
+      }
 
-  const { data } = supabase.storage.from(BUCKET_VIDEOS).getPublicUrl(ruta);
-  const videoUrl = `${data.publicUrl}?v=${Date.now()}`;
+      const ruta = `${crypto.randomUUID()}.mp4`;
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/${BUCKET_VIDEOS}/${ruta}`;
 
-  const { error: dbError } = await supabase
-    .from("avisos")
-    .update({ video_url: videoUrl })
-    .eq("id", avisoId);
-  if (dbError) {
-    console.error("Error guardando video_url:", dbError);
-    throw new Error("El video se subió pero no se pudo guardar en el aviso.");
-  }
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", url);
+      xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+      xhr.setRequestHeader("apikey", import.meta.env.VITE_SUPABASE_ANON_KEY);
+      xhr.setRequestHeader("Content-Type", "video/mp4");
+      xhr.setRequestHeader("x-upsert", "true");
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && onProgreso) onProgreso(Math.round((e.loaded / e.total) * 100));
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const { data } = supabase.storage.from(BUCKET_VIDEOS).getPublicUrl(ruta);
+          resolve({ videoUrl: `${data.publicUrl}?v=${Date.now()}`, videoPath: ruta });
+          return;
+        }
+        let mensaje = "No se pudo subir el video.";
+        if (xhr.status === 413) {
+          mensaje = "El video pesa más de 200 MB. Comprímelo o recórtalo antes de subirlo.";
+        } else {
+          try {
+            const cuerpo = JSON.parse(xhr.responseText);
+            if (cuerpo?.message) mensaje = cuerpo.message;
+          } catch { /* respuesta no era JSON, se queda el mensaje genérico */ }
+        }
+        console.error("Error subiendo video de aviso:", xhr.status, xhr.responseText);
+        reject(new Error(mensaje));
+      };
+      xhr.onerror = () => reject(new Error("No se pudo subir el video: fallo de red."));
+      xhr.ontimeout = () => reject(new Error("La subida del video tardó demasiado y se canceló."));
+      xhr.timeout = 10 * 60 * 1000; // 10 min: un video de 200 MB en mala conexión puede tardar
+      xhr.send(archivo);
+    }).catch(() => reject(new Error("No se pudo verificar tu sesión.")));
+  });
 
-  return videoUrl;
-};
-
-// Quita el video de un aviso sin tocar el resto. Borrar el objeto del bucket es
-// best-effort: si falla (ya no existía, red, lo que sea) igual se limpia la columna — un
-// archivo huérfano en Storage no es un problema, un aviso que sigue enseñando un video que
-// ya nadie quiere ahí, sí.
-export const quitarVideoAviso = async (avisoId, videoUrl) => {
-  if (videoUrl) {
-    const ruta = `${avisoId}.mp4`;
-    await supabase.storage.from(BUCKET_VIDEOS).remove([ruta]).catch(() => {});
-  }
-
-  const { error } = await supabase
-    .from("avisos")
-    .update({ video_url: null })
-    .eq("id", avisoId);
-  if (error) {
-    console.error("Error quitando el video del aviso:", error);
-    throw new Error("No se pudo quitar el video.");
-  }
+// Borra un video recién subido que todavía no quedó ligado a ningún aviso (se arrepintieron
+// antes de publicar) o el de un aviso existente. Best-effort: si el objeto ya no existe o
+// falla la red, no importa — un archivo huérfano en Storage no es problema; lo que sí lo
+// sería es que esto bloquee al usuario por un error de limpieza.
+export const borrarVideoStorage = async (videoPath) => {
+  if (!videoPath) return;
+  await supabase.storage.from(BUCKET_VIDEOS).remove([videoPath]).catch(() => {});
 };
 
 export const marcarAvisoLeido = async (avisoId, usuarioId) => {

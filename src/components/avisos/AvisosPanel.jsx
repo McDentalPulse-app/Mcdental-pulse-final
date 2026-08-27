@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, lazy, Suspense } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import Card from "../common/Card";
 import EmptyState from "../common/EmptyState";
@@ -16,6 +16,7 @@ import {
   AVISOS_SEGUNDOS_DEFECTO,
   AVISOS_SEGUNDOS_MAX,
 } from "../../services/supabase/ajustesService";
+import { subirVideoAviso, borrarVideoStorage } from "../../services/supabase/avisosService";
 
 // El editor enriquecido (TipTap) se carga solo al abrir el panel de avisos (gestión), no en el
 // bundle de empleados/doctores que solo LEEN los avisos.
@@ -119,11 +120,7 @@ const EsperaAviso = ({ userId }) => {
  * botón que de todos modos le rechazaría la base. El formulario vive en un panel deslizante
  * para que la pantalla abra con los avisos y no con un formulario de tres cuartos de alto.
  */
-// MP4 y 200 MB: mismo tope que hace cumplir el bucket (migraciones 129/130). Se valida acá
-// también para avisar de inmediato, sin esperar a que la subida entera falle al final.
-const VIDEO_TAM_MAX = 209715200;
-
-const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete, onSubirVideo, onQuitarVideo }) => {
+const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
   const { toast, confirm } = useNotification();
   const { nombresSucursales } = useGlobal();
   const puedeGestionar = ROLES_GESTION.includes(user?.role);
@@ -136,51 +133,43 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete, onSubirVide
   const [editandoId, setEditandoId] = useState(null);
   const [enviando, setEnviando] = useState(false);
 
-  // Video adjunto: `videoFile` es lo recién elegido en el <input>, todavía sin subir (se
-  // sube junto con el resto al enviar el formulario); `videoUrlActual` es el que ya estaba
-  // guardado al editar. Nunca los dos "compiten": elegir uno nuevo reemplaza la vista previa
-  // del guardado, y "Quitar video" borra cualquiera de los dos.
-  const [videoFile, setVideoFile] = useState(null);
-  const [videoUrlActual, setVideoUrlActual] = useState(null);
+  // Video adjunto: se sube al TOCAR el archivo, no al publicar — así "Publicar/Guardar" es
+  // instantáneo y el botón puede quedarse bloqueado mientras la subida está en curso, que es
+  // justo lo que faltaba (antes se elegía el archivo y no había forma de saber si ya estaba
+  // listo hasta apretar publicar, y si algo fallaba ahí ya era tarde).
+  //
+  // `videoPath` solo importa mientras el video está "huérfano" — subido pero todavía sin
+  // ligar a un aviso guardado — para poder borrarlo si se cancela. Un aviso ya guardado no
+  // necesita el path: si más tarde se quita su video, el archivo se queda de huérfano en
+  // Storage (no molesta a nadie) en vez de complicar esto con volver a calcular la ruta.
+  const [videoUrl, setVideoUrl] = useState(null);
+  const [videoPath, setVideoPath] = useState(null);
   const [subiendoVideo, setSubiendoVideo] = useState(false);
+  const [progresoVideo, setProgresoVideo] = useState(0);
 
-  // useMemo, no una expresión suelta: sin esto, cada render (había uno de más por CADA
-  // tecla del título/cuerpo, por compartir componente) creaba una URL de blob nueva sin
-  // liberar la anterior. Con memo solo se crea una vez por archivo, y el efecto de abajo
-  // libera esa única URL al cambiar o desmontar.
-  const videoPreviewUrl = useMemo(
-    () => (videoFile ? URL.createObjectURL(videoFile) : videoUrlActual),
-    [videoFile, videoUrlActual]
-  );
-  useEffect(() => {
-    if (!videoFile) return undefined;
-    return () => URL.revokeObjectURL(videoPreviewUrl);
-  }, [videoFile, videoPreviewUrl]);
-
-  const elegirVideo = (archivo) => {
+  const elegirVideo = async (archivo) => {
     if (!archivo) return;
-    if (archivo.type !== "video/mp4") {
-      toast.warning("Solo se aceptan videos en formato MP4.");
-      return;
+    setSubiendoVideo(true);
+    setProgresoVideo(0);
+    try {
+      const { videoUrl: url, videoPath: path } = await subirVideoAviso(archivo, setProgresoVideo);
+      setVideoUrl(url);
+      setVideoPath(path);
+      toast.success("Video listo.");
+    } catch (error) {
+      toast.error(error?.message || "No se pudo subir el video.");
+    } finally {
+      setSubiendoVideo(false);
     }
-    if (archivo.size > VIDEO_TAM_MAX) {
-      toast.warning("El video pesa más de 200 MB. Comprímelo o recórtalo antes de subirlo.");
-      return;
-    }
-    setVideoFile(archivo);
-    // Confirmación visible y distinta de cualquier otro aviso — así se sabe que el archivo
-    // sí quedó elegido, sin depender de fijarse en la vista previa.
-    toast.success(`Video listo para publicar: ${archivo.name}`);
   };
 
-  const quitarVideo = async () => {
-    if (editandoId && videoUrlActual && !videoFile) {
-      // Ya estaba guardado: hay que avisarle a la base, no solo limpiar la vista.
-      const ok = await onQuitarVideo(editandoId, videoUrlActual);
-      if (!ok) return;
-    }
-    setVideoFile(null);
-    setVideoUrlActual(null);
+  const quitarVideo = () => {
+    // Best-effort y sin esperar: si el video ya estaba guardado en un aviso existente
+    // (no se subió en esta sesión), no hay `videoPath` y no hay nada que borrar acá — se
+    // deja de referenciar al guardar, y el archivo viejo queda de huérfano en Storage.
+    if (videoPath) borrarVideoStorage(videoPath).catch(() => {});
+    setVideoUrl(null);
+    setVideoPath(null);
   };
 
   const toggleSucursal = (s) =>
@@ -189,15 +178,20 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete, onSubirVide
     s.toLowerCase().includes(buscarSuc.trim().toLowerCase())
   );
 
-  const cerrarPanel = () => {
+  // `mantenerVideo=true` es el caso de "se acaba de guardar bien" — el video (si había uno
+  // recién subido) ya quedó ligado al aviso, así que cerrar el panel NO debe borrarlo. En
+  // cualquier otro cierre (Cancelar, X, Escape, clic afuera) un video recién subido pero
+  // nunca publicado sí se limpia, para no dejar basura huérfana por cada intento abandonado.
+  const cerrarPanel = ({ mantenerVideo = false } = {}) => {
+    if (!mantenerVideo && videoPath) borrarVideoStorage(videoPath).catch(() => {});
     setAbierto(false);
     setTitulo("");
     setCuerpo("");
     setSucursalesSel([]);
     setBuscarSuc("");
     setEditandoId(null);
-    setVideoFile(null);
-    setVideoUrlActual(null);
+    setVideoUrl(null);
+    setVideoPath(null);
   };
 
   // Mientras se guarda no se cierra con Escape ni con clic fuera: irse a media petición
@@ -210,8 +204,8 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete, onSubirVide
     setSucursalesSel([]);
     setBuscarSuc("");
     setEditandoId(null);
-    setVideoFile(null);
-    setVideoUrlActual(null);
+    setVideoUrl(null);
+    setVideoPath(null);
     setAbierto(true);
   };
 
@@ -221,8 +215,8 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete, onSubirVide
     setSucursalesSel(aviso.sucursales || []);
     setBuscarSuc("");
     setEditandoId(aviso.id);
-    setVideoFile(null);
-    setVideoUrlActual(aviso.videoUrl || null);
+    setVideoUrl(aviso.videoUrl || null);
+    setVideoPath(null); // ya estaba guardado de antes, no de esta sesión — ver nota arriba
     setAbierto(true);
   };
 
@@ -235,34 +229,22 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete, onSubirVide
       toast.warning("No seleccionaste ninguna sucursal, elige al menos una para poder enviar el aviso.");
       return;
     }
+    if (subiendoVideo) {
+      toast.warning("Esperá a que termine de subirse el video.");
+      return;
+    }
 
     setEnviando(true);
-    const datos = { titulo: titulo.trim(), cuerpo: cuerpo.trim(), sucursales: sucursalesSel };
-    // onAdd devuelve el aviso creado (o null); onUpdate sigue devolviendo true/false — en
-    // los dos casos se necesita saber a qué id subirle el video, si eligieron uno.
+    // El video (si eligieron uno) ya está subido de antes — esto solo guarda su URL junto
+    // con el resto, en la misma llamada. Nada que esperar aparte.
+    const datos = { titulo: titulo.trim(), cuerpo: cuerpo.trim(), sucursales: sucursalesSel, videoUrl };
     const resultado = editandoId ? await onUpdate(editandoId, datos) : await onAdd(datos);
-    const avisoId = editandoId || resultado?.id;
     const ok = editandoId ? resultado : !!resultado;
-
-    // Nada de esto queda callado: si eligieron un video, alguna de las tres ramas de abajo
-    // avisa qué pasó — antes, si `avisoId` salía vacío por lo que fuera, esto no hacía nada
-    // y el video se perdía sin ningún mensaje.
-    if (videoFile) {
-      if (ok && avisoId) {
-        setSubiendoVideo(true);
-        const subido = await onSubirVideo(avisoId, videoFile);
-        setSubiendoVideo(false);
-        if (subido) toast.success("Video subido.");
-        // Si falló, onSubirVideo ya mostró su propio aviso de error.
-      } else if (ok) {
-        toast.error("El aviso se guardó, pero no se pudo subir el video (no se encontró su id). Editalo para volver a intentarlo.");
-      }
-    }
     setEnviando(false);
 
     if (ok) {
       toast.success(editandoId ? "Aviso actualizado." : "Aviso publicado.");
-      cerrarPanel();
+      cerrarPanel({ mantenerVideo: true });
     }
   };
 
@@ -285,7 +267,7 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete, onSubirVide
     ? createPortal(
         <div
           className="mc-slideout-overlay"
-          onClick={enviando ? undefined : cerrarPanel}
+          onClick={enviando ? undefined : () => cerrarPanel()}
           role="presentation"
         >
           <div
@@ -295,7 +277,7 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete, onSubirVide
             aria-modal="true"
             aria-label={editandoId ? "Editar aviso" : "Nuevo aviso"}
           >
-            <button type="button" className="mc-slideout-close" onClick={cerrarPanel} aria-label="Cerrar">
+            <button type="button" className="mc-slideout-close" onClick={() => cerrarPanel()} aria-label="Cerrar">
               <Icon name="xCircle" size={22} />
             </button>
 
@@ -324,16 +306,18 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete, onSubirVide
 
               <div className="mc-form-group">
                 <label className="mc-form-label" htmlFor="aviso-video">Video (opcional)</label>
-                <p className="mc-hint">MP4, máx. 200 MB. Se reproduce junto con el aviso.</p>
-                {videoPreviewUrl ? (
+                <p className="mc-hint">MP4, máx. 200 MB. Se sube al elegirlo — el botón de publicar espera a que termine.</p>
+                {subiendoVideo ? (
+                  <div className="aviso-video-progreso">
+                    <div className="aviso-video-progreso-barra">
+                      <div className="aviso-video-progreso-relleno" style={{ width: `${progresoVideo}%` }} />
+                    </div>
+                    <span>Subiendo… {progresoVideo}%</span>
+                  </div>
+                ) : videoUrl ? (
                   <div className="aviso-video-preview">
-                    <video controls src={videoPreviewUrl} className="aviso-video" />
-                    <button
-                      type="button"
-                      className="mc-btn-outline"
-                      disabled={enviando || subiendoVideo}
-                      onClick={quitarVideo}
-                    >
+                    <video controls src={videoUrl} className="aviso-video" />
+                    <button type="button" className="mc-btn-outline" disabled={enviando} onClick={quitarVideo}>
                       Quitar video
                     </button>
                   </div>
@@ -343,11 +327,10 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete, onSubirVide
                     className="mc-form-input"
                     type="file"
                     accept="video/mp4"
-                    disabled={enviando || subiendoVideo}
+                    disabled={enviando}
                     onChange={(e) => elegirVideo(e.target.files?.[0])}
                   />
                 )}
-                {subiendoVideo && <p className="mc-hint">Subiendo video…</p>}
               </div>
 
               <div className="mc-form-group">
@@ -388,11 +371,11 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete, onSubirVide
               </div>
 
               <div className="mc-form-row-2">
-                <button type="button" className="mc-btn-primary mc-btn-with-icon" disabled={enviando} onClick={enviar}>
+                <button type="button" className="mc-btn-primary mc-btn-with-icon" disabled={enviando || subiendoVideo} onClick={enviar}>
                   <Icon name={editandoId ? "check" : "bell"} size={16} />
-                  {enviando ? "Guardando…" : editandoId ? "Guardar cambios" : "Publicar aviso"}
+                  {enviando ? "Guardando…" : subiendoVideo ? "Subiendo video…" : editandoId ? "Guardar cambios" : "Publicar aviso"}
                 </button>
-                <button type="button" className="mc-btn-outline" disabled={enviando} onClick={cerrarPanel}>
+                <button type="button" className="mc-btn-outline" disabled={enviando} onClick={() => cerrarPanel()}>
                   Cancelar
                 </button>
               </div>

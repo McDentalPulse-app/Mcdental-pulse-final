@@ -3107,6 +3107,10 @@
 .aviso-video-preview { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
 .aviso-video-preview .aviso-video { margin-bottom: 0; max-height: 220px; width: auto; max-width: 100%; }
 
+.aviso-video-progreso { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--mc-texto-secundario); }
+.aviso-video-progreso-barra { flex: 1; height: 6px; border-radius: 999px; background: var(--mc-superficie-sutil); overflow: hidden; }
+.aviso-video-progreso-relleno { height: 100%; background: var(--mc-marca-texto); transition: width 0.15s ease; }
+
 /* Historial de avisos (AvisosPanel.jsx): una tarjeta por comunicado, con el texto COMPLETO.
    Antes se recortaba a 2 líneas y el empleado — a quien va dirigido — no podía leerlo entero
    más que en el modal bloqueante del momento. */

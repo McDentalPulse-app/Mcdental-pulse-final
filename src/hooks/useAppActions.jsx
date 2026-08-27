@@ -23,8 +23,6 @@ import {
   updateAviso as updateAvisoDb,
   deleteAviso as deleteAvisoDb,
   marcarAvisoLeido as marcarAvisoLeidoDb,
-  subirVideoAviso as subirVideoAvisoDb,
-  quitarVideoAviso as quitarVideoAvisoDb,
 } from "../services/supabase/avisosService";
 
 export const useAppActions = () => {
@@ -519,11 +517,13 @@ export const useAppActions = () => {
     }
   };
 
-  // Devuelve el aviso creado (no solo true/false): AvisosPanel necesita su id para poder
-  // subirle el video justo después, en el mismo flujo de "Publicar aviso".
-  const addAviso = async ({ titulo, cuerpo, sucursales }) => {
+  // El video (si eligieron uno) ya está subido ANTES de llegar acá — AvisosPanel lo sube al
+  // elegir el archivo, no al publicar — así que solo hace falta guardar la URL junto con el
+  // resto. Devuelve el aviso creado (no solo true/false) porque el formulario lo necesita
+  // para poder abrirlo de nuevo en modo edición sin recargar.
+  const addAviso = async ({ titulo, cuerpo, sucursales, videoUrl }) => {
     try {
-      const nuevo = await addAvisoDb({ titulo, cuerpo, creadoPor: user?.id, sucursales });
+      const nuevo = await addAvisoDb({ titulo, cuerpo, creadoPor: user?.id, sucursales, videoUrl });
       setAvisos(prev => [nuevo, ...prev]);
       // La notificación a la plantilla (fila en la campana de cada quien) la dispara un trigger
       // de BD al insertarse el aviso (migración 065), no el cliente.
@@ -535,38 +535,12 @@ export const useAppActions = () => {
     }
   };
 
-  const subirVideoAviso = async (avisoId, archivo) => {
-    try {
-      const videoUrl = await subirVideoAvisoDb(avisoId, archivo);
-      setAvisos(prev => prev.map(a => a.id === avisoId ? { ...a, videoUrl } : a));
-      return true;
-    } catch (error) {
-      console.error("Error subiendo video de aviso:", error);
-      notify.toast.error(error?.message || "No se pudo subir el video.");
-      return false;
-    }
-  };
-
-  const quitarVideoAviso = async (avisoId, videoUrl) => {
-    const previo = avisos.find(a => a.id === avisoId);
-    setAvisos(prev => prev.map(a => a.id === avisoId ? { ...a, videoUrl: null } : a));
-    try {
-      await quitarVideoAvisoDb(avisoId, videoUrl);
-      return true;
-    } catch (error) {
-      console.error("Error quitando video de aviso:", error);
-      if (previo) setAvisos(prev => prev.map(a => a.id === avisoId ? previo : a));
-      notify.toast.error(error?.message || "No se pudo quitar el video.");
-      return false;
-    }
-  };
-
-  const updateAviso = async (id, { titulo, cuerpo, sucursales }) => {
+  const updateAviso = async (id, { titulo, cuerpo, sucursales, videoUrl }) => {
     const previo = avisos.find(a => a.id === id);
-    setAvisos(prev => prev.map(a => a.id === id ? { ...a, titulo, cuerpo, sucursales } : a));
+    setAvisos(prev => prev.map(a => a.id === id ? { ...a, titulo, cuerpo, sucursales, videoUrl } : a));
 
     try {
-      await updateAvisoDb({ id, titulo, cuerpo, sucursales });
+      await updateAvisoDb({ id, titulo, cuerpo, sucursales, videoUrl });
       return true;
     } catch (error) {
       console.error("Error actualizando aviso:", error);
@@ -636,8 +610,6 @@ export const useAppActions = () => {
     addAviso,
     updateAviso,
     deleteAviso,
-    subirVideoAviso,
-    quitarVideoAviso,
     marcarAvisoLeido,
   };
 };

@@ -42,7 +42,7 @@ export default function HRLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
   const { vacaciones, permisos, descuentos, comisiones, intercambios, festivos, eventosCalendario, reconocimientos, encuestas, mensajes, notas, reportesConfidenciales, archivosExpediente, horarios, setHorarios, avisos, checadasHoy } = globals;
-  const { updateVacacionEstado, sendMensaje, marcarMensajesLeidos, updatePermisoEstado, updateDescuentoEstado, addDescuento, revisarComision, resolverIntercambio, addFestivo, deleteFestivo, addEvento, updateEvento, deleteEvento, agendarPropio, addReconocimiento, subirArchivoExpediente, eliminarArchivoExpediente, addAviso, updateAviso, deleteAviso, subirVideoAviso, quitarVideoAviso, justificarFalta, registrarChecada } = actions;
+  const { updateVacacionEstado, sendMensaje, marcarMensajesLeidos, updatePermisoEstado, updateDescuentoEstado, addDescuento, revisarComision, resolverIntercambio, addFestivo, deleteFestivo, addEvento, updateEvento, deleteEvento, agendarPropio, addReconocimiento, subirArchivoExpediente, eliminarArchivoExpediente, addAviso, updateAviso, deleteAviso, justificarFalta, registrarChecada } = actions;
 
   // Un solo handler para el calendario: sin id = crear, con id = actualizar.
   const guardarEvento = (id, form) => (id ? updateEvento(id, form) : addEvento(form));
@@ -88,7 +88,7 @@ export default function HRLayout({ user, globals, actions }) {
             <Route path="config" element={<Config />} />
             <Route path="soporte" element={<IdeasMejora user={user} />} />
             <Route path="soporteti" element={<SoporteTI user={user} />} />
-            <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} onSubirVideo={subirVideoAviso} onQuitarVideo={quitarVideoAviso} />} />
+            <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} />} />
             <Route path="mensajes" element={<Mensajes user={user} mensajes={mensajes} onSend={sendMensaje} onMarkRead={marcarMensajesLeidos} />} />
             <Route path="reuniones" element={<PaginaReuniones user={user} />} />
             <Route path="perfil" element={<Perfil />} />

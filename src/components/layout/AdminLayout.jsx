@@ -35,7 +35,7 @@ export default function AdminLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
   const { encuestas, mensajes, notas, permisos, descuentos, reconocimientos, reportesConfidenciales, vacaciones, archivosExpediente, horarios, setHorarios, avisos, festivos, intercambios } = globals;
-  const { restablecerPasswordUsuario, sendMensaje, marcarMensajesLeidos, subirArchivoExpediente, eliminarArchivoExpediente, addReconocimiento, addAviso, updateAviso, deleteAviso, subirVideoAviso, quitarVideoAviso, justificarFalta, resolverIntercambio, addFestivo, deleteFestivo } = actions;
+  const { restablecerPasswordUsuario, sendMensaje, marcarMensajesLeidos, subirArchivoExpediente, eliminarArchivoExpediente, addReconocimiento, addAviso, updateAviso, deleteAviso, justificarFalta, resolverIntercambio, addFestivo, deleteFestivo } = actions;
   const { ofrecerPush, activarAvisos, cerrarOfertaPush } = useAvisoPush();
 
   const { ofrecerUbicacion, estadoUbicacion, activarUbicacion, cerrarAviso } = useAvisoUbicacion();
@@ -76,7 +76,7 @@ export default function AdminLayout({ user, globals, actions }) {
             <Route path="mensajes" element={<Mensajes user={user} mensajes={mensajes} onSend={sendMensaje} onMarkRead={marcarMensajesLeidos} />} />
             <Route path="reuniones" element={<PaginaReuniones user={user} />} />
             <Route path="soporte" element={<IdeasMejora user={user} />} />
-            <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} onSubirVideo={subirVideoAviso} onQuitarVideo={quitarVideoAviso} />} />
+            <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} />} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
           </Routes>
