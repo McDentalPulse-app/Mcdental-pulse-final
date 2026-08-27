@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Bitácora Pulse</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,500;1,8..60,500;1,8..60,600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a100e; --surface:#121a17; --surface-2:#18211d; --border:#233029;
+    --text:#e6ece9; --muted:#8fa199; --accent:#33c98f; --accent-dim:#1f6b4c;
+    --accent-soft:rgba(51,201,143,.14); --danger:#ff8080;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:'IBM Plex Sans',-apple-system,'Segoe UI',sans-serif;
+    line-height:1.5; -webkit-font-smoothing:antialiased;}
+  h1,h2,.day-weekday{font-family:'Source Serif 4',Georgia,'Times New Roman',serif;}
+  .mono,.refs{font-family:'IBM Plex Mono',ui-monospace,SFMono-Regular,monospace;}
+  @media (prefers-reduced-motion: no-preference){
+    .stat,.entry,button{transition:border-color .15s ease, background .15s ease;}
+  }
+  button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--border);
+    background:var(--surface-2);color:var(--text);padding:.5em .9em;}
+  button:hover{border-color:var(--accent-dim);}
+  button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  button.primary{background:var(--accent);color:#052018;border-color:var(--accent);font-weight:600;}
+  button.primary:hover{background:#40dba0;}
+  button.chip-x{min-width:24px;min-height:24px;display:inline-flex;align-items:center;justify-content:center;
+    border:none;background:transparent;color:var(--muted);}
+  button.chip-x:hover{color:var(--danger);}
+  .icon{width:1em;height:1em;vertical-align:-0.15em;fill:none;stroke:currentColor;
+    stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;}
+  .icon-sm{width:.85em;height:.85em;}
+  .icon-edit{min-width:24px;min-height:24px;display:inline-flex;align-items:center;justify-content:center;
+    border:none;background:transparent;color:var(--muted);opacity:.6;vertical-align:middle;}
+  .icon-edit:hover,.icon-edit:focus-visible{opacity:1;color:var(--accent);}
+  .wrap{max-width:760px;margin:0 auto;padding:3rem 1.5rem 5rem;}
+  .banner{background:#3a2a12;color:#f2c14e;border-bottom:1px solid #5a4420;
+    padding:.6em 1.5rem;font-size:.9em;text-align:center;}
+  .eyebrow{margin:0 0 .6em;font-size:.78em;letter-spacing:.14em;color:var(--accent);
+    text-transform:uppercase;font-weight:600;}
+  h1{font-size:2.4rem;margin:0 0 .5rem;font-weight:600;text-wrap:balance;}
+  .sub{color:var(--muted);max-width:60ch;margin:0 0 1.4rem;}
+  .meta{display:flex;flex-wrap:wrap;gap:1.6em;font-size:.92em;color:var(--muted);
+    border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:.9em 0;margin:0 0 .8em;}
+  .meta b{color:var(--text);font-weight:600;margin-right:.4em;}
+  .updated{color:var(--muted);font-size:.85em;margin:0 0 1.4rem;}
+  .actions{display:flex;flex-wrap:wrap;gap:.6em;margin-bottom:2.6rem;}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;
+    background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:3rem;}
+  .stat{background:var(--surface);padding:1.1em 1.2em;position:relative;}
+  .stat .value{font-size:1.7rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--accent);}
+  .stat .label{color:var(--muted);font-size:.82em;margin-top:.2em;}
+  .stat-tools{position:absolute;top:.2em;right:.2em;display:flex;gap:2px;}
+  .add-stat{background:var(--surface);border:1px dashed var(--border);color:var(--muted);
+    display:flex;align-items:center;justify-content:center;}
+  .timeline{position:relative;padding-left:1.6rem;border-left:2px solid var(--border);}
+  .day{position:relative;margin-bottom:2.4rem;}
+  .day::before{content:'';position:absolute;left:-1.72rem;top:.35rem;width:10px;height:10px;
+    border-radius:50%;background:var(--bg);border:2px solid var(--accent);}
+  .day-head{display:flex;align-items:baseline;flex-wrap:wrap;gap:.7em;margin-bottom:.9em;}
+  .day-weekday{font-style:italic;font-size:1.3rem;font-weight:600;}
+  .day-rest{color:var(--muted);}
+  .day-tools{margin-left:auto;display:flex;align-items:center;gap:.3em;}
+  .day-tag{font-size:.72em;letter-spacing:.08em;text-transform:uppercase;
+    border:1px solid var(--accent-dim);color:var(--accent);border-radius:999px;padding:.25em .8em;
+    background:var(--accent-soft);}
+  button.day-tag:hover{border-color:var(--accent);}
+  .empty-note{color:var(--muted);font-style:italic;font-size:.92em;padding:.4em 0;}
+  .entry{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+    padding:1em 1.1em;margin-bottom:.8em;break-inside:avoid;}
+  .entry-head{display:flex;align-items:flex-start;gap:.6em;margin-bottom:.4em;}
+  .entry-title{font-weight:600;flex:1;}
+  .cat{font-size:.68em;letter-spacing:.05em;text-transform:uppercase;border-radius:5px;
+    padding:.22em .55em;white-space:nowrap;font-weight:600;}
+  .entry-desc{color:#c7d3ce;font-size:.94em;margin:0 0 .3em;}
+  .refs{color:var(--muted);font-size:.78em;word-break:break-word;}
+  .entry-tools{display:flex;gap:.4em;margin-left:auto;}
+  .pendings{margin-top:3rem;border-top:1px solid var(--border);padding-top:1.6rem;}
+  .pendings > p{color:var(--muted);font-size:.92em;margin-top:-.4em;}
+  .pendings ul{list-style:none;margin:1em 0;padding:0;display:flex;flex-direction:column;gap:.6em;}
+  .pendings li{display:flex;align-items:center;gap:.5em;flex-wrap:wrap;}
+  .arrow{color:var(--accent);display:inline-flex;}
+  .ptext{flex:1;min-width:12em;}
+  .owner{font-size:.72em;color:var(--muted);border:1px solid var(--border);border-radius:999px;
+    padding:.15em .7em;}
+  .empty-note.pendings-empty{padding:0 0 .4em;}
+  footer{margin-top:3.5rem;padding-top:1.2rem;border-top:1px solid var(--border);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5em;color:var(--muted);font-size:.78em;}
+  dialog{background:var(--surface);color:var(--text);border:1px solid var(--border);
+    border-radius:12px;padding:1.6em;max-width:480px;width:90vw;}
+  dialog::backdrop{background:rgba(0,0,0,.55);}
+  dialog h2{margin-top:0;font-size:1.2rem;font-style:italic;}
+  dialog label{display:block;font-size:.82em;color:var(--muted);margin:.9em 0 .3em;}
+  dialog input,dialog select,dialog textarea{width:100%;background:var(--surface-2);
+    border:1px solid var(--border);color:var(--text);border-radius:6px;padding:.5em .6em;font:inherit;}
+  dialog textarea{min-height:5em;resize:vertical;}
+  dialog .dialog-actions{display:flex;justify-content:flex-end;gap:.6em;margin-top:1.4em;}
+
+  @media print{
+    body{background:#fff;color:#111;}
+    .banner,.no-print{display:none !important;}
+    .wrap{max-width:100%;padding:0;}
+    .eyebrow,.day-weekday,.day-tag,.stat .value{color:#111 !important;}
+    .icon-edit,.stat-tools{display:none !important;}
+    .stats{background:#ccc;border-color:#ccc;}
+    .stat,.entry,.owner{background:#fff;border-color:#ccc;}
+    .day-tag{background:#f2f2f2;border-color:#ccc;}
+    .entry-desc{color:#333;}
+    .timeline{border-left-color:#ccc;}
+    .day::before{border-color:#111;background:#fff;}
+    .meta,.sub,.updated,footer{color:#444 !important;}
+    .entry{page-break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+<svg style="display:none" aria-hidden="true">
+  <symbol id="icon-printer" viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><rect x="6" y="14" width="12" height="8"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/></symbol>
+  <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></symbol>
+  <symbol id="icon-pencil" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+  <symbol id="icon-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></symbol>
+  <symbol id="icon-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+</svg>
+<div id="banner" class="banner no-print" hidden></div>
+<div class="wrap"><div id="app"></div></div>
+
+<dialog id="entryDialog">
+  <h2 id="entryDialogTitle">Agregar entrada</h2>
+  <form id="entryForm">
+    <input type="hidden" id="f-id">
+    <label for="f-date">Fecha</label>
+    <input type="date" id="f-date" required>
+    <label for="f-cat">Categoría</label>
+    <select id="f-cat"></select>
+    <label for="f-title">Título</label>
+    <input type="text" id="f-title" required placeholder="Qué se hizo, en pocas palabras">
+    <label for="f-desc">Descripción</label>
+    <textarea id="f-desc" required placeholder="El detalle: qué pasaba, qué se cambió, por qué"></textarea>
+    <label for="f-refs">Referencias (opcional)</label>
+    <input type="text" id="f-refs" placeholder="migración 127 · archivo.js · función()">
+    <div class="dialog-actions">
+      <button type="button" data-action="close-dialog">Cancelar</button>
+      <button type="submit" class="primary">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="rangeDialog">
+  <h2>Editar rango de fechas</h2>
+  <form id="rangeForm">
+    <label for="r-start">Fecha de inicio</label>
+    <input type="date" id="r-start" required>
+    <label for="r-end">Fecha de fin</label>
+    <input type="date" id="r-end" required>
+    <div class="dialog-actions">
+      <button type="button" data-action="close-dialog">Cancelar</button>
+      <button type="submit" class="primary">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="entornoDialog">
+  <h2>Editar entorno</h2>
+  <form id="entornoForm">
+    <label for="ent-value">Entorno</label>
+    <input type="text" id="ent-value" required placeholder="pulse-db (VPS, producción)">
+    <div class="dialog-actions">
+      <button type="button" data-action="close-dialog">Cancelar</button>
+      <button type="submit" class="primary">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="textDialog">
+  <h2 id="textDialogTitle">Editar</h2>
+  <form id="textDialogForm">
+    <div id="tf-wrap-1"><label id="tf-label-1" for="tf-1"></label><input id="tf-1"></div>
+    <div id="tf-wrap-2"><label id="tf-label-2" for="tf-2"></label><input id="tf-2"></div>
+    <div id="tf-wrap-3"><label id="tf-label-3" for="tf-3"></label><input id="tf-3"></div>
+    <div class="dialog-actions">
+      <button type="button" data-action="close-dialog">Cancelar</button>
+      <button type="submit" class="primary">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<script id="seed" type="application/json">
+{
+  "title": "Semana del inventario",
+  "subtitle": "Registro día por día de lo trabajado en el sistema de inventario y stock de las 26 clínicas, para el reporte semanal que se entrega el viernes.",
+  "weekStart": "2026-08-24",
+  "weekEnd": "2026-08-28",
+  "entorno": "pulse-db (VPS, producción)",
+  "lastUpdate": "jue 27 ago, 11:43",
+  "stats": [
+    {"id":"s1","value":"4","label":"migraciones de inventario aplicadas"},
+    {"id":"s2","value":"33/33","label":"materiales con foto en catálogo"},
+    {"id":"s3","value":"9","label":"redeploys a producción"},
+    {"id":"s4","value":"6","label":"bugs corregidos"}
+  ],
+  "dayTags": {
+    "2026-08-24": "Cimientos",
+    "2026-08-25": "Catálogo real + UI",
+    "2026-08-26": "Producción",
+    "2026-08-27": "Checador"
+  },
+  "entries": [
+    {"id":"e1","date":"2026-08-24","category":"BACKEND","title":"Esquema de base de datos del inventario","desc":"Cuatro migraciones que arman todo el modelo: permisos de quién puede gestionar inventario o bodega, stock por sucursal, pedidos de material entre clínica y bodega, y ajustes manuales de stock.","refs":"migraciones 120–123 · permisos_inventario · inventario_por_sucursal · pedidos_material · ajuste_inventario"},
+    {"id":"e2","date":"2026-08-24","category":"BACKEND","title":"Capa de servicios y bitácora","desc":"Servicios para leer/escribir inventario y pedidos, y el componente de bitácora que deja rastro de cada movimiento de stock.","refs":"inventarioService.js · pedidosService.js · BitacoraInventario.jsx"},
+    {"id":"e3","date":"2026-08-25","category":"DATOS","title":"33 materiales reales cargados al catálogo","desc":"Del Excel del dueño (bodega de ortodoncia). Sin cantidades todavía — solo catálogo puro, umbral de aviso en 5 parejo como placeholder.","refs":""},
+    {"id":"e4","date":"2026-08-25","category":"UI","title":"Barra de nivel de stock","desc":"Reemplaza el pill binario \"Stock bajo\" por una barra verde/amarillo/rojo con texto, para no depender solo del color.","refs":"StockBar.jsx"},
+    {"id":"e5","date":"2026-08-25","category":"UI","title":"Consumo y Ajuste fusionados, listas ordenadas","desc":"Una sola card con toggle en vez de dos casi idénticas. Stock bajo aparece primero en las listas. Teclado numérico en los inputs de cantidad.","refs":""},
+    {"id":"e6","date":"2026-08-26","category":"VERIFICACION","title":"Verificado en vivo contra datos reales","desc":"Las 3 pantallas (admin, clínica, bodega) probadas contra la base real de la VPS con cuentas de admin y recepción — nada de esto se había abierto en un navegador todavía.","refs":""},
+    {"id":"e7","date":"2026-08-26","category":"FEATURE","title":"Fotos de material en catálogo y stock","desc":"Columna de foto + bucket de almacenamiento nuevos. Las 3 vistas de material pasan de lista de texto a tarjetas con imagen. Los 33 materiales ya tienen foto (algunas genéricas, mientras el dueño sube las reales).","refs":"migración 124 · materiales-fotos · subirImagenMaterial()"},
+    {"id":"e8","date":"2026-08-26","category":"CORRECCION","title":"Bug: la cantidad aceptaba notación científica","desc":"Escribir \"5e3\" en un campo de cantidad lo volvía 5000 sin avisar — el input numérico del navegador permite \"e\" para notación científica. Bloqueado en los 7 campos de cantidad de las 3 pantallas.","refs":""},
+    {"id":"e9","date":"2026-08-26","category":"DATOS","title":"Fotos genéricas para los materiales sin foto real","desc":"33/33 materiales terminaron con foto (Wikimedia Commons, licencia libre) — algunas exactas, otras genéricas por categoría cuando no había una foto de producto real disponible.","refs":""},
+    {"id":"e10","date":"2026-08-26","category":"UI","title":"Rediseño a tabla — las 3 pantallas","desc":"A pedido del dueño: catálogo y stock pasan de tarjetas/formularios apilados a una tabla con búsqueda y acciones por fila (Ver por clínica, Ajustar stock, Editar, Desactivar), calcada de Gestión de Personal. Los formularios que antes estaban siempre abiertos ahora viven en modales. Bodega conserva sus tarjetas de pedido (tienen varias líneas + cantidad a enviar, no entran en una tabla plana), solo su formulario de ajuste pasó a modal.","refs":""},
+    {"id":"e11","date":"2026-08-26","category":"CORRECCION","title":"Bug: \"Editar\" mostraba la unidad vacía","desc":"La lista de unidades del formulario no incluía \"unidad\", \"pqt\" ni \"set\" — las que de verdad trae el Excel en 32 de 34 materiales. Al editar, el desplegable se veía vacío aunque el material sí tenía unidad guardada. Corregido agregando esas tres a la lista.","refs":""},
+    {"id":"e12","date":"2026-08-26","category":"HALLAZGO","title":"Repo local llevaba semanas atrás de la VPS","desc":"Al investigar el botón de Reuniones se encontró que 40 archivos + 10 nuevos (Reuniones/video, reorganización de Festivos y Comisiones) existían solo en la VPS — nunca volvieron al repo local. Sincronizado sin perder nada: se verificó que la VPS ya incluía todo lo que había sin comitear localmente antes de traerlo.","refs":""},
+    {"id":"e13","date":"2026-08-26","category":"CORRECCION","title":"Bug: la página se veía cortada y corrida","desc":"El menú de arriba ya no cabía en pantallas de escritorio normales (1280px) desde que se agregaron Inventario, Reuniones y Festivos — en vez de encogerse, empujaba toda la página fuera del viewport. Bug clásico de flexbox (le faltaba min-width: 0); ahora el menú se desliza en su propio carril y la página se queda quieta.","refs":""},
+    {"id":"e14","date":"2026-08-26","category":"FEATURE","title":"Eliminar material (reemplaza a desactivar)","desc":"A pedido del dueño: el catálogo ya tiene botón de eliminar de verdad en vez de solo desactivar. Si el material ya se pidió alguna vez, la base lo bloquea y avisa por qué (decisión explícita del dueño: sin protección para historial de stock, solo para pedidos ya hechos).","refs":"migración 125 · materiales_delete_gestion"},
+    {"id":"e15","date":"2026-08-26","category":"DATOS","title":"Ajustes de horario de sábado (77 empleados)","desc":"Todos los activos fuera de Oficina Administrativa pasan de sábado 10am–2pm a 10am–6pm. Oficina Administrativa (22 activos) queda igual.","refs":""},
+    {"id":"e16","date":"2026-08-26","category":"CORRECCION","title":"Pasada de auditoría: bug de permisos en bodega","desc":"bodega_procesar_pedido no dejaba pasar a admin (solo revisaba el flag de bodega), inconsistente con su función hermana ajustar_inventario. Corregido con el mismo patrón. Además: auditoría GRANT-vs-RLS en las 36 tablas (limpia) y recorrido de 38 rutas sin errores de consola.","refs":"migración 126"},
+    {"id":"e17","date":"2026-08-26","category":"CORRECCION","title":"Bug: los submenús del menú de arriba desaparecían","desc":"El arreglo del desbordamiento horizontal (más arriba) tenía un efecto secundario: al usar overflow-x para que el menú no empujara la página, el navegador obliga a overflow-y a comportarse igual —y eso recortaba los submenús que se abren hacia abajo, dejándolos invisibles. Corregido con un enfoque distinto: el menú se envuelve a una segunda línea cuando no cabe, en vez de recortarse. Arregla las dos cosas a la vez.","refs":""},
+    {"id":"e18","date":"2026-08-26","category":"UI","title":"Catálogo de materiales, paginado de 10 en 10","desc":"La tabla de Inventario ya no obliga a hacer tanto scroll — mismo patrón de paginación que ya usa Gestión de Personal (Anterior/Siguiente, \"Página X de Y\").","refs":""},
+    {"id":"e19","date":"2026-08-27","category":"FEATURE","title":"Bloqueo de entrada el viernes sin encuesta","desc":"A pedido del dueño: la encuesta semanal de bienestar se contesta sí o sí el viernes, antes de arrancar el día. Reemplaza (no se suma) al bloqueo que ya existía para el sábado en la salida — mismo mecanismo, mismo guard en la función de Postgres que registra la checada (es la única puerta real; el cliente solo evita el trámite de foto/ubicación para avisar antes). Verificado con SQL aislado en transacción con rollback contra la base real de la VPS: sin encuesta bloquea, con encuesta no bloquea, entre semana nunca bloquea. 573/573 tests, sin desplegar todavía.","refs":"migración 128 · ChecadorEmpleado.jsx · registrar_checada"}
+  ],
+  "pendings": [
+    {"id":"p1","text":"Cantidades reales de stock por clínica — el Excel no las traía.","owner":"dueño"},
+    {"id":"p2","text":"Umbrales de aviso reales por material — hoy los 33 en 5 parejo.","owner":"dueño"},
+    {"id":"p3","text":"Fotos reales de los materiales que quedaron con imagen genérica.","owner":"dueño"},
+    {"id":"p4","text":"Configurar identidad de git para poder comitear el trabajo de esta semana.","owner":"dueño"}
+  ]
+}
+</script>
+
+<script>
+(function(){
+  var STORAGE_KEY = 'mcdental-bitacora-pulse-v1';
+
+  var CATS = [
+    ['BACKEND','Backend','#8b9dff'],
+    ['UI','UI','#d19bff'],
+    ['DATOS','Datos','#f2c14e'],
+    ['CORRECCION','Corrección','#ff8080'],
+    ['FEATURE','Feature','#3ddc9b'],
+    ['HALLAZGO','Hallazgo','#5cc8f2'],
+    ['VERIFICACION','Verificación','#3fe0c5'],
+    ['OTRO','Otro','#9fb0a9']
+  ];
+  function catMeta(key){
+    for(var i=0;i<CATS.length;i++){ if(CATS[i][0]===key) return {label:CATS[i][1],color:CATS[i][2]}; }
+    return {label:'Otro',color:'#9fb0a9'};
+  }
+
+  function loadState(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw) return JSON.parse(raw);
+    }catch(e){}
+    return JSON.parse(document.getElementById('seed').textContent);
+  }
+  var STATE = loadState();
+
+  function esc(s){
+    return String(s==null?'':s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+  function uid(){ return 'id'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+  function editBtn(action,id,label){
+    return '<button class="icon-edit no-print" data-action="'+action+'"'+(id?' data-id="'+id+'"':'')+
+      ' aria-label="'+esc(label)+'"><svg class="icon icon-sm"><use href="#icon-pencil"/></svg></button>';
+  }
+  function delBtn(action,id,label){
+    return '<button class="chip-x no-print" data-action="'+action+'" data-id="'+id+'" aria-label="'+esc(label)+'">'+
+      '<svg class="icon icon-sm"><use href="#icon-x"/></svg></button>';
+  }
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function todayISO(){
+    var d=new Date();
+    return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  }
+  function dateRange(startISO,endISO){
+    var out=[], d=new Date(startISO+'T00:00:00'), end=new Date(endISO+'T00:00:00');
+    while(d<=end){
+      out.push(d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()));
+      d.setDate(d.getDate()+1);
+    }
+    return out;
+  }
+  function formatRange(startISO,endISO){
+    var s=new Date(startISO+'T00:00:00'), e=new Date(endISO+'T00:00:00');
+    var wd=function(d){return new Intl.DateTimeFormat('es-MX',{weekday:'short'}).format(d).replace('.','');};
+    var my=function(d){return new Intl.DateTimeFormat('es-MX',{month:'short',year:'numeric'}).format(d).replace('.','');};
+    return wd(s)+' '+s.getDate()+' — '+wd(e)+' '+e.getDate()+' '+my(e);
+  }
+  function formatDayHeader(iso){
+    var d=new Date(iso+'T00:00:00');
+    var weekday=new Intl.DateTimeFormat('es-MX',{weekday:'long'}).format(d);
+    var month=new Intl.DateTimeFormat('es-MX',{month:'long'}).format(d);
+    return {weekday: weekday.charAt(0).toUpperCase()+weekday.slice(1), rest: d.getDate()+' de '+month};
+  }
+  function autoUpdated(){
+    var d=new Date();
+    var wd=new Intl.DateTimeFormat('es-MX',{weekday:'short'}).format(d).replace('.','');
+    var mon=new Intl.DateTimeFormat('es-MX',{month:'short'}).format(d).replace('.','');
+    return wd+' '+d.getDate()+' '+mon+', '+pad(d.getHours())+':'+pad(d.getMinutes());
+  }
+
+  function entryTpl(e){
+    var cm = catMeta(e.category);
+    return '<div class="entry">'+
+      '<div class="entry-head">'+
+        '<span class="entry-title">'+esc(e.title)+'</span>'+
+        '<span class="cat" style="color:'+cm.color+';background:'+cm.color+'22">'+esc(cm.label)+'</span>'+
+        '<span class="entry-tools no-print">'+
+          editBtn('edit-entry',e.id,'Editar entrada: '+e.title)+
+          delBtn('del-entry',e.id,'Eliminar entrada: '+e.title)+
+        '</span>'+
+      '</div>'+
+      '<p class="entry-desc">'+esc(e.desc)+'</p>'+
+      (e.refs ? '<div class="refs">'+esc(e.refs)+'</div>' : '')+
+    '</div>';
+  }
+
+  function dayTpl(iso){
+    var h = formatDayHeader(iso);
+    var isToday = iso===todayISO();
+    var entries = STATE.entries.filter(function(e){return e.date===iso;});
+    var tag = STATE.dayTags[iso];
+    var tagHtml = '<span class="day-tools">'+
+      (tag
+        ? '<span class="day-tag">'+esc(tag)+'</span>'+editBtn('edit-daytag',iso,'Editar etiqueta del día')
+        : '<button class="day-tag no-print" data-action="edit-daytag" data-id="'+iso+'" style="opacity:.5">+ etiqueta</button>')+
+    '</span>';
+    var body;
+    if(entries.length){
+      body = entries.map(entryTpl).join('');
+    } else if(iso===STATE.weekEnd){
+      body = '<p class="empty-note">Día de entrega del reporte semanal — se cierra esta bitácora aquí.</p>';
+    } else {
+      body = '<p class="empty-note">Todavía no hay trabajo registrado — se actualiza al final del día.</p>';
+    }
+    return '<div class="day">'+
+      '<div class="day-head">'+
+        '<span class="day-weekday">'+esc(h.weekday)+'</span>'+
+        '<span class="day-rest">'+esc(h.rest)+(isToday?' · hoy':'')+'</span>'+
+        tagHtml+
+      '</div>'+
+      body+
+    '</div>';
+  }
+
+  function statTpl(s){
+    return '<div class="stat">'+
+      '<div class="value">'+esc(s.value)+'</div><div class="label">'+esc(s.label)+'</div>'+
+      '<span class="stat-tools no-print">'+
+        editBtn('edit-stat',s.id,'Editar métrica: '+s.label)+
+        delBtn('del-stat',s.id,'Quitar métrica: '+s.label)+
+      '</span>'+
+    '</div>';
+  }
+
+  function pendingTpl(p){
+    return '<li><span class="arrow"><svg class="icon icon-sm"><use href="#icon-arrow-right"/></svg></span>'+
+      '<span class="ptext">'+esc(p.text)+'</span>'+
+      '<span class="owner">'+esc(p.owner)+'</span>'+
+      editBtn('edit-pending',p.id,'Editar pendiente: '+p.text)+
+      delBtn('del-pending',p.id,'Quitar pendiente: '+p.text)+
+    '</li>';
+  }
+
+  function buildBody(){
+    var days = dateRange(STATE.weekStart, STATE.weekEnd).map(dayTpl).join('');
+    var stats = STATE.stats.map(statTpl).join('') +
+      '<button class="add-stat no-print" data-action="add-stat">+ métrica</button>';
+    var pendings = STATE.pendings.length ? STATE.pendings.map(pendingTpl).join('')
+      : '<li class="empty-note pendings-empty">Sin pendientes por ahora.</li>';
+    return (
+      '<p class="eyebrow">McDental Pulse · Bitácora de trabajo</p>'+
+      '<h1>'+esc(STATE.title)+editBtn('edit-title',null,'Editar título')+'</h1>'+
+      '<p class="sub">'+esc(STATE.subtitle)+editBtn('edit-subtitle',null,'Editar subtítulo')+'</p>'+
+      '<div class="meta">'+
+        '<span><b>Rango</b>'+esc(formatRange(STATE.weekStart,STATE.weekEnd))+editBtn('edit-range',null,'Editar rango de fechas')+'</span>'+
+        '<span><b>Entorno</b>'+esc(STATE.entorno)+editBtn('edit-entorno',null,'Editar entorno')+'</span>'+
+      '</div>'+
+      '<p class="updated">Última actualización '+esc(STATE.lastUpdate)+'</p>'+
+      '<div class="actions no-print">'+
+        '<button data-action="print"><svg class="icon"><use href="#icon-printer"/></svg> Descargar / imprimir PDF</button>'+
+        '<button class="primary" data-action="add-entry">+ Agregar entrada</button>'+
+        '<button data-action="new-week"><svg class="icon"><use href="#icon-refresh"/></svg> Nueva semana</button>'+
+      '</div>'+
+      '<div class="stats">'+stats+'</div>'+
+      '<div class="timeline">'+days+'</div>'+
+      '<div class="pendings">'+
+        '<h2>Lo que sigue, para que no se pierda</h2>'+
+        '<p>No es trabajo pendiente de esta semana — son decisiones que le tocan al dueño.</p>'+
+        '<ul>'+pendings+'</ul>'+
+        '<button class="no-print" data-action="add-pending">+ pendiente</button>'+
+      '</div>'+
+      '<footer><span>McDental Pulse — bitácora interna, no compartir fuera del equipo</span><span>mcdentalpulse.duckdns.org</span></footer>'
+    );
+  }
+
+  function showBanner(msg){
+    var b=document.getElementById('banner');
+    b.textContent=msg; b.hidden=false;
+  }
+
+  function render(){
+    document.getElementById('app').innerHTML = buildBody();
+  }
+
+  function persist(){
+    STATE.lastUpdate = autoUpdated();
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); }
+    catch(e){ showBanner('No se pudo guardar en este navegador: '+e.message); }
+    render();
+  }
+
+  // ---- entry dialog ----
+  var dialog = document.getElementById('entryDialog');
+  var form = document.getElementById('entryForm');
+  var catSelect = document.getElementById('f-cat');
+  catSelect.innerHTML = CATS.map(function(c){return '<option value="'+c[0]+'">'+c[1]+'</option>';}).join('');
+
+  function clampDate(iso){
+    if(iso<STATE.weekStart) return STATE.weekStart;
+    if(iso>STATE.weekEnd) return STATE.weekEnd;
+    return iso;
+  }
+  function openEntryDialog(entry){
+    document.getElementById('entryDialogTitle').textContent = entry ? 'Editar entrada' : 'Agregar entrada';
+    document.getElementById('f-id').value = entry ? entry.id : '';
+    document.getElementById('f-date').value = entry ? entry.date : clampDate(todayISO());
+    catSelect.value = entry ? entry.category : 'BACKEND';
+    document.getElementById('f-title').value = entry ? entry.title : '';
+    document.getElementById('f-desc').value = entry ? entry.desc : '';
+    document.getElementById('f-refs').value = entry ? (entry.refs||'') : '';
+    dialog.showModal();
+  }
+  form.addEventListener('submit', function(ev){
+    ev.preventDefault();
+    var id = document.getElementById('f-id').value;
+    var data = {
+      date: document.getElementById('f-date').value,
+      category: catSelect.value,
+      title: document.getElementById('f-title').value.trim(),
+      desc: document.getElementById('f-desc').value.trim(),
+      refs: document.getElementById('f-refs').value.trim()
+    };
+    if(!data.title || !data.desc || !data.date) return;
+    if(id){
+      var e = STATE.entries.find(function(x){return x.id===id;});
+      if(e) Object.assign(e, data);
+    } else {
+      data.id = uid();
+      STATE.entries.push(data);
+    }
+    dialog.close();
+    persist();
+  });
+  dialog.addEventListener('click', function(ev){ if(ev.target===dialog) dialog.close(); });
+
+  // ---- range dialog ----
+  var rangeDialog = document.getElementById('rangeDialog');
+  document.getElementById('rangeForm').addEventListener('submit', function(ev){
+    ev.preventDefault();
+    var s = document.getElementById('r-start').value;
+    var e = document.getElementById('r-end').value;
+    if(!s || !e || s>e){ alert('Fechas inválidas: el inicio debe ser antes que el fin.'); return; }
+    STATE.weekStart = s; STATE.weekEnd = e;
+    rangeDialog.close();
+    persist();
+  });
+  rangeDialog.addEventListener('click', function(ev){ if(ev.target===rangeDialog) rangeDialog.close(); });
+
+  // ---- entorno dialog ----
+  var entornoDialog = document.getElementById('entornoDialog');
+  document.getElementById('entornoForm').addEventListener('submit', function(ev){
+    ev.preventDefault();
+    var v = document.getElementById('ent-value').value.trim();
+    if(!v) return;
+    STATE.entorno = v;
+    entornoDialog.close();
+    persist();
+  });
+  entornoDialog.addEventListener('click', function(ev){ if(ev.target===entornoDialog) entornoDialog.close(); });
+
+  // ---- generic text dialog (título, subtítulo, etiqueta, métricas, pendientes, nueva semana) ----
+  var textDialog = document.getElementById('textDialog');
+  var textDialogTitle = document.getElementById('textDialogTitle');
+  var TEXT_FIELDS = [1,2,3].map(function(n){
+    return {
+      wrap: document.getElementById('tf-wrap-'+n),
+      label: document.getElementById('tf-label-'+n),
+      input: document.getElementById('tf-'+n)
+    };
+  });
+  var textDialogOnSave = null;
+  function openTextDialog(title, fields, onSave){
+    textDialogTitle.textContent = title;
+    TEXT_FIELDS.forEach(function(slot, i){
+      var f = fields[i];
+      if(f){
+        slot.wrap.hidden = false;
+        slot.label.textContent = f.label;
+        slot.input.type = f.type || 'text';
+        slot.input.value = f.value || '';
+        slot.input.placeholder = f.placeholder || '';
+        slot.input.required = f.required !== false;
+      } else {
+        slot.wrap.hidden = true;
+        slot.input.required = false;
+      }
+    });
+    textDialogOnSave = onSave;
+    textDialog.showModal();
+  }
+  document.getElementById('textDialogForm').addEventListener('submit', function(ev){
+    ev.preventDefault();
+    var values = TEXT_FIELDS.map(function(slot){ return slot.input.value.trim(); });
+    if(textDialogOnSave) textDialogOnSave(values);
+  });
+  textDialog.addEventListener('click', function(ev){ if(ev.target===textDialog) textDialog.close(); });
+
+  // ---- delegated actions ----
+  document.addEventListener('click', function(ev){
+    var el = ev.target.closest('[data-action]');
+    if(!el) return;
+    var action = el.dataset.action, id = el.dataset.id;
+    switch(action){
+      case 'print': window.print(); break;
+      case 'close-dialog': {
+        var openDialog = document.querySelector('dialog[open]');
+        if(openDialog) openDialog.close();
+        break;
+      }
+      case 'add-entry': openEntryDialog(null); break;
+      case 'edit-entry': openEntryDialog(STATE.entries.find(function(x){return x.id===id;})); break;
+      case 'del-entry':
+        if(confirm('¿Eliminar esta entrada?')){
+          STATE.entries = STATE.entries.filter(function(x){return x.id!==id;});
+          persist();
+        }
+        break;
+      case 'edit-title': {
+        openTextDialog('Editar título', [{label:'Título', value:STATE.title}], function(v){
+          if(!v[0]) return;
+          STATE.title = v[0]; textDialog.close(); persist();
+        });
+        break;
+      }
+      case 'edit-subtitle': {
+        openTextDialog('Editar subtítulo', [{label:'Subtítulo', value:STATE.subtitle, required:false}], function(v){
+          STATE.subtitle = v[0]; textDialog.close(); persist();
+        });
+        break;
+      }
+      case 'edit-range': {
+        document.getElementById('r-start').value = STATE.weekStart;
+        document.getElementById('r-end').value = STATE.weekEnd;
+        rangeDialog.showModal();
+        break;
+      }
+      case 'edit-entorno': {
+        document.getElementById('ent-value').value = STATE.entorno;
+        entornoDialog.showModal();
+        break;
+      }
+      case 'edit-daytag': {
+        openTextDialog('Etiqueta del día', [{label:'Etiqueta (vacío para quitarla)', value:STATE.dayTags[id]||'', required:false}], function(v){
+          if(v[0]) STATE.dayTags[id]=v[0]; else delete STATE.dayTags[id];
+          textDialog.close(); persist();
+        });
+        break;
+      }
+      case 'add-stat': {
+        openTextDialog('Agregar métrica', [
+          {label:'Valor (ej. 4, 33/33)', value:''},
+          {label:'Etiqueta (ej. bugs corregidos)', value:''}
+        ], function(v){
+          if(!v[0]||!v[1]) return;
+          STATE.stats.push({id:uid(), value:v[0], label:v[1]});
+          textDialog.close(); persist();
+        });
+        break;
+      }
+      case 'edit-stat': {
+        var s2 = STATE.stats.find(function(x){return x.id===id;}); if(!s2) break;
+        openTextDialog('Editar métrica', [
+          {label:'Valor', value:s2.value},
+          {label:'Etiqueta', value:s2.label}
+        ], function(v){
+          if(!v[0]||!v[1]) return;
+          s2.value=v[0]; s2.label=v[1]; textDialog.close(); persist();
+        });
+        break;
+      }
+      case 'del-stat':
+        STATE.stats = STATE.stats.filter(function(x){return x.id!==id;});
+        persist();
+        break;
+      case 'add-pending': {
+        openTextDialog('Agregar pendiente', [
+          {label:'Pendiente', value:''},
+          {label:'¿De quién depende?', value:'dueño'}
+        ], function(v){
+          if(!v[0]) return;
+          STATE.pendings.push({id:uid(), text:v[0], owner:v[1]||'dueño'});
+          textDialog.close(); persist();
+        });
+        break;
+      }
+      case 'edit-pending': {
+        var p = STATE.pendings.find(function(x){return x.id===id;}); if(!p) break;
+        openTextDialog('Editar pendiente', [
+          {label:'Pendiente', value:p.text},
+          {label:'¿De quién depende?', value:p.owner}
+        ], function(v){
+          if(!v[0]) return;
+          p.text=v[0]; p.owner=v[1]||p.owner; textDialog.close(); persist();
+        });
+        break;
+      }
+      case 'del-pending':
+        STATE.pendings = STATE.pendings.filter(function(x){return x.id!==id;});
+        persist();
+        break;
+      case 'new-week': {
+        if(!confirm('¿Empezar una semana nueva? Exportá el PDF de esta semana antes si no lo hiciste.')) break;
+        openTextDialog('Nueva semana', [
+          {label:'Fecha de inicio', type:'date', value:STATE.weekEnd},
+          {label:'Fecha de fin', type:'date', value:STATE.weekEnd},
+          {label:'Título', value:STATE.title}
+        ], function(v){
+          if(!v[0] || !v[1] || v[0]>v[1] || !v[2]){ alert('Revisá las fechas y el título.'); return; }
+          STATE = {
+            title: v[2], subtitle: STATE.subtitle, weekStart: v[0], weekEnd: v[1],
+            entorno: STATE.entorno, lastUpdate: '', stats: [], dayTags: {},
+            entries: [], pendings: STATE.pendings
+          };
+          textDialog.close(); persist();
+        });
+        break;
+      }
+    }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
