@@ -12122,7 +12122,7 @@
 .emp-table-th:hover { color: var(--mc-texto-titulo); }
 .emp-table-th--activo { color: var(--mc-marca-texto); }
 .emp-table-th--nombre { width: 30%; }
-.emp-table-th--acciones { cursor: default; width: 1%; }
+.emp-table-th--acciones { cursor: default; width: 1%; position: sticky; right: 0; background: var(--mc-superficie-sutil); }
 
 .emp-table-th-inner { display: inline-flex; align-items: center; gap: 4px; }
 .emp-table-th-caret { transition: transform 0.15s ease; }
@@ -12148,7 +12148,20 @@
 
 .emp-table-nowrap { white-space: nowrap; color: var(--mc-texto-secundario); }
 
-.emp-table-acciones { text-align: right; }
+/* Anclada al borde derecho: en pantallas angostas la tabla desplaza en horizontal y, sin
+   esto, una fila con varios botones (ej. archivado: editar/contraseña/restaurar/borrar) los
+   saca de la vista — la persona ve solo los primeros dos y cree que le faltan acciones.
+   El fondo se repite a mano (no hereda) porque una columna "position: sticky" queda por
+   encima del resto de la fila al desplazar, y sin fondo propio se vería el contenido de
+   detrás transparentándose. */
+.emp-table-acciones {
+  text-align: right;
+  position: sticky;
+  right: 0;
+  background: var(--mc-card-bg);
+  border-left: 1px solid var(--mc-borde-suave);
+}
+.emp-table-row:hover .emp-table-acciones { background: var(--mc-superficie-sutil); }
 .emp-table-icon-btn {
   display: inline-flex;
   align-items: center;

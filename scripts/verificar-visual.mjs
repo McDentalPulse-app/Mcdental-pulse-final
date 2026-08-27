@@ -92,6 +92,34 @@ for (const clase of ["mc-select-menu", "mc-daterange-pop"]) {
   );
 }
 
+// Los dos botones FLOTANTES del teléfono (Mensajes y Reuniones) no pueden acabar apagados.
+//
+// El 17 de agosto de 2026 nadie veía Reuniones en el móvil, y el botón se pintaba perfectamente:
+// el `display:none` que lo esconde en escritorio estaba escrito AL FINAL del CSS, por debajo del
+// `@media (max-width:768px)` que lo encendía. Una media query no añade especificidad, así que
+// la regla suelta de más abajo ganaba también dentro del teléfono. En el móvil Reuniones no
+// aparece en la barra de abajo ni en la hoja "Más" — solo existe este botón —, así que apagarlo
+// dejaba el módulo entero inalcanzable, y ninguna prueba de lógica podía notarlo.
+//
+// Se mide sobre el CSS YA COMPILADO y por POSICIÓN, que es lo único que decide aquí: si el
+// último `display:none` de una de esas clases viene DESPUÉS del que la enciende, está apagada.
+for (const clase of ["mensajes-flotante", "reuniones-flotante"]) {
+  // Se buscan reglas por su LISTA de selectores, no por `.clase{`: el compilador funde las dos
+  // clases en una sola regla (`.mensajes-flotante,.reuniones-flotante{display:none}`), y un
+  // patrón que exigiera la llave pegada no encontraría el apagado — daría verde justo en el
+  // caso que esto vigila. El `(?![\w-])` evita picar en `.reuniones-flotante-punto`.
+  const conLaClase = new RegExp(`\\.${clase}(?![\\w-])`);
+  const reglas = [...css.matchAll(/([^{}]*)\{([^{}]*)\}/g)].filter((m) => conLaClase.test(m[1]));
+  const enciende = reglas.filter((m) => /display:\s*(inline-)?flex/.test(m[2])).at(-1);
+  const apaga = reglas.filter((m) => /display:\s*none/.test(m[2])).at(-1);
+  const bien = Boolean(enciende) && (!apaga || apaga.index < enciende.index);
+  comprobar(
+    `.${clase} sigue encendido en el teléfono`,
+    bien,
+    !enciende ? "no hay ninguna regla que lo encienda" : (bien ? "" : "un display:none posterior lo apaga")
+  );
+}
+
 // ── 2. Lo que hay que medir en un navegador de verdad ─────────────────────────
 const chromium = ["chromium", "chromium-browser", "google-chrome"].find((c) => {
   try { execFileSync("which", [c], { stdio: "pipe" }); return true; } catch { return false; }
@@ -136,7 +164,11 @@ setTimeout(function(){
 
   const medir = (ancho) => {
     const dom = execFileSync(chromium, [
-      "--headless", "--disable-gpu", `--window-size=${ancho},760`,
+      // --no-sandbox porque el build de esta VPS corre como root, y Chrome se niega a arrancar
+      // así con el sandbox puesto (crbug.com/638180). No abre ninguna puerta: mide un HTML que
+      // este mismo script acaba de escribir en un directorio temporal, sin red y sin contenido
+      // ajeno que aislar. Sin la bandera, esto no avisaba: REVENTABA el despliegue.
+      "--headless", "--no-sandbox", "--disable-gpu", `--window-size=${ancho},760`,
       "--virtual-time-budget=3000", "--dump-dom", `file://${join(dir, "caso.html")}`,
     ], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
     const m = dom.match(/<pre id="out">([\s\S]*?)<\/pre>/);
@@ -154,6 +186,89 @@ setTimeout(function(){
   // El control tiene que resolver a los tokens, no a un valor suelto de alguna regla vieja.
   const r = medir(1400);
   comprobar("Campo con el estilo unificado", r.CONTROL === "8px|1px|14px", r.CONTROL);
+
+  // ── La columna de acciones de Gestión de Personal ──────────────────────────
+  //
+  // Una fila archivada llegó a tener cuatro botones (editar, contraseña, restaurar, borrar) y en
+  // un portátil solo se veían dos: la tabla desplazaba en horizontal y los dos últimos quedaban
+  // fuera. Se arregló anclando la columna al borde derecho, y esto lo vigila.
+  //
+  // Se mide con la tabla DESPLAZADA A LA IZQUIERDA (scrollLeft = 0), que es justo donde la
+  // columna de acciones se iba de la pantalla. Nombre larguísimo y sin cortes para forzar el
+  // desbordamiento sin depender del ancho de ventana que dé Chromium.
+  const tablaHtml = `<script>document.documentElement.setAttribute("data-theme","dark")</script>
+<link rel="stylesheet" href="app.css">
+<div class="mc-card emp-table-card">
+  <div class="emp-table-scroll" id="scroll">
+    <table class="emp-table">
+      <thead><tr>
+        <th class="emp-table-th emp-table-th--nombre">Nombre</th>
+        <th class="emp-table-th">Usuario</th>
+        <th class="emp-table-th emp-table-th--sucursal">Sucursal</th>
+        <th class="emp-table-th">Rol</th>
+        <th class="emp-table-th">Estado</th>
+        <th class="emp-table-th emp-table-th--acciones">Acciones</th>
+      </tr></thead>
+      <tbody><tr class="emp-table-row emp-table-row--estatica">
+        <td style="white-space:nowrap">MARIA CONCEPCION ANDRADE GARCIA DE LOS SANTOS HERNANDEZ</td>
+        <td class="emp-table-nowrap">@maria.concepcion.andrade</td>
+        <td class="emp-table-nowrap emp-table-th--sucursal">McDental Tampico Obregon</td>
+        <td><span class="mc-tag">empleado</span></td>
+        <td><span class="mc-tag">Archivado</span></td>
+        <td class="emp-table-acciones">
+          <div class="emp-table-acciones-grupo">
+            <button class="emp-table-icon-btn"></button>
+            <button class="emp-table-icon-btn emp-table-icon-btn--amber"></button>
+            <button class="emp-table-icon-btn emp-table-icon-btn--ok"></button>
+            <button class="emp-table-icon-btn emp-table-icon-btn--danger"></button>
+          </div>
+        </td>
+      </tr></tbody>
+    </table>
+  </div>
+</div>
+<pre id="out"></pre>
+<script>
+setTimeout(function(){
+  var L=[], caja=document.getElementById("scroll").getBoundingClientRect();
+  var botones=[].slice.call(document.querySelectorAll(".emp-table-icon-btn"));
+  var dentro=botones.filter(function(b){
+    var r=b.getBoundingClientRect();
+    return r.width>0 && r.left>=caja.left-0.5 && r.right<=caja.right+0.5;
+  });
+  L.push("DESBORDA=" + (document.getElementById("scroll").scrollWidth > caja.width + 1));
+  L.push("BOTONES_VISIBLES=" + dentro.length + "/" + botones.length);
+  L.push("BOTON_CUADRADO=" + Math.round(botones[3].getBoundingClientRect().width));
+  document.getElementById("out").textContent = L.join("\\n");
+},250);
+</script>`;
+  writeFileSync(join(dir, "caso-tabla.html"), tablaHtml);
+
+  const medirTabla = (ancho) => {
+    const dom = execFileSync(chromium, [
+      "--headless", "--no-sandbox", "--disable-gpu", `--window-size=${ancho},760`,
+      "--virtual-time-budget=3000", "--dump-dom", `file://${join(dir, "caso-tabla.html")}`,
+    ], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+    const m = dom.match(/<pre id="out">([\s\S]*?)<\/pre>/);
+    return Object.fromEntries((m ? m[1] : "").trim().split("\n").map((l) => l.split("=")));
+  };
+
+  for (const ancho of [1000, 800]) {
+    const t = medirTabla(ancho);
+    // Si a este ancho la tabla NO desborda, la comprobación no está midiendo nada: se dice, en
+    // vez de dar un verde que no significa lo que parece.
+    if (t.DESBORDA !== "true") {
+      avisos.push(`La tabla de personal no desborda a ${ancho}px: el anclaje no se pudo medir ahí`);
+      continue;
+    }
+    comprobar(
+      `Los 4 botones de acciones visibles a ${ancho}px`,
+      t.BOTONES_VISIBLES === "4/4",
+      t.BOTONES_VISIBLES
+    );
+  }
+  const t1000 = medirTabla(1000);
+  comprobar("Botón de acción sin aplastar", t1000.BOTON_CUADRADO === "30", `${t1000.BOTON_CUADRADO}px`);
 
   rmSync(dir, { recursive: true, force: true });
 }
