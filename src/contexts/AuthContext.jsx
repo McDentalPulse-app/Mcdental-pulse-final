@@ -37,6 +37,8 @@ const mapUsuarioRow = (row) =>
     // inventario ve/pide solo la suya. Una persona puede tener uno, otro, los dos o ninguno.
     puedeGestionarBodega: !!row.puede_gestionar_bodega,
     puedeGestionarInventario: !!row.puede_gestionar_inventario,
+    // Departamentos (mig. 133): puede crear uno propio y liderarlo.
+    puedeCrearDepartamento: !!row.puede_crear_departamento,
     // Puede fichar dentro del área de cualquier clínica, no solo la suya (mig. 118). Para quien
     // va a apoyar a otras sucursales y se quedaba sin poder marcar.
     puedeMarcarEnCualquierClinica: !!row.puede_marcar_en_cualquier_clinica,
