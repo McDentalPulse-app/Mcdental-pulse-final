@@ -105,7 +105,7 @@ const aBase64 = (blob) =>
     lector.readAsDataURL(blob);
   });
 
-export const registrarChecada = async ({ tipo, coords = null, selfieBlob = null, retoBlob = null, empleadoId, deviceId = null }) => {
+export const registrarChecada = async ({ tipo, coords = null, selfieBlob = null, retoBlob = null, empleadoId, deviceId = null, entradaLibre = false }) => {
   let selfiePath = null;
 
   if (selfieBlob && empleadoId) {
@@ -150,6 +150,7 @@ export const registrarChecada = async ({ tipo, coords = null, selfieBlob = null,
       precision: coords?.precision ?? null,
       deviceId,
       retoFoto,
+      entradaLibre,
     }),
   });
 

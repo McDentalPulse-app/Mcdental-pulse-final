@@ -147,14 +147,24 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
   // absoluto — el servidor hace exactamente lo mismo en `sucursal_para_checada`.
   const salidaLibre = siguiente === "salida" && !!user?.puedeMarcarSalidaSinGeocerca;
 
+  // Entrada libre (permiso `puede_marcar_entrada_libre`, migración 135): a diferencia de
+  // salida, el permiso NO basta por sí solo — hace falta que la persona prenda el
+  // interruptor para ESTA checada. Se apaga a mano justo después de registrar (en
+  // handleChecar), no con un efecto: para cuando `siguiente` pase a "salida" ya no
+  // importa (puedeEntradaLibre lo tapa), pero apagarlo evita que se quede prendido por
+  // si el día se cierra y se vuelve a abrir sin recargar la página.
+  const puedeEntradaLibre = siguiente === "entrada" && !!user?.puedeMarcarEntradaLibre;
+  const [entradaLibre, setEntradaLibre] = useState(false);
+
   const candado = useMemo(() => {
     if (salidaLibre) return { estado: "dentro", distanciaM: null };
+    if (puedeEntradaLibre && entradaLibre) return { estado: "dentro", distanciaM: null };
     // sucursal aún cargando: se fuerza "sin_gps" para que el botón espere y muestre "buscando".
     if (sucursal === undefined) return { estado: "sin_gps", distanciaM: null };
     return enCualquierClinica
       ? evaluarUbicacionEnVarias(ubicacion, clinicas)
       : evaluarUbicacion(ubicacion, sucursal);
-  }, [ubicacion, sucursal, clinicas, enCualquierClinica, salidaLibre]);
+  }, [ubicacion, sucursal, clinicas, enCualquierClinica, salidaLibre, puedeEntradaLibre, entradaLibre]);
 
   const fueraDeArea = candado.estado === "fuera" || candado.estado === "sin_gps";
 
@@ -332,10 +342,12 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
         selfieBlob: foto.blob,
         retoBlob,
         deviceId: getDeviceId(),
+        entradaLibre: puedeEntradaLibre && entradaLibre,
       });
       if (!checada) return; // el toast de error ya lo emitió la acción
 
       setUltima(checada);
+      setEntradaLibre(false); // se apaga tras usarse, no se queda prendido para la próxima
 
       // ¿La entrada llegó tarde? La tolerancia decide SI es retardo; se compara igual que el
       // resto de la app (minutosRetardo vs toleranciaMin del horario). La salida nunca es retardo.
@@ -476,6 +488,17 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
               Cancelar
             </button>
           </>
+        )}
+
+        {puedeEntradaLibre && !capturando && !girando && (
+          <label className="checador-entrada-libre">
+            <input
+              type="checkbox"
+              checked={entradaLibre}
+              onChange={(e) => setEntradaLibre(e.target.checked)}
+            />
+            <span>Marcar entrada sin retardo</span>
+          </label>
         )}
 
         {siguiente && !girando ? (

@@ -59,7 +59,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: "Sesión inválida." });
   }
 
-  const { tipo, selfiePath, lat, lng, precision, deviceId, retoFoto } = req.body || {};
+  const { tipo, selfiePath, lat, lng, precision, deviceId, retoFoto, entradaLibre } = req.body || {};
   if (tipo !== "entrada" && tipo !== "salida") {
     return res.status(400).json({ error: "Tipo de checada inválido." });
   }
@@ -104,6 +104,7 @@ export default async function handler(req, res) {
     p_lng: lng ?? null,
     p_precision: precision ?? null,
     p_tipo: tipo,
+    p_entrada_libre: !!entradaLibre,
   });
 
   if (errorUbic) {
@@ -417,6 +418,7 @@ export default async function handler(req, res) {
     p_precision: precision ?? null,
     p_selfie_path: selfiePath ?? null,
     p_device_id: deviceId ?? null,
+    p_entrada_libre: !!entradaLibre,
   });
 
   if (errorRpc) {

@@ -40,3 +40,4 @@ scripts/migration-report.json
 supabase/.temp/
 .vercel
 .env*
+.playwright-mcp/

@@ -29,6 +29,9 @@ const mapUsuario = (row) =>
     puedeMarcarEnCualquierClinica: !!row.puede_marcar_en_cualquier_clinica,
     // Permiso de marcar SALIDA sin geocerca (mig. 127). Independiente del de arriba.
     puedeMarcarSalidaSinGeocerca: !!row.puede_marcar_salida_sin_geocerca,
+    // Entrada libre (mig. 135): sin geocerca ni retardo, pero solo cuando la persona
+    // prende el interruptor en su Checador — el permiso no basta por sí solo.
+    puedeMarcarEntradaLibre: !!row.puede_marcar_entrada_libre,
   };
 
 // Fila completa, con PII (teléfono, email, fechas). El RLS de la migración 030 solo
@@ -81,6 +84,9 @@ export const updateUsuario = async (id, updates) => {
   }
   if (updates.puedeMarcarSalidaSinGeocerca !== undefined) {
     payload.puede_marcar_salida_sin_geocerca = !!updates.puedeMarcarSalidaSinGeocerca;
+  }
+  if (updates.puedeMarcarEntradaLibre !== undefined) {
+    payload.puede_marcar_entrada_libre = !!updates.puedeMarcarEntradaLibre;
   }
 
   const { data, error } = await supabase

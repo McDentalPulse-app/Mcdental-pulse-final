@@ -45,6 +45,9 @@ const mapUsuarioRow = (row) =>
     // Puede marcar SALIDA sin geocerca — solo la salida, la entrada sigue exigiendo estar en
     // una clínica (mig. 127). Independiente del permiso de arriba.
     puedeMarcarSalidaSinGeocerca: !!row.puede_marcar_salida_sin_geocerca,
+    // Entrada libre (mig. 135): sin geocerca ni retardo, pero solo cuando la persona
+    // prende el interruptor en su Checador — el permiso no basta por sí solo.
+    puedeMarcarEntradaLibre: !!row.puede_marcar_entrada_libre,
     debeCambiarPassword: row.debe_cambiar_password,
     avatarUrl: row.avatar_url,
     bannerUrl: row.banner_url,

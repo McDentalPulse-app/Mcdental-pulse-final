@@ -79,6 +79,7 @@ const GestionUsuarios = () => {
     puedeCrearDepartamento: false,
     puedeMarcarEnCualquierClinica: false,
     puedeMarcarSalidaSinGeocerca: false,
+    puedeMarcarEntradaLibre: false,
   });
 
   // Gestión (admin/rh/psicologa) puede asignar cualquier rol; el resto solo "empleado".
@@ -162,6 +163,7 @@ const GestionUsuarios = () => {
         puedeCrearDepartamento: !!empleado.puedeCrearDepartamento,
         puedeMarcarEnCualquierClinica: !!empleado.puedeMarcarEnCualquierClinica,
         puedeMarcarSalidaSinGeocerca: !!empleado.puedeMarcarSalidaSinGeocerca,
+        puedeMarcarEntradaLibre: !!empleado.puedeMarcarEntradaLibre,
       });
     } else {
       setUsuarioEditando(null);
@@ -180,6 +182,7 @@ const GestionUsuarios = () => {
         puedeCrearDepartamento: false,
         puedeMarcarEnCualquierClinica: false,
         puedeMarcarSalidaSinGeocerca: false,
+        puedeMarcarEntradaLibre: false,
       });
     }
     setMostrarModal(true);
@@ -738,6 +741,25 @@ const GestionUsuarios = () => {
                   <p className="mc-form-hint">
                     Solo afecta su salida — la entrada sigue exigiendo estar en una clínica. Su
                     horario se sigue midiendo con el de {formData.sucursal || "su sucursal"}.
+                  </p>
+                </div>
+              )}
+              {usuarioEditando && (
+                <div className="mc-form-group">
+                  <label className="mc-form-check" htmlFor="gu-entrada-libre">
+                    <input
+                      id="gu-entrada-libre"
+                      type="checkbox"
+                      checked={formData.puedeMarcarEntradaLibre}
+                      onChange={(e) => cambiarCampo("puedeMarcarEntradaLibre", e.target.checked)}
+                    />
+                    <span>Permitir entrada sin geocerca ni retardo (bajo pedido)</span>
+                  </label>
+                  <p className="mc-form-hint">
+                    No queda siempre encendido: en su Checador va a ver un interruptor que ella
+                    misma prende antes de marcar, solo cuando lo necesite ese día. Con el
+                    interruptor prendido, la entrada se registra sin exigir ubicación y sin que
+                    salga como retardo, sin importar la hora real.
                   </p>
                 </div>
               )}

@@ -9967,6 +9967,26 @@
 .checador-camara-aviso span { font-size: 0.85rem; color: var(--mc-texto-apagado); }
 .checador-camara-aviso--alerta { color: var(--mc-aviso-texto); }
 
+/* Entrada libre (mig. 135): interruptor que el propio empleado prende antes de marcar,
+   checada por checada — no es un ajuste permanente como salidaLibre, por eso vive junto
+   al botón y no en Config. */
+.checador-entrada-libre {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--mc-gris-suave);
+  border-radius: var(--mc-radio);
+  background: var(--mc-superficie-sutil);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--mc-texto-titulo);
+  cursor: pointer;
+}
+
 .checador-boton {
   display: flex;
   align-items: center;
