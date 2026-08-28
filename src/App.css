@@ -11828,14 +11828,9 @@
    asomando fuera del riel. overflow-wrap parte la palabra si no cabe. */
 .pulse-rail-item span { font-size: 9.5px; font-weight: 600; line-height: 1.15; text-align: center; padding: 0 2px; overflow-wrap: anywhere; max-width: 100%; }
 .pulse-rail-item:hover { background: rgba(var(--mc-aqua-rgb) / 0.08); color: var(--mc-texto-titulo); }
-/* Sin relleno de fondo: la franja de acento (abajo) + el color de ícono y
-   texto ya marcan cuál está seleccionado — un cuadro de color detrás se veía
-   pesado para un riel tan angosto. */
-.pulse-rail-item--activo { color: var(--mc-marca-texto); }
-.pulse-rail-item--activo::before {
-  content: ""; position: absolute; left: -8px; top: 50%; transform: translateY(-50%);
-  width: 3px; height: 22px; border-radius: 0 3px 3px 0; background: var(--mc-marca-texto);
-}
+/* Sin relleno de fondo (se veía pesado para un riel tan angosto): el
+   seleccionado se marca con un borde alrededor, no con un cuadro de color. */
+.pulse-rail-item--activo { color: var(--mc-marca-texto); border: 1.5px solid var(--mc-marca-texto); }
 .pulse-rail-cuenta { margin-top: 4px; flex: none; }
 
 .pulse-flyout {
