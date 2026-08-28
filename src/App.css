@@ -11766,45 +11766,64 @@
 .aviso-html { text-align: left; }
 
 /* ============================================================================
-   Header navigation (reemplaza el sidebar). Shell en columna: header arriba, main abajo.
+   Riel lateral (rediseño paso 1, reemplaza la barra horizontal de arriba). Shell en
+   columna: barra superior delgada arriba, main abajo — el riel sale del flujo
+   (position: fixed) y le hace sitio con el padding-left de más abajo.
    ============================================================================ */
 .app-shell { flex-direction: column; }
 .app-main { height: auto; flex: 1 1 auto; min-height: 0; }
 
-.topnav { flex: none; background: var(--mc-superficie); border-bottom: 1px solid var(--mc-borde-suave); z-index: 50; }
-.topnav-inner { display: flex; align-items: center; gap: 10px; min-height: 60px; padding: 0 18px; }
-.topnav-brand { display: flex; align-items: center; gap: 8px; border: none; background: none; cursor: pointer; padding: 0; flex: none; }
-.topnav-logo { width: 30px; height: 30px; border-radius: 7px; }
-.topnav-brand-text { font-weight: 700; color: var(--mc-texto-titulo); font-size: 15px; white-space: nowrap; }
-/* min-width: 0 deja que este flex:1 se encoja de verdad — sin él, un grupo más en el menú
-   (Inventario, Reuniones, Festivos...) que ya no entra empuja TODO el header (y la página
-   entera) fuera del viewport en vez de quedarse contenido. flex-wrap (no overflow-x: auto,
-   que se probó primero) es lo que de verdad lo resuelve: overflow-x fuerza a overflow-y a
-   "auto" también —regla de la spec, no se puede separar—, y eso RECORTABA los submenús que
-   se abren hacia abajo (`.topnav-menu`, position: absolute, vive dentro de este contenedor).
-   Envolver a una segunda línea no recorta nada: .topnav-inner solo crece de alto
-   (min-height, ya no height fija). */
-/* Sin overflow:hidden a propósito: los submenús (.topnav-menu) cuelgan de un .topnav-drop
-   que vive AQUÍ DENTRO, position:absolute — un overflow:hidden en el padre los recorta
-   igual que a cualquier otro desborde. El cálculo de "Más" corre en useLayoutEffect (antes
-   de pintar), así que no debería sobrar nada que tapar. */
-.topnav-links { display: flex; align-items: center; flex-wrap: nowrap; column-gap: 2px; flex: 1; min-width: 0; margin-left: 10px; }
+/* Riel oscuro fijo, siempre el mismo color con independencia del tema claro/oscuro de la
+   app — igual que Teams, cuya barra lateral no cambia con el tema del contenido. Solo se
+   monta en escritorio: en móvil Navegacion.jsx sigue eligiendo Sidebar, así que esto ni
+   se renderiza ahí. */
+@media (min-width: 769px) {
+  .app-shell { padding-left: 76px; }
+}
 
-/* Fila gemela para medir el ancho real de cada entrada (JS decide con esto cuántas caben
-   antes de juntar el resto en "Más") — invisible, fuera de flujo, nunca se pinta. */
-/* width/height 0 + overflow hidden en vez de mandarla fuera de pantalla con un offset
-   negativo: así no hay riesgo de que sume scroll horizontal a la página por accidente
-   (justo el tipo de bug que ya mordió a esta barra antes). */
-.topnav-medidor { position: absolute; width: 0; height: 0; overflow: hidden; display: flex; flex-wrap: nowrap; visibility: hidden; pointer-events: none; }
-.topnav-link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px; border: none; background: none; color: var(--mc-texto-secundario); font-size: 14px; font-weight: 600; border-radius: 8px; cursor: pointer; white-space: nowrap; font-family: inherit; }
-.topnav-link:hover { background: var(--mc-superficie-sutil); color: var(--mc-texto-titulo); }
-.topnav-link--activo { color: var(--mc-aqua); background: var(--mc-brand-suave); }
-.topnav-caret { transition: transform .15s ease; opacity: .7; }
-.topnav-link--abierto .topnav-caret { transform: rotate(180deg); }
-.topnav-drop { position: relative; flex: none; }
+.pulse-rail {
+  position: fixed; top: 0; left: 0; bottom: 0; width: 76px; z-index: 55;
+  display: flex; flex-direction: column; align-items: center;
+  background: #0D1613; padding: 14px 0 12px; overflow-y: auto;
+}
+.pulse-rail-logo {
+  width: 40px; height: 40px; border-radius: 11px; margin-bottom: 12px; flex: none;
+  border: none; cursor: pointer; padding: 0; overflow: hidden;
+  background: linear-gradient(155deg, #46D6C5, var(--mc-marca-texto));
+  display: flex; align-items: center; justify-content: center;
+}
+.pulse-rail-logo img { width: 66%; height: 66%; object-fit: contain; }
+.pulse-rail-lista { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1 1 auto; width: 100%; }
+.pulse-rail-drop { display: flex; justify-content: center; width: 100%; position: relative; }
+.pulse-rail-item {
+  width: 56px; min-height: 52px; border-radius: 12px; margin: 0 auto;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  border: none; background: none; cursor: pointer; position: relative;
+  color: #9AB0AA; font-family: inherit;
+}
+.pulse-rail-item span { font-size: 9.5px; font-weight: 600; line-height: 1.15; text-align: center; padding: 0 2px; }
+.pulse-rail-item:hover { background: #16211D; color: #D7E5E1; }
+.pulse-rail-item--activo { background: #1C2A25; color: #5EE6CE; }
+.pulse-rail-item--activo::before {
+  content: ""; position: absolute; left: -8px; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 22px; border-radius: 0 3px 3px 0; background: #5EE6CE;
+}
+.pulse-rail-cuenta { margin-top: 4px; flex: none; }
+.pulse-rail-item--avatar { min-height: 44px; }
 
-.topnav-menu { position: absolute; top: calc(100% + 6px); left: 0; min-width: 224px; background: var(--mc-superficie); border: 1px solid var(--mc-borde-suave); border-radius: 11px; box-shadow: 0 10px 28px rgba(0,0,0,.14); padding: 6px; z-index: 60; display: flex; flex-direction: column; gap: 2px; }
-.topnav-menu--der { right: 0; left: auto; }
+.pulse-flyout {
+  position: absolute; left: calc(100% + 10px); top: -6px; min-width: 224px;
+  background: var(--mc-superficie); border: 1px solid var(--mc-borde-suave); border-radius: 11px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.14); padding: 6px; z-index: 60;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.pulse-flyout--abajo { top: auto; bottom: -6px; }
+.pulse-flyout-titulo { font-size: 11px; text-transform: uppercase; letter-spacing: .03em; color: var(--mc-texto-secundario); padding: 6px 10px 4px; font-weight: 700; }
+
+.pulse-topbar { flex: none; display: flex; align-items: center; gap: 16px; min-height: 60px; padding: 0 22px; background: var(--mc-superficie); border-bottom: 1px solid var(--mc-borde-suave); z-index: 50; }
+.pulse-topbar-titulo { font-weight: 800; font-size: 16px; color: var(--mc-texto-titulo); white-space: nowrap; }
+.pulse-topbar-acciones { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
 .topnav-menu-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border: none; background: none; color: var(--mc-texto); font-size: 14px; border-radius: 8px; cursor: pointer; text-align: left; white-space: nowrap; font-family: inherit; }
 .topnav-menu-item:hover { background: var(--mc-superficie-sutil); }
 .topnav-menu-item--activo { color: var(--mc-aqua); }
@@ -11835,19 +11854,8 @@
 .topnav-menu-item--activo .topnav-menu-titulo { color: var(--mc-aqua); }
 .topnav-menu-desc { font-size: 12.5px; line-height: 1.35; color: var(--mc-texto-secundario); }
 
-.topnav-right { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: none; }
-.topnav-icon-btn { width: 38px; height: 38px; border: 1px solid var(--mc-borde-suave); border-radius: 9px; background: var(--mc-superficie); color: var(--mc-texto-secundario); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
-.topnav-icon-btn:hover { background: var(--mc-superficie-sutil); }
-.topnav-user { display: flex; align-items: center; gap: 8px; border: 1px solid var(--mc-borde-suave); border-radius: 9px; padding: 3px 8px 3px 3px; background: var(--mc-superficie); cursor: pointer; font-family: inherit; }
-.topnav-user:hover { background: var(--mc-superficie-sutil); }
-.topnav-user-info { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; }
-.topnav-user-name { font-size: 13px; font-weight: 600; color: var(--mc-texto-titulo); }
-.topnav-user-role { font-size: 11px; color: var(--mc-texto-secundario); text-transform: capitalize; }
-
-/* Botón permanente de Mensajes. Vive en la zona derecha del header, NO en la barra de enlaces:
-   esa se oculta entera por debajo de 1100 px, y Mensajes tiene que verse justo ahí, en el
-   celular, que es donde la plantilla lo usa. Mismo tamaño que la hamburguesa y que
-   .topnav-icon-btn para que los tres se alineen. */
+/* Botón permanente de Mensajes. Vive en las acciones de la barra superior, junto a
+   Reuniones y la campana — mismo tamaño los tres para que se alineen. */
 .topnav-mensajes { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: none; width: 38px; height: 38px; border: 1px solid var(--mc-borde-suave); border-radius: 9px; background: var(--mc-superficie); color: var(--mc-texto-secundario); cursor: pointer; }
 .topnav-mensajes:hover { background: var(--mc-superficie-sutil); color: var(--mc-texto-titulo); }
 .topnav-mensajes--activo { color: var(--mc-aqua); background: var(--mc-brand-suave); }
@@ -11936,33 +11944,13 @@
   }
 }
 
-.topnav-hamburguesa { display: none; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 38px; height: 38px; border: 1px solid var(--mc-borde-suave); border-radius: 9px; background: var(--mc-superficie); cursor: pointer; }
-.topnav-hamburguesa span { width: 18px; height: 2px; background: var(--mc-texto-titulo); border-radius: 2px; }
-
-.topnav-movil-overlay { position: fixed; inset: 60px 0 0 0; background: rgba(0,0,0,.4); z-index: 45; }
-.topnav-movil { background: var(--mc-superficie); max-height: calc(100dvh - 60px); overflow-y: auto; padding: 10px 12px 24px; }
-.topnav-movil-grupo { padding: 4px 0; border-bottom: 1px solid var(--mc-borde-suave); }
-.topnav-movil-grupo:last-child { border-bottom: none; }
-.topnav-movil-titulo { font-size: 11px; text-transform: uppercase; letter-spacing: .03em; color: var(--mc-texto-secundario); padding: 8px 8px 4px; font-weight: 700; }
-.topnav-movil-item { display: flex; align-items: center; gap: 11px; width: 100%; padding: 11px 8px; border: none; background: none; color: var(--mc-texto); font-size: 15px; border-radius: 8px; cursor: pointer; text-align: left; font-family: inherit; }
-.topnav-movil-item:hover { background: var(--mc-superficie-sutil); }
-.topnav-movil-item--activo { color: var(--mc-aqua); background: var(--mc-brand-suave); }
-.topnav-movil-item--danger { color: var(--mc-badge-rojo-texto); }
-
-/* Debajo de 1100px: nav horizontal fuera, hamburguesa dentro. */
-@media (max-width: 1100px) {
-  .topnav-links { display: none; }
-  .topnav-user-info { display: none; }
-  .topnav-hamburguesa { display: inline-flex; }
-}
-
 /* ============================================================================
-   Header: buscador global + campana integrada (ya no flotante).
+   Barra superior: buscador global + campana integrada (ya no flotante).
    ============================================================================ */
-/* Campana dentro del header: inline, con estilo de botón del header (no redondo flotante). */
-.topnav .campana { position: relative; top: auto; right: auto; z-index: 60; display: flex; }
-.topnav .campana-boton { width: 38px; height: 38px; border-radius: 9px; box-shadow: none; }
-.topnav .campana-panel { top: 48px; }
+/* Campana dentro de la barra: inline, con estilo de botón (no redondo flotante). */
+.pulse-topbar .campana { position: relative; top: auto; right: auto; z-index: 60; display: flex; }
+.pulse-topbar .campana-boton { width: 38px; height: 38px; border-radius: 9px; box-shadow: none; }
+.pulse-topbar .campana-panel { top: 48px; }
 
 /* Buscador global */
 .buscador { position: relative; display: flex; align-items: center; }
@@ -11976,10 +11964,6 @@
 .buscador-item span:first-of-type { flex: 1; }
 .buscador-grupo { font-size: 11px; color: var(--mc-texto-apagado); background: var(--mc-superficie-sutil); padding: 2px 6px; border-radius: 5px; }
 .buscador-vacio { padding: 12px; color: var(--mc-texto-secundario); font-size: 13px; text-align: center; }
-
-@media (max-width: 1100px) {
-  .buscador { display: none; }
-}
 
 /* ============================================================================
    Menú de cuenta (clic en la foto): cabecera con avatar/email + switch modo oscuro.
