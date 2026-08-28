@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, useMemo, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { marked } from "marked";
 import Card from "../common/Card";
 import PageHeader from "../common/PageHeader";
 import EmptyState from "../common/EmptyState";
 import Icon from "../ui/Icon";
-import { sanitizarHtml } from "../../utils/sanitizarHtml";
+import { sanitizarHtmlNota } from "../../utils/sanitizarHtml";
 import { notify } from "../../utils/notify";
 import {
   getNotas, addNota, updateNota, deleteNota,
@@ -11,38 +12,98 @@ import {
 } from "../../services/supabase/notasPersonalesService";
 import NotasGrafo from "./NotasGrafo";
 
-// El editor (TipTap) solo se necesita al abrir Notas — igual que en Avisos, no vale la
-// pena meterlo en el bundle inicial de quien nunca abre esta pantalla.
-const EditorTexto = lazy(() => import("../common/EditorTexto"));
+marked.setOptions({ breaks: true }); // un salto de línea sencillo ya separa párrafos, como en Obsidian
 
 const ESPERA_AUTOGUARDADO_MS = 800;
 
 const parseTags = (txt) => txt.split(",").map((t) => t.trim()).filter(Boolean);
 
-const soloTexto = (html) => (html || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-
-const formatoFecha = (iso) => {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("es-MX", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-};
+// Extracto para la lista/búsqueda: quita la sintaxis markdown más común, no hace falta
+// que sea perfecto — es solo una vista previa de una línea.
+const soloTexto = (md) => (md || "")
+  .replace(/```[\s\S]*?```/g, " ")
+  .replace(/\[\[([^[\]]+)\]\]/g, "$1")
+  .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+  .replace(/[#>*_`~-]/g, " ")
+  .replace(/\s+/g, " ")
+  .trim();
 
 const escapeAttr = (s) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
 
-// Vuelve clicables los [[Título]] del cuerpo YA saneado (nunca antes: el saneo es lo que
-// impide que un HTML malicioso pegado en la nota se ejecute; esto solo envuelve texto que
-// ya pasó ese filtro, así que no puede colar una etiqueta nueva — el propio patrón excluye
-// `<`/`>` dentro de los corchetes).
-const conEnlaces = (html) =>
-  sanitizarHtml(html).replace(/\[\[([^[\]<>]+)\]\]/g, (_, t) => {
+// Markdown -> HTML saneado, con los [[Título]] ya vueltos clicables. El saneo corre
+// SIEMPRE antes de tocar el texto con el regex de wikilinks — nunca al revés — y ese
+// regex no puede colar una etiqueta nueva porque excluye `<`/`>` dentro de los corchetes.
+const renderNota = (markdown) =>
+  sanitizarHtmlNota(marked.parse(markdown || "")).replace(/\[\[([^[\]<>]+)\]\]/g, (_, t) => {
     const titulo = t.trim();
     return `<button type="button" class="nota-wikilink" data-titulo="${escapeAttr(titulo)}">${titulo}</button>`;
   });
 
+// Arma un árbol { carpetas: Map<nombre, nodo>, notas: [] } agrupando por `carpeta`
+// partido en "/" — "Trabajo/Clientes" cuelga de Trabajo > Clientes. Sin carpeta = raíz.
+const armarArbol = (notas) => {
+  const raiz = { ruta: "", carpetas: new Map(), notas: [] };
+  for (const n of notas) {
+    const partes = (n.carpeta || "").split("/").map((p) => p.trim()).filter(Boolean);
+    let actual = raiz;
+    let ruta = "";
+    for (const parte of partes) {
+      ruta = ruta ? `${ruta}/${parte}` : parte;
+      if (!actual.carpetas.has(parte)) actual.carpetas.set(parte, { ruta, nombre: parte, carpetas: new Map(), notas: [] });
+      actual = actual.carpetas.get(parte);
+    }
+    actual.notas.push(n);
+  }
+  return raiz;
+};
+
+const porTitulo = (a, b) => a.titulo.localeCompare(b.titulo);
+
+function RamaArbol({ nodo, nivel, abiertas, onToggle, activaId, onSeleccionar }) {
+  const sub = [...nodo.carpetas.values()].sort((a, b) => a.nombre.localeCompare(b.nombre));
+  const notasOrdenadas = [...nodo.notas].sort(porTitulo);
+  return (
+    <>
+      {sub.map((s) => {
+        const abierta = abiertas.has(s.ruta);
+        return (
+          <div key={s.ruta}>
+            <button
+              type="button"
+              className="notas-carpeta-fila"
+              style={{ paddingLeft: 10 + nivel * 14 }}
+              onClick={() => onToggle(s.ruta)}
+            >
+              <Icon name="chevronDown" size={13} className={`notas-carpeta-caret${abierta ? "" : " notas-carpeta-caret--cerrada"}`} />
+              <Icon name="folder" size={14} />
+              <span>{s.nombre}</span>
+            </button>
+            {abierta && (
+              <RamaArbol nodo={s} nivel={nivel + 1} abiertas={abiertas} onToggle={onToggle} activaId={activaId} onSeleccionar={onSeleccionar} />
+            )}
+          </div>
+        );
+      })}
+      {notasOrdenadas.map((n) => (
+        <button
+          key={n.id}
+          type="button"
+          className={`notas-item${n.id === activaId ? " notas-item--activa" : ""}`}
+          style={{ paddingLeft: 28 + nivel * 14 }}
+          onClick={() => onSeleccionar(n)}
+        >
+          <span className="notas-item-titulo">{n.titulo}</span>
+        </button>
+      ))}
+    </>
+  );
+}
+
 /**
- * Notas personales por usuario — 100% privadas (RLS, migración 131). Estilo Obsidian:
- * enlaces [[Entre corchetes]] entre notas, backlinks y un grafo de conexiones.
+ * Notas personales por usuario — 100% privadas (RLS, migración 131). Estilo Obsidian de
+ * verdad: se escribe en markdown crudo (nada de barra de formato), [[Título]] enlaza
+ * entre notas, backlinks, grafo, carpetas anidadas y los atajos de Obsidian
+ * (Ctrl+B/I/K/E).
  */
 export default function NotasPanel({ user }) {
   const [notas, setNotas] = useState([]);
@@ -54,14 +115,12 @@ export default function NotasPanel({ user }) {
   const [tagsTexto, setTagsTexto] = useState("");
   const [modoVista, setModoVista] = useState(false);
   const [busqueda, setBusqueda] = useState("");
-  const [filtroCarpeta, setFiltroCarpeta] = useState("");
+  const [carpetasAbiertas, setCarpetasAbiertas] = useState(() => new Set());
   const [backlinks, setBacklinks] = useState([]);
   const [grafoAbierto, setGrafoAbierto] = useState(false);
   const [guardando, setGuardando] = useState(false);
 
-  // Los refs guardan SIEMPRE el último valor: el timeout del autoguardado se agenda una
-  // vez y, si se ejecuta varios renders después, necesita ver lo que hay ahora, no lo que
-  // había cuando se programó.
+  const textareaRef = useRef(null);
   const edicionRef = useRef({ titulo: "", cuerpo: "", carpeta: "", tagsTexto: "" });
   const activaIdRef = useRef(null);
   const timerRef = useRef(null);
@@ -76,6 +135,17 @@ export default function NotasPanel({ user }) {
       .catch(() => notify.toast.error("No se pudieron cargar tus notas."))
       .finally(() => setCargando(false));
   }, []);
+
+  // Ctrl/Cmd+E alterna Editar/Vista previa — igual que en Obsidian, funciona con el
+  // panel abierto sin importar si el foco está en el textarea o no.
+  useEffect(() => {
+    if (!activaId) return undefined;
+    const onKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "e") { e.preventDefault(); setModoVista((v) => !v); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [activaId]);
 
   const ejecutarGuardado = async () => {
     const id = activaIdRef.current;
@@ -137,7 +207,7 @@ export default function NotasPanel({ user }) {
     const tituloNuevo = t.trim();
     if (!tituloNuevo) { notify.toast.warning("Ponle un título a la nota."); return; }
     try {
-      const nueva = await addNota({ titulo: tituloNuevo, carpeta: filtroCarpeta || null });
+      const nueva = await addNota({ titulo: tituloNuevo });
       setNotas((prev) => [nueva, ...prev]);
       seleccionar(nueva);
     } catch (e) {
@@ -185,25 +255,60 @@ export default function NotasPanel({ user }) {
     }
   };
 
-  const carpetas = useMemo(
-    () => [...new Set(notas.map((n) => n.carpeta).filter(Boolean))].sort(),
-    [notas]
-  );
+  // Atajos de Obsidian dentro del textarea: Ctrl/Cmd+B negrita, +I cursiva, +K enlace.
+  // Envuelven la selección tal cual — sin selección, envuelven texto vacío y el cursor
+  // queda listo entre los marcadores para empezar a escribir.
+  const envolverSeleccion = (marcador) => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const { selectionStart: ini, selectionEnd: fin, value } = ta;
+    const seleccion = value.slice(ini, fin);
+    setCuerpo(value.slice(0, ini) + marcador + seleccion + marcador + value.slice(fin));
+    requestAnimationFrame(() => { ta.focus(); ta.setSelectionRange(ini + marcador.length, fin + marcador.length); });
+  };
+
+  const insertarEnlace = async () => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const { selectionStart: ini, selectionEnd: fin, value } = ta;
+    const seleccion = value.slice(ini, fin);
+    const url = await notify.prompt({ title: "Enlace", description: "Pega la URL:", placeholder: "https://…", confirmText: "Aplicar" });
+    if (url === null) return;
+    const href = url.trim() ? (/^https?:\/\//i.test(url) ? url.trim() : `https://${url.trim()}`) : "";
+    const texto = `[${seleccion || "enlace"}](${href})`;
+    setCuerpo(value.slice(0, ini) + texto + value.slice(fin));
+    requestAnimationFrame(() => { ta.focus(); const pos = ini + texto.length; ta.setSelectionRange(pos, pos); });
+  };
+
+  const onKeyDownEditor = (e) => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    const tecla = e.key.toLowerCase();
+    if (tecla === "b") { e.preventDefault(); envolverSeleccion("**"); }
+    else if (tecla === "i") { e.preventDefault(); envolverSeleccion("*"); }
+    else if (tecla === "k") { e.preventDefault(); insertarEnlace(); }
+  };
+
+  const toggleCarpeta = (ruta) => {
+    setCarpetasAbiertas((prev) => {
+      const next = new Set(prev);
+      if (next.has(ruta)) next.delete(ruta); else next.add(ruta);
+      return next;
+    });
+  };
+
+  const arbol = useMemo(() => armarArbol(notas), [notas]);
 
   const notasFiltradas = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
-    return notas.filter((n) => {
-      if (filtroCarpeta && n.carpeta !== filtroCarpeta) return false;
-      if (q && !n.titulo.toLowerCase().includes(q)) return false;
-      return true;
-    });
-  }, [notas, busqueda, filtroCarpeta]);
+    if (!q) return [];
+    return notas.filter((n) => n.titulo.toLowerCase().includes(q)).sort(porTitulo);
+  }, [notas, busqueda]);
 
   const notaActiva = notas.find((n) => n.id === activaId);
 
   return (
     <div className="notas-page">
-      <PageHeader icon="note" title="Notas" subtitle="Tu libreta personal — 100% privada, nadie más la ve.">
+      <PageHeader icon="note" title="Notas" subtitle="Tu libreta personal — 100% privada, nadie más la ve. Se escribe en markdown.">
         <button type="button" className="mc-btn-secondary" onClick={() => setGrafoAbierto(true)} disabled={notas.length < 1}>
           <Icon name="link" size={16} /> Ver grafo
         </button>
@@ -225,39 +330,35 @@ export default function NotasPanel({ user }) {
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
               />
-              {carpetas.length > 0 && (
-                <select className="notas-filtro-carpeta" value={filtroCarpeta} onChange={(e) => setFiltroCarpeta(e.target.value)}>
-                  <option value="">Todas las carpetas</option>
-                  {carpetas.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              )}
             </div>
-            <div className="notas-lista">
-              {notasFiltradas.length === 0 ? (
+            <div className="notas-arbol">
+              {notas.length === 0 ? (
                 <EmptyState icon="note" title="Sin notas todavía" message="Crea tu primera nota con el botón de arriba." />
+              ) : busqueda.trim() ? (
+                notasFiltradas.length === 0 ? (
+                  <p className="notas-sin-resultados">Nada coincide con "{busqueda}".</p>
+                ) : (
+                  notasFiltradas.map((n) => (
+                    <button
+                      key={n.id}
+                      type="button"
+                      className={`notas-item${n.id === activaId ? " notas-item--activa" : ""}`}
+                      onClick={() => seleccionar(n)}
+                    >
+                      <span className="notas-item-titulo">{n.titulo}</span>
+                      <span className="notas-item-extracto">{soloTexto(n.cuerpo).slice(0, 70) || "Sin contenido"}</span>
+                    </button>
+                  ))
+                )
               ) : (
-                notasFiltradas.map((n) => (
-                  <button
-                    key={n.id}
-                    type="button"
-                    className={`notas-item${n.id === activaId ? " notas-item--activa" : ""}`}
-                    onClick={() => seleccionar(n)}
-                  >
-                    <span className="notas-item-titulo">{n.titulo}</span>
-                    <span className="notas-item-extracto">{soloTexto(n.cuerpo).slice(0, 80) || "Sin contenido"}</span>
-                    <span className="notas-item-meta">
-                      {n.carpeta && <span className="notas-item-carpeta"><Icon name="folder" size={12} /> {n.carpeta}</span>}
-                      <span>{formatoFecha(n.updatedAt)}</span>
-                    </span>
-                  </button>
-                ))
+                <RamaArbol nodo={arbol} nivel={0} abiertas={carpetasAbiertas} onToggle={toggleCarpeta} activaId={activaId} onSeleccionar={seleccionar} />
               )}
             </div>
           </Card>
 
           <Card className="notas-editor-card">
             {!notaActiva ? (
-              <EmptyState icon="note" title="Elige o crea una nota" message="Selecciona una nota de la lista o crea una nueva para empezar a escribir." />
+              <EmptyState icon="note" title="Elige o crea una nota" message="Selecciona una nota del árbol o crea una nueva para empezar a escribir." />
             ) : (
               <>
                 <div className="notas-editor-head">
@@ -270,7 +371,7 @@ export default function NotasPanel({ user }) {
                   />
                   <div className="notas-editor-acciones">
                     <span className="notas-guardado-estado">{guardando ? "Guardando…" : "Guardado"}</span>
-                    <button type="button" className="mc-btn-secondary" onClick={() => setModoVista((v) => !v)}>
+                    <button type="button" className="mc-btn-secondary" onClick={() => setModoVista((v) => !v)} title="Ctrl+E">
                       <Icon name={modoVista ? "edit" : "eye"} size={16} /> {modoVista ? "Editar" : "Vista previa"}
                     </button>
                     <button
@@ -288,22 +389,28 @@ export default function NotasPanel({ user }) {
                 {modoVista ? (
                   <div
                     className="nota-vista"
-                    dangerouslySetInnerHTML={{ __html: conEnlaces(cuerpo) }}
+                    dangerouslySetInnerHTML={{ __html: renderNota(cuerpo) }}
                     onClick={(e) => {
                       const btn = e.target.closest(".nota-wikilink");
                       if (btn) irANota(btn.dataset.titulo);
                     }}
                   />
                 ) : (
-                  <Suspense fallback={<div className="editor-cargando">Cargando editor…</div>}>
-                    <EditorTexto value={cuerpo} onChange={setCuerpo} placeholder="Escribe aquí… usa [[Título]] para enlazar otra nota." />
-                  </Suspense>
+                  <textarea
+                    ref={textareaRef}
+                    className="notas-editor-textarea"
+                    value={cuerpo}
+                    onChange={(e) => setCuerpo(e.target.value)}
+                    onKeyDown={onKeyDownEditor}
+                    placeholder={"Escribe en markdown… **negrita**, ## título, [[Otra nota]], [enlace](url)\n\nCtrl+B negrita · Ctrl+I cursiva · Ctrl+K enlace · Ctrl+E vista previa"}
+                    spellCheck={false}
+                  />
                 )}
 
                 <div className="notas-panel-extra">
                   <label className="notas-campo-carpeta">
                     <Icon name="folder" size={14} /> Carpeta
-                    <input type="text" value={carpeta} onChange={(e) => setCarpeta(e.target.value)} placeholder="Sin carpeta" />
+                    <input type="text" value={carpeta} onChange={(e) => setCarpeta(e.target.value)} placeholder="Sin carpeta (usa / para subcarpetas)" />
                   </label>
                   <label className="notas-campo-tags">
                     Etiquetas (separadas por coma)

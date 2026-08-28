@@ -13560,9 +13560,10 @@
 }
 
 /* ============================================================
-   Notas personales (estilo Obsidian) — migración 131.
-   Mismo patrón de dos columnas que Mensajes (.mensajes-layout), a tres: lista, editor,
-   panel extra (carpeta/tags/backlinks). En móvil se apila en una sola columna.
+   Notas personales (estilo Obsidian) — migraciones 131/132.
+   Look más plano que el resto de la app a propósito — es una superficie de escritura,
+   no un formulario: menos "tarjeta" (bordes/sombras), tipografía monoespaciada en el
+   editor, árbol de carpetas denso. En móvil se apila en una sola columna.
    ============================================================ */
 .notas-page {
   display: flex;
@@ -13572,8 +13573,8 @@
 
 .notas-layout {
   display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 16px;
+  grid-template-columns: 260px 1fr;
+  gap: 12px;
   align-items: start;
 }
 
@@ -13583,78 +13584,92 @@
   display: flex;
   flex-direction: column;
   max-height: 78vh;
+  border-color: var(--mc-borde-suave);
+  box-shadow: none;
 }
 
 .notas-sidebar-head {
-  padding: 14px;
+  padding: 10px;
   border-bottom: 1px solid var(--mc-gris-suave);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
   flex-shrink: 0;
 }
 
-.notas-buscador,
-.notas-filtro-carpeta {
+.notas-buscador {
   width: 100%;
-  padding: 8px 10px;
-  border-radius: var(--mc-radio);
+  padding: 6px 9px;
+  border-radius: 6px;
   border: 1px solid var(--mc-gris-suave);
   background: var(--mc-superficie);
   color: var(--mc-texto-titulo);
-  font-size: 13px;
+  font-size: 12.5px;
 }
 
-.notas-lista {
+.notas-arbol {
   overflow-y: auto;
   flex: 1 1 auto;
+  padding: 6px 0;
 }
+
+.notas-sin-resultados {
+  padding: 10px;
+  color: var(--mc-texto-secundario);
+  font-size: 12.5px;
+}
+
+.notas-carpeta-fila {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  padding: 5px 10px;
+  border: none;
+  background: transparent;
+  color: var(--mc-texto-secundario);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.notas-carpeta-fila:hover { background: var(--mc-superficie-sutil); }
+
+.notas-carpeta-caret { transition: transform 0.12s ease; flex-shrink: 0; }
+.notas-carpeta-caret--cerrada { transform: rotate(-90deg); }
 
 .notas-item {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 1px;
   width: 100%;
   text-align: left;
-  padding: 12px 14px;
+  padding: 6px 10px;
   border: none;
-  border-bottom: 1px solid var(--mc-gris-suave);
+  border-radius: 5px;
   background: transparent;
   cursor: pointer;
 }
 
 .notas-item:hover { background: var(--mc-superficie-sutil); }
 
-.notas-item--activa {
-  background: var(--mc-brand-suave);
-  border-left: 3px solid var(--mc-marca-texto);
-}
+.notas-item--activa { background: var(--mc-brand-suave); }
 
-.notas-item-titulo { font-weight: 700; color: var(--mc-texto-titulo); font-size: 13.5px; }
+.notas-item-titulo { color: var(--mc-texto-titulo); font-size: 13px; }
+.notas-item--activa .notas-item-titulo { font-weight: 700; color: var(--mc-marca-texto); }
 
 .notas-item-extracto {
   color: var(--mc-texto-secundario);
-  font-size: 12px;
+  font-size: 11.5px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.notas-item-meta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--mc-texto-secundario);
-  font-size: 11px;
-}
-
-.notas-item-carpeta { display: inline-flex; align-items: center; gap: 3px; }
-
 .notas-editor-card {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
   min-height: 78vh;
+  border-color: var(--mc-borde-suave);
+  box-shadow: none;
 }
 
 .notas-editor-head {
@@ -13666,14 +13681,14 @@
 
 .notas-titulo-input {
   flex: 1 1 240px;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 800;
   color: var(--mc-texto-titulo);
   border: none;
   background: transparent;
   padding: 4px 0;
 }
-.notas-titulo-input:focus { outline: none; border-bottom: 1px solid var(--mc-marca-texto); }
+.notas-titulo-input:focus { outline: none; }
 
 .notas-editor-acciones {
   display: flex;
@@ -13687,12 +13702,49 @@
   color: var(--mc-texto-secundario);
 }
 
+/* Fuente monoespaciada: es la superficie de escritura en markdown crudo, no texto
+   enriquecido — se ve y se siente como el editor de Obsidian, no como un formulario. */
+.notas-editor-textarea {
+  flex: 1 1 auto;
+  min-height: 280px;
+  resize: none;
+  border: none;
+  background: transparent;
+  color: var(--mc-texto-titulo);
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  padding: 4px 0;
+}
+.notas-editor-textarea:focus { outline: none; }
+.notas-editor-textarea::placeholder { color: var(--mc-texto-secundario); white-space: pre-wrap; }
+
 .nota-vista {
   flex: 1 1 auto;
   min-height: 260px;
   line-height: 1.7;
   color: var(--mc-texto-titulo);
 }
+.nota-vista pre {
+  background: var(--mc-superficie-sutil);
+  padding: 10px 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+.nota-vista code {
+  background: var(--mc-superficie-sutil);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+.nota-vista pre code { background: none; padding: 0; }
+.nota-vista blockquote {
+  margin: 0;
+  padding-left: 12px;
+  border-left: 3px solid var(--mc-gris-suave);
+  color: var(--mc-texto-secundario);
+}
+.nota-vista hr { border: none; border-top: 1px solid var(--mc-gris-suave); }
 
 .nota-wikilink {
   display: inline;

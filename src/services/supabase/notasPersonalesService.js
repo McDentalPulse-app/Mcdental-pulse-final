@@ -57,13 +57,11 @@ export const deleteNota = async (id) => {
   }
 };
 
-// Saca los títulos [[Entre corchetes dobles]] del HTML del editor. Se despoja de
-// etiquetas primero (un <strong>[[Nota]]</strong> a medio escribir sigue debiendo
-// contarse) y no de un DOM real — más simple y de sobra para este alcance.
-export const extraerWikilinks = (html) => {
-  const texto = (html || "").replace(/<[^>]+>/g, "");
+// Saca los títulos [[Entre corchetes dobles]] del markdown de la nota (texto plano, ya
+// no hace falta despojar etiquetas: el cuerpo se escribe a mano, no lo genera un editor).
+export const extraerWikilinks = (markdown) => {
   const vistos = new Set();
-  for (const m of texto.matchAll(/\[\[([^[\]]+)\]\]/g)) {
+  for (const m of (markdown || "").matchAll(/\[\[([^[\]]+)\]\]/g)) {
     const titulo = m[1].trim();
     if (titulo) vistos.add(titulo);
   }

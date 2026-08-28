@@ -28,6 +28,7 @@
     "express": "^5.2.1",
     "jscanify": "^1.4.3",
     "lucide-react": "^1.21.0",
+    "marked": "^18.0.11",
     "motion": "^12.42.2",
     "onnxruntime-node": "^1.27.0",
     "react": "^19.2.6",
