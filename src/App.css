@@ -11779,13 +11779,18 @@
    se renderiza ahí. */
 @media (min-width: 769px) {
   .app-shell { padding-left: 76px; }
+  /* Riel + barra superior comparten color (--mc-superficie) y se leen como un
+     único panel; esta esquina redondeada separa ese panel del contenido en
+     vez de una línea recta — el riel (fixed, alto completo) se asoma detrás
+     del hueco que deja el radio. Solo aplica aquí: en móvil no hay riel al
+     lado (Sidebar.jsx pone la barra de pestañas abajo, sin este panel). */
+  .app-main { border-top-left-radius: var(--mc-radio-lg); }
 }
 
 .pulse-rail {
   position: fixed; top: 0; left: 0; bottom: 0; width: 76px; z-index: 55;
   display: flex; flex-direction: column; align-items: center;
-  background: var(--mc-fondo-shell); border-right: 1px solid var(--mc-borde-suave);
-  padding: 14px 0 12px;
+  background: var(--mc-superficie); padding: 14px 0 12px;
 }
 .pulse-rail-logo {
   width: 40px; height: 40px; border-radius: 11px; margin-bottom: 12px; flex: none;
@@ -11803,7 +11808,7 @@
   color: var(--mc-texto-secundario); font-family: inherit;
 }
 .pulse-rail-item span { font-size: 9.5px; font-weight: 600; line-height: 1.15; text-align: center; padding: 0 2px; }
-.pulse-rail-item:hover { background: var(--mc-superficie-sutil-hover); color: var(--mc-texto-titulo); }
+.pulse-rail-item:hover { background: rgba(var(--mc-aqua-rgb) / 0.08); color: var(--mc-texto-titulo); }
 .pulse-rail-item--activo { background: var(--mc-brand-suave); color: var(--mc-marca-texto); }
 .pulse-rail-item--activo::before {
   content: ""; position: absolute; left: -8px; top: 50%; transform: translateY(-50%);
