@@ -100,6 +100,7 @@ export default function HeaderNav() {
                   aria-label={e.grupo.nombre}
                 >
                   <Icon name={GROUP_ICONS[e.grupo.nombre]} size={20} />
+                  <Icon name="chevronDown" size={10} className="pulse-rail-caret" />
                   {grupoActivo(e.grupo.items) && <span>{e.grupo.nombre}</span>}
                 </button>
                 {abierto === e.grupo.nombre && (

@@ -11808,6 +11808,16 @@
 .pulse-rail-logo img { width: 66%; height: 66%; object-fit: contain; }
 .pulse-rail-lista { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1 1 auto; width: 100%; }
 .pulse-rail-drop { display: flex; justify-content: center; width: 100%; position: relative; }
+/* Distingue los que abren un flyout (grupo) de los que navegan directo — sin
+   esto no había forma de saberlo hasta hacer clic. Insignia pequeña con el
+   fondo del riel de "recorte" para que se lea sobre cualquier ícono. */
+.pulse-rail-caret {
+  position: absolute; right: 6px; bottom: 6px; width: 12px; height: 12px;
+  border-radius: 50%; background: var(--mc-superficie); color: var(--mc-texto-secundario);
+  padding: 1px; box-sizing: border-box;
+}
+.pulse-rail-item:hover .pulse-rail-caret { background: rgba(var(--mc-aqua-rgb) / 0.08); }
+.pulse-rail-item--activo .pulse-rail-caret { color: var(--mc-marca-texto); }
 .pulse-rail-item {
   /* Solo ícono salvo el activo: con todas las etiquetas visibles, las largas
      ("Vacaciones y permisos") envolvían a 2 líneas y las cortas ("RH") se
