@@ -83,9 +83,10 @@ export default function HeaderNav() {
                 type="button"
                 className={`pulse-rail-item${active === e.item.key ? " pulse-rail-item--activo" : ""}`}
                 onClick={() => ir(e.item.key)}
+                title={e.item.label}
+                aria-label={e.item.label}
               >
                 <Icon name={e.item.icon} size={20} />
-                <span>{e.item.label}</span>
               </button>
             ) : (
               <div key={e.key} className="pulse-rail-drop">
@@ -94,9 +95,10 @@ export default function HeaderNav() {
                   className={`pulse-rail-item${grupoActivo(e.grupo.items) ? " pulse-rail-item--activo" : ""}`}
                   onClick={() => setAbierto((a) => (a === e.grupo.nombre ? null : e.grupo.nombre))}
                   aria-expanded={abierto === e.grupo.nombre}
+                  title={e.grupo.nombre}
+                  aria-label={e.grupo.nombre}
                 >
                   <Icon name={GROUP_ICONS[e.grupo.nombre]} size={20} />
-                  <span>{e.grupo.nombre}</span>
                 </button>
                 {abierto === e.grupo.nombre && (
                   <div className="pulse-flyout">
@@ -132,6 +134,8 @@ export default function HeaderNav() {
             className={`pulse-rail-item pulse-rail-item--avatar${abierto === "usuario" ? " pulse-rail-item--activo" : ""}`}
             onClick={() => setAbierto((a) => (a === "usuario" ? null : "usuario"))}
             aria-expanded={abierto === "usuario"}
+            title={user?.name || "Cuenta"}
+            aria-label={user?.name || "Cuenta"}
           >
             <Avatar name={user?.name || ""} size={30} color="var(--mc-stat-teal-2)" photoUrl={user?.avatarUrl} zoom={false} />
           </button>

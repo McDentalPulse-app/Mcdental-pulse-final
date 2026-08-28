@@ -11784,7 +11784,14 @@
      vez de una línea recta — el riel (fixed, alto completo) se asoma detrás
      del hueco que deja el radio. Solo aplica aquí: en móvil no hay riel al
      lado (Sidebar.jsx pone la barra de pestañas abajo, sin este panel). */
-  .app-main { border-top-left-radius: var(--mc-radio-lg); }
+  .app-main {
+    border-top-left-radius: var(--mc-radio-lg);
+    /* En claro, --mc-fondo-app (casi blanco) y --mc-superficie (blanco) del
+       riel/barra quedan tan parecidos que la curva no se distinguía por
+       color — un borde de 1px con "inset" en vez de background-contrast, así
+       se ve en los dos temas pase lo que pase con el resto de la paleta. */
+    box-shadow: inset 1px 1px 0 0 var(--mc-borde-suave);
+  }
 }
 
 .pulse-rail {
@@ -11802,12 +11809,17 @@
 .pulse-rail-lista { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1 1 auto; width: 100%; }
 .pulse-rail-drop { display: flex; justify-content: center; width: 100%; position: relative; }
 .pulse-rail-item {
-  width: 56px; min-height: 52px; border-radius: 12px; margin: 0 auto;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  /* Solo ícono: las etiquetas ("Vacaciones y permisos", "Asistencia y
+     rostros"...) envolvían a 2 líneas mientras otras ("Notas", "RH") quedaban
+     en 1 — el riel se veía irregular, cada botón con su propia altura. El
+     nombre sigue disponible: `title`/`aria-label` en el botón (tooltip nativo
+     al pasar el mouse) y, ya en la página, el título de arriba
+     (`.pulse-topbar-titulo`) dice cuál está activa. */
+  width: 48px; height: 48px; border-radius: 12px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: center;
   border: none; background: none; cursor: pointer; position: relative;
   color: var(--mc-texto-secundario); font-family: inherit;
 }
-.pulse-rail-item span { font-size: 9.5px; font-weight: 600; line-height: 1.15; text-align: center; padding: 0 2px; }
 .pulse-rail-item:hover { background: rgba(var(--mc-aqua-rgb) / 0.08); color: var(--mc-texto-titulo); }
 .pulse-rail-item--activo { background: var(--mc-brand-suave); color: var(--mc-marca-texto); }
 .pulse-rail-item--activo::before {
@@ -11815,7 +11827,6 @@
   width: 3px; height: 22px; border-radius: 0 3px 3px 0; background: var(--mc-marca-texto);
 }
 .pulse-rail-cuenta { margin-top: 4px; flex: none; }
-.pulse-rail-item--avatar { min-height: 44px; }
 
 .pulse-flyout {
   position: absolute; left: calc(100% + 10px); top: -6px; min-width: 224px;
