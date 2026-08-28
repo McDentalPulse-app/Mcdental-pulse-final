@@ -11809,17 +11809,19 @@
 .pulse-rail-lista { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1 1 auto; width: 100%; }
 .pulse-rail-drop { display: flex; justify-content: center; width: 100%; position: relative; }
 .pulse-rail-item {
-  /* Solo ícono: las etiquetas ("Vacaciones y permisos", "Asistencia y
-     rostros"...) envolvían a 2 líneas mientras otras ("Notas", "RH") quedaban
-     en 1 — el riel se veía irregular, cada botón con su propia altura. El
-     nombre sigue disponible: `title`/`aria-label` en el botón (tooltip nativo
-     al pasar el mouse) y, ya en la página, el título de arriba
-     (`.pulse-topbar-titulo`) dice cuál está activa. */
-  width: 48px; height: 48px; border-radius: 12px; margin: 0 auto;
-  display: flex; align-items: center; justify-content: center;
+  /* Solo ícono salvo el activo: con todas las etiquetas visibles, las largas
+     ("Vacaciones y permisos") envolvían a 2 líneas y las cortas ("RH") se
+     quedaban en 1 — el riel se veía irregular, cada botón con su propia
+     altura. Ahora el nombre solo aparece bajo el ícono seleccionado (el JSX
+     solo pinta el `span` cuando está activo); en los demás sigue disponible
+     por `title`/`aria-label` (tooltip nativo al pasar el mouse). */
+  width: 56px; min-height: 48px; border-radius: 12px; margin: 0 auto;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  padding: 4px 0;
   border: none; background: none; cursor: pointer; position: relative;
   color: var(--mc-texto-secundario); font-family: inherit;
 }
+.pulse-rail-item span { font-size: 9.5px; font-weight: 600; line-height: 1.15; text-align: center; padding: 0 2px; }
 .pulse-rail-item:hover { background: rgba(var(--mc-aqua-rgb) / 0.08); color: var(--mc-texto-titulo); }
 .pulse-rail-item--activo { background: var(--mc-brand-suave); color: var(--mc-marca-texto); }
 .pulse-rail-item--activo::before {

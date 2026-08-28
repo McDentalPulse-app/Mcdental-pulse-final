@@ -87,6 +87,7 @@ export default function HeaderNav() {
                 aria-label={e.item.label}
               >
                 <Icon name={e.item.icon} size={20} />
+                {active === e.item.key && <span>{e.item.label}</span>}
               </button>
             ) : (
               <div key={e.key} className="pulse-rail-drop">
@@ -99,6 +100,7 @@ export default function HeaderNav() {
                   aria-label={e.grupo.nombre}
                 >
                   <Icon name={GROUP_ICONS[e.grupo.nombre]} size={20} />
+                  {grupoActivo(e.grupo.items) && <span>{e.grupo.nombre}</span>}
                 </button>
                 {abierto === e.grupo.nombre && (
                   <div className="pulse-flyout">
