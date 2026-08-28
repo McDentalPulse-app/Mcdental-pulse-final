@@ -16,6 +16,7 @@ import PaginaReuniones from '../comunicacion/PaginaReuniones';
 import Perfil from '../common/Perfil';
 import AvisosPanel from '../avisos/AvisosPanel';
 import NotasPanel from '../notas/NotasPanel';
+import DepartamentosPanel from '../departamentos/DepartamentosPanel';
 import ComisionesDoctor from '../comisiones/ComisionesDoctor';
 import CalendarioIntercambio from '../calendario/CalendarioIntercambio';
 
@@ -73,6 +74,7 @@ export default function DoctorLayout({ user, globals, actions }) {
             <Route path="reuniones" element={<PaginaReuniones user={user} />} />
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} />} />
             <Route path="notas" element={<NotasPanel user={user} />} />
+            <Route path="departamentos" element={<DepartamentosPanel user={user} />} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="/doctor/inicio" replace />} />
           </Routes>

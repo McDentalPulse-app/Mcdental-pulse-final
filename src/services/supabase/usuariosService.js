@@ -22,6 +22,8 @@ const mapUsuario = (row) =>
     // Inventario por clínica (mig. 120): ver el checkbox gemelo en GestionUsuarios.jsx.
     puedeGestionarBodega: !!row.puede_gestionar_bodega,
     puedeGestionarInventario: !!row.puede_gestionar_inventario,
+    // Departamentos (mig. 133): puede crear uno propio y liderarlo.
+    puedeCrearDepartamento: !!row.puede_crear_departamento,
     // Permiso de fichar en cualquier clínica (mig. 118). Ausente en el directorio sin PII,
     // donde queda undefined como el resto de campos que ahí no viajan.
     puedeMarcarEnCualquierClinica: !!row.puede_marcar_en_cualquier_clinica,
@@ -73,6 +75,7 @@ export const updateUsuario = async (id, updates) => {
   if (updates.archivado !== undefined) payload.archivado = updates.archivado;
   if (updates.puedeGestionarBodega !== undefined) payload.puede_gestionar_bodega = updates.puedeGestionarBodega;
   if (updates.puedeGestionarInventario !== undefined) payload.puede_gestionar_inventario = updates.puedeGestionarInventario;
+  if (updates.puedeCrearDepartamento !== undefined) payload.puede_crear_departamento = updates.puedeCrearDepartamento;
   if (updates.puedeMarcarEnCualquierClinica !== undefined) {
     payload.puede_marcar_en_cualquier_clinica = !!updates.puedeMarcarEnCualquierClinica;
   }

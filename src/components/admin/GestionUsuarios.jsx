@@ -76,6 +76,7 @@ const GestionUsuarios = () => {
     fechaCumpleanos: "",
     puedeGestionarBodega: false,
     puedeGestionarInventario: false,
+    puedeCrearDepartamento: false,
     puedeMarcarEnCualquierClinica: false,
     puedeMarcarSalidaSinGeocerca: false,
   });
@@ -158,6 +159,7 @@ const GestionUsuarios = () => {
         fechaCumpleanos: resolveFechaCumpleanos(empleado),
         puedeGestionarBodega: !!empleado.puedeGestionarBodega,
         puedeGestionarInventario: !!empleado.puedeGestionarInventario,
+        puedeCrearDepartamento: !!empleado.puedeCrearDepartamento,
         puedeMarcarEnCualquierClinica: !!empleado.puedeMarcarEnCualquierClinica,
         puedeMarcarSalidaSinGeocerca: !!empleado.puedeMarcarSalidaSinGeocerca,
       });
@@ -175,6 +177,7 @@ const GestionUsuarios = () => {
         fechaCumpleanos: "",
         puedeGestionarBodega: false,
         puedeGestionarInventario: false,
+        puedeCrearDepartamento: false,
         puedeMarcarEnCualquierClinica: false,
         puedeMarcarSalidaSinGeocerca: false,
       });
@@ -680,6 +683,27 @@ const GestionUsuarios = () => {
                   </div>
                 </>
               )}
+
+              {/* Departamentos (mig. 133): a diferencia de inventario, no se limita a gestión —
+                  el jefe de un departamento puede ser cualquier rol (un doctor líder de área,
+                  por ejemplo). Solo tiene sentido al editar una cuenta que ya existe. */}
+              {usuarioEditando && (
+                <div className="mc-form-group">
+                  <label className="mc-form-check">
+                    <input
+                      type="checkbox"
+                      checked={formData.puedeCrearDepartamento}
+                      onChange={(e) => cambiarCampo("puedeCrearDepartamento", e.target.checked)}
+                    />
+                    Puede crear y liderar un departamento
+                  </label>
+                  <p className="mc-form-hint">
+                    Va a poder crear su propio departamento, agregar gente, mandar avisos al
+                    grupo y asignar tareas con fecha límite.
+                  </p>
+                </div>
+              )}
+
               {usuarioEditando && (
                 // Solo al editar: quien se da de alta nace sin el permiso, y esto se enciende
                 // después, cuando de verdad va a andar rodando entre clínicas.

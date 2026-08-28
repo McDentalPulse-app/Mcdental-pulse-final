@@ -13864,3 +13864,145 @@
   .notas-sidebar-card { max-height: 260px; }
   .notas-editor-card { min-height: unset; }
 }
+
+/* ============================================================
+   Departamentos (estilo "clases" de Teams) — migraciones 133/134.
+   Tarjetas de color a la entrada (mismo lenguaje que EventoModal/.evento-color), canal
+   con Feed (avisos + mensajes) y Tareas al entrar a uno.
+   ============================================================ */
+.departamentos-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.departamentos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.departamento-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  text-align: left;
+  padding: 16px;
+  border-radius: var(--mc-radio-lg, 16px);
+  border: 1px solid var(--mc-borde-suave);
+  background: var(--mc-superficie);
+  border-top: 4px solid var(--c, var(--mc-evento-azul));
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.departamento-card:hover { transform: translateY(-2px); box-shadow: var(--mc-sombra); }
+.departamento-card--azul { --c: var(--mc-evento-azul); } .departamento-card--morado { --c: var(--mc-evento-morado); }
+.departamento-card--rosa { --c: var(--mc-evento-rosa); } .departamento-card--ambar { --c: var(--mc-evento-ambar); }
+.departamento-card--verde { --c: var(--mc-evento-verde); } .departamento-card--aqua { --c: var(--mc-evento-aqua); }
+.departamento-card--rojo { --c: var(--mc-evento-rojo); } .departamento-card--gris { --c: var(--mc-evento-gris); }
+
+.departamento-card-icono {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--c, var(--mc-evento-azul)) 16%, transparent);
+  color: var(--c, var(--mc-evento-azul));
+}
+.departamento-card-nombre { font-weight: 800; font-size: 15px; color: var(--mc-texto-titulo); }
+.departamento-card-jefe {
+  font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em;
+  color: var(--c, var(--mc-evento-azul));
+}
+.departamento-card-desc { font-size: 12.5px; color: var(--mc-texto-secundario); }
+
+/* ── Canal de un departamento ─────────────────────────────────────────────── */
+.departamento-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 4px;
+  border-bottom: 3px solid var(--c, var(--mc-evento-azul));
+}
+.departamento-cabecera--azul { --c: var(--mc-evento-azul); } .departamento-cabecera--morado { --c: var(--mc-evento-morado); }
+.departamento-cabecera--rosa { --c: var(--mc-evento-rosa); } .departamento-cabecera--ambar { --c: var(--mc-evento-ambar); }
+.departamento-cabecera--verde { --c: var(--mc-evento-verde); } .departamento-cabecera--aqua { --c: var(--mc-evento-aqua); }
+.departamento-cabecera--rojo { --c: var(--mc-evento-rojo); } .departamento-cabecera--gris { --c: var(--mc-evento-gris); }
+
+.departamento-volver {
+  width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--mc-borde-suave); background: var(--mc-superficie); color: var(--mc-texto-secundario);
+  cursor: pointer;
+}
+.departamento-volver:hover { background: var(--mc-superficie-sutil); }
+
+.departamento-cabecera-info { flex: 1 1 auto; min-width: 0; }
+.departamento-cabecera-info h1 { margin: 0; font-size: 19px; color: var(--mc-texto-titulo); }
+.departamento-cabecera-info p { margin: 2px 0 0; font-size: 13px; color: var(--mc-texto-secundario); }
+
+.departamento-cabecera-acciones { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.departamento-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--mc-gris-suave); }
+.departamento-tab {
+  padding: 8px 14px; border: none; background: transparent; color: var(--mc-texto-secundario);
+  font-weight: 700; font-size: 13.5px; cursor: pointer; border-bottom: 2px solid transparent;
+}
+.departamento-tab:hover { color: var(--mc-texto-titulo); }
+.departamento-tab--activo { color: var(--mc-marca-texto); border-bottom-color: var(--mc-marca-texto); }
+
+.departamento-feed-card, .departamento-tareas-card {
+  display: flex; flex-direction: column; gap: 12px; min-height: 60vh;
+}
+
+.departamento-feed-lista { flex: 1 1 auto; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 10px; }
+
+.departamento-post {
+  padding: 10px 12px;
+  border-radius: var(--mc-radio);
+  background: var(--mc-superficie-sutil);
+}
+.departamento-post--aviso { background: var(--mc-brand-suave); border-left: 3px solid var(--mc-marca-texto); }
+.departamento-post-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.departamento-post-autor { font-weight: 700; font-size: 13px; color: var(--mc-texto-titulo); }
+.departamento-post-badge {
+  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em;
+  padding: 1px 7px; border-radius: 999px; background: var(--mc-marca-texto); color: var(--mc-blanco);
+}
+.departamento-post-fecha { margin-left: auto; font-size: 11px; color: var(--mc-texto-secundario); }
+.departamento-post-texto { margin: 0; font-size: 13.5px; color: var(--mc-texto-titulo); white-space: pre-wrap; }
+
+.departamento-composer { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--mc-gris-suave); padding-top: 10px; }
+.departamento-composer-toggle { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--mc-texto-secundario); }
+.departamento-composer-fila { display: flex; gap: 8px; align-items: flex-end; }
+.departamento-composer-fila textarea {
+  flex: 1 1 auto; resize: none; padding: 8px 10px; border-radius: var(--mc-radio);
+  border: 1px solid var(--mc-gris-suave); background: var(--mc-superficie); color: var(--mc-texto-titulo); font: inherit;
+}
+
+.departamento-tareas-head { display: flex; justify-content: flex-end; }
+.departamento-tareas-lista { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+
+.departamento-tarea {
+  display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between;
+  padding: 12px; border-radius: var(--mc-radio); border: 1px solid var(--mc-gris-suave);
+}
+.departamento-tarea-info { display: flex; flex-direction: column; gap: 3px; min-width: 180px; }
+.departamento-tarea-titulo { font-weight: 700; color: var(--mc-texto-titulo); font-size: 14px; }
+.departamento-tarea-desc { font-size: 12.5px; color: var(--mc-texto-secundario); }
+.departamento-tarea-fecha { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; color: var(--mc-texto-secundario); }
+
+.departamento-tarea-asignados { display: flex; flex-direction: column; gap: 4px; }
+.departamento-asignado { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--mc-texto-titulo); }
+.departamento-asignado--hecha { color: var(--mc-texto-secundario); text-decoration: line-through; }
+
+.departamento-asignar-lista, .departamento-miembros-lista { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; }
+.departamento-asignar-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.departamento-miembro-fila {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 6px 8px; border-radius: 6px; font-size: 13px;
+}
+.departamento-miembro-fila:hover { background: var(--mc-superficie-sutil); }
+
+@media (max-width: 700px) {
+  .departamentos-grid { grid-template-columns: 1fr 1fr; }
+}
