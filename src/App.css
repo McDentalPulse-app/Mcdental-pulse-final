@@ -11815,15 +11815,23 @@
      altura. Ahora el nombre solo aparece bajo el ícono seleccionado (el JSX
      solo pinta el `span` cuando está activo); en los demás sigue disponible
      por `title`/`aria-label` (tooltip nativo al pasar el mouse). */
-  width: 56px; min-height: 48px; border-radius: 12px; margin: 0 auto;
+  width: 56px; min-width: 0; min-height: 48px; border-radius: 12px; margin: 0 auto;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-  padding: 4px 0;
+  padding: 4px 0; overflow: hidden;
   border: none; background: none; cursor: pointer; position: relative;
   color: var(--mc-texto-secundario); font-family: inherit;
 }
-.pulse-rail-item span { font-size: 9.5px; font-weight: 600; line-height: 1.15; text-align: center; padding: 0 2px; }
+/* "Departamentos" es una sola palabra sin espacio para partir: sin esto, un
+   hijo de flex-column mide su min-width por el contenido (min-width:auto por
+   default) y el botón se estira más ancho que sus 56px — invisible con fondo
+   transparente, pero se notaba feo en el activo, con el fondo de color
+   asomando fuera del riel. overflow-wrap parte la palabra si no cabe. */
+.pulse-rail-item span { font-size: 9.5px; font-weight: 600; line-height: 1.15; text-align: center; padding: 0 2px; overflow-wrap: anywhere; max-width: 100%; }
 .pulse-rail-item:hover { background: rgba(var(--mc-aqua-rgb) / 0.08); color: var(--mc-texto-titulo); }
-.pulse-rail-item--activo { background: var(--mc-brand-suave); color: var(--mc-marca-texto); }
+/* Sin relleno de fondo: la franja de acento (abajo) + el color de ícono y
+   texto ya marcan cuál está seleccionado — un cuadro de color detrás se veía
+   pesado para un riel tan angosto. */
+.pulse-rail-item--activo { color: var(--mc-marca-texto); }
 .pulse-rail-item--activo::before {
   content: ""; position: absolute; left: -8px; top: 50%; transform: translateY(-50%);
   width: 3px; height: 22px; border-radius: 0 3px 3px 0; background: var(--mc-marca-texto);
