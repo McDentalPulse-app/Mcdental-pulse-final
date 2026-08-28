@@ -13687,8 +13687,6 @@
   color: var(--mc-texto-secundario);
 }
 
-.notas-btn-borrar:hover { color: var(--mc-semaforo-rojo); }
-
 .nota-vista {
   flex: 1 1 auto;
   min-height: 260px;

@@ -273,8 +273,14 @@ export default function NotasPanel({ user }) {
                     <button type="button" className="mc-btn-secondary" onClick={() => setModoVista((v) => !v)}>
                       <Icon name={modoVista ? "edit" : "eye"} size={16} /> {modoVista ? "Editar" : "Vista previa"}
                     </button>
-                    <button type="button" className="icon-edit notas-btn-borrar" title="Eliminar nota" onClick={() => eliminar(notaActiva)}>
-                      <Icon name="trash" size={18} />
+                    <button
+                      type="button"
+                      className="emp-table-icon-btn emp-table-icon-btn--danger"
+                      title="Eliminar nota"
+                      aria-label={`Eliminar ${notaActiva.titulo}`}
+                      onClick={() => eliminar(notaActiva)}
+                    >
+                      <Icon name="trash" size={16} />
                     </button>
                   </div>
                 </div>
