@@ -11771,24 +11771,34 @@
 .app-shell { flex-direction: column; }
 .app-main { height: auto; flex: 1 1 auto; min-height: 0; }
 
+/* Dos pisos (opción B elegida tras ver 3 propuestas): arriba una franja delgada con marca,
+   buscador y acciones (`.topnav-top`); abajo una fila dedicada solo a los enlaces
+   (`.topnav-nav-row`), con TODO el ancho de la pantalla para sí sola — antes competía con el
+   logo y el buscador en una única fila de 60px, que era justo lo que hacía falta que "Más" se
+   activara tan seguido. Con su propio piso, "Más" casi nunca hace falta. */
 .topnav { flex: none; background: var(--mc-superficie); border-bottom: 1px solid var(--mc-borde-suave); z-index: 50; }
-.topnav-inner { display: flex; align-items: center; gap: 10px; min-height: 60px; padding: 0 18px; }
-.topnav-brand { display: flex; align-items: center; gap: 8px; border: none; background: none; cursor: pointer; padding: 0; flex: none; }
-.topnav-logo { width: 30px; height: 30px; border-radius: 7px; }
-.topnav-brand-text { font-weight: 700; color: var(--mc-texto-titulo); font-size: 15px; white-space: nowrap; }
+.topnav-top {
+  display: flex; align-items: center; gap: 18px; min-height: 54px; padding: 0 20px;
+  background: var(--mc-superficie-sutil); border-bottom: 1px solid var(--mc-borde-suave);
+}
+.topnav-brand { display: flex; align-items: center; gap: 9px; border: none; background: none; cursor: pointer; padding: 0; flex: none; }
+.topnav-logo { width: 30px; height: 30px; border-radius: 8px; }
+.topnav-brand-text { font-weight: 800; color: var(--mc-texto-titulo); font-size: 15px; white-space: nowrap; }
+.topnav-top-right { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: none; }
+
+.topnav-nav-row { display: flex; align-items: center; min-height: 52px; padding: 0 20px; }
 /* min-width: 0 deja que este flex:1 se encoja de verdad — sin él, un grupo más en el menú
    (Inventario, Reuniones, Festivos...) que ya no entra empuja TODO el header (y la página
    entera) fuera del viewport en vez de quedarse contenido. flex-wrap (no overflow-x: auto,
    que se probó primero) es lo que de verdad lo resuelve: overflow-x fuerza a overflow-y a
    "auto" también —regla de la spec, no se puede separar—, y eso RECORTABA los submenús que
    se abren hacia abajo (`.topnav-menu`, position: absolute, vive dentro de este contenedor).
-   Envolver a una segunda línea no recorta nada: .topnav-inner solo crece de alto
-   (min-height, ya no height fija). Por la misma razón NO lleva `overflow: hidden` — aunque
-   sea "solo" el eje por defecto (sin overflow-x explícito), sigue recortando cualquier
-   descendiente que sobresalga de la fila, y un `.topnav-menu` abierto mide mucho más alto
-   que ella. El JS (`visibleCount`) ya garantiza que nada se desborda de ancho — junta el
-   resto en "Más" antes de que haga falta — así que no hace falta clip ninguno aquí. */
-.topnav-links { display: flex; align-items: center; flex-wrap: nowrap; column-gap: 2px; flex: 1; min-width: 0; margin-left: 10px; }
+   Por la misma razón NO lleva `overflow: hidden` — aunque sea "solo" el eje por defecto (sin
+   overflow-x explícito), sigue recortando cualquier descendiente que sobresalga de la fila, y
+   un `.topnav-menu` abierto mide mucho más alto que ella. El JS (`visibleCount`) ya garantiza
+   que nada se desborda de ancho — junta el resto en "Más" antes de que haga falta — así que no
+   hace falta clip ninguno aquí. */
+.topnav-links { display: flex; align-items: center; flex-wrap: nowrap; column-gap: 2px; width: 100%; min-width: 0; }
 
 /* Fila gemela para medir el ancho real de cada entrada (JS decide con esto cuántas caben
    antes de juntar el resto en "Más") — invisible, fuera de flujo, nunca se pinta. */
@@ -11796,9 +11806,13 @@
    negativo: así no hay riesgo de que sume scroll horizontal a la página por accidente
    (justo el tipo de bug que ya mordió a esta barra antes). */
 .topnav-medidor { position: absolute; width: 0; height: 0; overflow: hidden; display: flex; flex-wrap: nowrap; visibility: hidden; pointer-events: none; }
-.topnav-link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px; border: none; background: none; color: var(--mc-texto-secundario); font-size: 14px; font-weight: 600; border-radius: 8px; cursor: pointer; white-space: nowrap; font-family: inherit; }
+.topnav-link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border: none; background: none; color: var(--mc-texto-secundario); font-size: 14px; font-weight: 600; border-radius: 8px; cursor: pointer; white-space: nowrap; font-family: inherit; }
 .topnav-link:hover { background: var(--mc-superficie-sutil); color: var(--mc-texto-titulo); }
-.topnav-link--activo { color: var(--mc-aqua); background: var(--mc-brand-suave); }
+/* Píldora en degradado (el mismo --grad-accent que ya usa el botón "Generar con IA" y las
+   burbujas propias del chat) en vez del fondo suave de antes — es el cambio con más carácter
+   de la opción B, y --brand-950 como texto porque ese degradado ya se validó legible con texto
+   oscuro encima (ver el comentario de --grad-accent en index.css). */
+.topnav-link--activo { color: var(--brand-950); background: var(--grad-accent); font-weight: 700; }
 .topnav-caret { transition: transform .15s ease; opacity: .7; }
 .topnav-link--abierto .topnav-caret { transform: rotate(180deg); }
 .topnav-drop { position: relative; flex: none; }
@@ -11835,7 +11849,6 @@
 .topnav-menu-item--activo .topnav-menu-titulo { color: var(--mc-aqua); }
 .topnav-menu-desc { font-size: 12.5px; line-height: 1.35; color: var(--mc-texto-secundario); }
 
-.topnav-right { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: none; }
 .topnav-icon-btn { width: 38px; height: 38px; border: 1px solid var(--mc-borde-suave); border-radius: 9px; background: var(--mc-superficie); color: var(--mc-texto-secundario); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
 .topnav-icon-btn:hover { background: var(--mc-superficie-sutil); }
 .topnav-user { display: flex; align-items: center; gap: 8px; border: 1px solid var(--mc-borde-suave); border-radius: 9px; padding: 3px 8px 3px 3px; background: var(--mc-superficie); cursor: pointer; font-family: inherit; }
@@ -11949,10 +11962,13 @@
 .topnav-movil-item--activo { color: var(--mc-aqua); background: var(--mc-brand-suave); }
 .topnav-movil-item--danger { color: var(--mc-badge-rojo-texto); }
 
-/* Debajo de 1100px: nav horizontal fuera, hamburguesa dentro. */
+/* Debajo de 1100px: la fila de navegación completa fuera (no solo los enlaces — dejar la fila
+   vacía a 52px de alto se vería como un hueco raro), hamburguesa dentro. El nombre/rol del
+   usuario en topnav-top-right ya NO se esconde aquí: con el buscador oculto (regla de abajo)
+   sobra sitio de sobra en esa fila, a diferencia de cuando compartía una sola fila con los
+   enlaces. */
 @media (max-width: 1100px) {
-  .topnav-links { display: none; }
-  .topnav-user-info { display: none; }
+  .topnav-nav-row { display: none; }
   .topnav-hamburguesa { display: inline-flex; }
 }
 

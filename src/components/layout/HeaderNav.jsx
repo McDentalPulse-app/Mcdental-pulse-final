@@ -12,9 +12,13 @@ import BotonMensajes from "./BotonMensajes";
 import BotonReuniones from "./BotonReuniones";
 import CampanaNotificaciones from "../notificaciones/CampanaNotificaciones";
 
-// Navegación en HEADER horizontal (reemplaza el sidebar). Los ítems sueltos son enlaces directos;
-// los agrupados van en menús desplegables por grupo. El perfil y cerrar sesión, en el menú del
-// usuario (derecha). En móvil, un botón hamburguesa abre el panel con todo agrupado.
+// Navegación en HEADER horizontal, en dos pisos (opción B elegida por el dueño tras ver 3
+// propuestas): arriba una franja delgada con marca, buscador y acciones; abajo una fila
+// dedicada solo a los enlaces, con todo el ancho de la pantalla para sí sola — así "Más" casi
+// nunca hace falta, en vez de competir por espacio con el logo y el buscador en una sola fila.
+// Los ítems sueltos son enlaces directos; los agrupados van en menús desplegables por grupo. El
+// perfil y cerrar sesión, en el menú del usuario (derecha). En móvil, un botón hamburguesa abre
+// el panel con todo agrupado.
 export default function HeaderNav() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -167,79 +171,16 @@ export default function HeaderNav() {
   );
 
   return (
-    <header className="topnav">
-      <div className="topnav-inner" ref={navRef}>
+    <header className="topnav" ref={navRef}>
+      <div className="topnav-top">
         <button type="button" className="topnav-brand" onClick={() => ir(sueltos[0]?.key || "dashboard")}>
           <img src={logoSmall} alt="McDental Pulse" className="topnav-logo" />
           <span className="topnav-brand-text">McDental Pulse</span>
         </button>
 
-        <nav className="topnav-links" aria-label="Navegación principal" ref={linksRef}>
-          {visibles.map((e) => <Fragment key={e.key}>{entradaTpl(e)}</Fragment>)}
+        <BuscadorGlobal />
 
-          {ocultas.length > 0 && (
-            <div className="topnav-drop">
-              <button
-                type="button"
-                className={`topnav-link${masActivo ? " topnav-link--activo" : ""}${abierto === "mas" ? " topnav-link--abierto" : ""}`}
-                onClick={() => setAbierto((a) => (a === "mas" ? null : "mas"))}
-                aria-expanded={abierto === "mas"}
-              >
-                <span>Más</span> <Icon name="chevronDown" size={15} className="topnav-caret" />
-              </button>
-              {abierto === "mas" && (
-                <div className="topnav-menu">
-                  {ocultas.map((e) => e.tipo === "link" ? (
-                    <button
-                      key={e.key}
-                      type="button"
-                      className={`topnav-menu-item${active === e.item.key ? " topnav-menu-item--activo" : ""}`}
-                      onClick={() => ir(e.item.key)}
-                    >
-                      <Icon name={e.item.icon} size={16} /> {e.item.label}
-                    </button>
-                  ) : (
-                    <div key={e.key}>
-                      {/* Rótulo del grupo: sin esto, dos grupos escondidos en "Más" se ven
-                          como una sola lista revuelta y no se distingue dónde empieza cada uno. */}
-                      <div className="topnav-movil-titulo">{e.grupo.nombre}</div>
-                      {e.grupo.items.map((item) => (
-                        <button
-                          key={item.key}
-                          type="button"
-                          className={`topnav-menu-item${item.desc ? " topnav-menu-item--condesc" : ""}${active === item.key ? " topnav-menu-item--activo" : ""}`}
-                          onClick={() => ir(item.key)}
-                        >
-                          <Icon name={item.icon} size={16} />
-                          {item.desc ? (
-                            <span className="topnav-menu-texto">
-                              <span className="topnav-menu-titulo">{item.label}</span>
-                              <span className="topnav-menu-desc">{item.desc}</span>
-                            </span>
-                          ) : (
-                            item.label
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </nav>
-
-        {/* Fila de medición: invisible, sin flex-wrap, mismos estilos — así cada entrada
-            enseña su ancho REAL sin importar si al final le toca caber o no. */}
-        <div className="topnav-medidor" aria-hidden="true">
-          {entradas.map((e, i) => (
-            <div key={e.key} ref={(el) => { medidaRefs.current[i] = el; }}>{entradaTpl(e)}</div>
-          ))}
-        </div>
-
-        <div className="topnav-right">
-          <BuscadorGlobal />
-
+        <div className="topnav-top-right">
           <BotonMensajes activo={active === "mensajes"} />
 
           <BotonReuniones activo={active === "reuniones"} />
@@ -304,6 +245,71 @@ export default function HeaderNav() {
           <button type="button" className="topnav-hamburguesa" onClick={() => setMovilOpen((v) => !v)} aria-label="Menú" aria-expanded={movilOpen}>
             <span /><span /><span />
           </button>
+        </div>
+      </div>
+
+      <div className="topnav-nav-row">
+        <nav className="topnav-links" aria-label="Navegación principal" ref={linksRef}>
+          {visibles.map((e) => <Fragment key={e.key}>{entradaTpl(e)}</Fragment>)}
+
+          {ocultas.length > 0 && (
+            <div className="topnav-drop">
+              <button
+                type="button"
+                className={`topnav-link${masActivo ? " topnav-link--activo" : ""}${abierto === "mas" ? " topnav-link--abierto" : ""}`}
+                onClick={() => setAbierto((a) => (a === "mas" ? null : "mas"))}
+                aria-expanded={abierto === "mas"}
+              >
+                <span>Más</span> <Icon name="chevronDown" size={15} className="topnav-caret" />
+              </button>
+              {abierto === "mas" && (
+                <div className="topnav-menu">
+                  {ocultas.map((e) => e.tipo === "link" ? (
+                    <button
+                      key={e.key}
+                      type="button"
+                      className={`topnav-menu-item${active === e.item.key ? " topnav-menu-item--activo" : ""}`}
+                      onClick={() => ir(e.item.key)}
+                    >
+                      <Icon name={e.item.icon} size={16} /> {e.item.label}
+                    </button>
+                  ) : (
+                    <div key={e.key}>
+                      {/* Rótulo del grupo: sin esto, dos grupos escondidos en "Más" se ven
+                          como una sola lista revuelta y no se distingue dónde empieza cada uno. */}
+                      <div className="topnav-movil-titulo">{e.grupo.nombre}</div>
+                      {e.grupo.items.map((item) => (
+                        <button
+                          key={item.key}
+                          type="button"
+                          className={`topnav-menu-item${item.desc ? " topnav-menu-item--condesc" : ""}${active === item.key ? " topnav-menu-item--activo" : ""}`}
+                          onClick={() => ir(item.key)}
+                        >
+                          <Icon name={item.icon} size={16} />
+                          {item.desc ? (
+                            <span className="topnav-menu-texto">
+                              <span className="topnav-menu-titulo">{item.label}</span>
+                              <span className="topnav-menu-desc">{item.desc}</span>
+                            </span>
+                          ) : (
+                            item.label
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </nav>
+
+        {/* Fila de medición: invisible, sin flex-wrap, mismos estilos — así cada entrada
+            enseña su ancho REAL sin importar si al final le toca caber o no. */}
+        <div className="topnav-medidor" aria-hidden="true">
+          {entradas.map((e, i) => (
+            <div key={e.key} ref={(el) => { medidaRefs.current[i] = el; }}>{entradaTpl(e)}</div>
+          ))}
         </div>
       </div>
 
