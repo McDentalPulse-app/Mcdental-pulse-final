@@ -11981,9 +11981,12 @@
 .topnav .campana-panel { top: 48px; }
 
 /* Buscador global */
-.buscador { position: relative; display: flex; align-items: center; }
+/* En .topnav-top vive entre la marca (flex:none) y las acciones (flex:none) — flex:1 +
+   justify-content:center lo centra en el piso 1 en vez de dejarlo pegado a la marca, y le da
+   sitio para crecer sin empujar nada más. */
+.buscador { position: relative; display: flex; align-items: center; flex: 1; justify-content: center; }
 .buscador-ico { position: absolute; left: 11px; color: var(--mc-texto-apagado); pointer-events: none; }
-.buscador-input { width: 220px; height: 38px; padding: 0 12px 0 34px; border: 1px solid var(--mc-control-borde); border-radius: var(--mc-control-radio); background: var(--mc-control-fondo); color: var(--mc-texto); font-size: var(--mc-control-letra); font-family: inherit; outline: none; }
+.buscador-input { width: 100%; max-width: 480px; height: 38px; padding: 0 12px 0 34px; border: 1px solid var(--mc-control-borde); border-radius: var(--mc-control-radio); background: var(--mc-control-fondo); color: var(--mc-texto); font-size: var(--mc-control-letra); font-family: inherit; outline: none; }
 .buscador-input::placeholder { color: var(--mc-texto-apagado); }
 .buscador-input:focus { border-color: var(--mc-aqua); background: var(--mc-superficie); }
 .buscador-panel { position: absolute; top: 46px; left: 0; width: 320px; max-width: 80vw; background: var(--mc-superficie); border: 1px solid var(--mc-borde-suave); border-radius: 11px; box-shadow: 0 10px 28px rgba(0,0,0,.14); padding: 6px; z-index: 60; display: flex; flex-direction: column; gap: 2px; max-height: 60vh; overflow-y: auto; }
