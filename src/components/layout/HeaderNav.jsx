@@ -178,7 +178,7 @@ export default function HeaderNav() {
           <span className="topnav-brand-text">McDental Pulse</span>
         </button>
 
-        <BuscadorGlobal />
+        <div className="topnav-search-slot"><BuscadorGlobal /></div>
 
         <div className="topnav-top-right">
           <BotonMensajes activo={active === "mensajes"} />

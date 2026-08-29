@@ -11981,10 +11981,14 @@
 .topnav .campana-panel { top: 48px; }
 
 /* Buscador global */
-/* En .topnav-top vive entre la marca (flex:none) y las acciones (flex:none) — flex:1 +
-   justify-content:center lo centra en el piso 1 en vez de dejarlo pegado a la marca, y le da
-   sitio para crecer sin empujar nada más. */
-.buscador { position: relative; display: flex; align-items: center; flex: 1; justify-content: center; }
+/* .topnav-search-slot (no .buscador) es quien ocupa el sitio libre entre la marca y las
+   acciones y centra — .buscador se queda del tamaño de su propio contenido (icono+input), NO
+   flex:1: si se estira a todo el ancho de la fila, .buscador-ico (position:absolute, "left:
+   11px" relativo A ESTA CAJA) se queda pegado a la izquierda de la FILA ENTERA mientras el
+   input centrado queda mucho más a la derecha — icono y campo se separan. Con .buscador del
+   ancho exacto de su input, los dos viajan pegados pase lo que pase. */
+.topnav-search-slot { flex: 1; min-width: 0; display: flex; justify-content: center; padding: 0 12px; }
+.buscador { position: relative; display: flex; align-items: center; width: 100%; max-width: 480px; }
 .buscador-ico { position: absolute; left: 11px; color: var(--mc-texto-apagado); pointer-events: none; }
 .buscador-input { width: 100%; max-width: 480px; height: 38px; padding: 0 12px 0 34px; border: 1px solid var(--mc-control-borde); border-radius: var(--mc-control-radio); background: var(--mc-control-fondo); color: var(--mc-texto); font-size: var(--mc-control-letra); font-family: inherit; outline: none; }
 .buscador-input::placeholder { color: var(--mc-texto-apagado); }
