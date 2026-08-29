@@ -2369,6 +2369,29 @@
   font-size: 13px;
 }
 
+/* Fila CLICABLE del historial (encuestas): es un <button>, y sin resetear queda con el
+   estilo nativo del navegador — gris con relieve, "botón crudo" — sobre una tarjeta oscura
+   se veía como un recuadro pegado que no pertenece al resto. Mismo layout que
+   .detail-list-item, con el reset de botón encima. */
+.detail-list-item--accion {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 8px 0;
+  border: none;
+  border-bottom: 1px solid var(--mc-slate-100);
+  background: none;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--mc-texto);
+  text-align: left;
+  cursor: pointer;
+  gap: 8px;
+}
+.detail-list-item--accion:hover { background: var(--mc-superficie-sutil); }
+.detail-list-item-ojo { flex-shrink: 0; color: var(--mc-texto-secundario); }
+
 /* "Solicitado el ..." en el expediente. Va un punto más apagado que el motivo: es el
    dato que se busca cuando hace falta, no el que se lee de entrada. */
 .detail-solicitud-fecha {
