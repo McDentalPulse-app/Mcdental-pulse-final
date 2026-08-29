@@ -11783,8 +11783,12 @@
    "auto" también —regla de la spec, no se puede separar—, y eso RECORTABA los submenús que
    se abren hacia abajo (`.topnav-menu`, position: absolute, vive dentro de este contenedor).
    Envolver a una segunda línea no recorta nada: .topnav-inner solo crece de alto
-   (min-height, ya no height fija). */
-.topnav-links { display: flex; align-items: center; flex-wrap: nowrap; overflow: hidden; column-gap: 2px; flex: 1; min-width: 0; margin-left: 10px; }
+   (min-height, ya no height fija). Por la misma razón NO lleva `overflow: hidden` — aunque
+   sea "solo" el eje por defecto (sin overflow-x explícito), sigue recortando cualquier
+   descendiente que sobresalga de la fila, y un `.topnav-menu` abierto mide mucho más alto
+   que ella. El JS (`visibleCount`) ya garantiza que nada se desborda de ancho — junta el
+   resto en "Más" antes de que haga falta — así que no hace falta clip ninguno aquí. */
+.topnav-links { display: flex; align-items: center; flex-wrap: nowrap; column-gap: 2px; flex: 1; min-width: 0; margin-left: 10px; }
 
 /* Fila gemela para medir el ancho real de cada entrada (JS decide con esto cuántas caben
    antes de juntar el resto en "Más") — invisible, fuera de flujo, nunca se pinta. */
