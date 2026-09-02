@@ -12,7 +12,7 @@ const STATUS_SIN_DATOS = {
   nivel: "sin-datos",
 };
 
-export const analyzeEmployeeAI = (empleado, encuestas, permisos = [], descuentos = [], reconocimientos = [], reportesConfidenciales = [], USERS = []) => {
+export const analyzeEmployeeAI = (empleado, encuestas, permisos = [], descuentos = [], reconocimientos = [], reportesConfidenciales = []) => {
   const encuestasEmpleado = encuestas.filter(e => e.empleadoId === empleado.id);
   const encuestasConScore = encuestasEmpleado.filter(e => tieneScoreValido(e.score));
   const permisosEmpleado = permisos.filter(p => p.empleadoId === empleado.id);

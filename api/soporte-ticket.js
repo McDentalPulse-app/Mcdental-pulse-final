@@ -82,7 +82,7 @@ export default async function handler(req, res) {
       return res.status(502).json({ error: "No se pudo registrar el ticket en soporte." });
     }
     return res.status(201).json({ id: data?.data?.id, status: data?.data?.status });
-  } catch (err) {
+  } catch {
     return res.status(502).json({ error: "No se pudo contactar al sistema de soporte." });
   }
 }

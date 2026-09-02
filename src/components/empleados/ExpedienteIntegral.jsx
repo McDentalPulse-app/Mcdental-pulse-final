@@ -104,6 +104,9 @@ const ExpedienteIntegral = ({
     empleados[0];
 
   useEffect(() => {
+    // Cierra el modal de detalle si estaba abierto para el empleado anterior — no es un valor
+    // derivable del render actual, es "olvidar" lo que había quedado abierto al cambiar de foco.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setEncuestaDetalle(null);
   }, [empleado?.id]);
 
@@ -192,7 +195,7 @@ const ExpedienteIntegral = ({
     try {
       const url = await getSignedUrlArchivoExpediente(rutaArchivo);
       window.open(url, "_blank", "noopener,noreferrer");
-    } catch (error) {
+    } catch {
       notify.toast.error("No se pudo abrir el archivo.");
     }
   };

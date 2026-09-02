@@ -6,15 +6,13 @@ import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
 import Icon from "../ui/Icon";
-import Badge from "../common/Badge";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
-import RiskBar from "../common/RiskBar";
-import { semaforoLabel, nivelColor, nivelTinte } from "../../config/theme";
+import { nivelColor, nivelTinte } from "../../config/theme";
 
 import { periodoActual, normalizeSucursal, formatSemanaDisplay } from "../../utils/constants";
 import { calcularAntiguedad, resolveFechaIngreso } from "../../utils/helpers";
-import { calcPulseScore, getPulseStatus, calcRiesgos, tieneScoreValido } from "../../utils/pulseScore";
+import { calcPulseScore, calcRiesgos, tieneScoreValido } from "../../utils/pulseScore";
 import { resumenEscalas } from "../../utils/encuestaDetail";
 import { callAI } from "../../utils/analysisEngine";
 import { analyzeEmployeeAI } from "../../utils/aiRiskEngine";
@@ -70,7 +68,7 @@ const AICard = ({ icon = "ai", title, desc, onGenerate, output, loading }) => (
   </Card>
 );
 
-const AIEngine = ({ encuestas, mensajes, notas, userRole, permisos = [], descuentos = [], reconocimientos = [], reportesConfidenciales = [] }) => {
+const AIEngine = ({ encuestas, mensajes, notas, permisos = [], descuentos = [], reconocimientos = [], reportesConfidenciales = [] }) => {
   // encuestaPreguntas hace falta para leer la respuesta de riesgo de renuncia: el jsonb
   // `respuestas` se indexa por el id de la pregunta, no por un número fijo.
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
@@ -120,21 +118,16 @@ const analisisIA = useMemo(
       permisos,
       descuentos,
       reconocimientos,
-      reportesConfidenciales,
-      USERS
+      reportesConfidenciales
     )
   ),
-  [empleados, encuestasSemana, permisos, descuentos, reconocimientos, reportesConfidenciales, USERS]
+  [empleados, encuestasSemana, permisos, descuentos, reconocimientos, reportesConfidenciales]
 );
 
 const analisisConDatos = analisisIA.filter(a => !a.sinDatos);
 const analisisConRiesgo = analisisConDatos.filter(
   a => a.riesgos.some(r => ["Crítica", "Alta", "Media"].includes(r.nivel))
 );
-const analisisFocoRojo = analisisConDatos.filter(
-  a => a.prioridad === "Crítica" || a.status?.semaforo === "Rojo"
-);
-
 const prioridadCritica = analisisConDatos.filter(a => a.prioridad === "Crítica").length;
 const prioridadAlta = analisisConDatos.filter(a => a.prioridad === "Alta").length;
 const prioridadMedia = analisisConDatos.filter(a => a.prioridad === "Media").length;

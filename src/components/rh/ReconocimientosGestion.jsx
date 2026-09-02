@@ -1,6 +1,5 @@
 import { useState } from "react";
 import Select from "../common/Select";
-import { useGlobal } from "../../contexts/GlobalContext";
 import { useNotification } from "../../contexts/NotificationContext";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
@@ -13,7 +12,6 @@ import { CATEGORIAS_MEDALLA, getMedalla } from "../../config/medallas";
 import Medalla from "../ui/Medalla";
 
 const ReconocimientosGestion = ({ users, reconocimientos, onAdd, currentUser }) => {
-  const { usuarios: USERS } = useGlobal();
   const { toast } = useNotification();
 
   const empleados = users.filter(esEmpleadoActivo);

@@ -37,6 +37,9 @@ export default function ModulosPanel() {
 
   useEffect(() => {
     if (!seleccionado) return;
+    // El spinner tiene que prenderse ANTES del fetch, no se puede derivar: no hay otra fuente
+    // de verdad para "está cargando" que no sea el propio ciclo de vida de esta promesa.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCargando(true);
     getModulosPersonaDe(seleccionado.id)
       .then(setModulosPersonaLocal)

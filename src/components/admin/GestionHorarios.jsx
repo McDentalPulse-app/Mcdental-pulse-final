@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import PageHeader from "../common/PageHeader";
 import EmptyState from "../common/EmptyState";
 import Card from "../common/Card";
@@ -199,13 +199,13 @@ export default function GestionHorarios({ usuarios = [], horarios = [], setHorar
     [empleados]
   );
 
-  useEffect(() => {
-    if (!filtroSucursal && sucursales.length) setFiltroSucursal(sucursales[0]);
-  }, [sucursales, filtroSucursal]);
+  // Sin sucursal elegida todavía, cae en la primera de la lista — derivado en vez de un
+  // efecto que la fijara después del primer render (parpadeo: "0 empleados" hasta que corría).
+  const filtroSucursalEfectivo = filtroSucursal || sucursales[0] || "";
 
   const empleadosFiltrados = useMemo(
-    () => empleados.filter((u) => u.sucursal === filtroSucursal),
-    [empleados, filtroSucursal]
+    () => empleados.filter((u) => u.sucursal === filtroSucursalEfectivo),
+    [empleados, filtroSucursalEfectivo]
   );
 
   const buscar = (empleadoId, diaSemana) =>
@@ -270,7 +270,7 @@ export default function GestionHorarios({ usuarios = [], horarios = [], setHorar
           <Icon name="mapPin" size={15} />
           <span>Sucursal</span>
           <WeekSelect
-            value={filtroSucursal}
+            value={filtroSucursalEfectivo}
             options={sucursales.map((s) => ({ value: s, label: s }))}
             onChange={setFiltroSucursal}
             icon={null}

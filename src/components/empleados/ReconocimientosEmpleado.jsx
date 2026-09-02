@@ -1,6 +1,5 @@
 import Card from "../common/Card";
 import StatCard from "../common/StatCard";
-import SectionTitle from "../common/SectionTitle";
 import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import Medalla from "../ui/Medalla";

@@ -85,7 +85,7 @@ export const getEncuestasEmpleado = (encuestas, empleadoId) =>
 export const formatEscalaValor = (valor) => {
   const n = Number(valor);
   if (!Number.isFinite(n)) return String(valor ?? "—");
-  let label = "Moderado";
+  let label;
   if (n >= 9) label = "Muy alto";
   else if (n >= 7) label = "Alto";
   else if (n >= 5) label = "Moderado";

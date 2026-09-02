@@ -25,6 +25,10 @@ export default function LandingPage() {
   const [errCambio, setErrCambio] = useState('');
 
   useEffect(() => {
+    // useState(requiereCambioPassword) ya cubre el valor al montar; esto es para cuando pasa a
+    // true DESPUÉS del montaje (login asíncrono). No se puede leer directo del prop porque el
+    // panel, una vez abierto, no debe volver a cerrarse solo si el prop no cambia.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (requiereCambioPassword) setMostrarCambioPassword(true);
   }, [requiereCambioPassword]);
 

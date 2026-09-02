@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, Fragment } from "react";
+import { useState, useEffect, useRef, Fragment } from "react";
 import { useLocation } from "react-router-dom";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";

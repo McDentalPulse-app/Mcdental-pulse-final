@@ -567,10 +567,6 @@ describe("salida anticipada", () => {
   // mecanismo nuevo: se reusa el módulo de permisos, que ya tenía solicitud, aprobación,
   // estado, causa y una columna `hora` sin usar esperando exactamente esto.
   const turno = { horaSalida: "18:00:00" };
-  const permiso = (extra) => ({
-    empleadoId: "ana", estado: "aprobado", causa: "salida_anticipada",
-    hora: "15:00", fecha: "2026-07-14", fechaFin: null, ...extra,
-  });
 
   it("un permiso aprobado ADELANTA la ventana de salida", () => {
     // Autorizado a las 15:00 -> puede checar desde las 14:45, no desde las 17:45.

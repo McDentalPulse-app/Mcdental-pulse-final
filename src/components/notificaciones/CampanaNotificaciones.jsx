@@ -63,6 +63,9 @@ export default function CampanaNotificaciones({ user }) {
   // Carga inicial + realtime: el badge sube solo cuando llega una notificación.
   useEffect(() => {
     if (!user?.id) return undefined;
+    // Carga inicial: no hay forma de tener las notificaciones antes de que exista un usuario
+    // logueado, es un fetch real, no un valor derivable del render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refrescar();
     return subscribeNotificaciones(user.id, refrescar);
   }, [user?.id, refrescar]);

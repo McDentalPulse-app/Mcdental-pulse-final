@@ -3,7 +3,6 @@ import EstadoSistema from "./EstadoSistema";
 import { useNotification } from '../../contexts/NotificationContext';
 import Card from '../common/Card';
 import SectionTitle from '../common/SectionTitle';
-import StatCard from '../common/StatCard';
 import PageHeader from '../common/PageHeader';
 import Icon from '../ui/Icon';
 import { useAuth } from '../../contexts/AuthContext';
