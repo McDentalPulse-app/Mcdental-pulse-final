@@ -1,8 +1,42 @@
 # HANDOFF — McDental Pulse en VPS propia
 
-> Para la próxima sesión de Claude. Última actualización: **2026-08-27**.
+> Para la próxima sesión de Claude. Última actualización: **2026-09-02**.
 > Este archivo vive en dos lados y hay que mantenerlos iguales: `/opt/pulse/HANDOFF.md`
-> (en la VPS) y `HANDOFF-pulse-vps.md` (en el repo del usuario, **sin versionar**).
+> (en la VPS) y `HANDOFF-pulse-vps.md` (en el repo del usuario). ⚠️ Pese a lo que decía esta
+> misma línea antes: **sí está versionado** (confirmado con `git log`, commit `0e3b7f9` en
+> adelante) — corregido el 2026-09-02, no repetir que no lo está.
+
+> ## 🔴 LEER PRIMERO — cambios del 2026-09-02
+>
+> 1. **Admin+**: rol nuevo arriba de admin (hereda todo automático vía `current_role()`, único
+>    que crea/borra/resetea/renombra cuentas admin/admin_plus), panel Módulos (interruptor por
+>    rol y por persona, cualquier ítem del menú), api/ (9 archivos) reconociéndolo. Migraciones
+>    138-150. Cuenta real: **"sistemas"**. Todo en producción, verificado con `claude-in-chrome`
+>    contra el sitio real.
+> 2. **Intercambios de festivos**: exclusividad por sucursal (no global) con Oficina
+>    Administrativa totalmente exenta (alias legacy "Oficina Central"/"Central" incluidos).
+>    Migración 151. Nuevo: elegir el festivo tocándolo en el calendario, no solo del
+>    desplegable.
+> 3. **`origin/vps-docker` tenía 10 commits desde el 4-5 de agosto que este checkout nunca
+>    había recibido** — se descubrió recién al hacer `git push`, no antes. Ya mergeados
+>    (commit `bfb226a`) y empujados a `origin` y `prod`. La lección que queda: **empujar
+>    seguido**, no acumular una semana entera sin `git push` — ver `plan-sanear-sistema-sep2026.md`
+>    y la regla nueva guardada en memoria (commit + push + bitácora por cada cambio real, no al
+>    final de la sesión).
+> 4. **`/opt/pulse/app` en la VPS tiene SU PROPIA historia git** (HEAD `f3e2257`, no existe en
+>    ningún repo local ni remoto), con archivos sueltos modificados sin commitear. No causó daño
+>    esta vez (todo lo que faltaba en el checkout local ya estaba ahí, incluidas migraciones
+>    115-119 que **nunca se guardaron como archivo en ningún lado**, solo se aplicaron a mano),
+>    pero es la tercera copia divergente de la historia — pendiente reconciliar, con el mismo
+>    cuidado que el punto 3. Ver §11 y `plan-sanear-sistema-sep2026.md` §4.
+> 5. **Corrección de un error propio**: en algún momento se dijo que "la vigilancia de
+>    geocercas" no existía. Es falso — está en producción desde el 6 de agosto
+>    (`plan-red-de-seguridad.md`). No repetir esa afirmación sin releer el código/los planes.
+> 6. **Hallazgos reales sin resolver, con nombre y fecha** (sacados en vivo de `pulse-db`,
+>    02-sep): respaldo externo sin latido desde el **29 de julio** (35 días — es la PC de
+>    oficina, no código); 4 personas bloqueadas para fichar (Mariana Aguilar López lleva 19
+>    días); 1 sin rostro aprobado (Hania Torres Peña). Detalle completo en
+>    `plan-sanear-sistema-sep2026.md` §1-2.
 
 > ## 🟡 SESIÓN DEL 2026-08-27 — bloqueo de entrada el viernes sin encuesta (sin deploy)
 >
@@ -522,9 +556,14 @@ deja de aparecer. Ver §10.
 
 ## 10. Qué falta (además de lo de §6)
 
-- **Vigilancia de geocercas:** tarea diaria que avise si una clínica se quedó muda justo
-  después de fijarle la geocerca, o si la mediana de sus checadas cae lejos del punto
-  configurado. Es la red que hoy no está.
+- ~~Vigilancia de geocercas~~ → **HECHO el 2026-08-06**, ver `plan-red-de-seguridad.md`.
+  `revisar_geocercas()` (mig. 104) + `personas_que_dejaron_de_fichar()` (mig. 116, ⚠️ el
+  archivo de esa migración **nunca se guardó en ningún repo**, solo se aplicó a mano — igual
+  que 115, 117, 118, 119). No repetir que esto falta sin releer el código primero.
 - **Revisar los rostros aprobados por la psicóloga** mientras no veía las fotos (§ bloque
-  del principio).
-- **El stack de Jitsi** sin documentar en esta misma VPS.
+  del principio). Sigue sin revisarse al 2026-09-02.
+- **El stack de Jitsi** — ya no es un misterio: lo usa "Reuniones" (`api/crear-reunion.js`,
+  `PaginaReuniones.jsx`, migraciones 090-091). Sigue sin documentar en `infra/README.md`.
+- **Lista completa y con nombres de lo pendiente real, al 2026-09-02**: ver
+  `plan-sanear-sistema-sep2026.md` (respaldo externo, personas bloqueadas para fichar, la
+  tercera copia de historia git en `/opt/pulse/app`, la PC vieja, deuda técnica menor).
