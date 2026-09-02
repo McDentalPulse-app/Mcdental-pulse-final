@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useCallback, useMemo } from "react";
+import { createContext, useState, useContext, useEffect, useCallback, useMemo } from "react";
 import { SUCURSALES } from "../utils/constants";
 import {
   MENSAJES_INIT,
@@ -28,6 +28,7 @@ import { getArchivosExpediente } from "../services/supabase/archivosExpedienteSe
 import { getNotasPsicologicas } from "../services/supabase/notasService";
 import { getUsuarios, getUsuariosDirectorio, getEncuestaPreguntas, getEncuestaBloques } from "../services/supabase/usuariosService";
 import { getSucursales } from "../services/supabase/sucursalesService";
+import { getModulosRol } from "../services/supabase/modulosRolService";
 import { getAsistencias } from "../services/supabase/asistenciasService";
 import { getHorarios } from "../services/supabase/horariosService";
 import { normalizePreguntasList } from "../utils/encuestaPreguntas";
@@ -40,6 +41,9 @@ export const GlobalProvider = ({ children }) => {
   // Estados iniciales
   const [usuarios, setUsuarios] = useState([]);
   const [sucursales, setSucursales] = useState([]);
+  // Interruptor global por rol (mig. 147) — para TODOS los roles, sea el que sea el propio:
+  // hace falta para filtrar el menú de cualquiera, no solo el de quien administra.
+  const [modulosRol, setModulosRol] = useState({});
   const [encuestaPreguntas, setEncuestaPreguntas] = useState(() =>
     normalizePreguntasList(ENCUESTA_PREGUNTAS)
   );
@@ -105,12 +109,17 @@ export const GlobalProvider = ({ children }) => {
       try {
         const promises = [];
         const { role } = user;
+        // Mismo pliegue que current_role() en la base (mig. 139): admin_plus cuenta como
+        // admin para todo lo que carga gestión. Los checks de empleado/doctor de abajo
+        // siguen usando `role` crudo a propósito — admin_plus nunca debe colar ahí.
+        const roleGestion = role === "admin_plus" ? "admin" : role;
         // Sentinela: null = no se cargó (no pedido, o falló). Un array (incluso
         // vacío) = fetch OK. Así "error de red" no se confunde con "0 datos".
         let huboError = false;
 
         let dbUsuarios = null;
         let dbSucursales = null;
+        let dbModulosRol = null;
         let dbPreguntas = null;
         let dbBloques = null;
         let dbEncuestas = null;
@@ -138,13 +147,15 @@ export const GlobalProvider = ({ children }) => {
         // que gestionan expedientes y altas. Un empleado lee el directorio, que no la
         // trae — así deja de poder sacar los datos personales de sus compañeros
         // (migración 030). El RLS lo garantiza aunque el cliente pidiera otra cosa.
-        const puedeVerPII = role === "admin" || role === "rh" || role === "psicologa";
+        const puedeVerPII = roleGestion === "admin" || roleGestion === "rh" || roleGestion === "psicologa";
         const cargarUsuarios = puedeVerPII ? getUsuarios : getUsuariosDirectorio;
 
         promises.push(cargarUsuarios().then(res => dbUsuarios = res).catch(() => { huboError = true; }));
         // Sucursales: las necesitan todos los roles (alimentan los desplegables de sucursal en
         // toda la app). Es la fuente única desde la BD; el array fijo de constants queda de fallback.
         promises.push(getSucursales().then(res => dbSucursales = res).catch(() => { huboError = true; }));
+        // Módulos por rol: para TODOS, hace falta para filtrar el propio menú (mig. 147).
+        promises.push(getModulosRol().then(res => dbModulosRol = res).catch(() => { huboError = true; }));
         promises.push(getEncuestaPreguntas().then(res => dbPreguntas = res).catch(() => { huboError = true; }));
         // Los bloques los lee cualquier autenticado: el empleado necesita el nombre para ver
         // de qué va su encuesta esta quincena.
@@ -161,30 +172,30 @@ export const GlobalProvider = ({ children }) => {
 
         // Encuestas y mensajes y reconocimientos: admin, rh, psicologa, empleado, doctor
         // (el doctor es un empleado con extras: consume lo mismo que el empleado)
-        if (["admin", "rh", "psicologa", "empleado", "doctor"].includes(role)) {
+        if (["admin", "rh", "psicologa", "empleado", "doctor"].includes(roleGestion)) {
           promises.push(getEncuestas().then(res => dbEncuestas = res).catch(() => { huboError = true; }));
           promises.push(getMensajes().then(res => dbMensajes = res).catch(() => { huboError = true; }));
           promises.push(getReconocimientos().then(res => dbReconocimientos = res).catch(() => { huboError = true; }));
         }
 
         // Reportes confidenciales: admin, rh, psicologa (rh con paridad admin)
-        if (role === "admin" || role === "rh" || role === "psicologa") {
+        if (roleGestion === "admin" || roleGestion === "rh" || roleGestion === "psicologa") {
           promises.push(getReportesConfidenciales().then(res => dbReportes = res).catch(() => { huboError = true; }));
         }
 
         // Vacaciones y permisos: admin, rh, psicologa, empleado, doctor
-        if (["admin", "rh", "psicologa", "empleado", "doctor"].includes(role)) {
+        if (["admin", "rh", "psicologa", "empleado", "doctor"].includes(roleGestion)) {
           promises.push(getVacaciones().then(res => dbVacaciones = res).catch(() => { huboError = true; }));
           promises.push(getPermisos().then(res => dbPermisos = res).catch(() => { huboError = true; }));
         }
 
         // Descuentos: admin, rh, psicologa
-        if (role === "admin" || role === "rh" || role === "psicologa") {
+        if (roleGestion === "admin" || roleGestion === "rh" || roleGestion === "psicologa") {
           promises.push(getDescuentos().then(res => dbDescuentos = res).catch(() => { huboError = true; }));
         }
 
         // Comisiones (recibos): el doctor carga las suyas; gestión, todas para revisarlas.
-        if (["doctor", "admin", "rh", "psicologa"].includes(role)) {
+        if (["doctor", "admin", "rh", "psicologa"].includes(roleGestion)) {
           promises.push(getComisiones().then(res => dbComisiones = res).catch(() => { huboError = true; }));
         }
 
@@ -192,7 +203,7 @@ export const GlobalProvider = ({ children }) => {
         // los suyos + los destinos ya ocupados (para no pedir un día tomado); gestión, todos.
         promises.push(getFestivos().then(res => dbFestivos = res).catch(() => { huboError = true; }));
         promises.push(getEventosCalendario().then(res => dbEventosCal = res).catch(() => { huboError = true; }));
-        if (["empleado", "doctor", "admin", "rh", "psicologa"].includes(role)) {
+        if (["empleado", "doctor", "admin", "rh", "psicologa"].includes(roleGestion)) {
           promises.push(getIntercambios().then(res => dbIntercambios = res).catch(() => { huboError = true; }));
         }
         if (["empleado", "doctor"].includes(role)) {
@@ -200,12 +211,12 @@ export const GlobalProvider = ({ children }) => {
         }
 
         // Archivos Expediente: admin, psicologa, rh
-        if (role === "admin" || role === "psicologa" || role === "rh") {
+        if (roleGestion === "admin" || roleGestion === "psicologa" || roleGestion === "rh") {
           promises.push(getArchivosExpediente().then(res => dbArchivos = res).catch(() => { huboError = true; }));
         }
 
         // Notas psicológicas: admin, rh, psicologa (rh con paridad admin; gateado también por RLS)
-        if (role === "admin" || role === "rh" || role === "psicologa") {
+        if (roleGestion === "admin" || roleGestion === "rh" || roleGestion === "psicologa") {
           promises.push(getNotasPsicologicas().then(res => dbNotas = res).catch(() => { huboError = true; }));
         }
 
@@ -232,6 +243,7 @@ export const GlobalProvider = ({ children }) => {
         // pisarlo con datos vacíos que parecerían "sin registros".
         if (dbUsuarios) setUsuarios(dbUsuarios);
         if (dbSucursales) setSucursales(dbSucursales);
+        if (dbModulosRol) setModulosRol(dbModulosRol);
         if (dbBloques) setEncuestaBloques(dbBloques);
         if (dbPreguntas && dbPreguntas.length > 0) {
           setEncuestaPreguntas(normalizePreguntasList(dbPreguntas));
@@ -291,7 +303,7 @@ export const GlobalProvider = ({ children }) => {
   useEffect(() => {
     if (!user) return;
     const { role } = user;
-    if (role !== "admin" && role !== "psicologa" && role !== "empleado" && role !== "doctor") return;
+    if (role !== "admin" && role !== "admin_plus" && role !== "psicologa" && role !== "empleado" && role !== "doctor") return;
 
     const unsubscribe = subscribeEncuestas((nueva) => {
       setEncuestas((prev) => (prev.some((e) => e.id === nueva.id) ? prev : [...prev, nueva]));
@@ -389,6 +401,7 @@ export const GlobalProvider = ({ children }) => {
         usuarios, setUsuarios,
         sucursales, setSucursales,
         nombresSucursales,
+        modulosRol, setModulosRol,
         encuestaPreguntas, setEncuestaPreguntas,
         encuestaBloques, setEncuestaBloques,
         encuestas, setEncuestas,

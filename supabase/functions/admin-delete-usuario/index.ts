@@ -9,8 +9,15 @@ const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 // cascade (mig 004), y prácticamente todas las tablas de negocio (asistencias,
 // encuestas, rostros, permisos, vacaciones...) tienen on delete cascade hacia
 // usuarios. Borrar es perder TODO el historial de esa persona para siempre — el
-// cliente ya avisa esto con dos confirmaciones antes de llamar acá. Solo admin (no
-// rh, a diferencia de admin-reset-password): es más grave que resetear una contraseña.
+// cliente ya avisa esto con dos confirmaciones antes de llamar acá.
+//
+// ESTA función queda FUERA de la paridad rh/psicologa = admin (migración 099).
+// Decisión del dueño, 2026-08-07 (desplegada directo en la VPS, commit d950e76,
+// nunca volvió a este repo hasta ahora): "rh y psico solo archivan, admin borra
+// definitivamente". Archivar es reversible y lo pueden los tres; esto no tiene
+// vuelta y lo puede admin/admin_plus, nadie más. La comprobación vive aquí y no
+// solo en el botón (esGestion/esAdmin de GestionUsuarios.jsx): esconder el botón
+// no impide llamar a la función directo.
 Deno.serve(async (req) => {
   const corsHeaders = corsFor(req);
   if (req.method === "OPTIONS") {
@@ -38,10 +45,7 @@ Deno.serve(async (req) => {
       .eq("auth_user_id", callerAuthUser.id)
       .single();
 
-    // Paridad rh/psicologa = admin (decisión del dueño, 2026-07-30; ver migración 099).
-    // Ojo: esto borra de forma DEFINITIVA. "Dar de baja" desde la interfaz archiva y es
-    // reversible; esta función no.
-    if (callerPerfilError || !["admin", "rh", "psicologa"].includes(callerPerfil?.role)) {
+    if (callerPerfilError || !["admin", "admin_plus"].includes(callerPerfil?.role)) {
       return new Response(JSON.stringify({ error: "No tienes permiso para eliminar usuarios." }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -67,13 +71,23 @@ Deno.serve(async (req) => {
 
     const { data: usuarioObjetivo, error: usuarioError } = await adminClient
       .from("usuarios")
-      .select("auth_user_id")
+      .select("auth_user_id, role")
       .eq("id", usuarioId)
       .single();
 
     if (usuarioError || !usuarioObjetivo?.auth_user_id) {
       return new Response(JSON.stringify({ error: "Usuario no encontrado." }), {
         status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Cierra el mismo hueco que admin-create-usuario (mig. 140): borrar una cuenta
+    // admin/admin_plus queda reservado a admin_plus. Sin excepción de arranque acá —
+    // borrar nunca es lo que crea al primer admin_plus.
+    if (["admin", "admin_plus"].includes(usuarioObjetivo.role) && callerPerfil.role !== "admin_plus") {
+      return new Response(JSON.stringify({ error: "Solo Admin+ puede eliminar una cuenta admin o admin_plus." }), {
+        status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

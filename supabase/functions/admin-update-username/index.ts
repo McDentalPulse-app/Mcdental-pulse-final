@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
       .single();
 
     // Paridad rh/psicologa = admin (decisión del dueño, 2026-07-30; ver migración 099).
-    if (callerPerfilError || !["admin", "rh", "psicologa"].includes(callerPerfil?.role)) {
+    if (callerPerfilError || !["admin", "admin_plus", "rh", "psicologa"].includes(callerPerfil?.role)) {
       return json({ error: "No tienes permiso para cambiar nombres de usuario." }, 403);
     }
 
@@ -74,6 +74,12 @@ Deno.serve(async (req) => {
     // auth.users.email, que es la credencial real de login: la guarda impedía que un 'rh'
     // cambiara el username de un 'admin' y lo dejara fuera de su propia app. Ahora rh y
     // psicologa pueden hacerlo.
+    //
+    // RESTAURADA acá para el nivel admin/admin_plus (mig. 140): cambiar el username de una
+    // cuenta admin o admin_plus queda reservado a admin_plus.
+    if (["admin", "admin_plus"].includes(objetivo.role) && callerPerfil.role !== "admin_plus") {
+      return json({ error: "Solo Admin+ puede cambiar el nombre de usuario de una cuenta admin o admin_plus." }, 403);
+    }
 
     // Disponibilidad: nadie más puede tener ese email sintético.
     const { data: ocupado } = await adminClient

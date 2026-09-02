@@ -11446,6 +11446,7 @@
 .cal-vacio { color: var(--mc-texto-apagado); font-size: 13px; margin: 8px 0 0; }
 .cal-evento { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--mc-borde-suave); font-size: 13px; }
 .cal-evento:last-child { border-bottom: none; }
+.cal-elegir-festivo { margin-top: 10px; }
 .cal-evento-titulo { color: var(--mc-texto-titulo); font-weight: 600; }
 .cal-evento-detalle { color: var(--mc-texto-secundario); font-style: normal; font-size: 12px; margin-left: auto; }
 
@@ -11842,6 +11843,11 @@
 
 .topnav-menu { position: absolute; top: calc(100% + 6px); left: 0; min-width: 224px; background: var(--mc-superficie); border: 1px solid var(--mc-borde-suave); border-radius: 11px; box-shadow: 0 10px 28px rgba(0,0,0,.14); padding: 6px; z-index: 60; display: flex; flex-direction: column; gap: 2px; }
 .topnav-menu--der { right: 0; left: auto; }
+/* Desplegables de AdminPlusNav (por rol y "Módulos"): hasta 32 ítems por rol, que .topnav-menu
+   normal (sin tope de alto) sacaba de la pantalla y se veían cortados. Aparte de .topnav-menu
+   para no tocar los desplegables de siempre (HeaderNav), que ya están medidos y probados. */
+.topnav-menu--rol { max-height: min(70vh, 520px); overflow-y: auto; min-width: 260px; }
+.topnav-menu-grupo + .topnav-menu-grupo { margin-top: 4px; border-top: 1px solid var(--mc-borde-suave); padding-top: 4px; }
 .topnav-menu-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border: none; background: none; color: var(--mc-texto); font-size: 14px; border-radius: 8px; cursor: pointer; text-align: left; white-space: nowrap; font-family: inherit; }
 .topnav-menu-item:hover { background: var(--mc-superficie-sutil); }
 .topnav-menu-item--activo { color: var(--mc-aqua); }
@@ -12045,6 +12051,21 @@
 .cuenta-switch > span { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.2); transition: transform .18s ease; }
 .cuenta-switch--on { background: var(--mc-aqua); }
 .cuenta-switch--on > span { transform: translateX(16px); }
+/* .cuenta-switch nació como <span> puramente visual (el toggle de modo oscuro, con el click
+   en el <button> que lo envuelve). AdminPlusNav.jsx y ModulosPanel.jsx lo reusan como <button>
+   real — sin resetear el botón, el navegador le mete su borde/relleno/fondo por defecto encima
+   y se ve roto. Este bloque es SOLO para esa variante <button>, no toca el <span> de siempre. */
+button.cuenta-switch { border: none; padding: 0; background: var(--mc-borde); cursor: pointer; -webkit-appearance: none; appearance: none; }
+button.cuenta-switch:disabled { opacity: .5; cursor: not-allowed; }
+button.cuenta-switch.cuenta-switch--on { background: var(--mc-aqua); }
+
+/* Filas con interruptor fuera de un desplegable (ModulosPanel.jsx: la pantalla completa, no un
+   .topnav-menu) — sin esto no tenían relleno ni separación, se veían amontonadas. */
+.emp-list-simple { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.emp-list-simple > li { padding: 10px 4px; border-bottom: 1px solid var(--mc-borde-suave); }
+.emp-list-simple > li:last-child { border-bottom: none; }
+.emp-list-simple > li.cuenta-switch-row { display: flex; align-items: center; }
+.mc-badge-role { font-size: 11px; text-transform: uppercase; letter-spacing: .03em; color: var(--mc-texto-secundario); background: var(--mc-superficie-sutil); border-radius: 999px; padding: 2px 9px; margin-left: 8px; }
 
 /* ============================================================================
    Perfil: cabecera estilo Untitled UI (banner degradado + avatar encima + email).

@@ -1,6 +1,7 @@
 import { Suspense, lazy, useState, useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { refreshSemana } from "./utils/constants";
+import { rutaBaseDe } from "./config/navItems";
 import { useAuth } from "./contexts/AuthContext";
 import { useGlobal } from "./contexts/GlobalContext";
 import { useAppActions } from "./hooks/useAppActions";
@@ -77,8 +78,17 @@ export default function App() {
     return <LandingPage />;
   }
 
-  if (!location.pathname.startsWith(`/${user.role}`)) {
-    return <Navigate to={`/${user.role}`} replace />;
+  // admin_plus reusa el AdminLayout montado en /admin/* (no hay /admin_plus/* aparte) —
+  // sin este caso especial, cada carga redirigiría a /admin_plus y no encontraría ruta.
+  //
+  // OJO con startsWith a secas: "/admin_plus/modulos".startsWith("/admin") da true (son
+  // letras, no segmentos), así que una URL vieja con /admin_plus/... NUNCA se corregía acá
+  // y cualquier navegación fallida se quedaba pegada — el propio catch-all de abajo
+  // ("Vista en construcción") es lo que se terminaba viendo. Por eso el límite de segmento
+  // (== exacto, o empieza con "/base/").
+  const rutaBase = rutaBaseDe(user.role);
+  if (location.pathname !== `/${rutaBase}` && !location.pathname.startsWith(`/${rutaBase}/`)) {
+    return <Navigate to={`/${rutaBase}`} replace />;
   }
 
   const combinedActions = {
@@ -107,7 +117,7 @@ export default function App() {
       <ModalActualizacion />
       <Suspense fallback={<Loader />}>
         <Routes>
-          {user.role === 'admin' && (
+          {(user.role === 'admin' || user.role === 'admin_plus') && (
             <Route path="/admin/*" element={<AdminLayout user={user} globals={globals} actions={combinedActions} />} />
           )}
           {user.role === 'psicologa' && (

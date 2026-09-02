@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import HeaderNav from "./HeaderNav";
+import AdminPlusNav from "./AdminPlusNav";
 import Sidebar from "./Sidebar";
 import BotonMensajes from "./BotonMensajes";
 import BotonReuniones from "./BotonReuniones";
@@ -35,5 +36,8 @@ export default function Navegacion() {
       </>
     );
   }
+  // Barra propia para Admin+ (pedido del dueño): navega por rol para prender/apagar módulos
+  // globalmente, en vez de las categorías de siempre — ver AdminPlusNav.jsx.
+  if (user?.role === "admin_plus") return <AdminPlusNav />;
   return <HeaderNav />;
 }

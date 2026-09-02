@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useGlobal } from "../../contexts/GlobalContext";
 import { useNotification } from "../../contexts/NotificationContext";
@@ -19,6 +19,7 @@ import { mensajeDeFallo } from "../../utils/errores";
 // Etiqueta legible del rol (no hay un mapa central; local y pequeño).
 const ROLE_LABEL = {
   admin: "Administración",
+  admin_plus: "Admin+",
   rh: "Recursos Humanos",
   psicologa: "Psicóloga",
   empleado: "Colaborador",

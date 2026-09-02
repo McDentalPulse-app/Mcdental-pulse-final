@@ -1,9 +1,10 @@
 import { useState, useEffect, useLayoutEffect, useRef, Fragment } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { useGlobal } from "../../contexts/GlobalContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { notify } from "../../utils/notify";
-import { navItemsPara, GROUP_ICONS, agruparPorCampo, tieneBotonPropio } from "../../config/navItems";
+import { navItemsPara, rutaBaseDe, GROUP_ICONS, agruparPorCampo, tieneBotonPropio } from "../../config/navItems";
 import logoSmall from "../../assets/logos/logo-small.png";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
@@ -21,6 +22,7 @@ import CampanaNotificaciones from "../notificaciones/CampanaNotificaciones";
 // el panel con todo agrupado.
 export default function HeaderNav() {
   const { user, logout } = useAuth();
+  const { modulosRol } = useGlobal();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,7 +32,7 @@ export default function HeaderNav() {
   const [movilOpen, setMovilOpen] = useState(false);
   const navRef = useRef(null);
 
-  const items = navItemsPara(user);
+  const items = navItemsPara(user, modulosRol);
   // Cuántas entradas (sueltas + grupos) caben en una sola línea antes de que el resto se
   // junte en "Más". Arranca en "todas caben" para no parpadear un "Más" vacío en el primer
   // frame; useLayoutEffect lo corrige antes de pintar si hace falta.
@@ -109,7 +111,7 @@ export default function HeaderNav() {
   // Volver arriba al cambiar de pantalla.
   useEffect(() => { document.querySelector(".app-main")?.scrollTo({ top: 0 }); }, [location.pathname]);
 
-  const ir = (key) => { setAbierto(null); setMovilOpen(false); navigate(`/${user.role}/${key}`); };
+  const ir = (key) => { setAbierto(null); setMovilOpen(false); navigate(`/${rutaBaseDe(user.role)}/${key}`); };
 
   const cerrarSesion = async () => {
     setAbierto(null); setMovilOpen(false);

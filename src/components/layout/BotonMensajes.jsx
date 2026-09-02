@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useGlobal } from "../../contexts/GlobalContext";
-import { navItemsPara } from "../../config/navItems";
+import { navItemsPara, rutaBaseDe } from "../../config/navItems";
 import Icon from "../ui/Icon";
 
 /**
@@ -15,12 +15,12 @@ import Icon from "../ui/Icon";
  */
 export default function BotonMensajes({ variante = "header", activo = false }) {
   const { user } = useAuth();
-  const { mensajes } = useGlobal();
+  const { mensajes, modulosRol } = useGlobal();
   const navigate = useNavigate();
 
   // Se pregunta al menú del rol en vez de asumir que todos lo tienen: si algún día un rol se queda
   // sin Mensajes, el botón desaparece con él y no hay que acordarse de este archivo.
-  if (!navItemsPara(user).some((i) => i.key === "mensajes")) return null;
+  if (!navItemsPara(user, modulosRol).some((i) => i.key === "mensajes")) return null;
 
   // Admin y RH no reciben cuenta de no leídos. OJO: el motivo original —que Mensajes les abría
   // Reuniones— ya no aplica; Reuniones tiene su propio icono y su propia ruta, y Mensajes.jsx
@@ -42,7 +42,7 @@ export default function BotonMensajes({ variante = "header", activo = false }) {
           ? "mensajes-flotante"
           : `topnav-mensajes${activo ? " topnav-mensajes--activo" : ""}`
       }
-      onClick={() => navigate(`/${user.role}/mensajes`)}
+      onClick={() => navigate(`/${rutaBaseDe(user.role)}/mensajes`)}
       title="Mensajes"
       aria-label={noLeidos ? `Mensajes, ${noLeidos} sin leer` : "Mensajes"}
     >

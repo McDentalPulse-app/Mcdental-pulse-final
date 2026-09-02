@@ -9,6 +9,7 @@ import AvisoPush from "./AvisoPush";
 import { useNotification } from "../../contexts/NotificationContext";
 import { obtenerUbicacion, textoUbicacion, evaluarUbicacion, evaluarUbicacionEnVarias, textoCandado } from "../../utils/geo";
 import { useNavigate } from "react-router-dom";
+import { rutaBaseDe } from "../../config/navItems";
 import { getDeviceId } from "../../utils/dispositivo";
 import { marcarChecadaEnCurso } from "../../utils/actualizacion";
 import { getMiRostro } from "../../services/supabase/rostrosService";
@@ -420,7 +421,7 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
             <button
               type="button"
               className="checador-boton checador-boton--entrada"
-              onClick={() => navigate(`/${user?.role}/rostro`)}
+              onClick={() => navigate(`/${rutaBaseDe(user?.role)}/rostro`)}
             >
               <Icon name="camera" size={20} />
               {puerta.caducado ? "Renovar mis fotos" : "Registrar mi rostro"}
@@ -581,7 +582,7 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
                   <Icon name="clipboardCheck" size={15} />
                   Antes de marcar tu entrada hoy (es viernes), contesta la encuesta semanal.
                 </p>
-                <button type="button" className="mc-btn-outline" onClick={() => navigate(`/${user?.role}/encuesta`)}>
+                <button type="button" className="mc-btn-outline" onClick={() => navigate(`/${rutaBaseDe(user?.role)}/encuesta`)}>
                   Contestar encuesta
                 </button>
               </>

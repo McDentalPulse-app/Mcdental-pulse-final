@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import DateRangePicker from "../common/DateRangePicker";
 import Select from "../common/Select";
 import { useGlobal } from "../../contexts/GlobalContext";
@@ -27,6 +27,10 @@ const ROLES = [
   { valor: "admin", etiqueta: "Administrador" },
 ];
 
+// Admin_plus no entra en ROLES arriba: es un nivel aparte, no una opción más del selector de
+// gestión — solo aparece para quien YA es admin_plus (ver rolesDisponibles).
+const ROL_ADMIN_PLUS = { valor: "admin_plus", etiqueta: "Admin+" };
+
 const DEFAULT_SUCURSAL = SUCURSALES[0];
 const FILAS_POR_PAGINA = 12;
 
@@ -38,11 +42,15 @@ const GestionUsuarios = () => {
   // Antes era `esAdmin` y valía solo para 'admin'. Con la paridad rh/psicologa = admin
   // (decisión del dueño, 2026-07-30; ver migración 099) los tres roles de gestión pueden
   // lo mismo, así que el nombre pasa a decir lo que de verdad comprueba.
-  const esGestion = ["admin", "rh", "psicologa"].includes(user?.role);
+  const esGestion = ["admin", "rh", "psicologa", "admin_plus"].includes(user?.role);
   // El borrado definitivo se queda FUERA de esa paridad: "rh y psico solo archivan, admin borra
   // definitivamente" (dueño, 2026-08-07). Esconder el botón no basta como seguridad — la Edge
   // Function admin-delete-usuario comprueba lo mismo—, pero es donde se ve la regla.
   const esAdmin = user?.role === "admin";
+  // Admin+: nivel aparte de la paridad de gestión de arriba — ve/edita cuentas admin y
+  // admin_plus, que para todos los demás (incluido admin normal) están fuera de esta
+  // pantalla (mig. 140).
+  const esAdminPlus = user?.role === "admin_plus";
 
   const [busqueda, setBusqueda] = useState("");
   const [filtroSucursal, setFiltroSucursal] = useState("Todas");
@@ -87,7 +95,7 @@ const GestionUsuarios = () => {
   // con un 403; esa guarda se retiró en la migración 099. Al editar se conserva el rol
   // actual como opción, para no degradar a un doctor por no tener ese valor en la lista.
   const rolesDisponibles = esGestion
-    ? ROLES
+    ? (esAdminPlus ? [...ROLES, ROL_ADMIN_PLUS] : ROLES)
     : ROLES.filter((r) => r.valor === "empleado" || r.valor === formData.role);
   const rolBloqueado = !esGestion && formData.role !== "empleado";
 
@@ -110,14 +118,18 @@ const GestionUsuarios = () => {
     return !u.archivado; // "vigentes": activos + inactivos, sin archivados
   };
 
+  // admin y admin_plus quedan fuera de esta pantalla para todos MENOS admin_plus (mig. 140):
+  // ni un admin normal puede ver o tocar a otro admin aquí.
+  const esRolProtegido = (rol) => rol === "admin" || rol === "admin_plus";
+
   const empleados = usuarios.filter(u =>
-    u.role !== "admin" &&
+    (esAdminPlus || !esRolProtegido(u.role)) &&
     u.name?.toLowerCase().includes(busqueda.toLowerCase()) &&
     (filtroSucursal === "Todas" || sucursalMatches(u.sucursal, filtroSucursal)) &&
     coincideEstado(u)
   );
 
-  const archivadosTotal = usuarios.filter((u) => u.role !== "admin" && u.archivado).length;
+  const archivadosTotal = usuarios.filter((u) => (esAdminPlus || !esRolProtegido(u.role)) && u.archivado).length;
 
   // Orden por columna: todo texto salvo "estado", que ordena por el booleano
   // `inactivo` para poder juntar arriba a los activos (o a los de baja).
@@ -365,7 +377,7 @@ const GestionUsuarios = () => {
                           >
                             <Icon name="refresh" size={15} />
                           </button>
-                          {esAdmin && (
+                          {(esAdmin || esAdminPlus) && (
                             // Icono distinto al de "dar de baja" a propósito: ese trash significa
                             // algo reversible, y quien lo tenga aprendido no debe leer lo mismo aquí.
                             <button
@@ -461,7 +473,7 @@ const GestionUsuarios = () => {
                       >
                         Restaurar
                       </button>
-                      {esAdmin && (
+                      {(esAdmin || esAdminPlus) && (
                         <button
                           type="button"
                           className="mc-btn-outline mc-btn-outline--danger"

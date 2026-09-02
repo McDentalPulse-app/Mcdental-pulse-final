@@ -19,6 +19,10 @@ const mapUsuario = (row) =>
     debeCambiarPassword: row.debe_cambiar_password,
     avatarUrl: row.avatar_url,
     bannerUrl: row.banner_url,
+    // Fija la geocerca de su clínica (recepción, mig. 103). Faltaba en este mapa — hallazgo
+    // de la revisión del panel de Módulos: sin esto, "Ubicación de mi clínica" se veía
+    // siempre apagado ahí aunque estuviera prendido en la base.
+    puedeUbicarSucursal: !!row.puede_ubicar_sucursal,
     // Inventario por clínica (mig. 120): ver el checkbox gemelo en GestionUsuarios.jsx.
     puedeGestionarBodega: !!row.puede_gestionar_bodega,
     puedeGestionarInventario: !!row.puede_gestionar_inventario,
@@ -32,6 +36,14 @@ const mapUsuario = (row) =>
     // Entrada libre (mig. 135): sin geocerca ni retardo, pero solo cuando la persona
     // prende el interruptor en su Checador — el permiso no basta por sí solo.
     puedeMarcarEntradaLibre: !!row.puede_marcar_entrada_libre,
+    // Módulos apagables por persona (mig. 141), gestionados desde ModulosPanel.jsx
+    // (Admin+). Default true en la base: nadie pierde acceso al desplegar esto.
+    puedeVerComisiones: row.puede_ver_comisiones !== false,
+    puedeUsarChecador: row.puede_usar_checador !== false,
+    puedeUsarNotas: row.puede_usar_notas !== false,
+    puedeVerDepartamentos: row.puede_ver_departamentos !== false,
+    puedeVerAvisos: row.puede_ver_avisos !== false,
+    puedeVerEncuestas: row.puede_ver_encuestas !== false,
   };
 
 // Fila completa, con PII (teléfono, email, fechas). El RLS de la migración 030 solo
@@ -76,6 +88,7 @@ export const updateUsuario = async (id, updates) => {
   if (updates.fechaCumpleanos !== undefined) payload.fecha_cumpleanos = updates.fechaCumpleanos || null;
   if (updates.inactivo !== undefined) payload.inactivo = updates.inactivo;
   if (updates.archivado !== undefined) payload.archivado = updates.archivado;
+  if (updates.puedeUbicarSucursal !== undefined) payload.puede_ubicar_sucursal = !!updates.puedeUbicarSucursal;
   if (updates.puedeGestionarBodega !== undefined) payload.puede_gestionar_bodega = updates.puedeGestionarBodega;
   if (updates.puedeGestionarInventario !== undefined) payload.puede_gestionar_inventario = updates.puedeGestionarInventario;
   if (updates.puedeCrearDepartamento !== undefined) payload.puede_crear_departamento = updates.puedeCrearDepartamento;
@@ -88,6 +101,12 @@ export const updateUsuario = async (id, updates) => {
   if (updates.puedeMarcarEntradaLibre !== undefined) {
     payload.puede_marcar_entrada_libre = !!updates.puedeMarcarEntradaLibre;
   }
+  if (updates.puedeVerComisiones !== undefined) payload.puede_ver_comisiones = !!updates.puedeVerComisiones;
+  if (updates.puedeUsarChecador !== undefined) payload.puede_usar_checador = !!updates.puedeUsarChecador;
+  if (updates.puedeUsarNotas !== undefined) payload.puede_usar_notas = !!updates.puedeUsarNotas;
+  if (updates.puedeVerDepartamentos !== undefined) payload.puede_ver_departamentos = !!updates.puedeVerDepartamentos;
+  if (updates.puedeVerAvisos !== undefined) payload.puede_ver_avisos = !!updates.puedeVerAvisos;
+  if (updates.puedeVerEncuestas !== undefined) payload.puede_ver_encuestas = !!updates.puedeVerEncuestas;
 
   const { data, error } = await supabase
     .from("usuarios")

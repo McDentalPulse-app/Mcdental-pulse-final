@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import Select from "../common/Select";
 import { useGlobal } from "../../contexts/GlobalContext";
 import FichaEmpleado from "./FichaEmpleado";
@@ -42,7 +42,7 @@ const EmpleadosList = ({
   const [pagina, setPagina] = useState(1);
 
   const empleados = USERS.filter(esEmpleadoActivo);
-  const puedeEliminar = currentUser?.role === "admin";
+  const puedeEliminar = currentUser?.role === "admin" || currentUser?.role === "admin_plus";
 
   // Sin ninguna encuesta contestada no es "verde" (estable) — es que no hay dato. Antes
   // caía a verde por defecto y se veía igual que alguien que de verdad está bien.

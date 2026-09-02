@@ -1,4 +1,3 @@
-import React from "react";
 import Card from "../common/Card";
 import EmptyState from "../common/EmptyState";
 import SectionTitle from "../common/SectionTitle";
@@ -34,7 +33,7 @@ import {
 } from "../../utils/helpers";
 
 const EventosPersonal = ({ users }) => {
-  const empleados = users.filter(u => ["empleado", "doctor", "rh", "psicologa", "admin"].includes(u.role) && !u.inactivo);
+  const empleados = users.filter(u => ["empleado", "doctor", "rh", "psicologa", "admin", "admin_plus"].includes(u.role) && !u.inactivo);
 
   const eventos = [
     ...empleados.map(u => {

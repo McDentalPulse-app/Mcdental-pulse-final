@@ -22,7 +22,7 @@ import { subirVideoAviso, borrarVideoStorage } from "../../services/supabase/avi
 // bundle de empleados/doctores que solo LEEN los avisos.
 const EditorTexto = lazy(() => import("../common/EditorTexto"));
 
-const ROLES_GESTION = ["admin", "rh", "psicologa"];
+const ROLES_GESTION = ["admin", "admin_plus", "rh", "psicologa"];
 
 const formatoFecha = (iso) => {
   if (!iso) return "";
@@ -401,7 +401,7 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
         )}
       </PageHeader>
 
-      {user?.role === "admin" && <EsperaAviso userId={user?.id} />}
+      {(user?.role === "admin" || user?.role === "admin_plus") && <EsperaAviso userId={user?.id} />}
 
       {avisos.length === 0 ? (
         <Card><EmptyState icon="bell" message="Todavía no se ha publicado ningún aviso." /></Card>

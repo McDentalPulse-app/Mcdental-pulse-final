@@ -19,20 +19,23 @@ export const NAV_ITEMS = {
     { key: "horarios", icon: "calendarDays", label: "Horarios", group: "Asistencia y rostros" },
     { key: "rostros", icon: "camera", label: "Rostros", group: "Asistencia y rostros" },
     { key: "intercambios", icon: "calendarDays", label: "Festivos", group: "Asistencia y rostros" },
-    { key: "encuestas", icon: "clipboard", label: "Encuestas", group: "Encuestas y reportes" },
+    { key: "encuestas", icon: "clipboard", label: "Encuestas", group: "Encuestas y reportes", requiere: "puedeVerEncuestas" },
     { key: "reportes", icon: "trending", label: "Reportes", group: "Encuestas y reportes" },
     { key: "confidenciales", icon: "lock", label: "Reportes Confidenciales", group: "Encuestas y reportes" },
     { key: "inventario", icon: "package", label: "Inventario", group: "Inventario" },
     { key: "ai", icon: "ai", label: "AI Engine", group: "Herramientas" },
     { key: "config", icon: "settings", label: "Config", group: "Herramientas" },
-    { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
+    { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas", requiere: "puedeVerAvisos" },
     { key: "mensajes", icon: "message", label: "Mensajes" },
-    { key: "notas", icon: "note", label: "Notas" },
-    { key: "departamentos", icon: "users", label: "Departamentos" },
+    { key: "notas", icon: "note", label: "Notas", requiere: "puedeUsarNotas" },
+    { key: "departamentos", icon: "users", label: "Departamentos", requiere: "puedeVerDepartamentos" },
     { key: "reuniones", icon: "camera", label: "Reuniones" },
     { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
     { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
   ],
+  // Admin+ hereda TODO el menú de admin (mismo AdminLayout, sin pantalla nueva que mantener
+  // en paralelo) y suma "Módulos": el panel para prender/apagar Comisiones/Checador/Notas/
+  // Departamentos/Avisos/Encuestas y los 6 interruptores previos, persona por persona.
   psicologa: [
     { key: "dashboard", icon: "dashboard", label: "Dashboard" },
     { key: "seguimiento", icon: "target", label: "Seguimiento", group: "Seguimiento" },
@@ -41,28 +44,28 @@ export const NAV_ITEMS = {
     { key: "permisos", icon: "clipboardCheck", label: "Permisos", group: "Vacaciones y permisos" },
     { key: "mispermisos", icon: "vacation", label: "Mis vacaciones/permisos", group: "Vacaciones y permisos" },
     { key: "intercambios", icon: "calendarDays", label: "Festivos", group: "Vacaciones y permisos" },
-    { key: "comisiones", icon: "dollar", label: "Comisiones", group: "Vacaciones y permisos" },
+    { key: "comisiones", icon: "dollar", label: "Comisiones", group: "Vacaciones y permisos", requiere: "puedeVerComisiones" },
     { key: "empleados", icon: "users", label: "Empleados", group: "Equipo" },
     { key: "usuarios", icon: "userCog", label: "Gestión de Personal", group: "Equipo" },
     { key: "expedientes", icon: "folder", label: "Expedientes", group: "Equipo" },
     { key: "reconocimientos", icon: "award", label: "Reconocimientos", group: "Equipo" },
     { key: "eventospersonal", icon: "cake", label: "Cumpleaños y Aniversarios", group: "Equipo" },
-    { key: "checador", icon: "clock", label: "Checador", group: "Asistencia y rostros" },
+    { key: "checador", icon: "clock", label: "Checador", group: "Asistencia y rostros", requiere: "puedeUsarChecador" },
     { key: "asistencia", icon: "clock", label: "Asistencia", group: "Asistencia y rostros" },
     { key: "sucursales", icon: "mapPin", label: "Sucursales", group: "Asistencia y rostros" },
     { key: "horarios", icon: "calendarDays", label: "Horarios", group: "Asistencia y rostros" },
     { key: "importar-horarios", icon: "file", label: "Importar horarios", group: "Asistencia y rostros" },
     { key: "calibracion", icon: "shield", label: "Calibración del cotejo", group: "Asistencia y rostros" },
     { key: "rostros", icon: "camera", label: "Rostros", group: "Asistencia y rostros" },
-    { key: "encuestas", icon: "clipboard", label: "Encuestas", group: "Encuestas y reportes" },
+    { key: "encuestas", icon: "clipboard", label: "Encuestas", group: "Encuestas y reportes", requiere: "puedeVerEncuestas" },
     { key: "reportes", icon: "trending", label: "Reportes", group: "Encuestas y reportes" },
     { key: "ai", icon: "ai", label: "AI Engine", group: "Herramientas" },
     { key: "config", icon: "settings", label: "Config", group: "Herramientas" },
     { key: "mensajes", icon: "message", label: "Mensajes" },
-    { key: "notas", icon: "note", label: "Notas" },
-    { key: "departamentos", icon: "users", label: "Departamentos" },
+    { key: "notas", icon: "note", label: "Notas", requiere: "puedeUsarNotas" },
+    { key: "departamentos", icon: "users", label: "Departamentos", requiere: "puedeVerDepartamentos" },
     { key: "reuniones", icon: "camera", label: "Reuniones" },
-    { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
+    { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas", requiere: "puedeVerAvisos" },
     { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
     // Clave distinta de "soporte" a propósito: en gestión esa clave ya está tomada por
     // Ideas de mejora, y la plantilla la usa para Soporte TI. Son dos módulos distintos
@@ -85,24 +88,24 @@ export const NAV_ITEMS = {
     // cambio de dia festivo habia que abrir un menu que no habla de dias libres. Mismo grupo y
     // mismo orden que la psicologa, que ya tiene estas cinco paginas juntas.
     { key: "intercambios", icon: "calendarDays", label: "Festivos", group: "Vacaciones y permisos" },
-    { key: "comisiones", icon: "dollar", label: "Comisiones", group: "Vacaciones y permisos" },
+    { key: "comisiones", icon: "dollar", label: "Comisiones", group: "Vacaciones y permisos", requiere: "puedeVerComisiones" },
     { key: "descuentos", icon: "dollar", label: "Descuentos", group: "RH" },
     { key: "calendario", icon: "calendar", label: "Calendario", group: "RH" },
     { key: "reportesrh", icon: "trending", label: "Reportes RH", group: "RH" },
-    { key: "checador", icon: "clock", label: "Checador", group: "Asistencia y rostros" },
+    { key: "checador", icon: "clock", label: "Checador", group: "Asistencia y rostros", requiere: "puedeUsarChecador" },
     { key: "asistencia", icon: "clock", label: "Asistencia", group: "Asistencia y rostros" },
     { key: "horarios", icon: "calendarDays", label: "Horarios", group: "Asistencia y rostros" },
     { key: "calibracion", icon: "shield", label: "Calibración del cotejo", group: "Asistencia y rostros" },
     { key: "rostros", icon: "camera", label: "Rostros", group: "Asistencia y rostros" },
     { key: "sucursales", icon: "mapPin", label: "Sucursales", group: "Asistencia y rostros" },
-    { key: "encuestas", icon: "clipboard", label: "Encuestas", group: "Encuestas y reportes" },
+    { key: "encuestas", icon: "clipboard", label: "Encuestas", group: "Encuestas y reportes", requiere: "puedeVerEncuestas" },
     { key: "reportes", icon: "trending", label: "Reportes", group: "Encuestas y reportes" },
     { key: "ai", icon: "ai", label: "AI Engine", group: "Herramientas" },
     { key: "config", icon: "settings", label: "Config", group: "Herramientas" },
-    { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas" },
+    { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas", requiere: "puedeVerAvisos" },
     { key: "mensajes", icon: "message", label: "Mensajes" },
-    { key: "notas", icon: "note", label: "Notas" },
-    { key: "departamentos", icon: "users", label: "Departamentos" },
+    { key: "notas", icon: "note", label: "Notas", requiere: "puedeUsarNotas" },
+    { key: "departamentos", icon: "users", label: "Departamentos", requiere: "puedeVerDepartamentos" },
     { key: "reuniones", icon: "camera", label: "Reuniones" },
     { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
     { key: "soporteti", icon: "wrench", label: "Soporte TI", group: "Herramientas" },
@@ -114,11 +117,11 @@ export const NAV_ITEMS = {
   empleado: [
     { key: "inicio", icon: "home", label: "Inicio" },
     { key: "mensajes", icon: "message", label: "Mensajes" },
-    { key: "notas", icon: "note", label: "Notas" },
-    { key: "departamentos", icon: "users", label: "Departamentos" },
+    { key: "notas", icon: "note", label: "Notas", requiere: "puedeUsarNotas" },
+    { key: "departamentos", icon: "users", label: "Departamentos", requiere: "puedeVerDepartamentos" },
     { key: "reuniones", icon: "camera", label: "Reuniones" },
     // "Mi rostro" vive en Asistencia porque solo existe para que el checador te reconozca.
-    { key: "checador", icon: "clock", label: "Checador", group: "Asistencia" },
+    { key: "checador", icon: "clock", label: "Checador", group: "Asistencia", requiere: "puedeUsarChecador" },
     { key: "historial", icon: "history", label: "Historial", group: "Asistencia" },
     { key: "rostro", icon: "camera", label: "Mi rostro", group: "Asistencia" },
     // Solo para quien tenga el permiso (recepción). Ver `requiere` y navItemsPara() abajo.
@@ -129,23 +132,23 @@ export const NAV_ITEMS = {
     { key: "bodega", icon: "truck", label: "Pedidos (Bodega)", group: "Asistencia", requiere: "puedeGestionarBodega" },
     { key: "permisosempleado", icon: "vacation", label: "Vacaciones", group: "Tiempo libre" },
     { key: "calendario", icon: "calendar", label: "Calendario", group: "Tiempo libre" },
-    { key: "encuesta", icon: "clipboardCheck", label: "Mi Encuesta", group: "Bienestar" },
+    { key: "encuesta", icon: "clipboardCheck", label: "Mi Encuesta", group: "Bienestar", requiere: "puedeVerEncuestas" },
     { key: "reconocimientos", icon: "award", label: "Reconocimientos", group: "Bienestar" },
     { key: "reporteconfidencial", icon: "lock", label: "Reporte Confidencial", group: "Bienestar" },
-    { key: "avisos", icon: "bell", label: "Avisos", group: "Ayuda" },
+    { key: "avisos", icon: "bell", label: "Avisos", group: "Ayuda", requiere: "puedeVerAvisos" },
     { key: "soporte", icon: "wrench", label: "Soporte TI", group: "Ayuda" },
     { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
   ],
   doctor: [
     { key: "inicio", icon: "home", label: "Inicio" },
     { key: "mensajes", icon: "message", label: "Mensajes" },
-    { key: "notas", icon: "note", label: "Notas" },
-    { key: "departamentos", icon: "users", label: "Departamentos" },
+    { key: "notas", icon: "note", label: "Notas", requiere: "puedeUsarNotas" },
+    { key: "departamentos", icon: "users", label: "Departamentos", requiere: "puedeVerDepartamentos" },
     { key: "reuniones", icon: "camera", label: "Reuniones" },
     // Comisiones va suelto y no dentro de un grupo: es lo que un doctor abre a diario, y
     // enterrarlo a dos clics es justo lo contrario de lo que se buscaba al reordenar esto.
-    { key: "comisiones", icon: "dollar", label: "Comisiones" },
-    { key: "checador", icon: "clock", label: "Checador", group: "Asistencia" },
+    { key: "comisiones", icon: "dollar", label: "Comisiones", requiere: "puedeVerComisiones" },
+    { key: "checador", icon: "clock", label: "Checador", group: "Asistencia", requiere: "puedeUsarChecador" },
     { key: "historial", icon: "history", label: "Historial", group: "Asistencia" },
     { key: "rostro", icon: "camera", label: "Mi rostro", group: "Asistencia" },
     // También aquí: en una clínica sin recepcionista, quien fija la ubicación es la doctora.
@@ -153,14 +156,22 @@ export const NAV_ITEMS = {
     { key: "miclinica", icon: "mapPin", label: "Ubicación de mi clínica", group: "Asistencia", requiere: "puedeUbicarSucursal" },
     { key: "permisosempleado", icon: "vacation", label: "Vacaciones", group: "Tiempo libre" },
     { key: "calendario", icon: "calendar", label: "Calendario", group: "Tiempo libre" },
-    { key: "encuesta", icon: "clipboardCheck", label: "Mi Encuesta", group: "Bienestar" },
+    { key: "encuesta", icon: "clipboardCheck", label: "Mi Encuesta", group: "Bienestar", requiere: "puedeVerEncuestas" },
     { key: "reconocimientos", icon: "award", label: "Reconocimientos", group: "Bienestar" },
     { key: "reporteconfidencial", icon: "lock", label: "Reporte Confidencial", group: "Bienestar" },
-    { key: "avisos", icon: "bell", label: "Avisos", group: "Ayuda" },
+    { key: "avisos", icon: "bell", label: "Avisos", group: "Ayuda", requiere: "puedeVerAvisos" },
     { key: "soporte", icon: "wrench", label: "Soporte TI", group: "Ayuda" },
     { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
   ],
 };
+
+// Admin+ hereda TODO el menú de admin tal cual (mismo AdminLayout, sin pantalla nueva que
+// mantener en paralelo) y suma "Módulos" — el panel para prender/apagar Comisiones/Checador/
+// Notas/Departamentos/Avisos/Encuestas y los 6 interruptores previos, persona por persona.
+NAV_ITEMS.admin_plus = [
+  ...NAV_ITEMS.admin,
+  { key: "modulos", icon: "shield", label: "Módulos", group: "Herramientas" },
+];
 
 /**
  * Las claves que NO se pintan como enlace en ningún menú, porque ya tienen su propio botón
@@ -249,6 +260,7 @@ const DESCRIPCIONES = {
   ai: "Preguntale a la IA sobre el bienestar del equipo.",
   config: "Umbrales, avisos y ajustes del sistema.",
   avisos: "Comunicados para toda la empresa o para una sucursal.",
+  modulos: "Prende o apaga Comisiones, Checador, Notas, Departamentos, Avisos y Encuestas por persona.",
   soporte: "Propón una mejora para la aplicación.",
   soporteti: "Reporta un problema técnico al equipo de sistemas.",
   perfil: "Tu foto, tu color y tu contraseña.",
@@ -266,12 +278,26 @@ const DESCRIPCIONES_POR_ROL = {
 };
 
 /** La descripción de una página, o cadena vacía si todavía no se ha escrito. */
+// admin_plus reusa las rutas /admin/* (App.jsx) — no hay /admin_plus/* aparte. Cualquier
+// `navigate` armado a mano con el rol tiene que pasar por acá, no repetir el `role ===
+// "admin_plus" ? "admin" : role` en cada archivo (así se coló el bug: BuscadorGlobal,
+// BotonMensajes, BotonReuniones y Sidebar armaban la ruta con `user.role` directo y
+// terminaban en `/admin_plus/...`, que no existe — "Vista en construcción / No encontrada").
+export const rutaBaseDe = (role) => (role === "admin_plus" ? "admin" : role);
+
 export const descripcionDe = (key, role) =>
   DESCRIPCIONES_POR_ROL[role]?.[key] ?? DESCRIPCIONES[key] ?? "";
 
-export const navItemsPara = (user) =>
+// `modulosRol` (mig. 147, opcional): interruptor GLOBAL por rol, además del `requiere` de
+// siempre (que es por persona). Un rol/ítem AUSENTE del mapa cuenta como prendido — mismo
+// criterio que ya usa cada `requiere` cuando el campo no viene.
+export const navItemsPara = (user, modulosRol) =>
   (NAV_ITEMS[user?.role] || [])
     .filter((i) => !i.requiere || !!user?.[i.requiere])
+    .filter((i) => modulosRol?.[user?.role]?.[i.key] !== false)
+    // Interruptor por persona para cualquier ítem (mig. 150) — los 7 con columna dedicada
+    // (`requiere`) nunca tienen fila aquí, así que este filtro no les afecta.
+    .filter((i) => user?.modulosPersona?.[i.key] !== false)
     // La descripción se pega aquí y no se escribe en cada ítem: NAV_ITEMS repite las mismas
     // páginas en cinco roles, y el menú se lee desde cuatro sitios.
     .map((i) => ({ ...i, desc: descripcionDe(i.key, user?.role) }));
@@ -290,6 +316,7 @@ export const navItemsPara = (user) =>
  */
 export const TABS_MOVIL = {
   admin: ["dashboard", "ai", "empleados", "usuarios"],
+  admin_plus: ["dashboard", "ai", "empleados", "usuarios"],
   psicologa: ["dashboard", "checador", "ai", "seguimiento"],
   rh: ["dashboard", "checador", "usuarios", "empleados"],
   // El checador va en la posición 2 a propósito: es lo único de la lista que se usa todos los

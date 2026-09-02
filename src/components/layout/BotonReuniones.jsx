@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useGlobal } from "../../contexts/GlobalContext";
-import { navItemsPara } from "../../config/navItems";
+import { navItemsPara, rutaBaseDe } from "../../config/navItems";
 import { estadoParaElIcono } from "../../utils/reuniones";
 import Icon from "../ui/Icon";
 
@@ -25,7 +25,7 @@ import Icon from "../ui/Icon";
  */
 export default function BotonReuniones({ variante = "header", activo = false }) {
   const { user } = useAuth();
-  const { reuniones } = useGlobal();
+  const { reuniones, modulosRol } = useGlobal();
   const navigate = useNavigate();
 
   // El "ahora" avanza solo: sin esto, el punto no se encendería al llegar la hora hasta que
@@ -38,7 +38,7 @@ export default function BotonReuniones({ variante = "header", activo = false }) 
 
   // Se pregunta al menú del rol en vez de asumir que todos lo tienen, igual que BotonMensajes:
   // si algún día un rol se queda sin Reuniones, el botón desaparece con él.
-  if (!navItemsPara(user).some((i) => i.key === "reuniones")) return null;
+  if (!navItemsPara(user, modulosRol).some((i) => i.key === "reuniones")) return null;
 
   const estado = estadoParaElIcono(reuniones, ahora);
   const esFlotante = variante === "flotante";
@@ -53,7 +53,7 @@ export default function BotonReuniones({ variante = "header", activo = false }) 
     <button
       type="button"
       className={`${base}${activo && !esFlotante ? " topnav-reuniones--activo" : ""}`}
-      onClick={() => navigate(`/${user.role}/reuniones`)}
+      onClick={() => navigate(`/${rutaBaseDe(user.role)}/reuniones`)}
       title={etiqueta}
       aria-label={etiqueta}
     >

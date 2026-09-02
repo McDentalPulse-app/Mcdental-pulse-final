@@ -1,19 +1,21 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useGlobal } from "../../contexts/GlobalContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { notify } from "../../utils/notify";
 import logoSmall from "../../assets/logos/logo-small.png";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
-import { navItemsPara, TABS_MOVIL, agruparPorCampo, tieneBotonPropio } from "../../config/navItems";
+import { navItemsPara, rutaBaseDe, TABS_MOVIL, agruparPorCampo, tieneBotonPropio } from "../../config/navItems";
 import "./Sidebar.css";
 
 const RAIL_KEY = "mcdental_sidebar_rail";
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
+  const { modulosRol } = useGlobal();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -57,7 +59,7 @@ const Sidebar = () => {
   // Los menús salen de config/navItems.js, la MISMA fuente que usa el header de escritorio.
   // Hasta el 2026-07-29 este archivo tenía su propia copia escrita a mano, y por eso los grupos
   // nuevos y Mensajes se quedaron sin llegar al teléfono: se cambió una lista y había dos.
-  const items = navItemsPara(user);
+  const items = navItemsPara(user, modulosRol);
 
   const [masOpen, setMasOpen] = useState(false);
   // La barra inferior se declara por clave y ya no depende del orden del arreglo: así reordenar el
@@ -71,7 +73,7 @@ const Sidebar = () => {
   const tabsExtra = items.filter(
     (i) => !clavesTab.includes(i.key) && !tieneBotonPropio(i),
   );
-  const irA = (key) => { setMasOpen(false); navigate(`/${user.role}/${key}`); };
+  const irA = (key) => { setMasOpen(false); navigate(`/${rutaBaseDe(user.role)}/${key}`); };
   const extraActivo = tabsExtra.some((i) => i.key === active);
 
   // Hoja "Más" del móvil: un ítem sin `group` que no esté en la tabbar cae en "Otros". Hoy no
@@ -132,7 +134,7 @@ const Sidebar = () => {
                   title={item.label}
                   aria-label={item.label}
                   aria-current={isActive ? "page" : undefined}
-                  onClick={() => navigate(`/${user.role}/${item.key}`)}
+                  onClick={() => navigate(`/${rutaBaseDe(user.role)}/${item.key}`)}
                   className={`sidebar-nav-btn${isActive ? " sidebar-nav-btn--active" : ""}`}
                   style={{ "--i": i }}
                 >
@@ -160,7 +162,7 @@ const Sidebar = () => {
         <button
           type="button"
           className="sidebar-user sidebar-user--link"
-          onClick={() => navigate(`/${user.role}/perfil`)}
+          onClick={() => navigate(`/${rutaBaseDe(user.role)}/perfil`)}
           title="Ver mi perfil"
           aria-label="Ver mi perfil"
         >

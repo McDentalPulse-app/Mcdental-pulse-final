@@ -8,7 +8,7 @@ import { notify } from "../../utils/notify";
 import { enCurso } from "../../utils/reuniones";
 import { crearReunion, responderInvitacion } from "../../services/supabase/reunionesService";
 
-const PUEDE_CONVOCAR = ["admin", "rh", "psicologa"];
+const PUEDE_CONVOCAR = ["admin", "admin_plus", "rh", "psicologa"];
 
 const fmt = new Intl.DateTimeFormat("es-MX", {
   timeZone: "America/Monterrey",

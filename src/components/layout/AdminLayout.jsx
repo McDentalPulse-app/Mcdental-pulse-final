@@ -1,4 +1,3 @@
-import React from 'react';
 import { useGlobal } from "../../contexts/GlobalContext";
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Navegacion from './Navegacion';
@@ -30,6 +29,7 @@ import { useAvisoPush } from '../../hooks/useAvisoPush';
 import AvisosPanel from '../avisos/AvisosPanel';
 import NotasPanel from '../notas/NotasPanel';
 import DepartamentosPanel from '../departamentos/DepartamentosPanel';
+import ModulosPanel from '../admin/ModulosPanel';
 
 import AvisoUbicacion from '../asistencia/AvisoUbicacion';
 import { useAvisoUbicacion } from '../../hooks/useAvisoUbicacion';
@@ -81,6 +81,7 @@ export default function AdminLayout({ user, globals, actions }) {
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} />} />
             <Route path="notas" element={<NotasPanel user={user} />} />
             <Route path="departamentos" element={<DepartamentosPanel user={user} />} />
+            <Route path="modulos" element={<ModulosPanel />} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
           </Routes>

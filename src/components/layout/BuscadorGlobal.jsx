@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { navItemsPara } from "../../config/navItems";
+import { useGlobal } from "../../contexts/GlobalContext";
+import { navItemsPara, rutaBaseDe } from "../../config/navItems";
 import Icon from "../ui/Icon";
 
 // Búsqueda global: filtra las páginas del rol actual por nombre y navega a la elegida.
@@ -10,12 +11,13 @@ const normalizar = (s) => (s || "").toLowerCase().normalize("NFD").replace(/\p{D
 
 export default function BuscadorGlobal() {
   const { user } = useAuth();
+  const { modulosRol } = useGlobal();
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [abierto, setAbierto] = useState(false);
   const ref = useRef(null);
 
-  const items = navItemsPara(user).filter((i) => i.group !== "Cuenta");
+  const items = navItemsPara(user, modulosRol).filter((i) => i.group !== "Cuenta");
   const nq = normalizar(q.trim());
   const resultados = nq ? items.filter((i) => normalizar(i.label).includes(nq)).slice(0, 8) : [];
 
@@ -26,7 +28,7 @@ export default function BuscadorGlobal() {
     return () => document.removeEventListener("mousedown", fuera);
   }, [abierto]);
 
-  const ir = (key) => { setQ(""); setAbierto(false); navigate(`/${user.role}/${key}`); };
+  const ir = (key) => { setQ(""); setAbierto(false); navigate(`/${rutaBaseDe(user.role)}/${key}`); };
 
   const onKey = (e) => {
     if (e.key === "Enter" && resultados[0]) ir(resultados[0].key);

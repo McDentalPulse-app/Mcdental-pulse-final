@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
       .single();
 
     // Paridad rh/psicologa = admin (decisión del dueño, 2026-07-30; ver migración 099).
-    if (callerPerfilError || !["admin", "rh", "psicologa"].includes(callerPerfil?.role)) {
+    if (callerPerfilError || !["admin", "admin_plus", "rh", "psicologa"].includes(callerPerfil?.role)) {
       return new Response(JSON.stringify({ error: "No tienes permiso para restablecer contraseñas." }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -69,6 +69,15 @@ Deno.serve(async (req) => {
     // él. Al quitarla, rh y psicologa pueden hacerlo: es una escalada a admin en dos pasos
     // y sin registro. Queda anotado porque el motivo original sigue siendo válido; lo que
     // cambió es la decisión, no el riesgo.
+    //
+    // RESTAURADA acá para el nivel admin/admin_plus (mig. 140): resetear la contraseña de
+    // una cuenta admin o admin_plus queda reservado a admin_plus.
+    if (["admin", "admin_plus"].includes(usuarioObjetivo.role) && callerPerfil.role !== "admin_plus") {
+      return new Response(JSON.stringify({ error: "Solo Admin+ puede restablecer la contraseña de una cuenta admin o admin_plus." }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const { error: updateAuthError } = await adminClient.auth.admin.updateUserById(
       usuarioObjetivo.auth_user_id,

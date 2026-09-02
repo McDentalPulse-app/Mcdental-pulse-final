@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
+import { rutaBaseDe } from "../../config/navItems";
 import { useGlobal } from "../../contexts/GlobalContext";
 import EncuestaDetalleModal from "./EncuestaDetalleModal";
 import { useEscapeKey } from "../../hooks/useEscapeKey";
@@ -59,11 +60,11 @@ export default function FichaEmpleado({
   // para mandar mensajes sería otro sitio que mantener y donde perder cosas.
   const escribirle = () => {
     onClose();
-    navigate(`/${currentUser?.role}/mensajes`, { state: { conversarCon: empleado.id } });
+    navigate(`/${rutaBaseDe(currentUser?.role)}/mensajes`, { state: { conversarCon: empleado.id } });
   };
 
   const puedeRestablecer =
-    currentUser?.role === "admin" && typeof onRestablecerPassword === "function";
+    (currentUser?.role === "admin" || currentUser?.role === "admin_plus") && typeof onRestablecerPassword === "function";
 
   // Solo la psicóloga. Para admin y RH, Mensajes NO es un chat general: es el buzón de Soporte
   // TI más su propia conversación con la psicóloga, así que ahí no existe un hilo con un

@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     // psicologa entra aquí por la decisión de la migración 050 (rh y psicologa con paridad
     // de admin). La guarda de más abajo sigue intacta: solo un admin puede asignar un rol
     // distinto de empleado, así que esto no abre una vía de escalada de privilegios.
-    if (callerPerfilError || !["admin", "rh", "psicologa"].includes(callerPerfil?.role)) {
+    if (callerPerfilError || !["admin", "admin_plus", "rh", "psicologa"].includes(callerPerfil?.role)) {
       return new Response(JSON.stringify({ error: "No tienes permiso para crear usuarios." }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
     // Roles que dan acceso a datos de otras personas. Crear uno de estos es lo que abre la
     // puerta a una escalada de privilegios, no crear una cuenta cualquiera.
     const ROLES_PRIVILEGIADOS = ["admin", "rh", "psicologa"];
-    const ROLES_VALIDOS = [...ROLES_PRIVILEGIADOS, "empleado", "doctor"];
+    const ROLES_VALIDOS = [...ROLES_PRIVILEGIADOS, "empleado", "doctor", "admin_plus"];
 
     if (!ROLES_VALIDOS.includes(role)) {
       return new Response(JSON.stringify({ error: `El rol "${role}" no existe.` }), {
@@ -71,13 +71,36 @@ Deno.serve(async (req) => {
 
     // Aquí vivía la guarda que reservaba a 'admin' la creación de cuentas privilegiadas
     // (admin/rh/psicologa). RETIRADA a petición del dueño (2026-07-30; ver migración 099).
-    //
-    // Por qué existía, que sigue siendo cierto: el insert de abajo usa service_role, que
-    // bypassa RLS, y el trigger prevent_usuario_privilege_escalation solo cubre UPDATE.
-    // Sin la guarda, un 'rh' puede crear una cuenta 'admin' y entrar con la contraseña
-    // temporal. Es la vía más corta de escalada que queda en el sistema.
-    //
     // ROLES_PRIVILEGIADOS se conserva: ROLES_VALIDOS se construye a partir de él.
+    //
+    // Lo que SÍ se restaura acá (mig. 140 + esta guarda): admin/admin_plus son un nivel
+    // aparte. El insert de abajo usa service_role, que bypassa RLS y el trigger
+    // prevent_usuario_privilege_escalation (que solo cubre UPDATE, no INSERT) — sin esto
+    // cualquier rh/psicologa podría seguir fabricando cuentas admin o admin_plus.
+    // Cliente service_role: única forma de crear usuarios en auth.users.
+    const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
+    if (["admin", "admin_plus"].includes(role) && callerPerfil.role !== "admin_plus") {
+      // Excepción de arranque: reclamar el ticket de un solo uso (mig. 140) — atómico
+      // (UPDATE ... WHERE usado=false, la segunda llamada concurrente no matchea nada) y
+      // restringido a quien YA es 'admin' de verdad (rol_real() adentro de la función).
+      // CRÍTICO: por callerClient (JWT del caller), NO por adminClient — con service_role
+      // no hay auth.uid(), rol_real() da NULL y el ticket nunca se reclamaría. La primera
+      // versión de esta guarda reimplementaba un `count(*) = 0` a mano acá mismo: sin
+      // atomicidad y sin restringir a admin, dejaba a rh/psicologa ganarle la carrera al
+      // dueño y auto-nombrarse el primer admin_plus — hallazgo de la revisión de seguridad.
+      let autorizado = false;
+      if (role === "admin_plus") {
+        const { data: reclamado, error: reclamarError } = await callerClient.rpc("reclamar_bootstrap_admin_plus");
+        autorizado = !reclamarError && reclamado === true;
+      }
+      if (!autorizado) {
+        return new Response(JSON.stringify({ error: "Solo Admin+ puede crear una cuenta admin o admin_plus." }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
 
     const syntheticEmail = usernameToSyntheticEmail(username);
 
@@ -91,9 +114,6 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    // Cliente service_role: única forma de crear usuarios en auth.users.
-    const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
     const { data: createdAuthUser, error: createAuthError } = await adminClient.auth.admin.createUser({
       email: syntheticEmail,

@@ -1,9 +1,10 @@
-import React, { createContext, useState, useContext, useEffect, useRef } from "react";
+import { createContext, useState, useContext, useEffect, useRef } from "react";
 import { supabase, usernameToSyntheticEmail } from "../config/supabase";
 import { notify } from "../utils/notify";
 import { mensajeDeFallo } from "../utils/errores";
+import { getMisModulosPersona } from "../services/supabase/modulosPersonaService";
 
-const VALID_ROLES = new Set(["admin", "rh", "psicologa", "empleado", "doctor"]);
+const VALID_ROLES = new Set(["admin", "admin_plus", "rh", "psicologa", "empleado", "doctor"]);
 
 // Contraseña temporal por defecto (debe coincidir con TEMP_PASSWORD de
 // supabase/functions/_shared/username.ts). Entrar con ella siempre fuerza el
@@ -48,6 +49,15 @@ const mapUsuarioRow = (row) =>
     // Entrada libre (mig. 135): sin geocerca ni retardo, pero solo cuando la persona
     // prende el interruptor en su Checador — el permiso no basta por sí solo.
     puedeMarcarEntradaLibre: !!row.puede_marcar_entrada_libre,
+    // Módulos apagables por persona (mig. 141), gestionados desde ModulosPanel.jsx
+    // (Admin+). Default true en la base: nadie pierde acceso al desplegar esto — por
+    // eso `!== false` y no `!!`, para que ausente (undefined) también cuente como "sí".
+    puedeVerComisiones: row.puede_ver_comisiones !== false,
+    puedeUsarChecador: row.puede_usar_checador !== false,
+    puedeUsarNotas: row.puede_usar_notas !== false,
+    puedeVerDepartamentos: row.puede_ver_departamentos !== false,
+    puedeVerAvisos: row.puede_ver_avisos !== false,
+    puedeVerEncuestas: row.puede_ver_encuestas !== false,
     debeCambiarPassword: row.debe_cambiar_password,
     avatarUrl: row.avatar_url,
     bannerUrl: row.banner_url,
@@ -94,6 +104,12 @@ export const AuthProvider = ({ children }) => {
     }
 
     setUser(mapUsuarioRow(data));
+
+    // Módulos por persona (mig. 150): tabla chica, propia, se pide aparte y se pega al
+    // user ya armado. Si falla, se sigue igual con el menú de siempre (ausente = prendido).
+    getMisModulosPersona(data.id)
+      .then((modulosPersona) => setUser((prev) => (prev ? { ...prev, modulosPersona } : prev)))
+      .catch(() => {});
 
     // Este SELECT puede haber salido ANTES de que mark_password_changed apagara el flag y
     // llegar DESPUÉS. Si en ese caso volviéramos a levantar requiereCambioPassword, el panel
@@ -222,7 +238,7 @@ export const AuthProvider = ({ children }) => {
       // psicologa entra aquí desde la paridad de la migración 099. Se había quedado fuera
       // de esta guarda aunque la edge function ya la aceptaba: el botón le respondía "no
       // tienes permiso" sin llegar a llamar a nadie.
-      if (!["admin", "rh", "psicologa", "recursos humanos"].includes(user?.role)) {
+      if (!["admin", "admin_plus", "rh", "psicologa", "recursos humanos"].includes(user?.role)) {
         notify.toast.error("No tienes permiso para restablecer contraseñas.");
         return;
       }

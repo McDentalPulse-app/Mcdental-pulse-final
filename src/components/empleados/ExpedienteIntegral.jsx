@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Select from "../common/Select";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
@@ -131,7 +131,7 @@ const ExpedienteIntegral = ({
   const pulseStatus = getPulseStatus(ultimoScore);
   const estatus = estatusEmpleado(empleado);
 
-  const esAdmin = currentUser?.role === "admin";
+  const esAdmin = currentUser?.role === "admin" || currentUser?.role === "admin_plus";
   const esRH = currentUser?.role === "rh" || currentUser?.role === "recursos humanos";
   const esPsicologa = currentUser?.role === "psicologa";
   const puedeVerEncuestas = esAdmin || esPsicologa;
