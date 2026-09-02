@@ -4,8 +4,9 @@ import { notificarGestion } from "./_notificaciones.js";
 /**
  * Un empleado/doctor aparta un festivo para cambiarlo por otro día (fecha_destino). Pasa por el
  * servidor para avisar a RH por push. La EXCLUSIVIDAD del destino la garantiza el índice único
- * parcial de la migración 075: si dos personas piden la misma fecha destino, la segunda choca
- * aquí con un 23505 y se le responde que ya está apartada.
+ * parcial de la migración 151 (por sucursal, con Oficina Administrativa exenta): si dos personas
+ * de la misma sucursal piden la misma fecha destino, la segunda choca aquí con un 23505 y se le
+ * responde que ya está apartada.
  */
 export default async function handler(req, res) {
   if (req.method !== "POST") {
