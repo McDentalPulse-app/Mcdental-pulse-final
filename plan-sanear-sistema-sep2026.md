@@ -93,12 +93,12 @@ llave por comprometida y rotarla en la VPS (nueva llave, actualizar `HANDOFF`).
 
 ## §6. Deuda técnica menor (bajo riesgo, sin prisa)
 
-- 27 errores de eslint preexistentes — cada uno necesita mirarse (ya no son mecánicos, los
-  mecánicos se limpiaron esta semana). Los reviso y arreglo los que sean seguros; los que
-  impliquen cambio de comportamiento real los reporto en vez de tocarlos a ciegas.
+- ~~27 errores de eslint preexistentes~~ → **HECHO 2026-09-02**: 27 → 5 (los 5 restantes,
+  `react-refresh` de los contexts, dejados a propósito — dev-only, sin efecto en producción).
+  Revisado adversarialmente, APPROVE. Commit `a3ec583`.
 - Test pgTAP para la exclusividad de intercambios (sugerido por el checker de la migración 151) —
   para que el próximo cambio a ese índice tenga una prueba automática, no solo el comentario de
-  VERIFICACIÓN.
+  VERIFICACIÓN. Sigue pendiente.
 
 ## §7. Bloqueado en vos, no hay nada que planear todavía
 
