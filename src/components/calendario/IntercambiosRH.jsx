@@ -78,7 +78,9 @@ const IntercambiosRH = ({ intercambios, festivos, onResolver, onAddFestivo, onDe
                     <div className="rh-data-row-title">{i.empleado}</div>
                     <div className="rh-data-row-sub">{normalizeSucursal(i.sucursal)} · {i.puesto}</div>
                     <div className="rh-data-row-note">
-                      Trabaja el {legible(i.fechaFestivo)} · quiere libre el {legible(i.fechaDestino)}
+                      {i.fechaFestivo === i.fechaDestino
+                        ? <>No trabajará el {legible(i.fechaFestivo)}</>
+                        : <>Trabaja el {legible(i.fechaFestivo)} · quiere libre el {legible(i.fechaDestino)}</>}
                     </div>
                   </div>
                   <div className="rh-data-row-status">

@@ -88,16 +88,21 @@ const CalendarioRH = ({ vacaciones = [], permisos = [], festivos = [], intercamb
         sucursal: p.sucursal,
         icon: "clipboard",
       })),
-      ...intercambios.filter((i) => i.estado === "aprobado").map((i) => ({
-        id: `int-${i.id}`,
-        fecha: i.fechaDestino,
-        tipo: "Intercambio",
-        titulo: `${i.empleado} · Día libre`,
-        etiqueta: primerNombre(i.empleado),
-        detalle: `A cambio de trabajar el ${legible(i.fechaFestivo)}`,
-        sucursal: i.sucursal,
-        icon: "calendar",
-      })),
+      ...intercambios.filter((i) => i.estado === "aprobado").map((i) => {
+        // Sin canje real (mismo festivo como destino, migración 152): no hubo día libre
+        // otorgado, ya era festivo para todos — solo avisó que no viene.
+        const sinCanje = i.fechaFestivo === i.fechaDestino;
+        return {
+          id: `int-${i.id}`,
+          fecha: i.fechaDestino,
+          tipo: "Intercambio",
+          titulo: `${i.empleado} · ${sinCanje ? "No trabaja" : "Día libre"}`,
+          etiqueta: primerNombre(i.empleado),
+          detalle: sinCanje ? "Aviso de ausencia" : `A cambio de trabajar el ${legible(i.fechaFestivo)}`,
+          sucursal: i.sucursal,
+          icon: "calendar",
+        };
+      }),
     ].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
   }, [vacaciones, permisos, festivos, intercambios]);
 

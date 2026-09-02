@@ -23,7 +23,9 @@ const mesSiguienteDe = (mes) => {
  * único parcial `(sucursal, fecha_destino)` de la migración 113 (por sucursal, no global) más
  * la excepción de la 151: Oficina Administrativa — y sus alias legacy "Oficina Central"/
  * "Central" — queda totalmente fuera, ni entre sí choca. Si dos personas DE LA MISMA sucursal
- * (no exenta) piden la misma fecha destino, la segunda choca aquí con un 23505.
+ * (no exenta) piden la misma fecha destino, la segunda choca aquí con un 23505. Excepción de la
+ * 152: si fecha_destino = fecha_festivo (avisar que no vienes, sin canje real) tampoco compite
+ * con nadie — no es un recurso escaso, es un festivo libre para todos.
  *
  * La sucursal no se manda desde aquí: la sella un trigger desde el empleado (migración 113),
  * para que el cliente no pueda elegir en qué clínica cuenta su solicitud.
@@ -54,10 +56,6 @@ export default async function handler(req, res) {
   if (!fechaOk(fechaFestivo) || !fechaOk(fechaDestino)) {
     return res.status(400).json({ error: "Faltan fechas o el formato no es válido." });
   }
-  if (fechaFestivo === fechaDestino) {
-    return res.status(400).json({ error: "El día destino no puede ser el mismo festivo." });
-  }
-
   const supabase = admin();
 
   // --- Las reglas, aquí y no solo en la pantalla -----------------------------
@@ -105,8 +103,10 @@ export default async function handler(req, res) {
   if (fechaDestino <= hoy) {
     return res.status(400).json({ error: "El día que pides a cambio tiene que ser posterior a hoy." });
   }
-  // Un conmemorativo SÍ vale como día a cambio (se trabaja), igual que en la pantalla.
-  if (enDestino && enDestino.tipo !== "conmemorativo") {
+  // Un conmemorativo SÍ vale como día a cambio (se trabaja), igual que en la pantalla. Y pedir
+  // el MISMO festivo como destino también vale — no es un canje, es avisar que no vienes ese
+  // día (ver migración 152); lo único que sigue sin sentido es pedir un festivo DISTINTO.
+  if (fechaDestino !== fechaFestivo && enDestino && enDestino.tipo !== "conmemorativo") {
     return res.status(400).json({ error: "No puedes pedir a cambio un día que ya es festivo." });
   }
 
@@ -133,7 +133,9 @@ export default async function handler(req, res) {
   await notificarGestion({
     tipo: "intercambio",
     titulo: "Solicitud de intercambio de día",
-    cuerpo: `${quien.name} pidió trabajar un festivo a cambio del ${destinoTxt}.`,
+    cuerpo: fechaDestino === fechaFestivo
+      ? `${quien.name} avisó que no trabajará el ${destinoTxt}.`
+      : `${quien.name} pidió trabajar un festivo a cambio del ${destinoTxt}.`,
     url: { rh: "/rh/intercambios", admin: "/admin/intercambios", psicologa: "/psicologa/intercambios" },
   }).catch(() => {});
 

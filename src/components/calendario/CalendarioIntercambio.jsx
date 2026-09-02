@@ -113,8 +113,13 @@ const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados,
   ];
 
   const ocupado = destino && destinosOcupados.includes(destino);
-  // Solo bloquea si el destino ya es un día NO laborable (un conmemorativo sí se puede pedir).
-  const destinoEsFestivo = destino && festivos.some((f) => f.fecha === destino && esNoLaborable(f));
+  // Pedir el MISMO festivo como destino es válido: no es un cambio de día, es avisar que no
+  // vienes ese día (el protocolo de la empresa para notificar la ausencia). Por eso el bloqueo
+  // de "ya es festivo" no aplica cuando destino es justo el festivo que estás cediendo — solo
+  // bloquea pedir un festivo NO laborable DISTINTO (eso sí no tendría sentido: ya es libre para
+  // todos, no hay nada que ganar cambiándolo por otro festivo).
+  const destinoEsFestivo = destino && destino !== festivoSel
+    && festivos.some((f) => f.fecha === destino && esNoLaborable(f));
   const puedeEnviar = festivoSel && destino && !ocupado && !destinoEsFestivo && destino > hoy && !enviando;
 
   const enviar = async () => {
@@ -162,10 +167,11 @@ const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados,
         ) : (
         <>
         <p className="intercambio-hint">
-          Elige el día festivo que quieres trabajar y a cambio pide el día que prefieras libre.
-          Solo aparecen los festivos de este mes y del siguiente, y el día que pidas a cambio
-          tiene que ser del mismo mes que el festivo. Cada día destino lo puede tomar una sola
-          persona de tu clínica.
+          Elige el festivo y a cambio pide el día que prefieras libre — o, si solo quieres avisar
+          que no vienes ese festivo sin cambiarlo por otro día, pide el mismo festivo como
+          destino. Solo aparecen los festivos de este mes y del siguiente, y el día que pidas a
+          cambio tiene que ser del mismo mes que el festivo. Cada día destino lo puede tomar una
+          sola persona de tu clínica — salvo que pidas el mismo festivo, que no tiene límite.
         </p>
 
         <div className="mc-form-grid">
@@ -217,8 +223,14 @@ const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados,
             {mios.map((i) => (
               <div key={i.id} className="rh-data-row">
                 <div className="rh-data-row-main">
-                  <div className="rh-data-row-title">Trabajo el {legible(i.fechaFestivo)}</div>
-                  <div className="rh-data-row-sub">A cambio quiero libre el {legible(i.fechaDestino)}</div>
+                  {i.fechaFestivo === i.fechaDestino ? (
+                    <div className="rh-data-row-title">No trabajaré el {legible(i.fechaFestivo)}</div>
+                  ) : (
+                    <>
+                      <div className="rh-data-row-title">Trabajo el {legible(i.fechaFestivo)}</div>
+                      <div className="rh-data-row-sub">A cambio quiero libre el {legible(i.fechaDestino)}</div>
+                    </>
+                  )}
                   {i.comentarioRH && <div className="rh-data-row-note">RH: {i.comentarioRH}</div>}
                 </div>
                 <div className="rh-data-row-status">
