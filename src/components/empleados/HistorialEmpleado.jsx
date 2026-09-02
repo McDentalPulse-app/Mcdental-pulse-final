@@ -1,4 +1,3 @@
-import React from "react";
 import Card from "../common/Card";
 import EmptyState from "../common/EmptyState";
 import StatCard from "../common/StatCard";

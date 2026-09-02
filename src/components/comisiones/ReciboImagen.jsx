@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { getSignedUrlComision } from "../../services/supabase/comisionesService";
 import Icon from "../ui/Icon";
 

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Card from "../common/Card";
 import Icon from "../ui/Icon";
 import { useNotification } from "../../contexts/NotificationContext";

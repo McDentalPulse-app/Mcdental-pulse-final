@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import { useNotification } from "../../contexts/NotificationContext";

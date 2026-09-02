@@ -1,4 +1,3 @@
-import React from 'react';
 import { useGlobal } from "../../contexts/GlobalContext";
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Navegacion from './Navegacion';

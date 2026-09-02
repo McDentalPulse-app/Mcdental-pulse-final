@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { nivelColor, colorMarca } from "../../config/theme";
 // El visor vive ahora en su propio archivo: el chat necesitaba el mismo.
 import FotoAmpliada from "./FotoAmpliada";

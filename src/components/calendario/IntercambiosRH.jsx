@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import DateRangePicker from "../common/DateRangePicker";
 import Card from "../common/Card";
 import StatCard from "../common/StatCard";

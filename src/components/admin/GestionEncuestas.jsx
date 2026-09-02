@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Select from "../common/Select";
 import { useGlobal } from "../../contexts/GlobalContext";
 import { useNotification } from "../../contexts/NotificationContext";

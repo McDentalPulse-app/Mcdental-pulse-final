@@ -1,4 +1,3 @@
-import React from "react";
 import Icon from "../ui/Icon";
 import Badge from "../common/Badge";
 import EmptyState from "../common/EmptyState";

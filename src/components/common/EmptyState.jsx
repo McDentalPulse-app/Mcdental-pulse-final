@@ -1,4 +1,3 @@
-import React from "react";
 import Icon from "../ui/Icon";
 
 // Reemplaza los `<p className="admin-empty">texto</p>` sueltos por un bloque

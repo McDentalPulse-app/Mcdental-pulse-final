@@ -1,4 +1,3 @@
-import React from "react";
 import { semaforoLabel } from "../../config/theme";
 
 // Dos modos: `tipo` (semáforo verde/amarillo/rojo, como siempre) o `variant` +

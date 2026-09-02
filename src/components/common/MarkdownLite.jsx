@@ -1,4 +1,3 @@
-import React from "react";
 
 // Inline markdown: **negrita**, *cursiva*, `código`.
 const parseInlineMD = (text) => {

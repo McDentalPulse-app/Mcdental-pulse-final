@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import Select from "../common/Select";
 import { useGlobal } from "../../contexts/GlobalContext";
 import { useNotification } from "../../contexts/NotificationContext";

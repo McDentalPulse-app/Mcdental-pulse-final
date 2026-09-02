@@ -1,4 +1,3 @@
-import React from "react";
 import { nivelColor, nivelTinte } from "../../config/theme";
 
 /**

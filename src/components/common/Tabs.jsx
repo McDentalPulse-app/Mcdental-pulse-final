@@ -1,4 +1,3 @@
-import React from "react";
 
 // Segmented control de pills (generalizado de `.asistencia-segmented`, que era
 // exclusivo del selector Día/Semana/Mes/Año de Asistencia).

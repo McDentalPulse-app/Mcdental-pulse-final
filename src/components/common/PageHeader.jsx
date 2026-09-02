@@ -1,4 +1,3 @@
-import React from "react";
 import Icon from "../ui/Icon";
 
 // Header plano compartido por todas las pantallas, estilo Untitled UI

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import Select from "../common/Select";
 import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";

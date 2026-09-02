@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import Icon from "../ui/Icon";
 
 // Desplegable propio (no nativo) para elegir semana. Se renderiza en la página,

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useGlobal } from "../../contexts/GlobalContext";
 import Card from "../common/Card";
 import PageHeader from "../common/PageHeader";

@@ -1,4 +1,3 @@
-import React from "react";
 
 // Consolida el `<div className="list-filters-grid">` + input de búsqueda que
 // GestionUsuarios/EmpleadosList/PsicologaSeguimiento repetían a mano (los tres

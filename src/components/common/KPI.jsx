@@ -1,4 +1,3 @@
-import React from "react";
 import Card from "./Card";
 import { colorMarca, nivelColor } from "../../config/theme";
 import Icon from "../ui/Icon";

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import EstadoSistema from "./EstadoSistema";
 import { useNotification } from '../../contexts/NotificationContext';
 import Card from '../common/Card';

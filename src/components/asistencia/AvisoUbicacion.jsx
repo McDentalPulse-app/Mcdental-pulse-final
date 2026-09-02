@@ -1,4 +1,3 @@
-import React from "react";
 import Card from "../common/Card";
 import Icon from "../ui/Icon";
 import { comoReactivar } from "../../utils/permisosDispositivo";

@@ -1,4 +1,3 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import Card from "../common/Card";
 import Icon from "../ui/Icon";

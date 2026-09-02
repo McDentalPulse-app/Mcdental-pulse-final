@@ -1,4 +1,3 @@
-import React from "react";
 import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
