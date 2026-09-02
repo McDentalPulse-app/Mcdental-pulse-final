@@ -55,12 +55,17 @@ export const enviarARH = async ({ titulo, cuerpo, url }) => {
   const { data: rh } = await admin()
     .from("usuarios")
     .select("id, role")
-    .in("role", ["rh", "admin", "psicologa"])
+    .in("role", ["rh", "admin", "admin_plus", "psicologa"])
     .eq("inactivo", false);
 
   if (!rh?.length) return;
 
-  const urlPara = (role) => (typeof url === "object" ? url[role] || "/" : url);
+  // admin_plus no tiene sección propia en los `url` que mandan los llamadores ({admin, rh,
+  // psicologa}) — usa la misma ruta que admin, igual que rutaBaseDe() en el frontend.
+  const urlPara = (role) => {
+    if (typeof url !== "object") return url;
+    return url[role === "admin_plus" ? "admin" : role] || "/";
+  };
   await Promise.all(rh.map((u) => enviar(u.id, { titulo, cuerpo, url: urlPara(u.role) })));
 };
 

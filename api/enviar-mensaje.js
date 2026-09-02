@@ -19,6 +19,12 @@ const RUTA_POR_ROL = {
   // Mismo olvido que la guarda de abajo: sin esta entrada, al pulsar el aviso un doctor
   // aterrizaba en "/" en vez de en su conversación.
   doctor: "/doctor/mensajes",
+  // admin/admin_plus/rh también son destinatarios legítimos de este canal (esGestion, abajo) y
+  // también pueden atender Soporte TI (bandera soporte_ti, independiente del rol): sin esta
+  // entrada, al pulsar el aviso aterrizaban en "/" en vez de en su conversación.
+  admin: "/admin/mensajes",
+  admin_plus: "/admin/mensajes",
+  rh: "/rh/mensajes",
 };
 
 export default async function handler(req, res) {
@@ -75,7 +81,7 @@ export default async function handler(req, res) {
   //   - quien ATIENDE soporte contesta a una persona, y puede hacerlo aunque su rol sea
   //     `empleado` — es lo que concede la bandera `soporte_ti`, y sin esta rama la guarda de
   //     abajo se lo impediría precisamente a los dos encargados.
-  const esGestion = (role) => ["admin", "rh", "psicologa"].includes(role);
+  const esGestion = (role) => ["admin", "admin_plus", "rh", "psicologa"].includes(role);
   if (esSoporte) {
     if (paraId && !quien.soporte_ti) {
       return res.status(403).json({ error: "Solo quien atiende Soporte TI puede responder en ese canal." });

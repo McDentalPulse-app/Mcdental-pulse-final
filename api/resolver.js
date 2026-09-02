@@ -21,7 +21,7 @@ import { notificar } from "./_notificaciones.js";
 // Antes había DOS listas, idénticas salvo la psicóloga (GESTION y GESTION_AMPLIA), y era justo
 // la diferencia entre ellas la que causaba el fallo. Se unifican en una: con dos, cada rama
 // nueva obliga a acertar cuál toca, y acertar es opcional.
-const GESTION = ["admin", "rh", "psicologa"];
+const GESTION = ["admin", "admin_plus", "rh", "psicologa"];
 
 const fmt = (f) =>
   new Date(`${f}T12:00:00`).toLocaleDateString("es-MX", { day: "numeric", month: "long" });

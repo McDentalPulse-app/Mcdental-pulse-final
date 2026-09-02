@@ -14,13 +14,14 @@ import { nuevaSala } from "./_jitsi.js";
  */
 const RUTA_POR_ROL = {
   admin: "/admin/mensajes",
+  admin_plus: "/admin/mensajes",
   rh: "/rh/mensajes",
   psicologa: "/psicologa/mensajes",
   empleado: "/empleado/mensajes",
   doctor: "/doctor/mensajes",
 };
 
-const PUEDE_CONVOCAR = ["admin", "rh", "psicologa"];
+const PUEDE_CONVOCAR = ["admin", "admin_plus", "rh", "psicologa"];
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Método no permitido." });

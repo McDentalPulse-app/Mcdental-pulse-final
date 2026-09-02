@@ -25,6 +25,7 @@ const LOTE = 100;        // Storage borra en tandas; no se le mandan miles de ru
 
 const RUTA_POR_ROL = {
   admin: "/admin/mensajes",
+  admin_plus: "/admin/mensajes",
   rh: "/rh/mensajes",
   psicologa: "/psicologa/mensajes",
   empleado: "/empleado/mensajes",

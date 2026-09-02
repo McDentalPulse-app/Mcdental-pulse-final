@@ -47,7 +47,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Falta el consentimiento." });
   }
 
-  const esGestor = ["admin", "rh", "psicologa"].includes(quien.role);
+  const esGestor = ["admin", "admin_plus", "rh", "psicologa"].includes(quien.role);
   const destino = empleadoId || quien.id;
 
   // La línea que sostiene todo: nadie registra la cara de otro salvo RH/admin.

@@ -42,7 +42,7 @@ export default async function handler(req, res) {
   if (!quien) {
     return res.status(401).json({ error: "Sesión inválida." });
   }
-  if (!["admin", "rh", "psicologa"].includes(quien.role)) {
+  if (!["admin", "admin_plus", "rh", "psicologa"].includes(quien.role)) {
     return res.status(403).json({ error: "No autorizado." });
   }
 

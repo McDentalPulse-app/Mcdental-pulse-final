@@ -100,6 +100,7 @@ const RUTA_POR_ROL = {
   rh: "/rh/soporte",
   psicologa: "/psicologa/soporte",
   admin: "/admin/soporte",
+  admin_plus: "/admin/soporte",
 };
 
 /** Detecta cambios de estado en los tickets de soporte (MCTIC) y avisa por push.
