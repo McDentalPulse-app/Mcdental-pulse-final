@@ -10988,6 +10988,14 @@
   background: var(--mc-superficie);
 }
 .campana-panel-head strong { color: var(--mc-texto-titulo); font-size: 14px; }
+/* Las acciones del panel («Marcar todas leídas» y «Limpiar»). Van agrupadas a la derecha con
+   separación propia: sin esto, con las dos visibles, `space-between` las reparte por el ancho
+   del panel y parecen dos botones sin relación entre sí. */
+.campana-panel-acciones {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
 .campana-marcar {
   border: none;
   background: none;
