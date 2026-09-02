@@ -75,7 +75,7 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
   // del empleado y de ella. Esto es la mitad de la garantía; la otra mitad — la que de verdad
   // cuenta — vive en la policy mensajes_select_participant, que no deja leer un mensaje a
   // quien no lo escribió ni lo recibió.
-  const soloSoporte = ["admin", "rh"].includes(user?.role);
+  const soloSoporte = ["admin", "admin_plus", "rh"].includes(user?.role);
   // Estable entre renders: pasarla como arrow inline la recreaba en cada repintado.
   const bodyRef = useRef(null);
   const canalRef = useRef(null);
