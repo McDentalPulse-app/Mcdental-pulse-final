@@ -14,6 +14,11 @@ import Icon from "../ui/Icon";
  *
  * `vistas`: qué vistas ofrecer. Por defecto solo "mes" (sin toggle). RH pasa ["mes","semana","dia"].
  * Como nuestros eventos son por DÍA (no por hora), Semana/Día son en formato agenda, no rejilla horaria.
+ *
+ * `onElegirFestivo(fecha)` + `festivosSeleccionables` (array de fechas "YYYY-MM-DD"): si se pasan,
+ * el panel del día (vista Mes) muestra un botón para elegir el festivo tocado, en vez de tener que
+ * ir a un desplegable aparte — dos toques (celda -> botón), no uno invisible. Sin estas props el
+ * calendario se comporta igual que siempre (RH y demás usos no cambian).
  */
 
 const DOW = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
@@ -33,7 +38,7 @@ const inicioSemana = (d) => { const x = new Date(d); x.setDate(x.getDate() - ((x
 const sumarDias = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
 const capitalizar = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
-export default function CalendarioMensual({ eventos = [], vistas = ["mes"] }) {
+export default function CalendarioMensual({ eventos = [], vistas = ["mes"], onElegirFestivo, festivosSeleccionables }) {
   const hoy = new Date();
   const hoyStr = isoYMD(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
 
@@ -102,7 +107,7 @@ export default function CalendarioMensual({ eventos = [], vistas = ["mes"] }) {
         )}
       </div>
 
-      {vista === "mes" && <VistaMes {...{ ancla, hoyStr, sel, setSel, porDia }} />}
+      {vista === "mes" && <VistaMes {...{ ancla, hoyStr, sel, setSel, porDia, onElegirFestivo, festivosSeleccionables }} />}
       {vista === "semana" && <VistaSemana {...{ ancla, hoyStr, porDia, setAncla, setVista, hayDia: vistas.includes("dia") }} />}
       {vista === "dia" && <VistaDia {...{ ancla, hoyStr, porDia }} />}
     </div>
@@ -120,12 +125,14 @@ function Chip({ e }) {
 }
 
 // --- Vista MES ---
-function VistaMes({ ancla, hoyStr, sel, setSel, porDia }) {
+function VistaMes({ ancla, hoyStr, sel, setSel, porDia, onElegirFestivo, festivosSeleccionables }) {
   const y = ancla.getFullYear(), m = ancla.getMonth();
   const offset = (new Date(y, m, 1).getDay() + 6) % 7;
   const totalDias = new Date(y, m + 1, 0).getDate();
   const celdas = [...Array(offset).fill(null), ...Array.from({ length: totalDias }, (_, i) => i + 1)];
   const eventosSel = porDia[sel] || [];
+  const festivoSel = eventosSel.find((e) => e.esFestivo);
+  const festivoSelEsElegible = festivoSel && (!festivosSeleccionables || festivosSeleccionables.includes(sel));
 
   return (
     <>
@@ -184,6 +191,15 @@ function VistaMes({ ancla, hoyStr, sel, setSel, porDia }) {
               {e.detalle && <em className="cal-evento-detalle">{e.detalle}</em>}
             </div>
           ))
+        )}
+        {festivoSelEsElegible && (
+          <button
+            type="button"
+            className="mc-btn-outline cal-elegir-festivo"
+            onClick={() => onElegirFestivo(sel)}
+          >
+            <Icon name="check" size={14} /> Elegir este festivo para intercambiar
+          </button>
         )}
       </div>
     </>

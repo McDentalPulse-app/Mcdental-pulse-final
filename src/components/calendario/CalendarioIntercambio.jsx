@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
@@ -144,7 +144,11 @@ const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados,
 
       <Card>
         <SectionTitle icon="calendar">Calendario del mes</SectionTitle>
-        <CalendarioMensual eventos={eventos} />
+        <CalendarioMensual
+          eventos={eventos}
+          festivosSeleccionables={festivosDelMes.map((f) => f.fecha)}
+          onElegirFestivo={(fecha) => { setFestivoSel(fecha); setDestino(""); }}
+        />
       </Card>
 
       <Card className="intercambio-card">
