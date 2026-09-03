@@ -55,17 +55,8 @@ export const nivelBadgeBg = (nivel) =>
     ? `var(--mc-badge-${nivel}-bg)`
     : "var(--mc-gris-perla)";
 
-export const nivelBadgeFg = (nivel) =>
-  nivel === "verde" || nivel === "amarillo" || nivel === "rojo"
-    ? `var(--mc-badge-${nivel}-texto)`
-    : "var(--mc-texto-secundario)";
-
 /** Color de marca (acción primaria), como variable CSS. Sustituye a `UI.verdeMedio`. */
 export const colorMarca = "var(--mc-verde)";
-
-/** Tinte del color de marca. Sustituye a los `color-mix(... ${UI.verdeMedio} ...)`. */
-export const tinteMarca = (porcentaje = 8) =>
-  `color-mix(in srgb, ${colorMarca} ${porcentaje}%, transparent)`;
 
 /** Etiqueta legible de cada nivel. Es texto, no color: se queda. */
 export const semaforoLabel = {
@@ -75,26 +66,3 @@ export const semaforoLabel = {
   "sin-datos": "Sin evaluar",
 };
 
-const SERIES = 8;
-
-/**
- * Color de una serie de la gráfica de tendencia por sucursal, como variable CSS.
- *
- * No es el semáforo: aquí el color solo distingue una serie de otra, no significa nada.
- * Antes era el array `TREND_COLORS`, duplicado literalmente en AdminDashboard y en
- * PsicologaDashboard.
- */
-export const colorSerie = (i) => `var(--mc-serie-${(i % SERIES) + 1})`;
-
-/**
- * Metadatos de un nivel de semáforo: etiqueta + color.
- *
- * Sustituye a `SEMAFORO_META`, que era otra copia local de la paleta (con su propio
- * #22c55e) repetida en los dos dashboards.
- */
-export const NIVELES = ["verde", "amarillo", "rojo", "sin-datos"];
-
-export const nivelMeta = (nivel) => ({
-  label: semaforoLabel[nivel] ?? "Sin datos",
-  color: nivelColor(nivel),
-});
