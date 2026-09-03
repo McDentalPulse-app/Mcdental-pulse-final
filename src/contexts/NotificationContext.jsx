@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import ConfirmModal from "../components/ui/ConfirmModal";
 import PromptModal from "../components/ui/PromptModal";
 import Toast from "../components/ui/Toast";
@@ -79,11 +79,15 @@ export const NotificationProvider = ({ children }) => {
     };
   }, [toastApi, confirm, prompt]);
 
-  const value = {
-    toast: toastApi(),
-    confirm,
-    prompt,
-  };
+  // Memoizado: toastApi() (y el objeto value) se llamaban de nuevo en CADA render, así que
+  // cualquier pantalla con `toast` en las dependencias de un efecto lo veía "cambiar" siempre.
+  // Si ese efecto llamaba a algo que podía fallar (un fetch) y el catch hacía toast.error(...),
+  // el error mismo disparaba el loop: toast.error -> nuevo estado de toasts -> re-render ->
+  // toast "nuevo" -> el efecto se repetía -> fetch de nuevo -> fallaba -> toast.error otra vez.
+  // Reproducido en SoporteTI.jsx: sin credenciales de MCTIC en local, el fetch fallaba y esto
+  // mandaba ~40 requests por segundo sin parar.
+  const toast = useMemo(() => toastApi(), [toastApi]);
+  const value = useMemo(() => ({ toast, confirm, prompt }), [toast, confirm, prompt]);
 
   return (
     <NotificationContext.Provider value={value}>

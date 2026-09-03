@@ -12007,6 +12007,15 @@
 @media (max-width: 1100px) {
   .topnav-nav-row { display: none; }
   .topnav-hamburguesa { display: inline-flex; }
+  /* AdminPlusNav reusa .topnav-nav-row pero NO tiene hamburguesa (sus 6 desplegables de rol
+     no son la lista variable de categorías de HeaderNav) — sin esta excepción, el bug real
+     que arregla esto: la fila entera desaparecía debajo de 1100px sin ningún reemplazo,
+     dejando a Admin+ sin forma de llegar a Usuario/Doctor/RH/Psicóloga/Admin/Módulos.
+     overflow-x descartado a propósito (ver comentario de .topnav-nav-row arriba: recorta los
+     .topnav-menu abiertos, que son position:absolute dentro de esta fila) — con 6 botones
+     fijos, envolver en más de una línea es más simple y no tiene ese problema. */
+  .topnav-nav-row--adminplus { display: flex; min-height: auto; }
+  .topnav-links--adminplus { flex-wrap: wrap; row-gap: 4px; padding: 8px 0; }
 }
 
 /* ============================================================================

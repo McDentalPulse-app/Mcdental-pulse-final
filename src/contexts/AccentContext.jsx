@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useAuth } from "./AuthContext";
 import { useNotification } from "./NotificationContext";
 import { guardarMiColor } from "../services/supabase/colorService";
@@ -132,10 +132,16 @@ export const AccentProvider = ({ children }) => {
     if (uidRef.current) programarGuardado(nuevo);
   }, [programarGuardado]);
 
+  // Memoizado — mismo bug que NotificationContext (encontrado ahí primero): un objeto literal
+  // en el JSX es nuevo en cada render, y cualquier efecto con `color`/`setColor` en las
+  // dependencias lo vería "cambiar" siempre.
+  const value = useMemo(
+    () => ({ color, setColor, presets: PRESETS, colorPorDefecto: SEMILLA_TEAL }),
+    [color, setColor]
+  );
+
   return (
-    <AccentContext.Provider
-      value={{ color, setColor, presets: PRESETS, colorPorDefecto: SEMILLA_TEAL }}
-    >
+    <AccentContext.Provider value={value}>
       {children}
     </AccentContext.Provider>
   );

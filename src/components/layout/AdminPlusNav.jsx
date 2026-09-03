@@ -152,8 +152,8 @@ export default function AdminPlusNav() {
         </div>
       </div>
 
-      <div className="topnav-nav-row">
-        <nav className="topnav-links" aria-label="Módulos por rol">
+      <div className="topnav-nav-row topnav-nav-row--adminplus">
+        <nav className="topnav-links topnav-links--adminplus" aria-label="Módulos por rol">
           {ROLES_GESTIONABLES.map(({ rol, etiqueta, icon }) => (
             <div className="topnav-drop" key={rol}>
               <button
