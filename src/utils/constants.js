@@ -16,9 +16,10 @@ export const sucursalMatches = (a, b) => normalizeSucursal(a) === normalizeSucur
 
 /**
  * Cómo se nombra cada rol de cara al personal. Se usa para firmar los avisos ("Lic. Mario
- * Ruiz · Administración"): un empleado no tiene por qué saber qué significa "psicologa".
+ * Ruiz · Administración"): un empleado no tiene por qué saber qué significa "psicologa". Sin
+ * `export`: solo lo usa `etiquetaRol`, que sí es la que se importa desde fuera.
  */
-export const ETIQUETA_ROL = {
+const ETIQUETA_ROL = {
   admin: "Administración",
   rh: "Recursos Humanos",
   psicologa: "Psicología",
@@ -27,9 +28,6 @@ export const ETIQUETA_ROL = {
 };
 
 export const etiquetaRol = (rol) => ETIQUETA_ROL[rol] || "";
-
-/** Semana legacy del piloto; se trata como la semana activa en lectura. */
-export const LEGACY_LAUNCH_WEEK = "2025-W15";
 
 /**
  * Semana ISO-8601 ("YYYY-Www") de una fecha. Las semanas empiezan el LUNES;
