@@ -395,39 +395,45 @@ export const GlobalProvider = ({ children }) => {
     return activas.length ? activas : SUCURSALES;
   }, [sucursales]);
 
+  const value = useMemo(() => ({
+    usuarios, setUsuarios,
+    sucursales, setSucursales,
+    nombresSucursales,
+    modulosRol, setModulosRol,
+    encuestaPreguntas, setEncuestaPreguntas,
+    encuestaBloques, setEncuestaBloques,
+    encuestas, setEncuestas,
+    avisos, setAvisos,
+    avisosLeidos, setAvisosLeidos,
+    mensajes, setMensajes,
+    reuniones, refreshReuniones,
+    reportesConfidenciales, setReportesConfidenciales,
+    reconocimientos, setReconocimientos,
+    archivosExpediente, setArchivosExpediente,
+    vacaciones, setVacaciones,
+    permisos, setPermisos,
+    descuentos, setDescuentos,
+    comisiones, setComisiones,
+    festivos, setFestivos,
+    eventosCalendario, setEventosCalendario,
+    intercambios, setIntercambios,
+    destinosOcupados, setDestinosOcupados,
+    notas, setNotas,
+    horarios, setHorarios,
+    checadasHoy, setChecadasHoy,
+    calendario, setCalendario,
+    calendarioExtra,
+    loadingData,
+  }), [
+    usuarios, sucursales, nombresSucursales, modulosRol, encuestaPreguntas, encuestaBloques,
+    encuestas, avisos, avisosLeidos, mensajes, reuniones, refreshReuniones,
+    reportesConfidenciales, reconocimientos, archivosExpediente, vacaciones, permisos,
+    descuentos, comisiones, festivos, eventosCalendario, intercambios, destinosOcupados,
+    notas, horarios, checadasHoy, calendario, calendarioExtra, loadingData,
+  ]);
+
   return (
-    <GlobalContext.Provider
-      value={{
-        usuarios, setUsuarios,
-        sucursales, setSucursales,
-        nombresSucursales,
-        modulosRol, setModulosRol,
-        encuestaPreguntas, setEncuestaPreguntas,
-        encuestaBloques, setEncuestaBloques,
-        encuestas, setEncuestas,
-        avisos, setAvisos,
-        avisosLeidos, setAvisosLeidos,
-        mensajes, setMensajes,
-        reuniones, refreshReuniones,
-        reportesConfidenciales, setReportesConfidenciales,
-        reconocimientos, setReconocimientos,
-        archivosExpediente, setArchivosExpediente,
-        vacaciones, setVacaciones,
-        permisos, setPermisos,
-        descuentos, setDescuentos,
-        comisiones, setComisiones,
-        festivos, setFestivos,
-        eventosCalendario, setEventosCalendario,
-        intercambios, setIntercambios,
-        destinosOcupados, setDestinosOcupados,
-        notas, setNotas,
-        horarios, setHorarios,
-        checadasHoy, setChecadasHoy,
-        calendario, setCalendario,
-        calendarioExtra,
-        loadingData
-      }}
-    >
+    <GlobalContext.Provider value={value}>
       {children}
     </GlobalContext.Provider>
   );

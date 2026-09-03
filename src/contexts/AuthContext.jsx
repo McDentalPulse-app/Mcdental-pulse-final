@@ -1,4 +1,4 @@
-import { createContext, useState, useContext, useEffect, useRef } from "react";
+import { createContext, useState, useContext, useEffect, useRef, useCallback, useMemo } from "react";
 import { supabase, usernameToSyntheticEmail } from "../config/supabase";
 import { notify } from "../utils/notify";
 import { mensajeDeFallo } from "../utils/errores";
@@ -81,7 +81,7 @@ export const AuthProvider = ({ children }) => {
   // gente fuera de la app: ver el comentario de cargarPerfil.
   const cambiandoPasswordRef = useRef(false);
 
-  const cargarPerfil = async (authUserId) => {
+  const cargarPerfil = useCallback(async (authUserId) => {
     const { data, error } = await supabase
       .from("usuarios")
       .select("*")
@@ -121,7 +121,7 @@ export const AuthProvider = ({ children }) => {
 
     setRequiereCambioPassword(!!data.debe_cambiar_password || loginConTemporalRef.current);
     return { inactivo: false };
-  };
+  }, []);
 
   useEffect(() => {
     let activo = true;
@@ -153,9 +153,11 @@ export const AuthProvider = ({ children }) => {
       activo = false;
       subscription.subscription.unsubscribe();
     };
-  }, []);
+    // cargarPerfil ahora es estable (useCallback), así que agregarla aquí no cambia el
+    // comportamiento: el efecto sigue corriendo solo al montar.
+  }, [cargarPerfil]);
 
-  const login = async (username, password) => {
+  const login = useCallback(async (username, password) => {
     setLoadingAuth(true);
     // Se marca antes del signIn: onAuthStateChange dispara cargarPerfil en
     // cuanto la sesión existe y ya debe ver este valor.
@@ -182,16 +184,16 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoadingAuth(false);
     }
-  };
+  }, [cargarPerfil]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     await supabase.auth.signOut();
     loginConTemporalRef.current = false;
     setUser(null);
     setRequiereCambioPassword(false);
-  };
+  }, []);
 
-  const cambiarPasswordActual = async (nuevaPassword) => {
+  const cambiarPasswordActual = useCallback(async (nuevaPassword) => {
     cambiandoPasswordRef.current = true;
     try {
       const { error: authError } = await supabase.auth.updateUser({ password: nuevaPassword });
@@ -231,9 +233,9 @@ export const AuthProvider = ({ children }) => {
     } finally {
       cambiandoPasswordRef.current = false;
     }
-  };
+  }, []);
 
-  const restablecerPasswordUsuario = async (empleado) => {
+  const restablecerPasswordUsuario = useCallback(async (empleado) => {
     try {
       // psicologa entra aquí desde la paridad de la migración 099. Se había quedado fuera
       // de esta guarda aunque la edge function ya la aceptaba: el botón le respondía "no
@@ -270,22 +272,22 @@ export const AuthProvider = ({ children }) => {
       console.error("Error restableciendo contraseña:", error);
       notify.toast.error(mensajeDeFallo("Error al restablecer contraseña.", error));
     }
-  };
+  }, [user]);
+
+  const value = useMemo(() => ({
+    user,
+    login,
+    logout,
+    loadingAuth,
+    checkingSession,
+    setUser,
+    requiereCambioPassword,
+    cambiarPasswordActual,
+    restablecerPasswordUsuario,
+  }), [user, login, logout, loadingAuth, checkingSession, requiereCambioPassword, cambiarPasswordActual, restablecerPasswordUsuario]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        login,
-        logout,
-        loadingAuth,
-        checkingSession,
-        setUser,
-        requiereCambioPassword,
-        cambiarPasswordActual,
-        restablecerPasswordUsuario,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
