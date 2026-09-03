@@ -311,9 +311,17 @@ El usuario eligió explícitamente **archivar en vez de borrar**. El botón de b
 **restaurable** desde el filtro «Archivados»). Restaurar devuelve al empleado como
 **Inactivo**, nunca activo — recuperar un error no debe re-otorgar acceso solo.
 
-`eliminarUsuario()` (borrado real en cascada) sigue en el código y su Edge Function
-desplegada, pero **NO está conectada a ningún botón**. No la vuelvas a cablear sin
-preguntar.
+⚠️ **Corregido el 2026-09-03**: esta nota decía que `eliminarUsuario()` (borrado real en
+cascada) NO estaba conectada a ningún botón. Es falso desde el commit `0e3b7f9`
+(2026-08-26, "sincroniza con la VPS") — el botón **"Borrar definitivamente"** existe y
+funciona en `GestionUsuarios.jsx`, visible solo para `admin`/`admin_plus`, sobre una fila ya
+archivada. Tiene su propia fricción fuerte (`useBajaUsuario.js`, `eliminarDefinitivo`):
+cuenta y muestra qué historial se pierde (checadas, encuestas, notas, archivos,
+comisiones, reconocimientos), pide confirmar, y exige teclear el nombre exacto del
+empleado antes de borrar — no es un descuido de cableado, es una opción deliberada.
+**Confirmado con el dueño (2026-09-03): es intencional, se queda así.** "Nada se borra"
+sigue siendo la regla por defecto (Desactivar/Archivar); esto es la excepción explícita
+para admin/admin_plus, no un botón perdido.
 
 ---
 
