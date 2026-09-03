@@ -285,7 +285,7 @@ const DESCRIPCIONES_POR_ROL = {
 // terminaban en `/admin_plus/...`, que no existe — "Vista en construcción / No encontrada").
 export const rutaBaseDe = (role) => (role === "admin_plus" ? "admin" : role);
 
-export const descripcionDe = (key, role) =>
+const descripcionDe = (key, role) =>
   DESCRIPCIONES_POR_ROL[role]?.[key] ?? DESCRIPCIONES[key] ?? "";
 
 // `modulosRol` (mig. 147, opcional): interruptor GLOBAL por rol, además del `requiere` de

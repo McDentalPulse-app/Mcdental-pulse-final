@@ -280,31 +280,6 @@ export const poseCoincide = (puntos, requerida) => {
   return { ok: false, pista: "Gira un poco la cabeza." };
 };
 
-/**
- * Recorta el canvas a la cara, con margen.
- *
- * El recorte NO es cosmético: es lo que hace que el cotejo del servidor compare caras contra
- * caras, en vez de una cara diminuta perdida en medio de una pared. El margen (40%) deja
- * frente y barbilla, que es donde están los rasgos que un modelo de reconocimiento usa.
- */
-export const recortarACara = (canvas, box, margen = 0.4) => {
-  if (!box) return canvas;
-
-  const m = Math.max(box.ancho, box.alto) * margen;
-  const x = Math.max(0, Math.round(box.x - m));
-  const y = Math.max(0, Math.round(box.y - m));
-  const ancho = Math.min(canvas.width - x, Math.round(box.ancho + m * 2));
-  const alto = Math.min(canvas.height - y, Math.round(box.alto + m * 2));
-
-  if (ancho <= 0 || alto <= 0) return canvas;
-
-  const recorte = document.createElement("canvas");
-  recorte.width = ancho;
-  recorte.height = alto;
-  recorte.getContext("2d").drawImage(canvas, x, y, ancho, alto, 0, 0, ancho, alto);
-  return recorte;
-};
-
 export const MENSAJE = {
   [RESULTADO.SIN_CARA]: "No se ve tu cara. Colócate frente a la cámara e inténtalo de nuevo.",
   [RESULTADO.VARIAS_CARAS]: "Hay más de una persona en la foto. Debes salir tú solo.",

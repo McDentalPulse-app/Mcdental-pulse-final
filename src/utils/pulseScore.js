@@ -186,8 +186,6 @@ export const getPulseStatus = (score) => {
   return { label: "Crítico", semaforo: "Rojo", nivel: "rojo" };
 };
 
-export const getEmployeeStatus = getPulseStatus;
-
 export const calcPulseScore = (empId, encuestas) => {
   const surveys = getEmployeeSurveys(empId, encuestas);
 

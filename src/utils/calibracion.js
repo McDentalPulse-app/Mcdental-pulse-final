@@ -46,10 +46,10 @@
 export const UMBRAL_ACTUAL = 0.5;
 
 /** Por encima de esto, dos caras distintas son lo bastante parecidas como para preocupar. */
-export const UMBRAL_PARECIDO = 0.4;
+const UMBRAL_PARECIDO = 0.4;
 
 /** Un margen por debajo de esto es una persona a punto de no poder fichar. */
-export const MARGEN_JUSTO = 0.1;
+const MARGEN_JUSTO = 0.1;
 
 /**
  * El margen de cada empleado: con cuánto ha pasado, y sobre todo con cuán poco.

@@ -202,7 +202,7 @@ export const readProblemaPersonal = (encuesta, preguntas = []) => {
   return null;
 };
 
-export const getPreguntaAbiertaTexto = (preguntas = []) =>
+const getPreguntaAbiertaTexto = (preguntas = []) =>
   getPreguntaAbierta(preguntas)?.texto || OPEN_QUESTION_FALLBACK;
 
 const readValorAbierto = (encuesta, preguntas = []) => {

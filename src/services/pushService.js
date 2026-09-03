@@ -124,17 +124,6 @@ export const probar = async () => {
   return cuerpo;
 };
 
-/** Deja de recibir: se borra la suscripción del navegador y del servidor. */
-export const desactivar = async () => {
-  if (!soportado()) return;
-  const registro = await navigator.serviceWorker.ready;
-  const suscripcion = await registro.pushManager.getSubscription();
-  if (!suscripcion) return;
-
-  await post("DELETE", { suscripcion: suscripcion.toJSON() });
-  await suscripcion.unsubscribe();
-};
-
 /**
  * Fuerza una suscripción NUEVA, descartando la que hubiera.
  *
@@ -185,28 +174,4 @@ export const sincronizarSuscripcion = async () => {
 
   // Falta suscripción, o la clave cambió: re-suscribir de cero (esto ya reguarda la huella).
   await refrescarSuscripcion();
-};
-
-/**
- * Diagnóstico para saber por qué NO llega el push. Devuelve si el servidor tiene el push
- * configurado y la huella de SU clave pública, y la huella de la clave del bundle del cliente.
- * Si las dos huellas no coinciden, ahí está el problema: cliente y servidor firman con claves
- * distintas y todo falla en silencio.
- */
-export const diagnostico = async () => {
-  const { data } = await supabase.auth.getSession();
-  const token = data?.session?.access_token;
-  if (!token) throw new Error("Tu sesión expiró.");
-
-  const r = await fetch("/api/suscribir-push", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ accion: "diagnostico" }),
-  });
-  const cuerpo = await r.json().catch(() => ({}));
-  return {
-    ...cuerpo,
-    clientePublicaFp: VAPID_PUBLICA ? huellaClave(VAPID_PUBLICA) : null,
-    coincide: Boolean(cuerpo.servidorPublicaFp) && cuerpo.servidorPublicaFp === (VAPID_PUBLICA ? huellaClave(VAPID_PUBLICA) : null),
-  };
 };

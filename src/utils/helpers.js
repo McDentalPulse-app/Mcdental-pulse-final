@@ -154,13 +154,13 @@ export const normalizeFechaCumpleanosInput = (value) => {
 
 const MAX_SHORT_EMPLEADO_ID = 9999;
 
-export const isShortEmpleadoId = (value) => {
+const isShortEmpleadoId = (value) => {
   const num = Number(value);
   return Number.isFinite(num) && Number.isInteger(num) && num > 0 && num <= MAX_SHORT_EMPLEADO_ID;
 };
 
 /** ID numérico corto del empleado (idOriginal o id). Ignora timestamps. */
-export const getEmpleadoNumericId = (user) => {
+const getEmpleadoNumericId = (user) => {
   if (!user) return null;
   for (const candidate of [user.idOriginal, user.id]) {
     if (isShortEmpleadoId(candidate)) return Number(candidate);
@@ -179,7 +179,7 @@ export const formatEmpleadoIdForDisplay = (user) => {
 
 /** Roles que forman la plantilla (los que "son personal"), frente a los de
  *  gestión (admin/rh/psicologa), que no se cuentan como plantilla. */
-export const ROLES_PLANTILLA = ["empleado", "doctor"];
+const ROLES_PLANTILLA = ["empleado", "doctor"];
 
 /** Empleado activo: la plantilla operativa. Los inactivos (baja) se excluyen
  *  de dashboards, KPIs, encuestas, mensajes y selects de acción — pero se
