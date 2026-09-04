@@ -23,7 +23,7 @@ import Icon from "../ui/Icon";
  * cambiara la ventana el icono pulsaría cuando ya no se puede entrar — o peor, se quedaría
  * apagado con la reunión abierta.
  */
-export default function BotonReuniones({ variante = "header", activo = false }) {
+export default function BotonReuniones({ variante = "header", activo = false, cerca = false }) {
   const { user } = useAuth();
   const { reuniones, modulosRol } = useGlobal();
   const navigate = useNavigate();
@@ -43,6 +43,10 @@ export default function BotonReuniones({ variante = "header", activo = false }) 
   const estado = estadoParaElIcono(reuniones, ahora);
   const esFlotante = variante === "flotante";
   const base = esFlotante ? "reuniones-flotante" : "topnav-reuniones";
+  // "cerca" es para cuando Mensajes ya no flota junto a ella (roles con checador central, ver
+  // Navegacion.jsx): sin ese vecino, se acerca a la campana en vez de dejar el hueco vacío. Va
+  // como clase aparte (no dentro de `base`) porque `base` también arma el nombre de `-punto`.
+  const modificadorCerca = esFlotante && cerca ? " reuniones-flotante--cerca" : "";
 
   const etiqueta =
     estado === "en_curso" ? "Reuniones, hay una en curso"
@@ -52,7 +56,7 @@ export default function BotonReuniones({ variante = "header", activo = false }) 
   return (
     <button
       type="button"
-      className={`${base}${activo && !esFlotante ? " topnav-reuniones--activo" : ""}`}
+      className={`${base}${modificadorCerca}${activo && !esFlotante ? " topnav-reuniones--activo" : ""}`}
       onClick={() => navigate(`/${rutaBaseDe(user.role)}/reuniones`)}
       title={etiqueta}
       aria-label={etiqueta}

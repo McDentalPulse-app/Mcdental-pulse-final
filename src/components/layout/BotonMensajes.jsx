@@ -7,9 +7,10 @@ import Icon from "../ui/Icon";
 /**
  * Acceso permanente a Mensajes, con el contador de no leídos.
  *
- * UN SOLO COMPONENTE para las dos navegaciones —el header de escritorio y el flotante del
- * teléfono— porque son dos sitios distintos que muestran lo MISMO. Tener el contador escrito dos
- * veces es exactamente cómo el móvil se quedó atrás la primera vez.
+ * UN SOLO COMPONENTE para las navegaciones que lo muestran —el header de escritorio, el tab fijo
+ * de la barra inferior del teléfono (roles con checador) y el flotante de admin/admin_plus, que
+ * no tienen esa barra— porque son sitios distintos que muestran lo MISMO. Tener el contador
+ * escrito dos veces es exactamente cómo el móvil se quedó atrás la primera vez.
  *
  * `variante` solo cambia dónde se coloca y el tamaño; el contenido y la cuenta son idénticos.
  */
@@ -33,6 +34,29 @@ export default function BotonMensajes({ variante = "header", activo = false }) {
     : 0;
 
   const esFlotante = variante === "flotante";
+  const esTab = variante === "tab";
+
+  if (esTab) {
+    // Mismo marcado que un .mobile-tab normal (Sidebar.jsx) para no desentonar con sus vecinos;
+    // el badge de no leídos va sobre el ícono, como el punto de BotonReuniones en su versión tab.
+    return (
+      <button
+        type="button"
+        className={`mobile-tab${activo ? " mobile-tab--active" : ""}`}
+        onClick={() => navigate(`/${rutaBaseDe(user.role)}/mensajes`)}
+        aria-current={activo ? "page" : undefined}
+        aria-label={noLeidos ? `Mensajes, ${noLeidos} sin leer` : "Mensajes"}
+      >
+        <span className={`mobile-tab-ico${activo ? " mobile-tab-ico--active" : ""}`}>
+          <Icon name="message" size={20} />
+          {noLeidos > 0 && (
+            <span className="mobile-tab-badge" aria-hidden="true">{noLeidos > 9 ? "9+" : noLeidos}</span>
+          )}
+        </span>
+        <span className="mobile-tab-label">Mensajes</span>
+      </button>
+    );
+  }
 
   return (
     <button

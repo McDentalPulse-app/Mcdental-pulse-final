@@ -9360,6 +9360,7 @@
   /* Slot del ícono: la pastilla activa es SU FONDO, así siempre queda alineada con el ícono
      (antes era un absoluto que se descuadraba con el centrado del flex). */
   .mobile-tab-ico {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -9371,6 +9372,42 @@
   .mobile-tab--active { color: var(--mc-texto-titulo); }
   .mobile-tab--active .mobile-tab-ico { background: var(--mc-brand-suave); }
   .mobile-tab--active svg { color: var(--mc-aqua); }
+
+  /* Badge de no leídos sobre el ícono del tab de Mensajes (BotonMensajes variante="tab"). */
+  .mobile-tab-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background: var(--mc-rojo-apagado);
+    color: var(--mc-blanco);
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 16px;
+    text-align: center;
+  }
+
+  /* Checador: círculo elevado al centro de la barra, como el ícono de marca de un tabbar de
+     e-commerce. Se sale del pill (margin-top negativo) para que se lea como el botón principal,
+     no un tab más — sin mover el resto de la barra ni cambiar su alto. */
+  .mobile-tab--central { flex: 0 0 auto; padding: 0; }
+  .mobile-tab-ico-central {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    margin-top: -30px;
+    border-radius: 50%;
+    background: var(--mc-aqua);
+    color: var(--mc-blanco);
+    box-shadow: var(--mc-sombra-card);
+    border: 3px solid var(--mc-superficie);
+  }
+  .mobile-tab--central.mobile-tab--active .mobile-tab-ico-central { background: var(--mc-aqua-oscuro, var(--mc-aqua)); }
 
   .mobile-sheet-overlay {
     display: block;
@@ -11768,6 +11805,9 @@
     cursor: pointer;
   }
   .reuniones-flotante:active { transform: scale(0.94); }
+  /* Roles con checador central: Mensajes ya no flota (bajó al tab de la barra inferior), así que
+     Reuniones se acerca a la campana en vez de dejar el hueco de en medio vacío. */
+  .reuniones-flotante--cerca { right: 76px; }
   .reuniones-flotante-punto { position: absolute; top: 3px; right: 3px; width: 9px; height: 9px; border-radius: 50%; background: var(--mc-texto-secundario); border: 1.5px solid var(--mc-superficie); }
   .reuniones-flotante-punto--encurso { background: var(--mc-badge-rojo-texto, #d92d20); animation: chat-pulso 1.4s ease-in-out infinite; }
 }

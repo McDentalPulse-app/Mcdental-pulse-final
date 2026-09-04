@@ -6,6 +6,7 @@ import Sidebar from "./Sidebar";
 import BotonMensajes from "./BotonMensajes";
 import BotonReuniones from "./BotonReuniones";
 import CampanaNotificaciones from "../notificaciones/CampanaNotificaciones";
+import { TABS_MOVIL } from "../../config/navItems";
 
 // Elige la navegación según el ancho: en ESCRITORIO (>768px) el header nuevo con categorías; en
 // TELÉFONO (≤768px) la navegación de siempre — barra de pestañas abajo (Sidebar) + campana
@@ -24,14 +25,15 @@ export default function Navegacion() {
   const esMovil = useEsMovil();
 
   if (esMovil) {
+    // Los roles con checador lo pintan como círculo central en la barra inferior (Sidebar.jsx) y
+    // eso deja un hueco libre que se le da a Mensajes ahí mismo — ya no necesita flotar. Admin y
+    // admin_plus no tienen checador ni ese hueco, así que Mensajes se queda flotante para ellos.
+    const tieneChecadorCentral = (TABS_MOVIL[user?.role] || []).includes("checador");
     return (
       <>
         <Sidebar />
-        {/* Mensajes flotante, al lado de la campana. En el teléfono no hay header donde ponerlo y
-            la barra inferior solo tiene 4 huecos, todos de uso diario; flotante queda a la vista
-            sin quitarle el sitio al checador. */}
-        <BotonMensajes variante="flotante" />
-        <BotonReuniones variante="flotante" />
+        {!tieneChecadorCentral && <BotonMensajes variante="flotante" />}
+        <BotonReuniones variante="flotante" cerca={tieneChecadorCentral} />
         <CampanaNotificaciones user={user} />
       </>
     );

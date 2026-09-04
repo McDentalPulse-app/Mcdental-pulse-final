@@ -311,18 +311,21 @@ export const navItemsPara = (user, modulosRol) =>
  * los menús escrita a mano dentro de Sidebar.jsx: por eso el 2026-07-29 los grupos nuevos y
  * Mensajes llegaron al escritorio y NO al teléfono. Con una sola fuente, eso no puede repetirse.
  *
- * `mensajes` no está en ninguna: en el teléfono es el botón flotante junto a la campana, y en
- * escritorio el botón del header. Está siempre a la vista, así que no gasta un hueco aquí.
+ * `mensajes` no está en admin/admin_plus: ahí sigue siendo el botón flotante junto a la campana
+ * (y en escritorio, el botón del header). En los 4 roles que sí tienen `checador`, en cambio,
+ * `mensajes` SÍ ocupa un hueco aquí — ver el comentario sobre Sidebar.jsx para el porqué.
  */
 export const TABS_MOVIL = {
   admin: ["dashboard", "ai", "empleados", "usuarios"],
   admin_plus: ["dashboard", "ai", "empleados", "usuarios"],
-  psicologa: ["dashboard", "checador", "ai", "seguimiento"],
-  rh: ["dashboard", "checador", "usuarios", "empleados"],
-  // El checador va en la posición 2 a propósito: es lo único de la lista que se usa todos los
-  // días, dos veces.
-  empleado: ["inicio", "checador", "encuesta", "historial"],
-  doctor: ["inicio", "checador", "comisiones", "encuesta"],
+  // El checador queda al centro (Sidebar.jsx lo pinta como círculo elevado) porque es lo único de
+  // la lista que se usa todos los días, dos veces. Sacarlo de entre los 4 tabs normales deja un
+  // hueco libre, que se le da a `mensajes` — cierra el pendiente de plan.md Fase 5 ("Mensajes a
+  // la vista, en todos los roles"): aquí deja de ser flotante y se vuelve un tab fijo.
+  psicologa: ["dashboard", "ai", "checador", "seguimiento", "mensajes"],
+  rh: ["dashboard", "usuarios", "checador", "empleados", "mensajes"],
+  empleado: ["inicio", "encuesta", "checador", "historial", "mensajes"],
+  doctor: ["inicio", "encuesta", "checador", "comisiones", "mensajes"],
 };
 
 // Icono de cada categoría, para el desplegable del header. Vive aquí y no en cada ítem porque

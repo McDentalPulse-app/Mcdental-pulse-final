@@ -8,6 +8,7 @@ import { notify } from "../../utils/notify";
 import logoSmall from "../../assets/logos/logo-small.png";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
+import BotonMensajes from "./BotonMensajes";
 import { navItemsPara, rutaBaseDe, TABS_MOVIL, agruparPorCampo, tieneBotonPropio } from "../../config/navItems";
 import "./Sidebar.css";
 
@@ -193,6 +194,29 @@ const Sidebar = () => {
     <nav className={`mobile-tabbar${navOculto ? " mobile-tabbar--oculto" : ""}`} aria-label="Navegación principal">
       {tabsPrincipales.map((item) => {
         const isActive = active === item.key;
+        // Mensajes reusa el mismo botón que el flotante de escritorio/admin: así el contador de
+        // no leídos no se vuelve a escribir a mano aquí (ver BotonMensajes.jsx).
+        if (item.key === "mensajes") {
+          return <BotonMensajes key={item.key} variante="tab" activo={isActive} />;
+        }
+        // Checador va al centro, elevado, como en el resto de la app (carrito/perfil de un tabbar
+        // de e-commerce): es lo único que se usa todos los días, dos veces — se gana el bulto.
+        if (item.key === "checador") {
+          return (
+            <button
+              key={item.key}
+              type="button"
+              className={`mobile-tab mobile-tab--central${isActive ? " mobile-tab--active" : ""}`}
+              onClick={() => irA(item.key)}
+              aria-current={isActive ? "page" : undefined}
+              aria-label={item.label}
+            >
+              <span className="mobile-tab-ico-central">
+                <Icon name={item.icon} size={24} />
+              </span>
+            </button>
+          );
+        }
         return (
           <button
             key={item.key}
