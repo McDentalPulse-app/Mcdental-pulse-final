@@ -9414,6 +9414,21 @@
      especificidad, pero esta va después en el archivo, así que gana. */
   .mobile-tab-ico-central svg { color: var(--mc-blanco); }
 
+  /* Asa del cajón: deslizar la barra hacia arriba abre la hoja (onPanEnd en Sidebar.jsx), esto es
+     el mismo gesto pero tocable — sin esto nadie encuentra el swipe, y no hay forma de abrirlo
+     con teclado/lector de pantalla. No cuenta como un 6to tab: no tiene label ni comparte fila. */
+  .mobile-tabbar-asa {
+    position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+    width: 44px; height: 20px;
+    display: flex; align-items: flex-start; justify-content: center; padding-top: 6px;
+    border: none; background: transparent; cursor: pointer;
+  }
+  .mobile-tabbar-asa span {
+    width: 32px; height: 4px; border-radius: 999px; background: var(--mc-borde-suave);
+    transition: background 0.2s ease;
+  }
+  .mobile-tabbar-asa--activa span { background: var(--mc-aqua); }
+
   .mobile-sheet-overlay {
     display: block;
     position: fixed; inset: 0; z-index: 250;
@@ -9435,19 +9450,21 @@
   }
   .mobile-sheet-user .sidebar-user-name { color: var(--mc-texto-fuerte); }
   .mobile-sheet-user .sidebar-user-role { color: var(--mc-texto-secundario); }
-  .mobile-sheet-list { display: flex; flex-direction: column; gap: 2px; }
-  .mobile-sheet-item {
-    display: flex; align-items: center; gap: 12px;
-    padding: 12px 10px; border-radius: 12px; border: none; background: transparent;
-    font-family: inherit; font-size: 15px; font-weight: 600; color: var(--mc-texto-fuerte);
-    cursor: pointer; text-align: left; width: 100%;
+  /* Grilla de íconos (como un selector de apps), no una lista de texto — pedido del dueño tras
+     ver la lista en vivo: "con iconos y así". */
+  .mobile-sheet-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px 4px; }
+  .mobile-sheet-tile {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 10px 4px; border-radius: 14px; border: none; background: transparent;
+    font-family: inherit; font-size: 11.5px; font-weight: 600; color: var(--mc-texto-fuerte);
+    cursor: pointer; text-align: center;
   }
-  .mobile-sheet-item--active { background: var(--mc-brand-suave); color: var(--mc-texto-titulo); }
-  .mobile-sheet-icon {
-    display: grid; place-items: center; width: 32px; height: 32px;
-    border-radius: 9px; background: var(--mc-superficie-sutil); color: var(--mc-icono-accion); flex-shrink: 0;
+  .mobile-sheet-tile-ico {
+    display: grid; place-items: center; width: 48px; height: 48px;
+    border-radius: 14px; background: var(--mc-superficie-sutil); color: var(--mc-icono-accion);
   }
-  .mobile-sheet-item--active .mobile-sheet-icon { background: rgba(var(--mc-aqua-rgb) / 0.18); }
+  .mobile-sheet-tile--active { color: var(--mc-texto-titulo); }
+  .mobile-sheet-tile--active .mobile-sheet-tile-ico { background: rgba(var(--mc-aqua-rgb) / 0.18); color: var(--mc-aqua); }
   .mobile-sheet-logout {
     width: 100%; margin-top: 10px; padding: 12px; border-radius: 12px;
     border: 1px solid var(--mc-gris-suave); background: var(--mc-superficie-sutil);

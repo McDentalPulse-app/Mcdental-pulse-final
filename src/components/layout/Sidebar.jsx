@@ -77,11 +77,6 @@ const Sidebar = () => {
   const irA = (key) => { setMasOpen(false); navigate(`/${rutaBaseDe(user.role)}/${key}`); };
   const extraActivo = tabsExtra.some((i) => i.key === active);
 
-  // Hoja "Más" del móvil: un ítem sin `group` que no esté en la tabbar cae en "Otros". Hoy no
-  // ocurre en ningún rol —los sueltos de NAV_ITEMS son el inicio y Mensajes, y los dos salen por
-  // otro lado— pero el encabezado existe para que un ítem nuevo no aparezca sin sección.
-  const gruposExtra = agruparPorCampo(tabsExtra).map((g) => ({ ...g, nombre: g.nombre || "Otros" }));
-
   // Desktop: la lista completa, agrupada igual. Los ítems sin `group` (Dashboard y los 2-3
   // más usados de cada rol) quedan sueltos arriba sin encabezado — mismo criterio que ya
   // los hace la tabbar del móvil.
@@ -190,8 +185,26 @@ const Sidebar = () => {
       </div>
     </aside>
 
-    {/* Navegación móvil: barra inferior con tabs + "Más" */}
-    <nav className={`mobile-tabbar${navOculto ? " mobile-tabbar--oculto" : ""}`} aria-label="Navegación principal">
+    {/* Navegación móvil: barra inferior con tabs — 5 nada más, sin un 6to botón "Más" que la
+        desalinea. El resto de las opciones se abre deslizando la barra hacia arriba (como un
+        cajón); la muesca es el mismo gesto pero tocable, para quien no lo descubra deslizando o
+        use lector de pantalla. */}
+    <motion.nav
+      className={`mobile-tabbar${navOculto ? " mobile-tabbar--oculto" : ""}`}
+      aria-label="Navegación principal"
+      onPanEnd={tabsExtra.length > 0 ? (_e, info) => { if (info.offset.y < -24) setMasOpen(true); } : undefined}
+    >
+      {tabsExtra.length > 0 && (
+        <button
+          type="button"
+          className={`mobile-tabbar-asa${masOpen || extraActivo ? " mobile-tabbar-asa--activa" : ""}`}
+          onClick={() => setMasOpen((v) => !v)}
+          aria-label="Más opciones"
+          aria-expanded={masOpen}
+        >
+          <span />
+        </button>
+      )}
       {tabsPrincipales.map((item) => {
         const isActive = active === item.key;
         // Mensajes reusa el mismo botón que el flotante de escritorio/admin: así el contador de
@@ -232,20 +245,7 @@ const Sidebar = () => {
           </button>
         );
       })}
-      {tabsExtra.length > 0 && (
-        <button
-          type="button"
-          className={`mobile-tab${masOpen || extraActivo ? " mobile-tab--active" : ""}`}
-          onClick={() => setMasOpen((v) => !v)}
-          aria-expanded={masOpen}
-        >
-          <span className={`mobile-tab-ico${masOpen || extraActivo ? " mobile-tab-ico--active" : ""}`}>
-            <Icon name="settings" size={20} />
-          </span>
-          <span className="mobile-tab-label">Más</span>
-        </button>
-      )}
-    </nav>
+    </motion.nav>
 
     {/* Hoja "Más": resto de secciones + usuario + cerrar sesión */}
     <AnimatePresence>
@@ -280,26 +280,23 @@ const Sidebar = () => {
               </div>
               <Icon name="user" size={16} className="mobile-sheet-user-chevron" />
             </button>
-            <div className="mobile-sheet-list">
-              {gruposExtra.map((grupo) => (
-                <div className="mobile-sheet-group" key={grupo.nombre}>
-                  <div className="mobile-sheet-group-title">{grupo.nombre}</div>
-                  {grupo.items.map((item) => {
-                    const isActive = active === item.key;
-                    return (
-                      <button
-                        key={item.key}
-                        type="button"
-                        className={`mobile-sheet-item${isActive ? " mobile-sheet-item--active" : ""}`}
-                        onClick={() => irA(item.key)}
-                      >
-                        <span className="mobile-sheet-icon"><Icon name={item.icon} size={18} /></span>
-                        <span>{item.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              ))}
+            {/* Grilla de íconos en vez de lista de texto: los grupos ya no pintan encabezado —
+                con 3-5 ítems sueltos no hacía falta la sección, solo alargaba la hoja. */}
+            <div className="mobile-sheet-grid">
+              {tabsExtra.map((item) => {
+                const isActive = active === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    className={`mobile-sheet-tile${isActive ? " mobile-sheet-tile--active" : ""}`}
+                    onClick={() => irA(item.key)}
+                  >
+                    <span className="mobile-sheet-tile-ico"><Icon name={item.icon} size={22} /></span>
+                    <span className="mobile-sheet-tile-label">{item.label}</span>
+                  </button>
+                );
+              })}
             </div>
             <button type="button" className="mobile-sheet-logout mobile-sheet-theme" onClick={toggleTheme} style={{ marginBottom: 8 }}>
               <Icon name={theme === "dark" ? "sun" : "moon"} size={16} /> {theme === "dark" ? "Modo claro" : "Modo oscuro"}
