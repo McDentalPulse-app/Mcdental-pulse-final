@@ -8,6 +8,7 @@ import ModalChecada from "./ModalChecada";
 import AvisoPush from "./AvisoPush";
 import { useNotification } from "../../contexts/NotificationContext";
 import { obtenerUbicacion, textoUbicacion, evaluarUbicacion, evaluarUbicacionEnVarias, textoCandado } from "../../utils/geo";
+import { registrarEstadoUbicacionReal } from "../../utils/permisosDispositivo";
 import { useNavigate } from "react-router-dom";
 import { rutaBaseDe } from "../../config/navItems";
 import { getDeviceId } from "../../utils/dispositivo";
@@ -110,14 +111,22 @@ export default function ChecadorEmpleado({ user, checadasHoy = [], horarios = []
   useEffect(() => {
     if (!navigator.geolocation) return undefined;
     const id = navigator.geolocation.watchPosition(
-      (pos) =>
+      (pos) => {
+        // El watcher del checador es el sitio que a diario de verdad ejercita el GPS: sirve
+        // para corregir a permisosDispositivo.js cuando permissions.query miente (iOS Safari,
+        // ver su comentario) — cada fix bueno confirma que el permiso sigue concedido.
+        registrarEstadoUbicacionReal("granted");
         setUbicacion({
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
           precision: Math.round(pos.coords.accuracy),
-        }),
+        });
+      },
       (error) => {
         console.warn("watchPosition falló:", error?.message || error);
+        // code 1 = PERMISSION_DENIED. Los demás (2 posición no disponible, 3 timeout del propio
+        // GPS) no dicen nada sobre el permiso — no hay que borrar un "concedido" real por un mal fix.
+        if (error?.code === 1) registrarEstadoUbicacionReal("denied");
         setUbicacion(null); // sin ubicación => sin_gps => botón bloqueado (GPS denegado no ficha)
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
