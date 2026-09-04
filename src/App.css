@@ -9408,6 +9408,11 @@
     border: 3px solid var(--mc-superficie);
   }
   .mobile-tab--central.mobile-tab--active .mobile-tab-ico-central { background: var(--mc-aqua-oscuro, var(--mc-aqua)); }
+  /* El círculo es aqua siempre (activo o no) y el ícono blanco siempre — sin esto, la regla vieja
+     `.mobile-tab--active svg { color: aqua }` (pensada para los tabs normales) pinta el ícono del
+     mismo aqua que su propio fondo cuando el checador ES la ruta activa: invisible. Misma
+     especificidad, pero esta va después en el archivo, así que gana. */
+  .mobile-tab-ico-central svg { color: var(--mc-blanco); }
 
   .mobile-sheet-overlay {
     display: block;
