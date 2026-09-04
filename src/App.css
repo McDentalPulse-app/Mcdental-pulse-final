@@ -9338,6 +9338,11 @@
     padding: 8px;
     box-shadow: var(--mc-sombra-card);
     transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    /* Sin esto, el dedo en un teléfono real nunca llega a onPanEnd (Sidebar.jsx): el navegador
+       intercepta el swipe vertical como su propio gesto (scroll/rebote) antes de que motion/react
+       termine de reconocerlo — con mouse (PC en vista de teléfono) no pasa, el mouse no tiene
+       touch-action que lo bloquee. */
+    touch-action: none;
   }
   /* Se esconde al hacer scroll hacia abajo y regresa al subir (clase la pone el Sidebar). */
   .mobile-tabbar--oculto { transform: translateY(calc(100% + 24px)); }
