@@ -86,10 +86,13 @@ mecánico; lo separaría en su propia sesión, no lo metería en esta misma tand
 
 ## §5. Seguridad — PC vieja (`100.92.81.83`) sin dar de baja
 
-Tiene la llave SSH sin passphrase y `pulse-password-temporal.xlsx`. Necesito saber si sigue
-alcanzable (¿la prendiste desde julio?) antes de proponer cómo. Si responde: borrado seguro de
-`~/.ssh` y el Excel, y sacarla de `authorized_keys` de la VPS. Si no responde nunca más: dar la
-llave por comprometida y rotarla en la VPS (nueva llave, actualizar `HANDOFF`).
+~~Tiene la llave SSH sin passphrase y `pulse-password-temporal.xlsx`.~~ → **CERRADO
+2026-09-07, decisión del dueño**: confirmada no alcanzable desde el 31-jul (dato que ya
+traía `HANDOFF-pulse-vps.md`). La llave compartida sigue siendo la que usa la PC nueva
+para entrar a la VPS — no hay una línea separada en `authorized_keys` para "la vieja", es
+el mismo archivo copiado en la migración. Dueño decide **no rotarla**: "si funciona, mejor
+no moverle". Riesgo asumido a propósito, no un olvido: mientras el disco de la PC vieja
+exista en algún lado, tiene esa misma llave sin passphrase y el Excel de contraseñas.
 
 ## §6. Deuda técnica menor (bajo riesgo, sin prisa)
 
