@@ -189,8 +189,14 @@ export default function GestionHorarios({ usuarios = [], horarios = [], setHorar
   // Se ve UNA sucursal a la vez: con ~100 empleados, una sola lista era interminable.
   const [filtroSucursal, setFiltroSucursal] = useState("");
 
+  // admin/admin_plus/psicologa no cuentan como plantilla aquí — ensuciaban el conteo por
+  // sucursal (Mario Ruiz y la psicóloga, ambos con sucursal "Oficina Administrativa" cargada).
+  // No les quita el acceso a la app ni su checador propio (psicologa sí fichaba) — solo los
+  // saca de esta grilla de asignación de horario, a pedido del dueño.
   const empleados = useMemo(
-    () => usuarios.filter((u) => !u.inactivo).sort((a, b) => (a.name || "").localeCompare(b.name || "")),
+    () => usuarios
+      .filter((u) => !u.inactivo && !["admin", "admin_plus", "psicologa"].includes(u.role))
+      .sort((a, b) => (a.name || "").localeCompare(b.name || "")),
     [usuarios]
   );
 

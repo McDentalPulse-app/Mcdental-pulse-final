@@ -285,6 +285,38 @@ export const GlobalProvider = ({ children }) => {
     fetchAllData();
   }, [user]);
 
+  // Refetch puntual de usuarios (el KPI "Empleados" del dashboard no se movía si alguien
+  // daba de alta/baja a un empleado con la pestaña ya abierta). Sin realtime: altas/bajas
+  // son raras, a diferencia de encuestas/avisos — refetch al volver + polling alcanza.
+  const refreshUsuarios = useCallback(async () => {
+    if (!user) return;
+    try {
+      const puedeVerPII = ["admin", "admin_plus", "rh", "psicologa"].includes(user.role);
+      const rows = await (puedeVerPII ? getUsuarios() : getUsuariosDirectorio());
+      setUsuarios(rows);
+    } catch (error) {
+      console.error("Error refrescando usuarios:", error);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return undefined;
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refreshUsuarios();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === "visible") refreshUsuarios();
+    }, 60000);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      clearInterval(intervalId);
+    };
+  }, [user, refreshUsuarios]);
+
   // Refetch puntual de encuestas (para sincronización en vivo). Si la red
   // falla se conserva el estado previo, igual que en la carga inicial.
   const refreshEncuestas = useCallback(async () => {
