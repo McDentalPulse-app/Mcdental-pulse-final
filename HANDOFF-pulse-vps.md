@@ -20,7 +20,7 @@
 > 3. **`origin/vps-docker` tenía 10 commits desde el 4-5 de agosto que este checkout nunca
 >    había recibido** — se descubrió recién al hacer `git push`, no antes. Ya mergeados
 >    (commit `bfb226a`) y empujados a `origin` y `prod`. La lección que queda: **empujar
->    seguido**, no acumular una semana entera sin `git push` — ver `plan-sanear-sistema-sep2026.md`
+>    seguido**, no acumular una semana entera sin `git push` — ver `plans/plan-sanear-sistema-sep2026.md`
 >    y la regla nueva guardada en memoria (commit + push + bitácora por cada cambio real, no al
 >    final de la sesión).
 > 4. **`/opt/pulse/app` en la VPS tiene SU PROPIA historia git** (HEAD `f3e2257`, no existe en
@@ -28,15 +28,15 @@
 >    esta vez (todo lo que faltaba en el checkout local ya estaba ahí, incluidas migraciones
 >    115-119 que **nunca se guardaron como archivo en ningún lado**, solo se aplicaron a mano),
 >    pero es la tercera copia divergente de la historia — pendiente reconciliar, con el mismo
->    cuidado que el punto 3. Ver §11 y `plan-sanear-sistema-sep2026.md` §4.
+>    cuidado que el punto 3. Ver §11 y `plans/plan-sanear-sistema-sep2026.md` §4.
 > 5. **Corrección de un error propio**: en algún momento se dijo que "la vigilancia de
 >    geocercas" no existía. Es falso — está en producción desde el 6 de agosto
->    (`plan-red-de-seguridad.md`). No repetir esa afirmación sin releer el código/los planes.
+>    (`plans/plan-red-de-seguridad.md`). No repetir esa afirmación sin releer el código/los planes.
 > 6. **Hallazgos reales sin resolver, con nombre y fecha** (sacados en vivo de `pulse-db`,
 >    02-sep): respaldo externo sin latido desde el **29 de julio** (35 días — es la PC de
 >    oficina, no código); 4 personas bloqueadas para fichar (Mariana Aguilar López lleva 19
 >    días); 1 sin rostro aprobado (Hania Torres Peña). Detalle completo en
->    `plan-sanear-sistema-sep2026.md` §1-2.
+>    `plans/plan-sanear-sistema-sep2026.md` §1-2.
 
 > ## 🟡 SESIÓN DEL 2026-08-27 — bloqueo de entrada el viernes sin encuesta (sin deploy)
 >
@@ -62,7 +62,7 @@
 > ahora divergen** (commit local sin subir + un INSERT que solo vive en `pulse-db`).
 >
 > **Hecho contra `pulse-db` (VPS, real, vía `ssh -i ~/.ssh/pulse_vps_key root@2.25.150.106`):**
-> - Confirmado que las migraciones 120-123 del `plan-inventario-clinicas.md` **ya estaban
+> - Confirmado que las migraciones 120-123 del `plans/plan-inventario-clinicas.md` **ya estaban
 >   aplicadas** ahí (las 6 tablas + las 5 funciones existen). El repo local decía "sin
 >   verificar" pero ya se había hecho en algún momento no documentado.
 > - Insertados los **33 materiales** del Excel que pasó el dueño
@@ -564,7 +564,7 @@ deja de aparecer. Ver §10.
 
 ## 10. Qué falta (además de lo de §6)
 
-- ~~Vigilancia de geocercas~~ → **HECHO el 2026-08-06**, ver `plan-red-de-seguridad.md`.
+- ~~Vigilancia de geocercas~~ → **HECHO el 2026-08-06**, ver `plans/plan-red-de-seguridad.md`.
   `revisar_geocercas()` (mig. 104) + `personas_que_dejaron_de_fichar()` (mig. 116, ⚠️ el
   archivo de esa migración **nunca se guardó en ningún repo**, solo se aplicó a mano — igual
   que 115, 117, 118, 119). No repetir que esto falta sin releer el código primero.
@@ -573,5 +573,5 @@ deja de aparecer. Ver §10.
 - **El stack de Jitsi** — ya no es un misterio: lo usa "Reuniones" (`api/crear-reunion.js`,
   `PaginaReuniones.jsx`, migraciones 090-091). Sigue sin documentar en `infra/README.md`.
 - **Lista completa y con nombres de lo pendiente real, al 2026-09-02**: ver
-  `plan-sanear-sistema-sep2026.md` (respaldo externo, personas bloqueadas para fichar, la
+  `plans/plan-sanear-sistema-sep2026.md` (respaldo externo, personas bloqueadas para fichar, la
   tercera copia de historia git en `/opt/pulse/app`, la PC vieja, deuda técnica menor).
