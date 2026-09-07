@@ -1,9 +1,12 @@
 # Plan — Organigrama interactivo y responsabilidades por departamento
 
 **STATUS: APPROVED** (2026-09-07) — §9 contestado por el dueño, ver §9.1. Fase 1 (migración 153)
-escrita y verificada contra `pulse-db` real en transacción con rollback (8/8 checks OK, sin tocar
-producción). Pendiente: revisión adversarial de la migración (toca RLS y el trigger de
-anti-escalación), luego aplicar, luego Fases 2-5.
+aplicada a `pulse-db` real, revisión adversarial en 2 líneas (correctness + seguridad): APPROVE
+sin hallazgos en las dos. Fase 2 (datos reales) aplicada y verificada: 100 personas con área
+asignada, 99 con jefe directo (Mario Ruiz es la raíz), solo `sistemas` (cuenta técnica admin_plus,
+no es una persona del organigrama) queda sin asignar — correcto. 6 áreas creadas: Dirección
+General, Recursos Humanos, TIC, Clínicas, Marketing, Administrativa. Pendiente: Fase 3 (pantalla
+de solo lectura), Fase 4 (edición), Fase 5 (archivo por departamento).
 **Fecha:** 2026-09-07
 **Rama:** `vps-docker`
 **Origen:** pedido del dueño — «una sección de organigrama y órdenes Pulse por departamentos,
