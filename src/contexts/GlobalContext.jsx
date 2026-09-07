@@ -28,6 +28,7 @@ import { getArchivosExpediente } from "../services/supabase/archivosExpedienteSe
 import { getNotasPsicologicas } from "../services/supabase/notasService";
 import { getUsuarios, getUsuariosDirectorio, getEncuestaPreguntas, getEncuestaBloques } from "../services/supabase/usuariosService";
 import { getSucursales } from "../services/supabase/sucursalesService";
+import { getAreas } from "../services/supabase/areasService";
 import { getModulosRol } from "../services/supabase/modulosRolService";
 import { getAsistencias } from "../services/supabase/asistenciasService";
 import { getHorarios } from "../services/supabase/horariosService";
@@ -41,6 +42,9 @@ export const GlobalProvider = ({ children }) => {
   // Estados iniciales
   const [usuarios, setUsuarios] = useState([]);
   const [sucursales, setSucursales] = useState([]);
+  // Departamentos del organigrama (mig. 153) — para TODOS los roles, igual que sucursales:
+  // el organigrama lo ve todo el mundo.
+  const [areas, setAreas] = useState([]);
   // Interruptor global por rol (mig. 147) — para TODOS los roles, sea el que sea el propio:
   // hace falta para filtrar el menú de cualquiera, no solo el de quien administra.
   const [modulosRol, setModulosRol] = useState({});
@@ -119,6 +123,7 @@ export const GlobalProvider = ({ children }) => {
 
         let dbUsuarios = null;
         let dbSucursales = null;
+        let dbAreas = null;
         let dbModulosRol = null;
         let dbPreguntas = null;
         let dbBloques = null;
@@ -154,6 +159,8 @@ export const GlobalProvider = ({ children }) => {
         // Sucursales: las necesitan todos los roles (alimentan los desplegables de sucursal en
         // toda la app). Es la fuente única desde la BD; el array fijo de constants queda de fallback.
         promises.push(getSucursales().then(res => dbSucursales = res).catch(() => { huboError = true; }));
+        // Organigrama: áreas, para TODOS los roles (mismo criterio que sucursales).
+        promises.push(getAreas().then(res => dbAreas = res).catch(() => { huboError = true; }));
         // Módulos por rol: para TODOS, hace falta para filtrar el propio menú (mig. 147).
         promises.push(getModulosRol().then(res => dbModulosRol = res).catch(() => { huboError = true; }));
         promises.push(getEncuestaPreguntas().then(res => dbPreguntas = res).catch(() => { huboError = true; }));
@@ -243,6 +250,7 @@ export const GlobalProvider = ({ children }) => {
         // pisarlo con datos vacíos que parecerían "sin registros".
         if (dbUsuarios) setUsuarios(dbUsuarios);
         if (dbSucursales) setSucursales(dbSucursales);
+        if (dbAreas) setAreas(dbAreas);
         if (dbModulosRol) setModulosRol(dbModulosRol);
         if (dbBloques) setEncuestaBloques(dbBloques);
         if (dbPreguntas && dbPreguntas.length > 0) {
@@ -316,6 +324,17 @@ export const GlobalProvider = ({ children }) => {
       clearInterval(intervalId);
     };
   }, [user, refreshUsuarios]);
+
+  // Sin polling propio a propósito: las 6 áreas cambian poco (crear una, subir un
+  // archivo), y quien hace ese cambio ya está mirando la pantalla del organigrama —
+  // le alcanza con llamar esto después de guardar, no hace falta vigilar la pestaña.
+  const refreshAreas = useCallback(async () => {
+    try {
+      setAreas(await getAreas());
+    } catch (error) {
+      console.error("Error refrescando áreas:", error);
+    }
+  }, []);
 
   // Refetch puntual de encuestas (para sincronización en vivo). Si la red
   // falla se conserva el estado previo, igual que en la carga inicial.
@@ -428,8 +447,9 @@ export const GlobalProvider = ({ children }) => {
   }, [sucursales]);
 
   const value = useMemo(() => ({
-    usuarios, setUsuarios,
+    usuarios, setUsuarios, refreshUsuarios,
     sucursales, setSucursales,
+    areas, refreshAreas,
     nombresSucursales,
     modulosRol, setModulosRol,
     encuestaPreguntas, setEncuestaPreguntas,
@@ -457,7 +477,7 @@ export const GlobalProvider = ({ children }) => {
     calendarioExtra,
     loadingData,
   }), [
-    usuarios, sucursales, nombresSucursales, modulosRol, encuestaPreguntas, encuestaBloques,
+    usuarios, refreshUsuarios, sucursales, areas, refreshAreas, nombresSucursales, modulosRol, encuestaPreguntas, encuestaBloques,
     encuestas, avisos, avisosLeidos, mensajes, reuniones, refreshReuniones,
     reportesConfidenciales, reconocimientos, archivosExpediente, vacaciones, permisos,
     descuentos, comisiones, festivos, eventosCalendario, intercambios, destinosOcupados,

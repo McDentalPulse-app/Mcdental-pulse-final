@@ -16,6 +16,7 @@ import Perfil from '../common/Perfil';
 import AvisosPanel from '../avisos/AvisosPanel';
 import NotasPanel from '../notas/NotasPanel';
 import DepartamentosPanel from '../departamentos/DepartamentosPanel';
+import Organigrama from '../organigrama/Organigrama';
 import CalendarioIntercambio from '../calendario/CalendarioIntercambio';
 
 
@@ -76,6 +77,7 @@ export default function EmpleadoLayout({ user, globals, actions }) {
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} />} />
             <Route path="notas" element={<NotasPanel user={user} />} />
             <Route path="departamentos" element={<DepartamentosPanel user={user} />} />
+            <Route path="organigrama" element={<Organigrama user={user} />} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="/empleado/inicio" replace />} />
           </Routes>

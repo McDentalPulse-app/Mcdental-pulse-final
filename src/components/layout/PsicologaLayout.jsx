@@ -35,6 +35,7 @@ import { useAvisoPush } from '../../hooks/useAvisoPush';
 import AvisosPanel from '../avisos/AvisosPanel';
 import NotasPanel from '../notas/NotasPanel';
 import DepartamentosPanel from '../departamentos/DepartamentosPanel';
+import Organigrama from '../organigrama/Organigrama';
 
 import AvisoUbicacion from '../asistencia/AvisoUbicacion';
 import { useAvisoUbicacion } from '../../hooks/useAvisoUbicacion';
@@ -90,6 +91,7 @@ export default function PsicologaLayout({ user, globals, actions }) {
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} />} />
             <Route path="notas" element={<NotasPanel user={user} />} />
             <Route path="departamentos" element={<DepartamentosPanel user={user} />} />
+            <Route path="organigrama" element={<Organigrama user={user} />} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="*" element={<Navigate to="/psicologa/dashboard" replace />} />
           </Routes>

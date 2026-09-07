@@ -1,0 +1,267 @@
+/* Organigrama — layout vertical con sangría (tipo explorador de archivos), no un diagrama
+   horizontal de cajas y líneas: con ~100 personas y creciendo, es lo que cabe en un teléfono
+   sin scroll lateral. Reusa los tokens de marca (--mc-*) ya definidos en App.css. */
+
+.organigrama-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .organigrama-layout {
+    grid-template-columns: 1fr 320px;
+  }
+}
+
+.organigrama-buscador {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 14px;
+  border-radius: var(--mc-control-radio, 8px);
+  border: 1px solid var(--mc-control-borde, var(--mc-borde-suave));
+  background: var(--mc-control-fondo, var(--mc-superficie-sutil));
+  color: var(--mc-texto-apagado);
+}
+.organigrama-buscador input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  color: var(--mc-texto);
+  font-size: var(--mc-control-letra, 14px);
+}
+
+.organigrama-raiz,
+.organigrama-hijos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.organigrama-hijos {
+  margin-left: 22px;
+  padding-left: 14px;
+  border-left: 1px dashed var(--mc-borde-suave);
+}
+.organigrama-nodo {
+  margin: 6px 0;
+}
+
+.organigrama-caja {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  border: 1px solid var(--mc-borde-suave);
+  border-radius: var(--mc-radio, 10px);
+  background: var(--mc-superficie);
+  color: var(--mc-texto);
+  padding: 4px 6px;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.organigrama-caja:hover {
+  border-color: var(--mc-verde, var(--mc-verde-medio));
+}
+.organigrama-caja--activa {
+  border-color: var(--mc-verde, var(--mc-verde-medio));
+  background: var(--mc-superficie-sutil);
+}
+.organigrama-caja--inactivo {
+  opacity: 0.6;
+}
+.organigrama-caja--grupo {
+  background: var(--mc-superficie-sutil);
+}
+.organigrama-caja--miembro {
+  padding: 6px 10px;
+  font-size: 0.92em;
+}
+
+.organigrama-toggle,
+.organigrama-toggle--vacio {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--mc-texto-apagado);
+  cursor: pointer;
+  padding: 0;
+}
+.organigrama-toggle--vacio { cursor: default; }
+
+.organigrama-chevron {
+  transition: transform 0.15s ease;
+}
+.organigrama-chevron--cerrado {
+  transform: rotate(-90deg);
+}
+
+.organigrama-persona {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 4px 2px;
+}
+.organigrama-nombre {
+  font-weight: 600;
+  color: var(--mc-texto-titulo);
+}
+.organigrama-puesto {
+  font-size: 0.85em;
+  color: var(--mc-texto-secundario);
+}
+.organigrama-conteo {
+  color: var(--mc-texto-apagado);
+  font-size: 0.9em;
+}
+.organigrama-etiqueta-inactivo {
+  font-size: 0.72em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--mc-borde-suave);
+  color: var(--mc-texto-apagado);
+}
+
+/* ── Panel de detalle ────────────────────────────────────────────────── */
+.organigrama-panel-persona {
+  position: sticky;
+  top: 12px;
+}
+.organigrama-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.organigrama-panel-avatar,
+.organigrama-panel-avatar--vacio {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--mc-superficie-sutil);
+  color: var(--mc-texto-apagado);
+}
+.organigrama-panel-titulo { flex: 1; min-width: 0; }
+.organigrama-panel-nombre {
+  font-weight: 600;
+  color: var(--mc-texto-titulo);
+}
+.organigrama-panel-puesto {
+  font-size: 0.85em;
+  color: var(--mc-texto-secundario);
+}
+.organigrama-panel-cerrar {
+  flex: none;
+  border: none;
+  background: transparent;
+  color: var(--mc-texto-apagado);
+  cursor: pointer;
+}
+.organigrama-panel-aviso {
+  font-size: 0.85em;
+  color: var(--mc-texto-secundario);
+  background: var(--mc-superficie-sutil);
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+}
+.organigrama-panel-datos {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+.organigrama-panel-datos > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.9em;
+}
+.organigrama-panel-datos dt {
+  color: var(--mc-texto-apagado);
+}
+.organigrama-panel-datos dd {
+  margin: 0;
+  color: var(--mc-texto);
+  text-align: right;
+}
+.organigrama-panel-edicion {
+  display: grid;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--mc-borde-suave);
+}
+.organigrama-panel-campo {
+  display: grid;
+  gap: 6px;
+  font-size: 0.85em;
+  color: var(--mc-texto-secundario);
+}
+
+/* ── Archivos de responsabilidades por depto ────────────────────────── */
+.organigrama-areas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+.organigrama-area-nombre {
+  font-weight: 600;
+  color: var(--mc-texto-titulo);
+  margin-bottom: 8px;
+}
+.organigrama-area-archivo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--mc-texto-secundario);
+  font-size: 0.9em;
+  margin-bottom: 12px;
+}
+.organigrama-area-archivo-nombre {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.organigrama-area-sin-archivo {
+  color: var(--mc-texto-apagado);
+  font-size: 0.88em;
+  margin-bottom: 12px;
+}
+.organigrama-area-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.organigrama-area-subir {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.organigrama-area-borrar {
+  color: var(--mc-rojo, #e05a5a);
+}

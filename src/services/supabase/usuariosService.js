@@ -44,6 +44,10 @@ const mapUsuario = (row) =>
     puedeVerDepartamentos: row.puede_ver_departamentos !== false,
     puedeVerAvisos: row.puede_ver_avisos !== false,
     puedeVerEncuestas: row.puede_ver_encuestas !== false,
+    // Organigrama (mig. 153): jefe directo y departamento. Vienen en ambas fuentes
+    // (usuarios y usuarios_directorio), así que también los ve empleado/doctor.
+    jefeId: row.jefe_id,
+    areaId: row.area_id,
   };
 
 // Fila completa, con PII (teléfono, email, fechas). El RLS de la migración 030 solo
@@ -107,6 +111,10 @@ export const updateUsuario = async (id, updates) => {
   if (updates.puedeVerDepartamentos !== undefined) payload.puede_ver_departamentos = !!updates.puedeVerDepartamentos;
   if (updates.puedeVerAvisos !== undefined) payload.puede_ver_avisos = !!updates.puedeVerAvisos;
   if (updates.puedeVerEncuestas !== undefined) payload.puede_ver_encuestas = !!updates.puedeVerEncuestas;
+  // Organigrama (mig. 153). null explícito = "sin jefe"/"sin departamento" (la raíz,
+  // o falta asignar) — por eso se compara con `!== undefined` y no con un `if (updates.x)`.
+  if (updates.jefeId !== undefined) payload.jefe_id = updates.jefeId;
+  if (updates.areaId !== undefined) payload.area_id = updates.areaId;
 
   const { data, error } = await supabase
     .from("usuarios")

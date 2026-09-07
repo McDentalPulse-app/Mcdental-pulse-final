@@ -34,6 +34,7 @@ import { useAvisoPush } from '../../hooks/useAvisoPush';
 import AvisosPanel from '../avisos/AvisosPanel';
 import NotasPanel from '../notas/NotasPanel';
 import DepartamentosPanel from '../departamentos/DepartamentosPanel';
+import Organigrama from '../organigrama/Organigrama';
 import Mensajes from '../comunicacion/Mensajes';
 import PaginaReuniones from '../comunicacion/PaginaReuniones';
 
@@ -92,6 +93,7 @@ export default function HRLayout({ user, globals, actions }) {
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} onAdd={addAviso} onUpdate={updateAviso} onDelete={deleteAviso} />} />
             <Route path="notas" element={<NotasPanel user={user} />} />
             <Route path="departamentos" element={<DepartamentosPanel user={user} />} />
+            <Route path="organigrama" element={<Organigrama user={user} />} />
             <Route path="mensajes" element={<Mensajes user={user} mensajes={mensajes} onSend={sendMensaje} onMarkRead={marcarMensajesLeidos} />} />
             <Route path="reuniones" element={<PaginaReuniones user={user} />} />
             <Route path="perfil" element={<Perfil />} />

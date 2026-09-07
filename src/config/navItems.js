@@ -29,6 +29,7 @@ export const NAV_ITEMS = {
     { key: "mensajes", icon: "message", label: "Mensajes" },
     { key: "notas", icon: "note", label: "Notas", requiere: "puedeUsarNotas" },
     { key: "departamentos", icon: "users", label: "Departamentos", requiere: "puedeVerDepartamentos" },
+    { key: "organigrama", icon: "users", label: "Organigrama" },
     { key: "reuniones", icon: "camera", label: "Reuniones" },
     { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
     { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
@@ -64,6 +65,7 @@ export const NAV_ITEMS = {
     { key: "mensajes", icon: "message", label: "Mensajes" },
     { key: "notas", icon: "note", label: "Notas", requiere: "puedeUsarNotas" },
     { key: "departamentos", icon: "users", label: "Departamentos", requiere: "puedeVerDepartamentos" },
+    { key: "organigrama", icon: "users", label: "Organigrama" },
     { key: "reuniones", icon: "camera", label: "Reuniones" },
     { key: "avisos", icon: "bell", label: "Avisos", group: "Herramientas", requiere: "puedeVerAvisos" },
     { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
@@ -106,6 +108,7 @@ export const NAV_ITEMS = {
     { key: "mensajes", icon: "message", label: "Mensajes" },
     { key: "notas", icon: "note", label: "Notas", requiere: "puedeUsarNotas" },
     { key: "departamentos", icon: "users", label: "Departamentos", requiere: "puedeVerDepartamentos" },
+    { key: "organigrama", icon: "users", label: "Organigrama" },
     { key: "reuniones", icon: "camera", label: "Reuniones" },
     { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
     { key: "soporteti", icon: "wrench", label: "Soporte TI", group: "Herramientas" },
@@ -119,6 +122,7 @@ export const NAV_ITEMS = {
     { key: "mensajes", icon: "message", label: "Mensajes" },
     { key: "notas", icon: "note", label: "Notas", requiere: "puedeUsarNotas" },
     { key: "departamentos", icon: "users", label: "Departamentos", requiere: "puedeVerDepartamentos" },
+    { key: "organigrama", icon: "users", label: "Organigrama" },
     { key: "reuniones", icon: "camera", label: "Reuniones" },
     // "Mi rostro" vive en Asistencia porque solo existe para que el checador te reconozca.
     { key: "checador", icon: "clock", label: "Checador", group: "Asistencia", requiere: "puedeUsarChecador" },
@@ -144,6 +148,7 @@ export const NAV_ITEMS = {
     { key: "mensajes", icon: "message", label: "Mensajes" },
     { key: "notas", icon: "note", label: "Notas", requiere: "puedeUsarNotas" },
     { key: "departamentos", icon: "users", label: "Departamentos", requiere: "puedeVerDepartamentos" },
+    { key: "organigrama", icon: "users", label: "Organigrama" },
     { key: "reuniones", icon: "camera", label: "Reuniones" },
     // Comisiones va suelto y no dentro de un grupo: es lo que un doctor abre a diario, y
     // enterrarlo a dos clics es justo lo contrario de lo que se buscaba al reordenar esto.
@@ -212,6 +217,7 @@ const DESCRIPCIONES = {
   inicio: "Tu resumen: pendientes, avisos y accesos rápidos.",
   mensajes: "Conversaciones con el equipo y con Soporte TI.",
   reuniones: "Convoca una reunión por vídeo o entra a la que te toca.",
+  organigrama: "Quién reporta a quién, y las responsabilidades de cada departamento.",
 
   // Equipo / Personal
   empleados: "Ficha rápida de cada persona y su Pulse Score.",
