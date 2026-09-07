@@ -1,12 +1,12 @@
 # Plan — Organigrama interactivo y responsabilidades por departamento
 
-**STATUS: APPROVED** (2026-09-07) — §9 contestado por el dueño, ver §9.1. Fase 1 (migración 153)
-aplicada a `pulse-db` real, revisión adversarial en 2 líneas (correctness + seguridad): APPROVE
-sin hallazgos en las dos. Fase 2 (datos reales) aplicada y verificada: 100 personas con área
-asignada, 99 con jefe directo (Mario Ruiz es la raíz), solo `sistemas` (cuenta técnica admin_plus,
-no es una persona del organigrama) queda sin asignar — correcto. 6 áreas creadas: Dirección
-General, Recursos Humanos, TIC, Clínicas, Marketing, Administrativa. Pendiente: Fase 3 (pantalla
-de solo lectura), Fase 4 (edición), Fase 5 (archivo por departamento).
+**STATUS: HECHO** (2026-09-07) — las 5 fases completas y desplegadas en producción. §9
+contestado por el dueño, ver §9.1. Fase 1 (migración 153) y Fase 2 (migración 154, datos reales)
+verificadas contra `pulse-db` real, 2 líneas de revisión adversarial (correctness + seguridad):
+APPROVE sin hallazgos. Fases 3-5 (pantalla interactiva, edición, archivo por departamento)
+revisadas (APPROVE, 2 LOW sin bloquear) y desplegadas: `build-frontend.sh` 20/20, bundle
+confirmado, sitio público en 200. Ver bitácora e5-e8 del 2026-09-07 para el detalle de cada
+paso.
 **Fecha:** 2026-09-07
 **Rama:** `vps-docker`
 **Origen:** pedido del dueño — «una sección de organigrama y órdenes Pulse por departamentos,
@@ -488,13 +488,28 @@ Bucket ya creado en la Fase 1. `responsabilidadesService.js` + `Responsabilidade
 
 ## 8. Qué queda medido como «hecho»
 
-- [ ] Los 6 roles ven «Organigrama» en su menú y entran sin error.
-- [ ] El árbol refleja la imagen que mandó el dueño, con personas reales de `usuarios`.
-- [ ] Expandir/colapsar y clic-para-detalle funcionan en escritorio y en móvil.
-- [ ] Las cajas de grupo muestran el conteo real y se despliegan a la lista de personas.
-- [ ] admin/admin_plus/rh mueven a alguien de rama; psicóloga y empleado no pueden, ni desde la API.
-- [ ] Cada departamento tiene su archivo y cualquiera lo descarga.
-- [ ] `npm run lint`, `npx vitest run` y `npm run build` sin regresiones.
+- [x] Los 6 roles ven «Organigrama» en su menú (`navItems.js`, los 5 arreglos + herencia de
+      admin_plus) y hay ruta montada en los 5 layouts. **No probado clic a clic en el navegador
+      como cada rol real** — solo verificado por código y revisión adversarial.
+- [x] El árbol refleja la imagen que mandó el dueño, con personas reales de `usuarios`
+      (migración 154, verificado con conteos reales contra `pulse-db`).
+- [x] Expandir/colapsar y clic-para-detalle: cubierto por `arbol.test.js` y trazado por el
+      checker de frontend. **Sin probar en un teléfono real** — el layout vertical con sangría
+      es responsive por CSS, no se verificó con un dispositivo físico ni con Playwright.
+- [x] Las cajas de grupo muestran el conteo real y se despliegan a la lista de personas
+      (`arbol.test.js`, caso de agrupación).
+- [x] admin/admin_plus/rh mueven a alguien de rama; psicóloga y empleado no pueden — verificado
+      en la base (22 escenarios de ataque, línea de seguridad) y en la UI (el checker de
+      frontend confirmó que `PanelPersona` no le muestra los controles a quien no puede).
+- [x] Cada departamento tiene su archivo y cualquiera lo descarga — el servicio y su orden de
+      operaciones están verificados; **no se subió un archivo real de prueba en producción
+      todavía** (nadie ha usado el botón "Subir" en vivo).
+- [x] `npm run lint`, `npx vitest run` y `npm run build` sin regresiones (594/594, 0 errores
+      nuevos de lint, build exitoso).
+
+**Pendiente real, no de código**: alguien de gestión tiene que entrar y subir el primer archivo
+de responsabilidades de cada departamento — la pantalla está lista, los archivos no existen
+todavía (`areas.archivo_ruta` sigue en null para las 6).
 
 ---
 
