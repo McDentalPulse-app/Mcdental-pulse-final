@@ -41,3 +41,7 @@ supabase/.temp/
 .vercel
 .env*
 .playwright-mcp/
+
+# Docs congeladas/de un solo uso — quedan en disco, no en git (decisión del dueño 2026-09-07)
+contexto.md
+auditoria-pulse-producto.md
