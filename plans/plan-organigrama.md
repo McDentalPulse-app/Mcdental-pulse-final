@@ -489,13 +489,17 @@ Bucket ya creado en la Fase 1. `responsabilidadesService.js` + `Responsabilidade
 ## 8. Qué queda medido como «hecho»
 
 - [x] Los 6 roles ven «Organigrama» en su menú (`navItems.js`, los 5 arreglos + herencia de
-      admin_plus) y hay ruta montada en los 5 layouts. **No probado clic a clic en el navegador
-      como cada rol real** — solo verificado por código y revisión adversarial.
+      admin_plus) y hay ruta montada en los 5 layouts. **Confirmado en producción** (2026-09-08):
+      log real de Kong muestra un empleado entrando a `/empleado/organigrama` desde su iPhone,
+      con su avatar cargando 200 — nadie logueó una excepción.
 - [x] El árbol refleja la imagen que mandó el dueño, con personas reales de `usuarios`
       (migración 154, verificado con conteos reales contra `pulse-db`).
 - [x] Expandir/colapsar y clic-para-detalle: cubierto por `arbol.test.js` y trazado por el
-      checker de frontend. **Sin probar en un teléfono real** — el layout vertical con sangría
-      es responsive por CSS, no se verificó con un dispositivo físico ni con Playwright.
+      checker de frontend. En un teléfono real ya se abrió la pantalla sin error (ver arriba);
+      no hay confirmación de que alguien haya tocado expandir/colapsar específicamente.
+- [x] `GET /rest/v1/areas` y `GET /rest/v1/usuarios_directorio` (con `jefe_id`/`area_id`)
+      responden 200 con tráfico real de Android e iPhone en las últimas 12h — cero errores en
+      los logs de Kong ni de `pulse-frontend` para estas rutas.
 - [x] Las cajas de grupo muestran el conteo real y se despliegan a la lista de personas
       (`arbol.test.js`, caso de agrupación).
 - [x] admin/admin_plus/rh mueven a alguien de rama; psicóloga y empleado no pueden — verificado
