@@ -1,5 +1,6 @@
 import { supabase } from "../../config/supabase";
 import { fetchAll } from "./fetchAll";
+import { puedeVerOrganigrama } from "../../utils/constants";
 
 const mapUsuario = (row) =>
   row && {
@@ -48,6 +49,9 @@ const mapUsuario = (row) =>
     // (usuarios y usuarios_directorio), así que también los ve empleado/doctor.
     jefeId: row.jefe_id,
     areaId: row.area_id,
+    // Organigrama visible o no (ver puedeVerOrganigrama() en constants.js) — se pasa la fila
+    // completa porque la regla mira role y sucursal a la vez.
+    puedeVerOrganigrama: puedeVerOrganigrama(row),
   };
 
 // Fila completa, con PII (teléfono, email, fechas). El RLS de la migración 030 solo

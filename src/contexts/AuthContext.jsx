@@ -3,6 +3,7 @@ import { supabase, usernameToSyntheticEmail } from "../config/supabase";
 import { notify } from "../utils/notify";
 import { mensajeDeFallo } from "../utils/errores";
 import { getMisModulosPersona } from "../services/supabase/modulosPersonaService";
+import { puedeVerOrganigrama } from "../utils/constants";
 
 const VALID_ROLES = new Set(["admin", "admin_plus", "rh", "psicologa", "empleado", "doctor"]);
 
@@ -58,6 +59,9 @@ const mapUsuarioRow = (row) =>
     puedeVerDepartamentos: row.puede_ver_departamentos !== false,
     puedeVerAvisos: row.puede_ver_avisos !== false,
     puedeVerEncuestas: row.puede_ver_encuestas !== false,
+    // Organigrama visible o no (ver puedeVerOrganigrama() en constants.js, compartida con
+    // usuariosService.mapUsuario() — los dos mappers de fila de usuario del repo).
+    puedeVerOrganigrama: puedeVerOrganigrama(row),
     debeCambiarPassword: row.debe_cambiar_password,
     avatarUrl: row.avatar_url,
     bannerUrl: row.banner_url,

@@ -15,6 +15,20 @@ export const normalizeSucursal = (sucursal) => {
 export const sucursalMatches = (a, b) => normalizeSucursal(a) === normalizeSucursal(b);
 
 /**
+ * Visibilidad TEMPORAL del organigrama (pedido del dueño, 2026-09-08): solo Oficina
+ * Administrativa por ahora, mientras se decide si las clínicas también lo ven. Sin columna
+ * nueva a propósito — es provisional, calculada de `sucursal`. admin_plus siempre lo ve: no
+ * está atado a una sucursal ("sistemas" no tiene ninguna cargada) y administra el interruptor
+ * de módulos que a futuro reemplace esto.
+ *
+ * Compartida por los dos mappers de fila de usuario del repo (`AuthContext.mapUsuarioRow` y
+ * `usuariosService.mapUsuario`) — vivían como la misma expresión repetida en los dos archivos,
+ * un lugar donde cambiarla y olvidarse del otro.
+ */
+export const puedeVerOrganigrama = (row) =>
+  row?.role === "admin_plus" || normalizeSucursal(row?.sucursal) === "Oficina Administrativa";
+
+/**
  * Cómo se nombra cada rol de cara al personal. Se usa para firmar los avisos ("Lic. Mario
  * Ruiz · Administración"): un empleado no tiene por qué saber qué significa "psicologa". Sin
  * `export`: solo lo usa `etiquetaRol`, que sí es la que se importa desde fuera.
