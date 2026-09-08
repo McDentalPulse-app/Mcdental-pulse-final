@@ -13,6 +13,7 @@ import { navItemsPara, rutaBaseDe, TABS_MOVIL, agruparPorCampo, tieneBotonPropio
 import "./Sidebar.css";
 
 const RAIL_KEY = "mcdental_sidebar_rail";
+const HINT_ASA_KEY = "mcdental_asa_hint_visto";
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
@@ -63,6 +64,20 @@ const Sidebar = () => {
   const items = navItemsPara(user, modulosRol);
 
   const [masOpen, setMasOpen] = useState(false);
+  // El asa (la rayita sobre la barra) ya deja tocar Y deslizar, pero es sutil — el dueño reportó
+  // que buena parte del equipo nunca la descubre. Un chevron animado la marca hasta la primera
+  // vez que alguien abre el cajón (swipe o toque); después se guarda en localStorage y no vuelve
+  // a salir — no tiene sentido seguir señalando algo que esa persona ya sabe usar.
+  const [hintAsaVisto, setHintAsaVisto] = useState(() => {
+    try { return localStorage.getItem(HINT_ASA_KEY) === "1"; } catch { return false; }
+  });
+  // Se marca en el propio gesto (swipe o toque), no en un efecto que observe masOpen: no hay
+  // "sistema externo" que sincronizar acá, solo un guardado que corre una vez.
+  const marcarHintAsaVisto = () => {
+    if (hintAsaVisto) return;
+    setHintAsaVisto(true);
+    try { localStorage.setItem(HINT_ASA_KEY, "1"); } catch { /* ignore */ }
+  };
   // La barra inferior se declara por clave y ya no depende del orden del arreglo: así reordenar el
   // menú para que se lea mejor no mueve los accesos que la gente usa sin mirar.
   const clavesTab = TABS_MOVIL[user?.role] || [];
@@ -192,16 +207,17 @@ const Sidebar = () => {
     <motion.nav
       className={`mobile-tabbar${navOculto ? " mobile-tabbar--oculto" : ""}`}
       aria-label="Navegación principal"
-      onPanEnd={tabsExtra.length > 0 ? (_e, info) => { if (info.offset.y < -24) setMasOpen(true); } : undefined}
+      onPanEnd={tabsExtra.length > 0 ? (_e, info) => { if (info.offset.y < -24) { setMasOpen(true); marcarHintAsaVisto(); } } : undefined}
     >
       {tabsExtra.length > 0 && (
         <button
           type="button"
           className={`mobile-tabbar-asa${masOpen || extraActivo ? " mobile-tabbar-asa--activa" : ""}`}
-          onClick={() => setMasOpen((v) => !v)}
-          aria-label="Más opciones"
+          onClick={() => { const abriendo = !masOpen; setMasOpen(abriendo); if (abriendo) marcarHintAsaVisto(); }}
+          aria-label="Más opciones. Desliza hacia arriba o toca aquí."
           aria-expanded={masOpen}
         >
+          {!hintAsaVisto && <Icon name="chevronDown" size={14} className="mobile-tabbar-asa-hint" aria-hidden="true" />}
           <span />
         </button>
       )}

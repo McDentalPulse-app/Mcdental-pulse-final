@@ -9434,6 +9434,27 @@
   }
   .mobile-tabbar-asa--activa span { background: var(--mc-aqua); }
 
+  /* Chevron que marca el asa hasta que alguien la usa una vez (Sidebar.jsx guarda el "ya la vi"
+     en localStorage) — el dueño reportó que la rayita sola no se nota. Apunta hacia arriba
+     (chevronDown rotado 180°) y rebota suave; se detiene con prefers-reduced-motion. */
+  .mobile-tabbar-asa-hint {
+    position: absolute;
+    top: -15px;
+    /* Centrado explícito — el padre es flex y sin esto el navegador ubica un hijo
+       position:absolute por su "static position" del flujo flex, que no es lo mismo en
+       todos los motores. */
+    left: 50%;
+    color: var(--mc-texto-apagado);
+    animation: mobileAsaHintRebote 1.6s ease-in-out infinite;
+  }
+  @keyframes mobileAsaHintRebote {
+    0%, 100% { transform: translateX(-50%) rotate(180deg) translateY(0); opacity: 0.55; }
+    50% { transform: translateX(-50%) rotate(180deg) translateY(-4px); opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-tabbar-asa-hint { animation: none; opacity: 0.8; }
+  }
+
   .mobile-sheet-overlay {
     display: block;
     position: fixed; inset: 0; z-index: 250;
@@ -11881,6 +11902,62 @@
     line-height: 18px;
     text-align: center;
   }
+}
+
+/* Búsqueda global flotante del TELÉFONO — pedido del dueño: en escritorio ya vive en el header
+   (.buscador, oculto debajo de 1100px), pero en móvil no hay header (Navegacion monta Sidebar
+   solo), así que no había forma de buscar. Mismo aspecto y alto que .campana, del lado
+   opuesto (izquierda) para no competir por el mismo espacio. Icono nada más hasta que se toca
+   — una barra de texto abierta todo el tiempo se come media pantalla chica. */
+.buscador-movil { display: none; }
+
+@media (max-width: 768px) {
+  .buscador-movil { display: block; position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); left: 24px; z-index: 300; }
+  .buscador-movil-boton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid var(--mc-borde-suave);
+    background: var(--mc-superficie);
+    color: var(--mc-texto-titulo);
+    box-shadow: var(--mc-sombra-card);
+    cursor: pointer;
+  }
+  .buscador-movil-boton:active { transform: scale(0.94); }
+  .buscador-movil-panel {
+    position: absolute;
+    top: 50px;
+    left: 0;
+    width: min(80vw, 320px);
+    background: var(--mc-superficie);
+    border: 1px solid var(--mc-borde-suave);
+    border-radius: 11px;
+    box-shadow: 0 10px 28px rgba(0,0,0,.14);
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+  .buscador-movil-input {
+    width: 100%;
+    height: 38px;
+    padding: 0 12px;
+    margin-bottom: 4px;
+    border: 1px solid var(--mc-control-borde);
+    border-radius: var(--mc-control-radio);
+    background: var(--mc-control-fondo);
+    color: var(--mc-texto);
+    font-size: var(--mc-control-letra);
+    font-family: inherit;
+    outline: none;
+  }
+  .buscador-movil-input::placeholder { color: var(--mc-texto-apagado); }
+  .buscador-movil-input:focus { border-color: var(--mc-aqua); background: var(--mc-superficie); }
 }
 
 .topnav-hamburguesa { display: none; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 38px; height: 38px; border: 1px solid var(--mc-borde-suave); border-radius: 9px; background: var(--mc-superficie); cursor: pointer; }

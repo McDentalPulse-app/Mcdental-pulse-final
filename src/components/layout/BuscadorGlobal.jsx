@@ -1,25 +1,14 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext";
-import { useGlobal } from "../../contexts/GlobalContext";
-import { navItemsPara, rutaBaseDe } from "../../config/navItems";
+import { useBuscadorGlobal } from "../../hooks/useBuscadorGlobal";
 import Icon from "../ui/Icon";
 
-// Búsqueda global: filtra las páginas del rol actual por nombre y navega a la elegida.
-// Insensible a mayúsculas y acentos. Enter va al primer resultado.
-const normalizar = (s) => (s || "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
-
+// Búsqueda global de escritorio: filtra las páginas del rol actual por nombre y navega a la
+// elegida. Enter va al primer resultado. Lógica de filtrado compartida con BuscadorMovil.jsx
+// vía useBuscadorGlobal — solo cambia la presentación (esto es una barra siempre abierta).
 export default function BuscadorGlobal() {
-  const { user } = useAuth();
-  const { modulosRol } = useGlobal();
-  const navigate = useNavigate();
-  const [q, setQ] = useState("");
+  const { q, setQ, resultados, ir } = useBuscadorGlobal();
   const [abierto, setAbierto] = useState(false);
   const ref = useRef(null);
-
-  const items = navItemsPara(user, modulosRol).filter((i) => i.group !== "Cuenta");
-  const nq = normalizar(q.trim());
-  const resultados = nq ? items.filter((i) => normalizar(i.label).includes(nq)).slice(0, 8) : [];
 
   useEffect(() => {
     if (!abierto) return undefined;
@@ -28,10 +17,10 @@ export default function BuscadorGlobal() {
     return () => document.removeEventListener("mousedown", fuera);
   }, [abierto]);
 
-  const ir = (key) => { setQ(""); setAbierto(false); navigate(`/${rutaBaseDe(user.role)}/${key}`); };
+  const irYcerrar = (key) => { ir(key); setAbierto(false); };
 
   const onKey = (e) => {
-    if (e.key === "Enter" && resultados[0]) ir(resultados[0].key);
+    if (e.key === "Enter" && resultados[0]) irYcerrar(resultados[0].key);
     if (e.key === "Escape") { setQ(""); setAbierto(false); e.currentTarget.blur(); }
   };
 
@@ -54,7 +43,7 @@ export default function BuscadorGlobal() {
             <div className="buscador-vacio">Sin resultados para “{q.trim()}”</div>
           ) : (
             resultados.map((item) => (
-              <button key={item.key} type="button" className="buscador-item" onMouseDown={(e) => { e.preventDefault(); ir(item.key); }}>
+              <button key={item.key} type="button" className="buscador-item" onMouseDown={(e) => { e.preventDefault(); irYcerrar(item.key); }}>
                 <Icon name={item.icon} size={16} />
                 <span>{item.label}</span>
                 {item.group && <span className="buscador-grupo">{item.group}</span>}
