@@ -3,7 +3,6 @@ import { useAuth } from "../../contexts/AuthContext";
 import HeaderNav from "./HeaderNav";
 import AdminPlusNav from "./AdminPlusNav";
 import Sidebar from "./Sidebar";
-import BuscadorMovil from "./BuscadorMovil";
 import BotonMensajes from "./BotonMensajes";
 import BotonReuniones from "./BotonReuniones";
 import CampanaNotificaciones from "../notificaciones/CampanaNotificaciones";
@@ -32,8 +31,9 @@ export default function Navegacion() {
     const tieneChecadorCentral = (TABS_MOVIL[user?.role] || []).includes("checador");
     return (
       <>
+        {/* El buscador del teléfono ya no va suelto acá: vive DENTRO de la barra de abajo
+            (Sidebar.jsx), como una fila propia debajo de los tabs. */}
         <Sidebar />
-        <BuscadorMovil />
         {!tieneChecadorCentral && <BotonMensajes variante="flotante" />}
         <BotonReuniones variante="flotante" cerca={tieneChecadorCentral} />
         <CampanaNotificaciones user={user} />

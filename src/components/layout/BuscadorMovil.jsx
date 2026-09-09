@@ -3,18 +3,19 @@ import { useBuscadorGlobal } from "../../hooks/useBuscadorGlobal";
 import Icon from "../ui/Icon";
 
 /**
- * Búsqueda global del TELÉFONO — pedido del dueño: en escritorio ya existe (BuscadorGlobal, en
- * el header), pero en móvil no hay header (Navegacion.jsx monta Sidebar solo), así que no había
- * forma de buscar una pantalla por nombre.
+ * Búsqueda global del TELÉFONO. Vive como una barra completa DENTRO de la barra de navegación de
+ * abajo (Sidebar.jsx), debajo de los tabs — pedido del dueño: "queda más alcanzable y se puede
+ * poner la barra completa". En escritorio esto no se monta: ahí está BuscadorGlobal, en el header.
  *
- * Botón flotante arriba a la izquierda, mismo aspecto y alto que `.campana` (arriba a la
- * derecha) — ícono nada más hasta que se toca, no una barra abierta todo el tiempo comiéndose
- * el ancho de una pantalla chica. Al tocar, despliega el campo + resultados debajo.
+ * La barra de abajo es solo el DISPARADOR; al tocarla se abre una capa a pantalla completa con el
+ * campo real arriba. No es un capricho: un `<input>` fijo pegado al borde inferior queda tapado
+ * por el teclado en iOS (el `position: fixed` se ancla al viewport de layout, no al visual), y
+ * esta app se usa desde iPhone, Chrome de Android y HuaweiBrowser, donde eso se comporta distinto
+ * en cada uno. Con el campo arriba, ningún teclado lo cubre.
  */
 export default function BuscadorMovil() {
   const { q, setQ, resultados, ir } = useBuscadorGlobal();
   const [abierto, setAbierto] = useState(false);
-  const ref = useRef(null);
   const inputRef = useRef(null);
 
   const cerrar = useCallback(() => { setAbierto(false); setQ(""); }, [setQ]);
@@ -22,59 +23,56 @@ export default function BuscadorMovil() {
   useEffect(() => {
     if (!abierto) return undefined;
     inputRef.current?.focus();
-    const fuera = (e) => { if (ref.current && !ref.current.contains(e.target)) cerrar(); };
-    document.addEventListener("mousedown", fuera);
-    return () => document.removeEventListener("mousedown", fuera);
+    const alTeclear = (e) => { if (e.key === "Escape") cerrar(); };
+    document.addEventListener("keydown", alTeclear);
+    return () => document.removeEventListener("keydown", alTeclear);
   }, [abierto, cerrar]);
 
-  const onKey = (e) => {
-    if (e.key === "Enter" && resultados[0]) { ir(resultados[0].key); cerrar(); }
-    if (e.key === "Escape") cerrar();
-  };
+  const elegir = (key) => { ir(key); cerrar(); };
 
   return (
-    <div className="buscador-movil" ref={ref}>
-      <button
-        type="button"
-        className="buscador-movil-boton"
-        onClick={() => setAbierto((v) => !v)}
-        aria-label="Buscar en la app"
-        aria-expanded={abierto}
-      >
-        <Icon name="search" size={18} />
+    <>
+      <button type="button" className="buscador-movil-barra" onClick={() => setAbierto(true)}>
+        <Icon name="search" size={16} />
+        <span>Buscar en la app…</span>
       </button>
+
       {abierto && (
-        <div className="buscador-movil-panel">
-          <input
-            ref={inputRef}
-            className="buscador-movil-input"
-            type="text"
-            placeholder="Buscar en la app…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            onKeyDown={onKey}
-            aria-label="Buscar en la app"
-          />
-          {q.trim() && (
-            resultados.length === 0 ? (
-              <div className="buscador-vacio">Sin resultados para “{q.trim()}”</div>
-            ) : (
-              resultados.map((item) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  className="buscador-item"
-                  onMouseDown={(e) => { e.preventDefault(); ir(item.key); cerrar(); }}
-                >
-                  <Icon name={item.icon} size={16} />
-                  <span>{item.label}</span>
-                  {item.group && <span className="buscador-grupo">{item.group}</span>}
-                </button>
-              ))
-            )
-          )}
+        <div className="buscador-movil-overlay" onClick={cerrar} role="presentation">
+          <div className="buscador-movil-caja" onClick={(e) => e.stopPropagation()} role="search">
+            <div className="buscador-movil-campo">
+              <Icon name="search" size={17} />
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder="Buscar en la app…"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && resultados[0]) elegir(resultados[0].key); }}
+                aria-label="Buscar en la app"
+              />
+              <button type="button" className="buscador-movil-cerrar" onClick={cerrar} aria-label="Cerrar búsqueda">
+                <Icon name="close" size={18} />
+              </button>
+            </div>
+            {q.trim() && (
+              <div className="buscador-movil-resultados">
+                {resultados.length === 0 ? (
+                  <div className="buscador-vacio">Sin resultados para “{q.trim()}”</div>
+                ) : (
+                  resultados.map((item) => (
+                    <button key={item.key} type="button" className="buscador-item" onClick={() => elegir(item.key)}>
+                      <Icon name={item.icon} size={16} />
+                      <span>{item.label}</span>
+                      {item.group && <span className="buscador-grupo">{item.group}</span>}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

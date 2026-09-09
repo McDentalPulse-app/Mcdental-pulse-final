@@ -9,11 +9,11 @@ import logoSmall from "../../assets/logos/logo-small.png";
 import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
 import BotonMensajes from "./BotonMensajes";
+import BuscadorMovil from "./BuscadorMovil";
 import { navItemsPara, rutaBaseDe, TABS_MOVIL, agruparPorCampo, tieneBotonPropio } from "../../config/navItems";
 import "./Sidebar.css";
 
 const RAIL_KEY = "mcdental_sidebar_rail";
-const HINT_ASA_KEY = "mcdental_asa_hint_visto";
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
@@ -64,20 +64,6 @@ const Sidebar = () => {
   const items = navItemsPara(user, modulosRol);
 
   const [masOpen, setMasOpen] = useState(false);
-  // El asa (la rayita sobre la barra) ya deja tocar Y deslizar, pero es sutil — el dueño reportó
-  // que buena parte del equipo nunca la descubre. Un chevron animado la marca hasta la primera
-  // vez que alguien abre el cajón (swipe o toque); después se guarda en localStorage y no vuelve
-  // a salir — no tiene sentido seguir señalando algo que esa persona ya sabe usar.
-  const [hintAsaVisto, setHintAsaVisto] = useState(() => {
-    try { return localStorage.getItem(HINT_ASA_KEY) === "1"; } catch { return false; }
-  });
-  // Se marca en el propio gesto (swipe o toque), no en un efecto que observe masOpen: no hay
-  // "sistema externo" que sincronizar acá, solo un guardado que corre una vez.
-  const marcarHintAsaVisto = () => {
-    if (hintAsaVisto) return;
-    setHintAsaVisto(true);
-    try { localStorage.setItem(HINT_ASA_KEY, "1"); } catch { /* ignore */ }
-  };
   // La barra inferior se declara por clave y ya no depende del orden del arreglo: así reordenar el
   // menú para que se lea mejor no mueve los accesos que la gente usa sin mirar.
   const clavesTab = TABS_MOVIL[user?.role] || [];
@@ -203,24 +189,30 @@ const Sidebar = () => {
     {/* Navegación móvil: barra inferior con tabs — 5 nada más, sin un 6to botón "Más" que la
         desalinea. El resto de las opciones se abre deslizando la barra hacia arriba (como un
         cajón); la muesca es el mismo gesto pero tocable, para quien no lo descubra deslizando o
-        use lector de pantalla. */}
+        use lector de pantalla. Debajo de los tabs, la barra de búsqueda: es el borde más cerca
+        del pulgar, y ahí abajo no estorba al círculo del checador, que sobresale hacia arriba. */}
     <motion.nav
       className={`mobile-tabbar${navOculto ? " mobile-tabbar--oculto" : ""}`}
       aria-label="Navegación principal"
-      onPanEnd={tabsExtra.length > 0 ? (_e, info) => { if (info.offset.y < -24) { setMasOpen(true); marcarHintAsaVisto(); } } : undefined}
+      onPanEnd={tabsExtra.length > 0 ? (_e, info) => { if (info.offset.y < -24) setMasOpen(true); } : undefined}
     >
       {tabsExtra.length > 0 && (
         <button
           type="button"
           className={`mobile-tabbar-asa${masOpen || extraActivo ? " mobile-tabbar-asa--activa" : ""}`}
-          onClick={() => { const abriendo = !masOpen; setMasOpen(abriendo); if (abriendo) marcarHintAsaVisto(); }}
+          onClick={() => setMasOpen((v) => !v)}
           aria-label="Más opciones. Desliza hacia arriba o toca aquí."
           aria-expanded={masOpen}
         >
-          {!hintAsaVisto && <Icon name="chevronDown" size={14} className="mobile-tabbar-asa-hint" aria-hidden="true" />}
+          {/* Siempre visible, no solo la primera vez: el dueño reportó que le molestaba justo
+              que desapareciera. Va DESPLAZADA del centro a propósito — en el centro la tapa el
+              círculo del checador (sobresale -22px y se pinta después, así que ganaba él: por
+              eso "desaparecía" en los 4 roles que tienen checador). */}
+          <Icon name="chevronDown" size={14} className="mobile-tabbar-asa-hint" aria-hidden="true" />
           <span />
         </button>
       )}
+      <div className="mobile-tabbar-tabs">
       {tabsPrincipales.map((item) => {
         const isActive = active === item.key;
         // Mensajes reusa el mismo botón que el flotante de escritorio/admin: así el contador de
@@ -261,6 +253,8 @@ const Sidebar = () => {
           </button>
         );
       })}
+      </div>
+      <BuscadorMovil />
     </motion.nav>
 
     {/* Hoja "Más": resto de secciones + usuario + cerrar sesión */}

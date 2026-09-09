@@ -9320,14 +9320,17 @@
 
 @media (max-width: 768px) {
   .sidebar { display: none !important; }
-  .app-main { padding-bottom: calc(96px + env(safe-area-inset-bottom)) !important; }
+  /* 140 y no 96 desde el 2026-09-09: la barra creció una fila (la búsqueda debajo de los tabs),
+     de ~62px a ~104px de alto. Sin esto el último bloque de cada pantalla queda tapado. */
+  .app-main { padding-bottom: calc(140px + env(safe-area-inset-bottom)) !important; }
 
-  /* Pill flotante, en la paleta de la app (superficie + acento aqua), no una barra full-width. */
+  /* Pill flotante, en la paleta de la app (superficie + acento aqua), no una barra full-width.
+     Dos filas desde el 2026-09-09: los tabs arriba y la búsqueda abajo, pegada al pulgar. */
   .mobile-tabbar {
     display: flex;
-    align-items: center;
-    justify-content: space-around;
-    gap: 2px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
     position: fixed;
     bottom: calc(12px + env(safe-area-inset-bottom));
     left: 14px; right: 14px;
@@ -9346,6 +9349,15 @@
   }
   /* Se esconde al hacer scroll hacia abajo y regresa al subir (clase la pone el Sidebar). */
   .mobile-tabbar--oculto { transform: translateY(calc(100% + 24px)); }
+
+  /* Fila de los tabs. Antes eran hijos directos del pill; con la búsqueda abajo hace falta
+     esta fila propia para que `space-around` reparta los tabs y no las dos filas. */
+  .mobile-tabbar-tabs {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: 2px;
+  }
 
   .mobile-tab {
     position: relative;
@@ -9422,8 +9434,13 @@
   /* Asa del cajón: deslizar la barra hacia arriba abre la hoja (onPanEnd en Sidebar.jsx), esto es
      el mismo gesto pero tocable — sin esto nadie encuentra el swipe, y no hay forma de abrirlo
      con teclado/lector de pantalla. No cuenta como un 6to tab: no tiene label ni comparte fila. */
+  /* DESPLAZADA del centro (2026-09-09): centrada la tapaba el círculo del checador, que
+     sobresale de -22px a +30px y se pinta DESPUÉS (los dos son elementos posicionados sin
+     z-index, así que gana el último del DOM). En los 4 roles con checador el asa era invisible
+     y del chevron solo asomaba la mitad — por eso "desaparecía" y nadie encontraba el gesto.
+     A 26% de la izquierda queda libre en todos los roles, con o sin círculo. */
   .mobile-tabbar-asa {
-    position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+    position: absolute; top: -14px; left: 26%; transform: translateX(-50%);
     width: 44px; height: 20px;
     display: flex; align-items: flex-start; justify-content: center; padding-top: 6px;
     border: none; background: transparent; cursor: pointer;
@@ -9434,9 +9451,9 @@
   }
   .mobile-tabbar-asa--activa span { background: var(--mc-aqua); }
 
-  /* Chevron que marca el asa hasta que alguien la usa una vez (Sidebar.jsx guarda el "ya la vi"
-     en localStorage) — el dueño reportó que la rayita sola no se nota. Apunta hacia arriba
-     (chevronDown rotado 180°) y rebota suave; se detiene con prefers-reduced-motion. */
+  /* Chevron que marca el asa. SIEMPRE visible (antes se escondía tras el primer uso y al dueño
+     le molestó justo eso). Apunta hacia arriba (chevronDown rotado 180°) y rebota suave; se
+     detiene con prefers-reduced-motion. */
   .mobile-tabbar-asa-hint {
     position: absolute;
     top: -15px;
@@ -11904,60 +11921,95 @@
   }
 }
 
-/* Búsqueda global flotante del TELÉFONO — pedido del dueño: en escritorio ya vive en el header
+/* Búsqueda global del TELÉFONO — pedido del dueño: en escritorio ya vive en el header
    (.buscador, oculto debajo de 1100px), pero en móvil no hay header (Navegacion monta Sidebar
-   solo), así que no había forma de buscar. Mismo aspecto y alto que .campana, del lado
-   opuesto (izquierda) para no competir por el mismo espacio. Icono nada más hasta que se toca
-   — una barra de texto abierta todo el tiempo se come media pantalla chica. */
-.buscador-movil { display: none; }
+   solo), así que no había forma de buscar.
+   Desde el 2026-09-09 es una barra COMPLETA dentro de la barra de abajo, debajo de los tabs
+   ("queda más alcanzable", dueño). Antes era un botón redondo flotando arriba a la izquierda. */
+.buscador-movil-barra { display: none; }
 
 @media (max-width: 768px) {
-  .buscador-movil { display: block; position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); left: 24px; z-index: 300; }
-  .buscador-movil-boton {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    border: 1px solid var(--mc-borde-suave);
-    background: var(--mc-superficie);
-    color: var(--mc-texto-titulo);
-    box-shadow: var(--mc-sombra-card);
-    cursor: pointer;
-  }
-  .buscador-movil-boton:active { transform: scale(0.94); }
-  .buscador-movil-panel {
-    position: absolute;
-    top: 50px;
-    left: 0;
-    width: min(80vw, 320px);
-    background: var(--mc-superficie);
-    border: 1px solid var(--mc-borde-suave);
-    border-radius: 11px;
-    box-shadow: 0 10px 28px rgba(0,0,0,.14);
-    padding: 6px;
+  .buscador-movil-barra {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
-    max-height: 60vh;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--mc-control-borde);
+    border-radius: 18px;
+    background: var(--mc-control-fondo);
+    color: var(--mc-texto-apagado);
+    font-family: inherit;
+    font-size: var(--mc-control-letra);
+    text-align: left;
+    cursor: pointer;
+    /* Es un <button> y NO un <input> a propósito: el pill padre lleva `touch-action: none`
+       (necesario para que el swipe hacia arriba llegue a onPanEnd en touch real), y eso no se
+       puede deshacer desde el hijo — el navegador intersecta el touch-action con el de los
+       ancestros y gana el más restrictivo. A un input eso le rompería el caret y la selección;
+       a un botón no le afecta, porque el tap no depende de touch-action. El campo de texto de
+       verdad vive en la capa que se abre al tocar, fuera del pill. */
+  }
+  .buscador-movil-barra:active { border-color: var(--mc-aqua); }
+
+  /* Capa a pantalla completa: el campo va ARRIBA a propósito. Un input fijo pegado al borde de
+     abajo lo tapa el teclado en iOS (fixed se ancla al viewport de layout, no al visual). */
+  .buscador-movil-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 400;
+    background: rgba(6, 32, 29, 0.5);
+    animation: mobileFadeIn 0.18s ease;
+  }
+  .buscador-movil-caja {
+    background: var(--mc-superficie);
+    border-bottom: 1px solid var(--mc-borde-suave);
+    padding: calc(env(safe-area-inset-top, 0px) + 10px) 12px 10px;
+    max-height: 100dvh;
     overflow-y: auto;
   }
-  .buscador-movil-input {
-    width: 100%;
-    height: 38px;
-    padding: 0 12px;
-    margin-bottom: 4px;
+  .buscador-movil-campo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 42px;
+    padding: 0 10px;
     border: 1px solid var(--mc-control-borde);
     border-radius: var(--mc-control-radio);
     background: var(--mc-control-fondo);
-    color: var(--mc-texto);
-    font-size: var(--mc-control-letra);
-    font-family: inherit;
-    outline: none;
+    color: var(--mc-texto-apagado);
   }
-  .buscador-movil-input::placeholder { color: var(--mc-texto-apagado); }
-  .buscador-movil-input:focus { border-color: var(--mc-aqua); background: var(--mc-superficie); }
+  .buscador-movil-campo input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    outline: none;
+    color: var(--mc-texto);
+    /* 16px o iOS hace zoom al enfocar el campo y descuadra toda la pantalla. */
+    font-size: 16px;
+    font-family: inherit;
+  }
+  .buscador-movil-campo input::placeholder { color: var(--mc-texto-apagado); }
+  .buscador-movil-cerrar {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: transparent;
+    color: var(--mc-texto-secundario);
+    cursor: pointer;
+  }
+  .buscador-movil-resultados {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 8px;
+  }
 }
 
 .topnav-hamburguesa { display: none; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 38px; height: 38px; border: 1px solid var(--mc-borde-suave); border-radius: 9px; background: var(--mc-superficie); cursor: pointer; }
