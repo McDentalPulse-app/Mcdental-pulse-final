@@ -129,8 +129,8 @@ const SoporteTI = ({ user }) => {
     <div className="admin-page empleado-page empleado-form-narrow">
       <PageHeader
         icon="wrench"
-        title="Soporte TI"
-        subtitle="¿Un problema con tu equipo, un programa o tus accesos? Abre un ticket y el área de TI lo atenderá."
+        title="Soporte Sistemas"
+        subtitle="¿Un problema con tu equipo, un programa o tus accesos? Abre un ticket y el área de Sistemas lo atenderá."
       />
 
       <Card className="empleado-form-card">

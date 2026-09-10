@@ -9,6 +9,13 @@ import MensajeItem from "./MensajeItem";
 import Composer from "./Composer";
 import { getPsicologaPrincipal, formatUsuarioMensajesMeta } from "../../utils/psicologa";
 import { esEmpleadoActivo } from "../../utils/helpers";
+import {
+  BUZONES,
+  CANALES_BUZON,
+  quienAtiende,
+  construirConversaciones,
+  ordenarConversaciones,
+} from "../../utils/mensajes/conversaciones";
 import { horaCorta, claveDia, etiquetaDia, continuaGrupo } from "../../utils/fechaChat";
 import {
   getMensajes, subscribeMensajes, canalConversacion, subirAdjunto,
@@ -22,9 +29,6 @@ const LARGO_CITA = 90;
 // Tras cuánto silencio se considera que dejó de escribir. Ni tan corto que parpadee entre
 // palabras, ni tan largo que el indicador siga puesto cuando ya se fue.
 const PAUSA_ESCRIBIENDO_MS = 2500;
-
-// Orden cronológico: los ids son uuid (no ordenables), se ordena por fecha (ISO, sortable como string).
-const porTiempo = (a, b) => String(a.fecha || "").localeCompare(String(b.fecha || ""));
 
 /**
  * Una línea que resuma el último mensaje, para la lista de conversaciones.
@@ -43,16 +47,6 @@ const resumenDe = (m) => {
   return m.adjunto?.nombre || "Adjunto";
 };
 
-// Interlocutor del canal de Soporte TI visto por el empleado. Para él, Soporte TI es un CANAL y no
-// una persona (detrás hay dos), pero la lista y la cabecera esperan un usuario: dándole esta forma
-// no hacen falta dos caminos distintos para pintar lo mismo. El id no existe en la base a
-// propósito — nunca se usa como destinatario, solo para saber qué conversación está abierta.
-const CANAL_SOPORTE = {
-  id: "canal-soporte-ti",
-  name: "Soporte TI",
-  puesto: "Sistemas",
-  sucursal: "McDental",
-};
 
 const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
   const { usuarios: USERS, setMensajes } = useGlobal();
@@ -69,13 +63,13 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
   const [reacciones, setReacciones] = useState({});
   const [otro, setOtro] = useState({ presente: false, escribiendo: false });
   // Todos los roles ven el chat, admin y RH incluidos: estaban fuera cuando la única
-  // conversación era la confidencial con la psicóloga, y con el canal de Soporte TI (mig. 094)
-  // ya hay algo que sí les toca. Lo que ven está acotado abajo, en `soloSoporte`.
-  // Admin y RH: SOLO el buzón de Soporte TI. La conversación con la psicóloga sigue siendo
-  // del empleado y de ella. Esto es la mitad de la garantía; la otra mitad — la que de verdad
+  // conversación era la confidencial con la psicóloga, y con los buzones ya hay algo que sí les
+  // toca. Lo que ven está acotado abajo.
+  // Admin y RH: SOLO buzones, nunca la conversación con la psicóloga — esa sigue siendo del
+  // empleado y de ella. Esto es la mitad de la garantía; la otra mitad — la que de verdad
   // cuenta — vive en la policy mensajes_select_participant, que no deja leer un mensaje a
   // quien no lo escribió ni lo recibió.
-  const soloSoporte = ["admin", "admin_plus", "rh"].includes(user?.role);
+  const sinCanalPsicologa = ["admin", "admin_plus", "rh"].includes(user?.role);
   // Estable entre renders: pasarla como arrow inline la recreaba en cada repintado.
   const bodyRef = useRef(null);
   const canalRef = useRef(null);
@@ -85,100 +79,15 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
   const empleados = USERS.filter(esEmpleadoActivo);
   const getUserById = (id) => USERS.find(u => u.id === id);
 
-  // Quien ATIENDE Soporte TI se distingue por una bandera propia y no por su rol: los dos
-  // encargados son rol `empleado` (ver migración 094). Por eso aquí se mira `soporteTi`.
-  const atiendeSoporte = !!user?.soporteTi;
-  const esDeSoporte = (m) => m.canal === "soporte";
+  // Quién atiende cada buzón (Sistemas por bandera, Mantenimiento por rol). Se pregunta al mismo
+  // sitio que lo usa para armar las conversaciones, para que no puedan discrepar.
+  const atiende = quienAtiende(user);
+  const atiendeSoporte = atiende.soporte;
 
-  /**
-   * Da forma de conversación a una lista de mensajes.
-   *
-   * `para` es a quién se le escribe al pulsar enviar, y es lo único que distingue de verdad a los
-   * tres casos: la psicóloga (una persona), el buzón de soporte visto por el empleado (nadie: el
-   * canal no es una persona, va `null`) y un hilo de soporte visto por quien lo atiende (el
-   * empleado del hilo).
-   */
-  const armarConversacion = ({ usuario, canal, para, mensajes: lista }) => {
-    const orden = [...lista].sort(porTiempo);
-    return {
-      usuario, canal, para,
-      mensajes: orden,
-      ultimo: orden[orden.length - 1],
-      // "No leído" = no lo escribí yo y viene dirigido a mí o al buzón compartido (`para` nulo).
-      // La segunda mitad es la que hace que el buzón cuente lo que nadie ha atendido todavía.
-      noLeidos: orden.filter(
-        (m) => !m.leido && m.de !== user.id && (m.para === user.id || !m.para)
-      ).length,
-    };
-  };
-
-  // El canal de la psicóloga excluye explícitamente lo de soporte: si no, los dos hilos
-  // aparecerían mezclados en la conversación privada, que es el peor sitio donde podría pasar.
-  const conversacionCon = (otro) =>
-    armarConversacion({
-      usuario: otro,
-      canal: "psicologa",
-      para: otro.id,
-      mensajes: mensajes.filter(
-        (m) => !esDeSoporte(m) &&
-          ((m.de === user.id && m.para === otro.id) || (m.de === otro.id && m.para === user.id))
-      ),
-    });
-
-  // Un hilo por empleado que haya escrito al buzón. El empleado del hilo es quien NO es soporte:
-  // en el mensaje que entra no hay destinatario (`para` nulo) y lo escribió él; en la respuesta
-  // el destinatario es él.
-  const hilosDeSoporte = () => {
-    const porEmpleado = new Map();
-    for (const m of mensajes.filter(esDeSoporte)) {
-      const empId = m.para || m.de;
-      if (!porEmpleado.has(empId)) porEmpleado.set(empId, []);
-      porEmpleado.get(empId).push(m);
-    }
-    return [...porEmpleado.entries()].map(([empId, lista]) =>
-      armarConversacion({
-        usuario: getUserById(empId) || { id: empId, name: "Empleado" },
-        canal: "soporte",
-        para: empId,
-        mensajes: lista,
-      })
-    );
-  };
-
-  const conversaciones = user.role === "psicologa"
-    ? empleados.map(conversacionCon)
-    : [
-        // Admin y RH no llevan la conversación de la psicóloga: para ellos esta pantalla es
-        // solo el buzón de Soporte TI.
-        ...(psicologa && !soloSoporte ? [conversacionCon(psicologa)] : []),
-        // Debajo del chat de la psicóloga, el canal de Soporte TI. Quien lo atiende no se escribe
-        // a sí mismo: en su lugar ve los hilos de la plantilla.
-        ...(atiendeSoporte
-          ? hilosDeSoporte()
-          : [armarConversacion({
-              usuario: CANAL_SOPORTE,
-              canal: "soporte",
-              para: null,
-              mensajes: mensajes.filter(esDeSoporte),
-            })]),
-      ];
-
-  // Más reciente primero. Solo se aplica a las listas de muchas conversaciones (la psicóloga y el
-  // buzón): las dos fijas de un empleado tienen un orden pensado —psicóloga y debajo soporte— que
-  // no debe cambiar según quién escribió último.
-  const masRecientePrimero = (a, b) =>
-    String(b.ultimo?.fecha || "").localeCompare(String(a.ultimo?.fecha || ""));
-
-  const conversacionesActivas = user.role === "psicologa"
-    ? conversaciones.filter(c => c.mensajes.length > 0).sort(masRecientePrimero)
-    : atiendeSoporte
-      ? [
-          // Su propia conversación con la psicóloga va primero y se conserva aunque esté vacía:
-          // es la suya, no un hilo que atiende. Debajo, los hilos del buzón por recencia.
-          ...conversaciones.filter(c => c.canal === "psicologa"),
-          ...conversaciones.filter(c => c.canal === "soporte" && c.mensajes.length > 0).sort(masRecientePrimero),
-        ]
-      : conversaciones;
+  // El armado vive en utils/mensajes/conversaciones.js: es la parte que decide quién ve qué
+  // hilo, y ahí se puede probar sin montar esta pantalla entera (conversaciones.test.js).
+  const conversaciones = construirConversaciones({ mensajes, user, psicologa, empleados, getUserById });
+  const conversacionesActivas = ordenarConversaciones(conversaciones);
 
   // Una conversación NUEVA no está en `conversacionesActivas`: esa lista filtra por las que ya
   // tienen mensajes. Y hasta ahora, en la práctica, la psicóloga solo podía responder — la
@@ -301,10 +210,10 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
   // conversación: el canal es por pareja, no por usuario.
   useEffect(() => {
     if (!selected?.usuario.id || !user?.id) return undefined;
-    // El buzón de soporte visto por el empleado no tiene UNA persona enfrente, así que no hay
-    // presencia que mostrar: abrir un canal contra un id que no existe solo gastaría una conexión
-    // y encendería un punto de "está aquí" que no significaría nada.
-    if (selected.usuario.id === CANAL_SOPORTE.id) return undefined;
+    // Un buzón visto por quien reporta no tiene UNA persona enfrente, así que no hay presencia
+    // que mostrar: abrir un canal contra un id que no existe solo gastaría una conexión y
+    // encendería un punto de "está aquí" que no significaría nada.
+    if (CANALES_BUZON.some((c) => BUZONES[c].id === selected.usuario.id)) return undefined;
 
     const canal = canalConversacion({
       yo: user.id,
@@ -412,10 +321,12 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
         icon="message"
         title="Mensajes"
         subtitle={atiendeSoporte
-            ? "Tu canal con la psicóloga y el buzón de Soporte TI que atiendes."
+            ? "Tu canal con la psicóloga y el buzón de Soporte Sistemas que atiendes."
             : user.role === "psicologa"
-              ? "Canal privado de comunicación con el personal."
-              : "Canal privado con la psicóloga, y Soporte TI para problemas del sistema."}
+              ? "Canal privado con el personal, y el buzón de Soporte Mantenimiento."
+              : sinCanalPsicologa
+                ? "El buzón de Soporte Mantenimiento que atiendes, y Soporte Sistemas para lo tuyo."
+                : "Canal privado con la psicóloga, y los buzones de Sistemas y Mantenimiento."}
       />
 
       {sinConversacionesActivas ? (
@@ -488,17 +399,18 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
                 );
               })}
 
-              {/* Quien atiende soporte solo ve un hilo cuando alguien ya escribió, así que
-                  con el buzón vacío la lista se quedaba con la conversación de la psicóloga
-                  y nada más — justo debajo de una cabecera que promete "el buzón de Soporte
-                  TI que atiendes". Parecía roto sin estarlo. Este renglón dice que el buzón
-                  está ahí y que simplemente no hay nada. */}
-              {atiendeSoporte && !conversacionesVisibles.some(c => c.canal === "soporte") && (
-                <p className="mensajes-conv-vacio">
-                  <Icon name="wrench" size={14} />
-                  Buzón de Soporte TI · nadie ha escrito todavía
-                </p>
-              )}
+              {/* Quien atiende un buzón solo ve un hilo cuando alguien ya escribió, así que con
+                  el buzón vacío la lista se quedaba sin rastro de él — justo debajo de una
+                  cabecera que promete "el buzón que atiendes". Parecía roto sin estarlo. Este
+                  renglón dice que el buzón está ahí y que simplemente no hay nada. */}
+              {CANALES_BUZON.filter((canal) => atiende[canal]).map((canal) => (
+                !conversacionesVisibles.some((c) => c.canal === canal) && (
+                  <p className="mensajes-conv-vacio" key={canal}>
+                    <Icon name={BUZONES[canal].icono} size={14} />
+                    Buzón de {BUZONES[canal].name} · nadie ha escrito todavía
+                  </p>
+                )
+              ))}
             </div>
           </Card>
 
@@ -538,9 +450,10 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
                           : formatUsuarioMensajesMeta(selected.usuario)}
                     </div>
                   </div>
-                  {selected.canal === "soporte" ? (
+                  {BUZONES[selected.canal] ? (
                     <span className="mensajes-private-pill">
-                      <Icon name="wrench" size={12} /> Soporte TI
+                      <Icon name={BUZONES[selected.canal].icono} size={12} />
+                      {" "}{BUZONES[selected.canal].name}
                     </span>
                   ) : (
                     <span className="mensajes-private-pill">

@@ -23,15 +23,31 @@ export default function BotonMensajes({ variante = "header", activo = false }) {
   // sin Mensajes, el botón desaparece con él y no hay que acordarse de este archivo.
   if (!navItemsPara(user, modulosRol).some((i) => i.key === "mensajes")) return null;
 
-  // Admin y RH no reciben cuenta de no leídos. OJO: el motivo original —que Mensajes les abría
-  // Reuniones— ya no aplica; Reuniones tiene su propio icono y su propia ruta, y Mensajes.jsx
-  // tiene veChat=true para todos, así que sí ven chat (el buzón de Soporte TI). Que no se les
-  // cuenten los no leídos es hoy una decisión sin justificar, no una consecuencia. Pendiente de
-  // decidir con el dueño; no se cambia aquí para no alterar de paso lo que ve gestión.
-  const veChat = ["psicologa", "empleado", "doctor"].includes(user?.role);
-  const noLeidos = veChat
-    ? (mensajes || []).filter((m) => m.para === user?.id && !m.leido && !m.eliminado).length
-    : 0;
+  // DOS FALLOS ARREGLADOS ACÁ (mig. 155, al montar el buzón de Mantenimiento):
+  //
+  // 1. `m.para === user.id` NUNCA es cierto para un mensaje de buzón: entra sin destinatario
+  //    (`para` nulo), que es justo como se le escribe a un buzón. O sea que un reporte a Soporte
+  //    Sistemas no encendía el badge de nadie, y quien lo mandaba veía "enviado". Silencioso.
+  // 2. Admin y RH estaban fuera del contador por un `veChat` que el propio comentario de antes
+  //    reconocía como "una decisión sin justificar". Con Mantenimiento atendido por rol, dejarlos
+  //    fuera sería que los reportes lleguen a un buzón cuyo aviso nadie ve.
+  //
+  // Ahora cuenta lo que esa persona tiene que atender de verdad: lo dirigido a ella, más lo que
+  // entra a un buzón que ella atiende.
+  const atiendeSoporte = !!user?.soporteTi;
+  const atiendeMantenimiento = ["admin", "admin_plus", "rh", "psicologa"].includes(user?.role);
+
+  const meToca = (m) => {
+    if (m.leido || m.eliminado || m.de === user?.id) return false;
+    if (m.para === user?.id) return true;
+    if (!m.para) {
+      if (m.canal === "soporte") return atiendeSoporte;
+      if (m.canal === "mantenimiento") return atiendeMantenimiento;
+    }
+    return false;
+  };
+
+  const noLeidos = (mensajes || []).filter(meToca).length;
 
   const esFlotante = variante === "flotante";
   const esTab = variante === "tab";

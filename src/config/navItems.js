@@ -72,7 +72,7 @@ export const NAV_ITEMS = {
     // Clave distinta de "soporte" a propósito: en gestión esa clave ya está tomada por
     // Ideas de mejora, y la plantilla la usa para Soporte TI. Son dos módulos distintos
     // que conviven, no uno que sustituye al otro.
-    { key: "soporteti", icon: "wrench", label: "Soporte TI", group: "Herramientas" },
+    { key: "soporteti", icon: "wrench", label: "Soporte Sistemas", group: "Herramientas" },
     { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
   ],
   rh: [
@@ -111,7 +111,7 @@ export const NAV_ITEMS = {
     { key: "organigrama", icon: "users", label: "Organigrama", requiere: "puedeVerOrganigrama" },
     { key: "reuniones", icon: "camera", label: "Reuniones" },
     { key: "soporte", icon: "lightbulb", label: "Ideas de mejora", group: "Herramientas" },
-    { key: "soporteti", icon: "wrench", label: "Soporte TI", group: "Herramientas" },
+    { key: "soporteti", icon: "wrench", label: "Soporte Sistemas", group: "Herramientas" },
     { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
   ],
   // Empleado y doctor: hasta el 2026-07-29 tenían TODO en dos menús — "Mi trabajo" con 9 ítems
@@ -140,7 +140,7 @@ export const NAV_ITEMS = {
     { key: "reconocimientos", icon: "award", label: "Reconocimientos", group: "Bienestar" },
     { key: "reporteconfidencial", icon: "lock", label: "Reporte Confidencial", group: "Bienestar" },
     { key: "avisos", icon: "bell", label: "Avisos", group: "Ayuda", requiere: "puedeVerAvisos" },
-    { key: "soporte", icon: "wrench", label: "Soporte TI", group: "Ayuda" },
+    { key: "soporte", icon: "wrench", label: "Soporte Sistemas", group: "Ayuda" },
     { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
   ],
   doctor: [
@@ -165,7 +165,7 @@ export const NAV_ITEMS = {
     { key: "reconocimientos", icon: "award", label: "Reconocimientos", group: "Bienestar" },
     { key: "reporteconfidencial", icon: "lock", label: "Reporte Confidencial", group: "Bienestar" },
     { key: "avisos", icon: "bell", label: "Avisos", group: "Ayuda", requiere: "puedeVerAvisos" },
-    { key: "soporte", icon: "wrench", label: "Soporte TI", group: "Ayuda" },
+    { key: "soporte", icon: "wrench", label: "Soporte Sistemas", group: "Ayuda" },
     { key: "perfil", icon: "user", label: "Mi perfil", group: "Cuenta" },
   ],
 };
@@ -215,7 +215,7 @@ export const tieneBotonPropio = (item) => ["mensajes", "reuniones"].includes(ite
 const DESCRIPCIONES = {
   dashboard: "Bienestar de toda la organización, semana a semana.",
   inicio: "Tu resumen: pendientes, avisos y accesos rápidos.",
-  mensajes: "Conversaciones con el equipo y con Soporte TI.",
+  mensajes: "Conversaciones con el equipo y con los buzones de Sistemas y Mantenimiento.",
   reuniones: "Convoca una reunión por vídeo o entra a la que te toca.",
   organigrama: "Quién reporta a quién, y las responsabilidades de cada departamento.",
 

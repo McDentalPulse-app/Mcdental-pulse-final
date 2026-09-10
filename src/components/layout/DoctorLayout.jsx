@@ -69,7 +69,7 @@ export default function DoctorLayout({ user, globals, actions }) {
             <Route path="reporteconfidencial" element={<ReporteConfidencialEmpleado user={user} onSubmit={addReporteConfidencial} />} />
             <Route path="soporte" element={<SoporteTI user={user} />} />
             {/* Igual que en EmpleadoLayout: el destinatario lo decide Mensajes, porque desde la
-                mig. 094 hay dos conversaciones y la de Soporte TI va sin destinatario. */}
+                mig. 094 hay varias conversaciones y las de los buzones van sin destinatario. */}
             <Route path="mensajes" element={<Mensajes user={user} mensajes={userMensajes} onSend={sendMensaje} onMarkRead={marcarMensajesLeidos}/>} />
             <Route path="reuniones" element={<PaginaReuniones user={user} />} />
             <Route path="avisos" element={<AvisosPanel user={user} avisos={avisos} />} />

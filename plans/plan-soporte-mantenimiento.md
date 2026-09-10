@@ -748,3 +748,14 @@ consulta puede distinguirlos automáticamente**.
 
 Sin cambios respecto del plan en todo lo demás (buzón compartido por rol para admin/admin_plus/rh/
 psicologa, escribe todo el personal, rename a las dos cosas que hoy se llaman «Soporte TI»).
+
+### 10.2 Efecto lateral aceptado (2026-09-10)
+
+Al arreglar el defecto que encontró la revisión (quien atiende un buzón no tenía dónde escribir su
+propio reporte), la regla quedó uniforme: **todo el que puede reportar a un buzón tiene su hilo
+propio, atienda ese buzón o no**. Eso alcanza también a los dos encargados de Sistemas
+(`soporte_ti`), que antes no tenían hilo propio hacia Sistemas y ahora sí.
+
+Es intencional y se acepta: pueden reportar un problema de su propio equipo como cualquiera, y no
+toca ningún límite de confidencialidad (lo confirmó la línea de seguridad). Se anota acá para que
+quien lo lea mañana no lo confunda con una regresión sin revisar.

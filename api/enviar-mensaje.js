@@ -3,8 +3,9 @@ import { notificar } from "./_notificaciones.js";
 import { primerEnlace, vistaPreviaEnlace } from "./_enlace.js";
 
 /**
- * Envía un mensaje y avisa por push a quien lo recibe. Sirve a los dos canales (mig. 094): el
- * confidencial empleado ↔ psicóloga, y el buzón compartido de Soporte TI.
+ * Envía un mensaje y avisa por push a quien lo recibe. Sirve a los TRES canales: el confidencial
+ * empleado ↔ psicóloga, el buzón compartido de Soporte Sistemas (mig. 094, bandera por persona)
+ * y el de Soporte Mantenimiento (mig. 155, por rol: admin/admin_plus/rh/psicóloga).
  *
  * POR QUÉ ESTO PASA POR EL SERVIDOR, cuando antes era un insert directo desde el navegador: para
  * mandar el aviso. El push se firma con la clave privada de VAPID, que no puede salir del
@@ -43,14 +44,19 @@ export default async function handler(req, res) {
   const { paraId, texto, fecha, adjunto, respondeA, canal } = req.body || {};
   const hayTexto = texto && String(texto).trim();
 
-  // Dos canales (mig. 094): 'psicologa' es la conversación confidencial 1 a 1 de siempre, y
-  // 'soporte' es el buzón compartido de Soporte TI. Cualquier otro valor se trata como el de
-  // siempre en vez de rechazarse, para que un cliente viejo —que no manda `canal`— siga enviando.
+  // Tres canales: 'psicologa' es la conversación confidencial 1 a 1 de siempre, y 'soporte'
+  // (mig. 094) y 'mantenimiento' (mig. 155) son buzones compartidos. Cualquier otro valor se
+  // trata como el de siempre en vez de rechazarse, para que un cliente viejo —que no manda
+  // `canal`— siga enviando.
   const esSoporte = canal === "soporte";
+  const esMantenimiento = canal === "mantenimiento";
+  // Lo que comparten los dos buzones: se les escribe SIN destinatario (no son una persona) y la
+  // respuesta sí va dirigida. Casi todas las ramas de abajo dependen de esto y no de cuál es.
+  const esBuzon = esSoporte || esMantenimiento;
 
-  // En soporte, el empleado escribe SIN destinatario: el buzón no es una persona. Solo la
-  // respuesta de un encargado lleva `paraId`.
-  if ((!esSoporte && !paraId) || (!hayTexto && !adjunto?.path)) {
+  // En un buzón, el personal escribe SIN destinatario: no es una persona. Solo la respuesta de
+  // quien lo atiende lleva `paraId`.
+  if ((!esBuzon && !paraId) || (!hayTexto && !adjunto?.path)) {
     return res.status(400).json({ error: "Falta el destinatario o el contenido del mensaje." });
   }
 
@@ -76,21 +82,26 @@ export default async function handler(req, res) {
   // quedó mirando solo a 'empleado', así que un doctor podía escribirle a cualquiera. Un doctor
   // es un empleado con extras, y en este canal vale la misma regla.
   //
-  // El canal de soporte tiene sus propias reglas (mig. 094) y por eso se comprueba aparte:
-  //   - el empleado escribe al buzón, sin destinatario;
-  //   - quien ATIENDE soporte contesta a una persona, y puede hacerlo aunque su rol sea
-  //     `empleado` — es lo que concede la bandera `soporte_ti`, y sin esta rama la guarda de
-  //     abajo se lo impediría precisamente a los dos encargados.
+  // Los buzones tienen sus propias reglas y por eso se comprueban aparte:
+  //   - cualquiera del personal escribe al buzón, sin destinatario;
+  //   - quien lo ATIENDE contesta a una persona. En Sistemas eso lo concede la bandera
+  //     `soporte_ti` aunque su rol sea `empleado` (mig. 094) — sin esta rama, la guarda de abajo
+  //     se lo impediría precisamente a los dos encargados. En Mantenimiento lo concede el ROL
+  //     (mig. 155), que es la misma lista de `esGestion`.
   const esGestion = (role) => ["admin", "admin_plus", "rh", "psicologa"].includes(role);
-  if (esSoporte) {
-    if (paraId && !quien.soporte_ti) {
-      return res.status(403).json({ error: "Solo quien atiende Soporte TI puede responder en ese canal." });
+  if (esBuzon) {
+    if (paraId && esSoporte && !quien.soporte_ti) {
+      return res.status(403).json({ error: "Solo quien atiende Soporte Sistemas puede responder en ese canal." });
+    }
+    if (paraId && esMantenimiento && !esGestion(quien.role)) {
+      return res.status(403).json({ error: "Solo quien atiende Soporte Mantenimiento puede responder en ese canal." });
     }
   } else if (["empleado", "doctor"].includes(quien.role) && !esGestion(destinatario.role)) {
     return res.status(403).json({ error: "No puedes enviar mensajes a otro empleado por este canal." });
   }
 
-  const payload = { de_id: quien.id, para_id: paraId || null, canal: esSoporte ? "soporte" : "psicologa" };
+  const canalGuardado = esSoporte ? "soporte" : esMantenimiento ? "mantenimiento" : "psicologa";
+  const payload = { de_id: quien.id, para_id: paraId || null, canal: canalGuardado };
   if (hayTexto) payload.texto = String(texto).trim().slice(0, 2000);
   if (fecha) payload.fecha = fecha;
 
@@ -104,17 +115,20 @@ export default async function handler(req, res) {
       .eq("id", respondeA)
       .single();
 
-    // En soporte el hilo no lo definen "las dos partes" (el buzón no es una persona) sino EL
-    // EMPLEADO: es él quien escribe y a quien se contesta. Si no, un encargado podría citar el
-    // mensaje de un compañero dentro de la conversación de otro.
+    // En un buzón el hilo no lo definen "las dos partes" (el buzón no es una persona) sino LA
+    // PERSONA que reportó: es quien escribe y a quien se contesta. Si no, quien atiende podría
+    // citar el mensaje de un compañero dentro de la conversación de otro.
+    //
+    // Se compara contra `canalGuardado` y no contra un literal: así citar de un buzón al otro
+    // queda cortado igual que citar de un buzón al canal de la psicóloga.
     const mismaConversacion = () => {
       if (!citado) return false;
-      if (esSoporte) {
-        if (citado.canal !== "soporte") return false;
-        const empleadoDelHilo = paraId || quien.id;
-        return citado.de_id === empleadoDelHilo || citado.para_id === empleadoDelHilo;
+      if (esBuzon) {
+        if (citado.canal !== canalGuardado) return false;
+        const personaDelHilo = paraId || quien.id;
+        return citado.de_id === personaDelHilo || citado.para_id === personaDelHilo;
       }
-      if (citado.canal === "soporte") return false;
+      if (citado.canal !== "psicologa") return false;
       const dosPartes = [quien.id, paraId];
       return dosPartes.includes(citado.de_id) && dosPartes.includes(citado.para_id);
     };
@@ -173,31 +187,40 @@ export default async function handler(req, res) {
       ? "Te envió una imagen"
       : "Te envió un archivo";
 
-  if (esSoporte && !paraId) {
-    // Va al buzón: se avisa a TODOS los que atienden soporte. Avisar solo a uno convertiría el
-    // buzón en una lotería — si ese día no está, nadie se entera de que hay algo esperando.
-    const { data: encargados } = await supabase
-      .from("usuarios")
-      .select("id, role")
-      .eq("soporte_ti", true)
-      .eq("inactivo", false);
+  // Cómo se llama cada buzón de cara a quien recibe el aviso.
+  const NOMBRE_BUZON = esMantenimiento ? "Soporte Mantenimiento" : "Soporte Sistemas";
+
+  if (esBuzon && !paraId) {
+    // Va al buzón: se avisa a TODOS los que lo atienden. Avisar solo a uno lo convertiría en una
+    // lotería — si ese día no está, nadie se entera de que hay algo esperando.
+    //
+    // Quién atiende se resuelve distinto en cada uno, y es la única diferencia real entre los
+    // dos: Sistemas por bandera (mig. 094), Mantenimiento por rol (mig. 155).
+    const consulta = supabase.from("usuarios").select("id, role").eq("inactivo", false);
+    const { data: encargados } = esMantenimiento
+      ? await consulta.in("role", ["admin", "admin_plus", "rh", "psicologa"])
+      : await consulta.eq("soporte_ti", true);
 
     await Promise.all(
-      (encargados || []).map((e) =>
-        notificar(e.id, {
-          tipo: "mensaje",
-          titulo: `Soporte TI: ${quien.name}`,
-          cuerpo: resumen,
-          url: RUTA_POR_ROL[e.role] || "/",
-        }).catch(() => {}),
-      ),
+      (encargados || [])
+        // Quien reporta puede ser del propio equipo que atiende (un admin reportando algo de su
+        // oficina): avisarle de su propio mensaje sería ruido.
+        .filter((e) => e.id !== quien.id)
+        .map((e) =>
+          notificar(e.id, {
+            tipo: "mensaje",
+            titulo: `${NOMBRE_BUZON}: ${quien.name}`,
+            cuerpo: resumen,
+            url: RUTA_POR_ROL[e.role] || "/",
+          }).catch(() => {}),
+        ),
     );
   } else {
     await notificar(paraId, {
       tipo: "mensaje",
-      // En soporte, quien contesta lo hace COMO el canal y no como persona: para el empleado el
-      // interlocutor es "Soporte TI". Dentro de la conversación sí se ve quién respondió.
-      titulo: esSoporte ? "Respuesta de Soporte TI" : `Nuevo mensaje de ${quien.name}`,
+      // En un buzón, quien contesta lo hace COMO el canal y no como persona: para quien reportó,
+      // el interlocutor es el buzón. Dentro de la conversación sí se ve quién respondió.
+      titulo: esBuzon ? `Respuesta de ${NOMBRE_BUZON}` : `Nuevo mensaje de ${quien.name}`,
       cuerpo: resumen,
       url: RUTA_POR_ROL[destinatario?.role] || "/",
     }).catch(() => {});
