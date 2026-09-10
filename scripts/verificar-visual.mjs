@@ -17,7 +17,8 @@
  */
 import { readFileSync, readdirSync, writeFileSync, mkdtempSync, rmSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
 
 // La carpeta a medir. Por defecto `dist/assets` (uso local, tras `npm run build`), pero el
@@ -319,8 +320,13 @@ setTimeout(function(){
     return out;
   };
 
+  // `src/` se resuelve desde la UBICACIÓN DE ESTE SCRIPT, nunca desde el directorio de trabajo.
+  // /opt/pulse/build-frontend.sh invoca este archivo por ruta absoluta y con la carpeta de
+  // assets como argumento, así que buscar "src" a ciegas contra el cwd habría dado un aviso
+  // silencioso —cero párrafos revisados, verde— justo en el despliegue que debe vigilar.
+  const raiz = join(dirname(fileURLToPath(import.meta.url)), "..");
   let ficheros = null;
-  try { ficheros = jsxDe("src"); } catch { ficheros = null; }
+  try { ficheros = jsxDe(join(raiz, "src")); } catch { ficheros = null; }
 
   if (!ficheros) {
     avisos.push("No se encontró src/: los párrafos .mc-hint no se pudieron revisar");
