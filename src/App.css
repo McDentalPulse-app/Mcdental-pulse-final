@@ -6233,6 +6233,27 @@
   gap: 2px;
 }
 
+/* En el teléfono este menú se salía ENTERO de la pantalla (medido: empezaba en x = -157px).
+   No era cosa del margen. `.chat-composer-ayuda` se oculta a ≤768px, así que el pie se queda
+   con un solo hijo y el `justify-content: space-between` lo alinea a la IZQUIERDA; el menú,
+   anclado con `right: 0` a ese contenedor, se extendía 232px hacia la izquierda desde ahí. Y
+   `.mensajes-chat-card` tiene `overflow: hidden`, así que lo que se salía no se podía ni ver
+   ni alcanzar.
+
+   Se ancla al COMPOSITOR en vez de al botón: con el envoltorio en `static`, el bloque
+   contenedor pasa a ser `.chat-composer` (que a ≤768px es `sticky`, o sea posicionado), y el
+   menú ocupa su ancho menos 10px por lado. Así deja de depender de dónde caigan los botones,
+   que es lo que lo rompió. */
+@media (max-width: 768px) {
+  .chat-composer-menu-wrap { position: static; }
+
+  .chat-composer-menu {
+    left: 10px;
+    right: 10px;
+    min-width: 0;
+  }
+}
+
 .chat-composer-menu-item {
   display: flex;
   align-items: center;
