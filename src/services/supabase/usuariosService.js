@@ -45,6 +45,16 @@ const mapUsuario = (row) =>
     puedeVerDepartamentos: row.puede_ver_departamentos !== false,
     puedeVerAvisos: row.puede_ver_avisos !== false,
     puedeVerEncuestas: row.puede_ver_encuestas !== false,
+    // Plaza VACANTE del organigrama (mig. 157): una caja con puesto pero sin titular, como la
+    // «Gerencia General» del organigrama oficial. La señal es no tener cuenta de acceso —
+    // ninguna persona real de la plantilla está sin ella (verificado: 0 filas vigentes con
+    // auth_user_id nulo antes de crear la primera plaza).
+    //
+    // La comparación es ESTRICTA contra null a propósito. `usuarios_directorio` (lo que lee la
+    // plantilla, mig. 030) no incluye esa columna, así que ahí vale `undefined` y esto da
+    // false: sin el `=== null`, un `!row.auth_user_id` marcaría a TODO el mundo como vacante
+    // en la vista de los empleados.
+    vacante: row.auth_user_id === null,
     // Sueldo semanal (mig. 156), base de la pantalla de Nómina. NO viaja en
     // usuarios_directorio: ahí queda undefined, como el resto de la PII. `null` significa
     // "sin capturar" y hay que conservarlo distinto de 0 — un 0 diría que no gana nada.

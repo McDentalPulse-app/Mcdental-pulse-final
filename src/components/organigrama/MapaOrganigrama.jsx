@@ -240,9 +240,14 @@ export default function MapaOrganigrama({
                   <span className="organigrama-puesto">
                     {esGrupo ? `${c.nodo.personas.length} personas` : persona.puesto || ""}
                   </span>
-                  {persona?.inactivo && (
+                  {/* Una plaza VACANTE también viene marcada como inactiva —es lo que la
+                      mantiene fuera de Nómina y Asistencia—, pero llamarla «De baja» sería
+                      falso: no hay nadie de baja, hay un puesto sin cubrir. */}
+                  {persona?.vacante ? (
+                    <span className="organigrama-etiqueta-inactivo">Vacante</span>
+                  ) : persona?.inactivo ? (
                     <span className="organigrama-etiqueta-inactivo">De baja</span>
-                  )}
+                  ) : null}
                 </button>
 
                 {tieneHijos && (
