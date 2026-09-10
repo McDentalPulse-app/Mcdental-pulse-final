@@ -15,6 +15,10 @@
 
 // Interlocutor de cada buzón visto por quien reporta. El id no existe en la base a propósito:
 // nunca se usa como destinatario, solo para saber qué conversación está abierta.
+//
+// OJO al agregar un buzón: `icono` TIENE que existir en el ICON_MAP de components/ui/Icon.jsx.
+// Un nombre que no está ahí no rompe nada ruidosamente — Icon devuelve null y el avatar del
+// chat sale como un círculo VACÍO, sin ícono y sin iniciales. Se ve como un error de carga.
 export const BUZONES = {
   soporte: {
     id: "canal-soporte-ti",

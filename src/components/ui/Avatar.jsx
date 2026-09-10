@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { nivelColor, colorMarca } from "../../config/theme";
 // El visor vive ahora en su propio archivo: el chat necesitaba el mismo.
 import FotoAmpliada from "./FotoAmpliada";
+import Icon from "./Icon";
 
 const getInitials = (name) =>
   name ? name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "";
@@ -28,7 +29,13 @@ const getInitials = (name) =>
  * elegir conversación en Mensajes, los chips de la IA). Sin foto no hay nada que ampliar: las
  * iniciales nunca son pulsables.
  */
-const Avatar = ({ name, size = 36, slug, color, photoUrl, presente, zoom = true }) => {
+/**
+ * `icono` sustituye a las iniciales cuando el "usuario" NO es una persona: los buzones de
+ * soporte (Sistemas, Mantenimiento) se pintan como una conversación más, y con iniciales
+ * quedaban como "SS" y "SM" — se leen como el nombre de alguien. Solo aplica si no hay foto:
+ * una foto real siempre gana.
+ */
+const Avatar = ({ name, size = 36, slug, color, photoUrl, presente, zoom = true, icono }) => {
   const fondo = slug ? nivelColor(slug) : (color || colorMarca);
   const [ampliada, setAmpliada] = useState(false);
   const disparadorRef = useRef(null);
@@ -55,7 +62,9 @@ const Avatar = ({ name, size = 36, slug, color, photoUrl, presente, zoom = true 
     >
       {photoUrl
         ? <img src={photoUrl} alt={name || "Avatar"} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        : getInitials(name)}
+        : icono
+          ? <Icon name={icono} size={Math.round(size * 0.5)} />
+          : getInitials(name)}
     </div>
   );
 

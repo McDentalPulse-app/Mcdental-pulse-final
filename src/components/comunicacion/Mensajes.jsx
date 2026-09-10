@@ -377,6 +377,9 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
                       size={36}
                       color={activo ? "var(--mc-verde)" : "var(--mc-texto-secundario)"}
                       photoUrl={c.usuario.avatarUrl}
+                      /* Un buzón no es una persona: su ícono en vez de unas iniciales que se
+                         leerían como el nombre de alguien ("SS", "SM"). */
+                      icono={c.para === null ? BUZONES[c.canal]?.icono : undefined}
                       zoom={false}
                     />
 
@@ -438,6 +441,7 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
                     size={40}
                     color="var(--mc-verde)"
                     photoUrl={selected.usuario.avatarUrl}
+                    icono={selected.para === null ? BUZONES[selected.canal]?.icono : undefined}
                     presente={otro.presente}
                   />
                   <div>
@@ -502,7 +506,16 @@ const Mensajes = ({ user, mensajes, onSend, onMarkRead = () => {} }) => {
 
                   {otro.escribiendo && (
                     <div className="chat-escribiendo" aria-live="polite">
-                      <Avatar name={selected.usuario.name} size={28} photoUrl={selected.usuario.avatarUrl} />
+                      {/* Hoy es inalcanzable para un buzón (no se suscribe presencia contra un
+                          id que no existe, ver el efecto de arriba), pero lleva el mismo ícono
+                          que los otros dos avatares: si algún día esa guarda se afloja, no
+                          aparece de golpe un "SS" donde el resto muestra la llave inglesa. */}
+                      <Avatar
+                        name={selected.usuario.name}
+                        size={28}
+                        photoUrl={selected.usuario.avatarUrl}
+                        icono={selected.para === null ? BUZONES[selected.canal]?.icono : undefined}
+                      />
                       <span className="chat-escribiendo-puntos" aria-label={`${selected.usuario.name} está escribiendo`}>
                         <i /><i /><i />
                       </span>
