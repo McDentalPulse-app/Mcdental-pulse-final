@@ -1,6 +1,12 @@
-/* Organigrama — layout vertical con sangría (tipo explorador de archivos), no un diagrama
-   horizontal de cajas y líneas: con ~100 personas y creciendo, es lo que cabe en un teléfono
-   sin scroll lateral. Reusa los tokens de marca (--mc-*) ya definidos en App.css. */
+/* Organigrama — MAPA arrastrable con zoom (2026-09-10), no una lista con sangría.
+
+   La versión anterior era una lista, y su comentario explicaba por qué: un diagrama ancho de
+   cajas y líneas no cabe en un teléfono. Era cierto — pero un mapa NO NECESITA CABER: se
+   arrastra y se acerca, como cualquier mapa. Eso es lo que disuelve la objeción.
+
+   Las POSICIONES no están aquí: las calcula utils/organigrama/layout.js (puro y probado) y el
+   componente las aplica con estilos en línea, que es el caso que DESIGN.md permite ("layout
+   dinámico calculado"). Aquí solo hay aspecto, y sin un solo hex: todo sale de tokens. */
 
 .organigrama-layout {
   display: grid;
@@ -35,111 +41,175 @@
   font-size: var(--mc-control-letra, 14px);
 }
 
-.organigrama-raiz,
-.organigrama-hijos {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+/* ── El lienzo ───────────────────────────────────────────────────────── */
+
+.organigrama-mapa {
+  position: relative;
+  overflow: hidden;
+  height: min(64vh, 620px);
+  min-height: 340px;
+  border: 1px solid var(--mc-borde-suave);
+  border-radius: var(--mc-radio, 10px);
+  background: var(--mc-gris-fondo);
+  /* Sin esto, en el teléfono el navegador se queda el gesto para desplazar la página y el
+     mapa no se puede arrastrar ni pellizcar. */
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
 }
-.organigrama-hijos {
-  margin-left: 22px;
-  padding-left: 14px;
-  border-left: 1px dashed var(--mc-borde-suave);
-}
-.organigrama-nodo {
-  margin: 6px 0;
+.organigrama-mapa--arrastrando { cursor: grabbing; }
+
+.organigrama-lienzo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
 }
 
+.organigrama-enlaces {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+/* Las líneas del mapa NO son un separador: son la estructura, lo que dice quién depende de
+   quién. Empezaron con `--mc-borde-suave` y al medirlas en el navegador salían
+   `rgba(138,233,221,0.12)` sobre un lienzo casi negro — 12% de alfa, prácticamente invisibles.
+   `--mc-texto-apagado` es un tono legible en los dos temas (gris medio en claro, claro en
+   oscuro), que es lo que corresponde a una marca que hay que poder seguir con la vista.
+
+   `vector-effect: non-scaling-stroke` mantiene el grosor al alejar el zoom: sin él, 1.5px al
+   35% se quedan en medio píxel y el árbol se deshilacha justo cuando más falta hace verlo
+   entero. */
+.organigrama-enlace {
+  fill: none;
+  stroke: var(--mc-texto-apagado);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+/* ── Las cajas ───────────────────────────────────────────────────────── */
+
 .organigrama-caja {
+  position: absolute;
   display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
+  align-items: stretch;
   border: 1px solid var(--mc-borde-suave);
   border-radius: var(--mc-radio, 10px);
   background: var(--mc-superficie);
   color: var(--mc-texto);
-  padding: 4px 6px;
-  text-align: left;
-  font: inherit;
-  cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  box-shadow: var(--mc-sombra-card);
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.organigrama-caja:hover {
-  border-color: var(--mc-verde, var(--mc-verde-medio));
-}
+.organigrama-caja:hover { border-color: var(--mc-verde, var(--mc-verde-medio)); }
 .organigrama-caja--activa {
   border-color: var(--mc-verde, var(--mc-verde-medio));
-  background: var(--mc-superficie-sutil);
+  box-shadow: 0 0 0 3px rgb(var(--mc-aqua-rgb) / 0.18);
 }
-.organigrama-caja--inactivo {
-  opacity: 0.6;
-}
-.organigrama-caja--grupo {
-  background: var(--mc-superficie-sutil);
-}
-.organigrama-caja--miembro {
-  padding: 6px 10px;
-  font-size: 0.92em;
-}
+/* Coincidencia del buscador: se resalta la caja en vez de filtrar el mapa, para no perder
+   de vista dónde está esa persona dentro de la organización. */
+.organigrama-caja--resaltada { border-color: var(--mc-aqua); }
+.organigrama-caja--inactivo { opacity: 0.6; }
+.organigrama-caja--grupo { background: var(--mc-superficie-sutil); }
 
-.organigrama-toggle,
-.organigrama-toggle--vacio {
-  flex: none;
-  width: 22px;
-  height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: transparent;
-  color: var(--mc-texto-apagado);
-  cursor: pointer;
-  padding: 0;
-}
-.organigrama-toggle--vacio { cursor: default; }
-
-.organigrama-chevron {
-  transition: transform 0.15s ease;
-}
-.organigrama-chevron--cerrado {
-  transform: rotate(-90deg);
-}
-
-.organigrama-persona {
+.organigrama-caja-cuerpo {
   flex: 1;
+  min-width: 0;
   display: flex;
-  align-items: baseline;
-  gap: 8px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 10px;
   border: none;
   background: transparent;
   color: inherit;
   font: inherit;
   text-align: left;
   cursor: pointer;
-  padding: 4px 2px;
 }
+
 .organigrama-nombre {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--mc-texto-titulo);
+  font-size: 13px;
+  line-height: 1.25;
+  /* Dos líneas como mucho: la caja tiene un alto fijo (lo usa el cálculo de posiciones), así
+     que un nombre muy largo no puede empujarla. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .organigrama-puesto {
-  font-size: 0.85em;
+  font-size: 11px;
   color: var(--mc-texto-secundario);
-}
-.organigrama-conteo {
-  color: var(--mc-texto-apagado);
-  font-size: 0.9em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .organigrama-etiqueta-inactivo {
-  font-size: 0.72em;
+  align-self: flex-start;
+  font-size: 9px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  padding: 1px 7px;
+  padding: 1px 6px;
   border-radius: 999px;
   border: 1px solid var(--mc-borde-suave);
   color: var(--mc-texto-apagado);
+}
+
+/* Abrir/cerrar la rama. Va pegado al borde derecho de la caja y separado del cuerpo, para que
+   no se confunda con "ver a la persona". */
+.organigrama-toggle {
+  flex: none;
+  width: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-left: 1px solid var(--mc-borde-suave);
+  background: var(--mc-superficie-sutil);
+  color: var(--mc-texto-secundario);
+  cursor: pointer;
+  padding: 0;
+}
+.organigrama-toggle:hover { color: var(--mc-texto-titulo); }
+
+/* ── Controles flotantes ─────────────────────────────────────────────── */
+
+.organigrama-controles {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.organigrama-control {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--mc-borde-suave);
+  border-radius: 8px;
+  background: var(--mc-superficie);
+  color: var(--mc-texto-secundario);
+  cursor: pointer;
+  box-shadow: var(--mc-sombra-card);
+}
+.organigrama-control:hover {
+  color: var(--mc-texto-titulo);
+  border-color: var(--mc-verde, var(--mc-verde-medio));
+}
+
+.organigrama-ayuda-mapa {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--mc-texto-apagado);
+  text-align: center;
 }
 
 /* ── Panel de detalle ────────────────────────────────────────────────── */

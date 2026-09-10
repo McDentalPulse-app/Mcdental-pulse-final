@@ -5,7 +5,7 @@ import Card from "../common/Card";
 import EmptyState from "../common/EmptyState";
 import Icon from "../ui/Icon";
 import { construirArbol } from "../../utils/organigrama/arbol";
-import NodoOrganigrama from "./NodoOrganigrama";
+import MapaOrganigrama from "./MapaOrganigrama";
 import PanelPersona from "./PanelPersona";
 import ResponsabilidadesArea from "./ResponsabilidadesArea";
 import "./Organigrama.css";
@@ -68,6 +68,27 @@ export default function Organigrama({ user }) {
   const expandidosEfectivos = coincidencias
     ? new Set([...expandidosBase, ...coincidencias])
     : expandidosBase;
+
+  // A qué caja se mueve el mapa al buscar: la PRIMERA coincidencia. Sin esto, buscar a alguien
+  // en un organigrama de ~100 personas abre su rama... en una parte del lienzo que no se está
+  // mirando, y parece que el buscador no hace nada.
+  const enfocarId = useMemo(() => {
+    if (!coincidencias || coincidencias.size === 0) return null;
+    const primera = (lista) => {
+      for (const n of lista) {
+        if (coincidencias.has(n.id)) {
+          if (n.tipo === "grupo") return n.id;
+          const propia = (n.persona.name || "").toLowerCase().includes(terminoBusqueda);
+          if (propia) return n.id;
+          const dentro = primera(n.hijos || []);
+          if (dentro) return dentro;
+          return n.id;
+        }
+      }
+      return null;
+    };
+    return primera(arbol);
+  }, [coincidencias, arbol, terminoBusqueda]);
 
   const alternar = (id) => {
     setExpandidosManual((prev) => {
@@ -136,18 +157,15 @@ export default function Organigrama({ user }) {
             {arbol.length === 0 ? (
               <EmptyState icon="users" message="Todavía no hay nadie asignado en el organigrama." />
             ) : (
-              <ul className="organigrama-raiz">
-                {arbol.map((nodo) => (
-                  <NodoOrganigrama
-                    key={nodo.id}
-                    nodo={nodo}
-                    expandidos={expandidosEfectivos}
-                    onToggle={alternar}
-                    onSeleccionar={setSeleccionado}
-                    seleccionadoId={seleccionado?.id}
-                  />
-                ))}
-              </ul>
+              <MapaOrganigrama
+                arbol={arbol}
+                expandidos={expandidosEfectivos}
+                onToggle={alternar}
+                onSeleccionar={setSeleccionado}
+                seleccionadoId={seleccionado?.id}
+                enfocarId={enfocarId}
+                resaltados={coincidencias}
+              />
             )}
           </Card>
 
