@@ -139,9 +139,11 @@ export default function EnrolarRostros({ usuarios = [] }) {
       <Card>
         <p className="mc-hint">
           <Icon name="alert" size={15} />
-          Al aprobar estás afirmando que <strong>esa cara es la de esa persona</strong>. Compárala
-          con su foto de perfil. Si apruebas sin mirar, quien haya registrado la cara de otro
-          quedará verificado por el sistema — y sus checadas falsas dejarán de detectarse.
+          <span>
+            Al aprobar estás afirmando que <strong>esa cara es la de esa persona</strong>. Compárala
+            con su foto de perfil. Si apruebas sin mirar, quien haya registrado la cara de otro
+            quedará verificado por el sistema — y sus checadas falsas dejarán de detectarse.
+          </span>
         </p>
       </Card>
 

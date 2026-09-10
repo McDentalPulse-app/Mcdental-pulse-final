@@ -273,6 +273,108 @@ setTimeout(function(){
   rmSync(dir, { recursive: true, force: true });
 }
 
+// ── Los párrafos de ayuda (.mc-hint) con el texto SIN envolver ────────────────
+//
+// `.mc-hint` es `display: flex`. En un flex CADA hijo es un ítem propio: los `<strong>` y
+// también cada trozo de texto suelto entre ellos. Un párrafo escrito así no se lee como un
+// párrafo, se parte en columnas — el 2026-09-10 la pantalla de Nómina salió a producción
+// diciendo «Son fijos e iguales para toda la empresa. Un» en una columna y «retardo es llegar
+// pasada la» en la de al lado. Este banco dio 20/20 CON ese fallo dentro: ninguna comprobación
+// miraba los párrafos de ayuda. Esta es esa comprobación.
+//
+// La convención del repo, documentada en MiRostro.jsx desde antes de que esto se rompiera, es
+// envolver TODO el texto en un solo `<span>`: así el flex tiene dos ítems (icono y texto) y las
+// negritas vuelven a fluir como texto normal. Un comentario no impidió que se repitiera tres
+// veces; esto sí.
+//
+// Se mide sobre el CÓDIGO FUENTE y no sobre el paquete, al revés que el resto de este archivo,
+// y con motivo: aquí el compilador no interviene, la estructura la decide el JSX. Si algún día
+// `src/` no está junto al `dist/` que se mide, se avisa en vez de dar un verde vacío.
+{
+  /** Índice justo DESPUÉS de la etiqueta de cierre que corresponde a la apertura ya consumida. */
+  const finDelBloque = (texto, desde, tag) => {
+    const abre = new RegExp(`<${tag}\\b`, "g");
+    const cierra = new RegExp(`</${tag}>`, "g");
+    let profundidad = 1;
+    let i = desde;
+    while (profundidad > 0) {
+      abre.lastIndex = i;
+      cierra.lastIndex = i;
+      const a = abre.exec(texto);
+      const c = cierra.exec(texto);
+      if (!c) return -1;                       // sin cierre: JSX que no sabemos leer
+      if (a && a.index < c.index) { profundidad += 1; i = a.index + 1; }
+      else { profundidad -= 1; i = c.index + c[0].length; }
+    }
+    return i;
+  };
+
+  const jsxDe = (dir) => {
+    let out = [];
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = join(dir, e.name);
+      if (e.isDirectory()) out = out.concat(jsxDe(p));
+      else if (e.name.endsWith(".jsx")) out.push(p);
+    }
+    return out;
+  };
+
+  let ficheros = null;
+  try { ficheros = jsxDe("src"); } catch { ficheros = null; }
+
+  if (!ficheros) {
+    avisos.push("No se encontró src/: los párrafos .mc-hint no se pudieron revisar");
+  } else {
+    const malos = [];
+    let revisados = 0;
+
+    for (const fichero of ficheros) {
+      const texto = readFileSync(fichero, "utf8");
+      const apertura = /<(\w+)([^>]*?)className="mc-hint"([^>]*?)>/g;
+      let m;
+      while ((m = apertura.exec(texto)) !== null) {
+        const tag = m[1];
+        const finApertura = m.index + m[0].length;
+        const fin = finDelBloque(texto, finApertura, tag);
+        if (fin === -1) continue;
+        revisados += 1;
+
+        let dentro = texto.slice(fin - `</${tag}>`.length, fin) === `</${tag}>`
+          ? texto.slice(finApertura, fin - `</${tag}>`.length)
+          : texto.slice(finApertura, fin);
+
+        // Se descartan dos cosas que NO son ítems del flex:
+        //  · Los comentarios JSX, que no renderizan nada. Sin esto la comprobación acusaba
+        //    justo a MiRostro.jsx, que es el ejemplo BIEN escrito: lleva un comentario entre
+        //    el icono y el <span> explicando este mismo fallo. Un guardián que señala al
+        //    modelo a seguir se desactiva a la semana, así que esto no es un detalle.
+        //  · El icono, que es un ítem legítimo y tiene su propia regla (`.mc-hint svg`).
+        dentro = dentro
+          .replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
+          .replace(/<Icon\b[^>]*?\/>/g, "")
+          .trim();
+
+        // Sin ninguna etiqueta dentro es UN solo nodo de texto: un único ítem, se ve bien.
+        if (!dentro.includes("<")) continue;
+
+        // Con etiquetas, lo único válido es que TODO cuelgue de un envoltorio único.
+        const abreSpan = /^<span\b[^>]*>/.exec(dentro);
+        const finSpan = abreSpan ? finDelBloque(dentro, abreSpan[0].length, "span") : -1;
+        if (finSpan === dentro.length) continue;
+
+        const linea = texto.slice(0, m.index).split("\n").length;
+        malos.push(`${fichero}:${linea}`);
+      }
+    }
+
+    comprobar(
+      `Párrafos .mc-hint con el texto envuelto — ${revisados} revisados`,
+      malos.length === 0,
+      malos.length ? malos.join(", ") : ""
+    );
+  }
+}
+
 // ── Resultado ─────────────────────────────────────────────────────────────────
 for (const p of pasos) console.log(`  ok    ${p}`);
 for (const a of avisos) console.log(`  AVISO ${a}`);

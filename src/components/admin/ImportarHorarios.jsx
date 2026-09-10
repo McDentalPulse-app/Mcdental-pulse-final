@@ -174,8 +174,10 @@ export default function ImportarHorarios({ usuarios = [], onImportado }) {
       <Card>
         <p className="mc-hint">
           <Icon name="alert" size={15} />
-          El archivo debe tener una <strong>fila por empleado y día</strong>, con una cabecera arriba.
-          Da igual cómo se llamen las columnas: tú dices cuál es cuál.
+          <span>
+            El archivo debe tener una <strong>fila por empleado y día</strong>, con una cabecera
+            arriba. Da igual cómo se llamen las columnas: tú dices cuál es cuál.
+          </span>
         </p>
 
         <label className="mc-file-input-wrap">
@@ -260,9 +262,11 @@ export default function ImportarHorarios({ usuarios = [], onImportado }) {
             <Card>
               <p className="mc-hint">
                 <Icon name="alert" size={15} />
-                Estos empleados <strong>no aparecen en el Excel</strong>. Se quedarán sin horario, y
-                para el sistema <strong>todos sus días serán descanso</strong>: no acumularán retardos
-                ni faltas.
+                <span>
+                  Estos empleados <strong>no aparecen en el Excel</strong>. Se quedarán sin horario,
+                  y para el sistema <strong>todos sus días serán descanso</strong>: no acumularán
+                  retardos ni faltas.
+                </span>
               </p>
               <ul className="importar-lista">
                 {analisis.olvidados.map((e) => <li key={e.id}>{e.name}</li>)}

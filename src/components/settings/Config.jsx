@@ -122,11 +122,13 @@ const Config = () => {
 
         <p className="mc-hint">
           <Icon name="alert" size={15} />
-          Mientras esté <strong>apagado</strong>, quien no tenga el rostro registrado puede checar
-          igual (sin comprobación). Es lo que hay que hacer al principio: si se exigiera desde el
-          primer día, <strong>no podría fichar nadie</strong>. Enciéndelo cuando la plantilla ya esté
-          registrada — a partir de ahí, no registrarse deja de ser la forma fácil de esquivar la
-          comprobación.
+          <span>
+            Mientras esté <strong>apagado</strong>, quien no tenga el rostro registrado puede checar
+            igual (sin comprobación). Es lo que hay que hacer al principio: si se exigiera desde el
+            primer día, <strong>no podría fichar nadie</strong>. Enciéndelo cuando la plantilla ya
+            esté registrada — a partir de ahí, no registrarse deja de ser la forma fácil de esquivar
+            la comprobación.
+          </span>
         </p>
 
         <div className="ajuste-fila">
