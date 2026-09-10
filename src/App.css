@@ -10795,6 +10795,14 @@
   color: var(--mc-ambar, #b45309);
 }
 
+/* La tarjeta de los filtros NO puede recortar: `.mc-card` lleva `overflow: hidden` y el menú
+   de <WeekSelect> es `position: absolute` DENTRO de ella, así que al desplegarse se cortaba
+   contra el borde inferior — se veía asomar solo una tira. Misma regla que ya usa
+   `.horarios-panel`, que es donde este mismo problema se resolvió la primera vez.
+   (Ojo: <Select> no sufre esto porque dibuja su lista en un portal a <body>; <WeekSelect> la
+   deja dentro del contenedor, así que cualquier tarjeta que lo aloje necesita esta regla.) */
+.nomina-toolbar { position: relative; z-index: 5; overflow: visible; }
+
 .nomina-filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .nomina-filtro-label {
   display: inline-flex; align-items: center; gap: 5px;
