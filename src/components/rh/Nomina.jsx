@@ -327,12 +327,17 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
 
       <Card className="nomina-config">
         <SectionTitle icon="settings">Montos que se descuentan</SectionTitle>
+        {/* El texto va en UN solo <span>: .mc-hint es flex, y sin esto cada <strong> y cada
+            trozo de texto suelto se vuelve un ítem del flex — el párrafo se parte en columnas.
+            Mismo motivo que el comentario gemelo en MiRostro.jsx. */}
         <p className="mc-hint">
           <Icon name="alert" size={15} />
-          Son fijos e iguales para toda la empresa. Un <strong>retardo</strong> es llegar pasada la
-          tolerancia de su horario; una <strong>falta</strong> es un día con turno sin checada y sin
-          permiso ni vacación aprobados. Un día justificado o de descanso no descuenta nada. Cambiar
-          estos montos recalcula lo que se ve en <em>todas</em> las semanas.
+          <span>
+            Son fijos e iguales para toda la empresa. Un <strong>retardo</strong> es llegar pasada la
+            tolerancia de su horario; una <strong>falta</strong> es un día con turno sin checada y sin
+            permiso ni vacación aprobados. Un día justificado o de descanso no descuenta nada. Cambiar
+            estos montos recalcula lo que se ve en <em>todas</em> las semanas.
+          </span>
         </p>
         <div className="nomina-config-campos">
           <label>
@@ -397,9 +402,11 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
         <Card>
           <p className="mc-hint">
             <Icon name="alert" size={15} />
-            {totales.sinSueldo} {totales.sinSueldo === 1 ? "persona no tiene" : "personas no tienen"} sueldo
-            capturado. Su pago final aparece como <strong>«Falta el sueldo»</strong> y no suma al total:
-            un $0.00 ahí parecería un cálculo hecho.
+            <span>
+              {totales.sinSueldo} {totales.sinSueldo === 1 ? "persona no tiene" : "personas no tienen"} sueldo
+              capturado. Su pago final aparece como <strong>«Falta el sueldo»</strong> y no suma al total:
+              un $0.00 ahí parecería un cálculo hecho.
+            </span>
           </p>
         </Card>
       )}

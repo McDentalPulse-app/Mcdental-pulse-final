@@ -320,13 +320,17 @@ export default function GestionHorarios({ usuarios = [], horarios = [], setHorar
       />
 
       <Card className="horarios-panel">
+        {/* El texto va en UN solo <span>: .mc-hint es flex, y sin esto cada <strong> y cada
+            trozo de texto suelto se vuelve un ítem del flex — el párrafo se parte en columnas. */}
         <p className="mc-hint">
           <Icon name="alert" size={15} />
-          Cada día se configura por separado: alguien puede entrar de lunes a miércoles de 10:00 a
-          14:00, jueves y viernes de 10:00 a 19:00 y no venir el sábado. Un día sin turno
-          <strong> no cuenta como falta</strong>. La <strong>tolerancia</strong> son los minutos de
-          gracia antes de contar retardo: con entrada a las 9:00 y 10 de tolerancia, las 9:10 llegan
-          a tiempo; las 9:11, no.
+          <span>
+            Cada día se configura por separado: alguien puede entrar de lunes a miércoles de 10:00 a
+            14:00, jueves y viernes de 10:00 a 19:00 y no venir el sábado. Un día sin turno{" "}
+            <strong>no cuenta como falta</strong>. La <strong>tolerancia</strong> son los minutos de
+            gracia antes de contar retardo: con entrada a las 9:00 y 10 de tolerancia, las 9:10
+            llegan a tiempo; las 9:11, no.
+          </span>
         </p>
         <div className="horarios-filtro">
           <Icon name="mapPin" size={15} />
