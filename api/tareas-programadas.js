@@ -32,6 +32,68 @@ const getISOWeek = (d = new Date()) => {
   return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
 };
 
+// ---------------------------------------------------------------------------------------
+// EL PERÍODO DE LA ENCUESTA, duplicado del front a conciencia.
+//
+// Réplica de `claveDePeriodo` / `PRIMER_PERIODO_QUINCENAL` de src/utils/constants.js. Se
+// duplica por lo mismo que getISOWeek de arriba: api/ y src/ son dos bundles independientes y
+// hoy no comparten módulos. SI SE CAMBIA LA CADENCIA O EL CORTE, HAY QUE CAMBIARLO EN LOS DOS
+// SITIOS — si solo se cambia allí, este recordatorio nagea por una encuesta ya contestada.
+//
+// Por qué importa aquí: el filtro es «quien no tenga encuesta de ESTE período». Si los dos no
+// dicen lo mismo, las 95 personas reciben tres avisos por una encuesta que ya entregaron. Pasó
+// al revés en agosto de 2026: el front se volvió quincenal y este archivo seguía en semanas.
+const LAUNCH_WEEK = "2026-W27";
+const PRIMER_PERIODO_QUINCENAL = null; // null = la encuesta es SEMANAL. Ver el gemelo en constants.js.
+const DIA_MS = 86400000;
+
+// Ancla en el 4 de enero, igual que isoWeekToMonday en constants.js: el 4 cae siempre en la
+// semana ISO 1. Anclando en el 1, "2026-W53" y "2027-W01" devuelven el mismo lunes y el par
+// quincenal se parte en el cambio de año. El test api/periodo.frontVsApi.test.js compara este
+// gemelo con el del front semana a semana — es lo que pilló esta misma línea mal copiada.
+const lunesDeSemanaISO = (semana) => {
+  const m = /^(\d{4})-W(\d{2})$/.exec(String(semana ?? "").trim());
+  if (!m) return null;
+  const cuatroEnero = new Date(Date.UTC(Number(m[1]), 0, 4));
+  const lunesW1 = new Date(cuatroEnero);
+  lunesW1.setUTCDate(cuatroEnero.getUTCDate() - ((cuatroEnero.getUTCDay() || 7) - 1));
+  const lunes = new Date(lunesW1);
+  lunes.setUTCDate(lunesW1.getUTCDate() + (Number(m[2]) - 1) * 7);
+  return lunes;
+};
+
+/** Número de semana desde el lanzamiento (1 = LAUNCH_WEEK). null si es anterior. */
+const numeroDeSemana = (semana) => {
+  const a = lunesDeSemanaISO(semana);
+  const b = lunesDeSemanaISO(LAUNCH_WEEK);
+  if (!a || !b) return null;
+  const n = Math.round((a - b) / (7 * DIA_MS)) + 1;
+  return n >= 1 ? n : null;
+};
+
+/** La semana ISO que hace el número n. Todo en UTC (ver el JSDoc del gemelo en constants.js). */
+const semanaDesdeNumero = (n) => {
+  const base = lunesDeSemanaISO(LAUNCH_WEEK);
+  if (!base || !Number.isInteger(n) || n < 1) return null;
+  const jueves = new Date(base.getTime() + ((n - 1) * 7 + 3) * DIA_MS);
+  const anio = jueves.getUTCFullYear();
+  const numero = Math.ceil(((jueves.getTime() - Date.UTC(anio, 0, 1)) / DIA_MS + 1) / 7);
+  return `${anio}-W${String(numero).padStart(2, "0")}`;
+};
+
+/** Las claves de `encuestas.semana` que cuentan como «este período». */
+export const semanasDelPeriodo = (semanaHoy) => {
+  const n = numeroDeSemana(semanaHoy);
+  const nCorte = numeroDeSemana(PRIMER_PERIODO_QUINCENAL);
+  if (n == null || nCorte == null || n < nCorte) return [semanaHoy];
+  // Las DOS del par: la clave con la que se guarda (la primera) y la segunda, que es lo que
+  // manda un teléfono con el bundle viejo en caché.
+  const primera = n % 2 === 1 ? semanaHoy : semanaDesdeNumero(n - 1);
+  const segunda = n % 2 === 1 ? semanaDesdeNumero(n + 1) : semanaHoy;
+  return [primera, segunda].filter(Boolean);
+};
+// ---------------------------------------------------------------------------------------
+
 // Día ISO (1=lunes...7=domingo) en hora de México, sin depender de ninguna librería.
 const diaISOEnMexico = () => {
   const nombre = new Intl.DateTimeFormat("en-US", {
@@ -43,11 +105,14 @@ const diaISOEnMexico = () => {
 
 const DIAS_RECORDATORIO_ENCUESTA = [2, 4, 5]; // martes, jueves, viernes
 
-/** Recordatorio de encuesta semanal sin responder. Como el filtro siempre es "sin encuesta de
- * ESTA semana", en cuanto la persona responde deja de recibir el aviso solo, sin tabla de
- * control aparte. */
+/** Recordatorio de encuesta del período en curso sin responder. Como el filtro siempre es "sin
+ * encuesta de ESTE período", en cuanto la persona responde deja de recibir el aviso solo, sin
+ * tabla de control aparte.
+ *
+ * Con la encuesta semanal son como mucho tres avisos por encuesta (martes, jueves y viernes).
+ * Si molesta, se recorta DIAS_RECORDATORIO_ENCUESTA. */
 const recordatorioEncuestas = async (supabase) => {
-  const semana = getISOWeek();
+  const semanasAceptadas = semanasDelPeriodo(getISOWeek());
 
   const { data: empleados, error: errorEmpleados } = await supabase
     .from("usuarios")
@@ -64,10 +129,10 @@ const recordatorioEncuestas = async (supabase) => {
   const { data: respondidas, error: errorEncuestas } = await supabase
     .from("encuestas")
     .select("empleado_id")
-    .eq("semana", semana);
+    .in("semana", semanasAceptadas);
 
   if (errorEncuestas) {
-    console.error("Error buscando encuestas de la semana:", errorEncuestas);
+    console.error("Error buscando encuestas del período:", errorEncuestas);
     return { avisados: 0, error: "No se pudieron buscar las encuestas." };
   }
 
@@ -78,14 +143,14 @@ const recordatorioEncuestas = async (supabase) => {
     pendientes.map((u) =>
       notificar(u.id, {
         tipo: "encuesta",
-        titulo: "Encuesta semanal pendiente",
-        cuerpo: "Todavía no respondes tu encuesta de esta semana. Te toma un par de minutos.",
+        titulo: "Encuesta pendiente",
+        cuerpo: "Todavía no respondes tu encuesta. Te toma un par de minutos.",
         url: "/empleado/encuesta",
       }).catch(() => {})
     )
   );
 
-  return { semana, avisados: pendientes.length };
+  return { periodo: semanasAceptadas[0], avisados: pendientes.length };
 };
 
 const ESTADO_LABEL = {
@@ -567,12 +632,19 @@ const revisarGeocercas = async (supabase) => {
     const titulo =
       a.motivo === "muda"
         ? `Nadie puede fichar en ${a.nombre}`
-        : `Revisa la ubicación de ${a.nombre}`;
+        : `En ${a.nombre} no pueden fichar: la ubicación está mal puesta`;
     if (yaAvisado.has(titulo)) continue;
-    // "Muda" = nadie puede fichar en esa clínica. Eso no se arregla leyéndolo.
+    // Ni "muda" ni "lejos" se arreglan leyéndolos: en las dos hay gente que no puede fichar.
     await notificarGestion({
       tipo: "geocerca", titulo, cuerpo: a.detalle, url: urlSucursales,
-      critica: a.motivo === "muda",
+      // Las DOS son críticas. `lejos` solo se emite cuando la mediana de las checadas reales
+      // cae MÁS LEJOS que el radio, y eso significa que la gente que trabaja ahí está fuera del
+      // área y NO PUEDE FICHAR. No existe un caso de `lejos` que no sea gente bloqueada.
+      //
+      // Tratarlo como aviso menor es lo que dejó a McDental Palmas tres días bloqueada CON EL
+      // AVISO LEÍDO (3, 4 y 5 de agosto de 2026): un no-crítico se lee y se olvida; un crítico se
+      // queda clavado en la campana con «Sigue sin resolverse» hasta que el problema desaparece.
+      critica: a.motivo === "muda" || a.motivo === "lejos",
     });
     avisadas += 1;
   }
@@ -601,6 +673,69 @@ const OMITIR_EN_SALUD = new Set([
   // Avisarlo también desde aquí sería mandar el mismo problema dos veces.
   "respaldo_externo",
 ]);
+
+/**
+ * Personas que se quedaron SIN PODER fichar. El hueco que dejaba `revisarGeocercas`.
+ *
+ * POR QUÉ HACÍA FALTA: los detectores de geocerca miran la CLÍNICA en agregado, y en Palmas eso
+ * bastó para no ver nada. Sandra seguía fichando desde donde había movido la geocerca, así que
+ * la clínica no estaba «muda»; y sus 9 checadas en la oficina movieron la mediana con ella, así
+ * que compararla contra el punto configurado daba 13 m, «ok». Tres personas bloqueadas y todos
+ * los semáforos en verde. Una persona no se puede esconder detrás de la media de sus compañeros.
+ *
+ * UN SOLO AVISO CON LA LISTA, no uno por persona. Seis personas por tres destinatarios serían 18
+ * filas en la campana, y una campana llena deja de leerse — es el mismo motivo por el que existe
+ * `limpiar_notificaciones_obsoletas`. El NÚMERO va en el título: así se entiende sin abrir nada
+ * y, cuando empeora, el título cambia y el freno de 48 h no lo silencia.
+ *
+ * CRÍTICA siempre: no es una métrica de ausentismo (eso es trabajo de RH y vive en Asistencia),
+ * son personas que trabajaron y cuyo día no quedó registrado.
+ */
+const revisarPersonasQueNoFichan = async (supabase) => {
+  const { data, error } = await supabase.rpc("personas_que_dejaron_de_fichar");
+  if (error) {
+    console.error("Error revisando quién no puede fichar:", error);
+    return { error: "No se pudo revisar quién no puede fichar." };
+  }
+
+  const casos = data || [];
+  if (!casos.length) return { casos: 0, avisadas: 0 };
+
+  const titulo =
+    casos.length === 1
+      ? `${casos[0].nombre} no ha podido fichar`
+      : `${casos.length} personas no han podido fichar`;
+
+  const hace48h = new Date(Date.now() - 48 * 3_600_000).toISOString();
+  const { data: recientes } = await supabase
+    .from("notificaciones")
+    .select("titulo")
+    .eq("tipo", "sin_fichar")
+    .gte("creada_en", hace48h);
+  if ((recientes || []).some((n) => n.titulo === titulo)) {
+    return { casos: casos.length, avisadas: 0, motivo: "ya avisado en 48 h" };
+  }
+
+  // Se ordena por gravedad —más días primero— porque el cuerpo se lee de arriba abajo y puede
+  // quedar cortado en el teléfono.
+  const lineas = [...casos]
+    .sort((a, b) => (b.dias_perdidos || 0) - (a.dias_perdidos || 0))
+    .map((c) => {
+      const donde = c.sucursal || "sin sucursal";
+      const desde = c.motivo === "nunca_ficho" ? "nunca ha fichado" : `desde el ${c.ultima_fecha}`;
+      return `· ${c.nombre} (${donde}) — ${c.dias_perdidos} días, ${desde}`;
+    });
+
+  await notificarGestion({
+    tipo: "sin_fichar",
+    titulo,
+    cuerpo: `${lineas.join("\n")}\n\nNinguna tiene vacaciones ni permiso aprobado. Una checada rechazada no deja rastro, así que puede ser un bloqueo: revisa la geocerca de su clínica y si tienen rostro aprobado.`,
+    url: { admin: "/admin/asistencia", rh: "/rh/asistencia", psicologa: "/psicologa/asistencia" },
+    critica: true,
+  });
+
+  return { casos: casos.length, avisadas: 1, personas: casos.map((c) => c.nombre) };
+};
 
 const revisarSalud = async (supabase) => {
   const { data, error } = await supabase.rpc("estado_del_sistema");
@@ -712,6 +847,10 @@ export default async function handler(req, res) {
   // Corre SIEMPRE y no depende del push: aunque el push esté caído, la fila queda en la campana
   // y el resultado del cron. Una clínica bloqueada no puede esperar a que se arregle otra cosa.
   resultado.geocercas = await revisarGeocercas(supabase);
+
+  // También SIEMPRE, y por el mismo motivo: mira a la PERSONA en vez de a la clínica, que es el
+  // hueco por el que se colaron tres días de gente bloqueada en Palmas.
+  resultado.sinFichar = await revisarPersonasQueNoFichan(supabase);
 
   if (pushDisponible()) {
     if (DIAS_RECORDATORIO_ENCUESTA.includes(diaISOEnMexico())) {
