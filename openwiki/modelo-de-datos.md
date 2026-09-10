@@ -35,6 +35,26 @@ documentación es `26_candidatos_bolsa`. Las migraciones 15–17 concentran RLS 
 | `sucursales` | 34 | Catálogo de clínicas con geocerca (`lat`/`lng`/`radio_m`) |
 | `horarios` | 35 | Turno por empleado y día ISO. **Sin fila = descanso** |
 | `asistencias` | 36 | Checadas de entrada/salida con foto y ubicación |
+| `nomina_config` | 156 | Montos fijos que descuentan un retardo y una falta. **Una sola fila** |
+
+### Nómina (migración 156)
+
+Dos piezas y ninguna tabla de nóminas calculadas:
+
+- `usuarios.sueldo_semanal` — lo que gana cada persona en una semana. `NULL` = **sin capturar**,
+  que no es lo mismo que `0`. Lo leen admin/rh/psicóloga (`usuarios_select_privilegiados`) y cada
+  quien su propia fila (`usuarios_select_own`). **No** está en la vista `usuarios_directorio`, que
+  enumera columnas una por una: por eso la plantilla no ve sueldos ajenos. Si algún día se
+  reescribe esa vista, no meter esta columna.
+- `nomina_config` — `monto_retardo` y `monto_falta`, iguales para toda la empresa. SELECT y UPDATE
+  restringidos a admin/rh/psicóloga (a diferencia de `ajustes`, que lo lee cualquier autenticado).
+
+El recibo de una semana **se deriva, no se guarda**: sueldo − retardos × monto − faltas × monto,
+sobre los días que ya clasifica `construirDias()` (`src/utils/asistencia.js`). Es el mismo criterio
+por el que `asistencias` no guarda "faltó": si el resultado estuviera almacenado, justificar hoy una
+falta del mes pasado exigiría reprocesar filas viejas, y el día que ese reproceso fallara la nómina
+guardada y la realidad dirían cosas distintas en silencio. El cálculo puro vive en
+`src/utils/nomina.js`, con pruebas en `src/utils/nomina.test.js`.
 
 ### Asistencia (checador, migraciones 34-38)
 

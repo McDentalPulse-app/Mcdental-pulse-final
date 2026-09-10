@@ -10698,9 +10698,7 @@
   font-size: 0.8rem; color: var(--mc-texto-secundario);
 }
 
-/* Chips de días */
-.horarios-dias { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.horarios-dias > .horarios-editor-label { flex: 1 1 100%; margin-bottom: 0; }
+/* Chip del día: es el interruptor de "trabaja / no trabaja" dentro de cada renglón */
 .horarios-dia-chip {
   min-width: 46px;
   padding: 8px 12px;
@@ -10719,17 +10717,30 @@
   color: var(--mc-marca-texto);
 }
 
-/* Excepciones */
-.horarios-excepciones { display: flex; flex-direction: column; gap: 8px; }
-.horarios-excepciones > .horarios-editor-label { margin-bottom: 0; }
-.horarios-exc-row {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+/* Un renglón por día (2026-09-10): cada día lleva SU horario, o dice que no se trabaja.
+   Sustituye al bloque de "excepciones", que solo dejaba editar un día DESPUÉS de que ya
+   fuera distinto del estándar — con lo que un día distinto no se podía capturar nunca. */
+.horarios-semana { display: flex; flex-direction: column; gap: 8px; }
+.horarios-semana > .horarios-editor-label { margin-bottom: 0; }
+.horarios-dia-row {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px;
   padding: 8px 10px;
   border: 1px solid var(--mc-card-borde);
   border-radius: 10px;
   background: var(--mc-gris-fondo);
 }
-.horarios-exc-dia { font-weight: 800; color: var(--mc-texto-titulo); min-width: 34px; }
+.horarios-dia-row--libre { opacity: 0.72; }
+.horarios-dia-row label {
+  display: flex; flex-direction: column; gap: 4px;
+  font-size: 0.8rem; color: var(--mc-texto-secundario); font-weight: 600;
+}
+.horarios-dia-row > .horarios-dia-chip { align-self: center; min-width: 58px; }
+.horarios-dia-libre {
+  align-self: center;
+  font-size: 0.82rem;
+  color: var(--mc-texto-apagado);
+}
+.horarios-dia-row .horarios-quitar { margin-left: auto; align-self: center; }
 
 /* Inputs del editor: mismo estilo que la app (superficie, borde, radio, foco teal) */
 .horarios-editor input[type="time"],
@@ -10755,6 +10766,104 @@
 @media (max-width: 640px) {
   .horarios-mini-semana { display: none; }
   .horarios-estandar label { flex: 1 1 40%; }
+  .horarios-dia-row label { flex: 1 1 40%; }
+  .horarios-dia-row .horarios-quitar { margin-left: 0; }
+}
+
+/* --- Nómina (migración 156): el pago de la semana, día por día --- */
+
+.nomina-config-campos {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px;
+  margin-top: 12px;
+}
+.nomina-config-campos label,
+.nomina-filtros label {
+  display: flex; flex-direction: column; gap: 4px;
+  font-size: 0.8rem; color: var(--mc-texto-secundario); font-weight: 600;
+}
+.nomina-config-campos input {
+  width: 130px;
+  padding: 8px 10px;
+  border-radius: var(--mc-control-radio);
+  border: 1px solid var(--mc-control-borde);
+  background: var(--mc-control-fondo);
+  color: var(--mc-texto);
+  font-family: inherit; font-size: var(--mc-control-letra); font-weight: 700;
+}
+.nomina-config-aviso {
+  font-size: 0.78rem; font-weight: 700;
+  color: var(--mc-ambar, #b45309);
+}
+
+.nomina-filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.nomina-filtro-label {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 0.8rem; font-weight: 700; color: var(--mc-texto-secundario);
+}
+.nomina-filtros em { font-size: 0.8rem; color: var(--mc-texto-apagado); font-style: normal; }
+
+.nomina-lista { display: flex; flex-direction: column; gap: 10px; }
+.nomina-fila {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--mc-card-borde);
+  border-radius: 12px;
+  background: var(--mc-gris-fondo);
+}
+.nomina-persona { flex: 1 1 180px; min-width: 0; }
+.nomina-persona-nombre { font-weight: 800; color: var(--mc-texto-titulo); }
+.nomina-persona-sub { font-size: 0.78rem; color: var(--mc-texto-apagado); }
+
+/* La semana: una columna por día, con la letra arriba, el color del estado en medio y
+   lo que se le descuenta abajo. El color reusa las MISMAS clases que el calendario de
+   Asistencia, así la leyenda de allá vale acá sin mantener dos paletas. */
+.nomina-semana { display: flex; gap: 6px; flex: 0 0 auto; }
+.nomina-dia { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 34px; }
+.nomina-dia-letra { font-size: 11px; font-weight: 800; color: var(--mc-texto-secundario); }
+.nomina-dia-celda {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  display: block;
+}
+.nomina-dia-monto { font-size: 10px; font-weight: 700; color: var(--mc-texto-apagado); }
+.nomina-dia-monto--cobra { color: var(--mc-rojo, #b91c1c); }
+
+.nomina-sueldo { display: flex; flex-direction: column; gap: 4px; flex: 0 0 auto; }
+.nomina-sueldo span { font-size: 0.75rem; font-weight: 700; color: var(--mc-texto-secundario); }
+.nomina-sueldo input {
+  width: 130px;
+  padding: 8px 10px;
+  border-radius: var(--mc-control-radio);
+  border: 1px solid var(--mc-control-borde);
+  background: var(--mc-control-fondo);
+  color: var(--mc-texto);
+  font-family: inherit; font-size: var(--mc-control-letra); font-weight: 700;
+}
+.nomina-sueldo input:focus {
+  outline: none; border-color: var(--mc-aqua);
+  box-shadow: 0 0 0 3px rgba(var(--mc-aqua-rgb) / 0.15);
+}
+.nomina-sueldo input:disabled { opacity: 0.55; cursor: wait; }
+
+.nomina-totales { margin-left: auto; text-align: right; min-width: 160px; }
+.nomina-total-linea {
+  display: flex; justify-content: space-between; gap: 12px;
+  font-size: 0.8rem; color: var(--mc-texto-secundario);
+}
+.nomina-total-linea--final {
+  margin-top: 2px; padding-top: 4px;
+  border-top: 1px solid var(--mc-borde-suave);
+  font-size: 0.95rem; color: var(--mc-texto-titulo);
+}
+.nomina-total-linea--final strong { font-size: 1.05rem; }
+.nomina-monto--cobra { color: var(--mc-rojo, #b91c1c); }
+.nomina-sin-sueldo { color: var(--mc-ambar, #b45309); font-size: 0.85rem; }
+.nomina-total-detalle { font-size: 0.72rem; color: var(--mc-texto-apagado); margin-top: 3px; }
+
+@media (max-width: 760px) {
+  .nomina-totales { margin-left: 0; text-align: left; width: 100%; }
+  .nomina-semana { order: 3; width: 100%; justify-content: space-between; }
+  .nomina-sueldo { order: 2; }
 }
 
 /* --- Enrolado de rostros (migración 041) --- */

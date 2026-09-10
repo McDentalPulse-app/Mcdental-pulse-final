@@ -45,6 +45,10 @@ const mapUsuario = (row) =>
     puedeVerDepartamentos: row.puede_ver_departamentos !== false,
     puedeVerAvisos: row.puede_ver_avisos !== false,
     puedeVerEncuestas: row.puede_ver_encuestas !== false,
+    // Sueldo semanal (mig. 156), base de la pantalla de Nómina. NO viaja en
+    // usuarios_directorio: ahí queda undefined, como el resto de la PII. `null` significa
+    // "sin capturar" y hay que conservarlo distinto de 0 — un 0 diría que no gana nada.
+    sueldoSemanal: row.sueldo_semanal == null ? null : Number(row.sueldo_semanal),
     // Organigrama (mig. 153): jefe directo y departamento. Vienen en ambas fuentes
     // (usuarios y usuarios_directorio), así que también los ve empleado/doctor.
     jefeId: row.jefe_id,
@@ -115,6 +119,23 @@ export const updateUsuario = async (id, updates) => {
   if (updates.puedeVerDepartamentos !== undefined) payload.puede_ver_departamentos = !!updates.puedeVerDepartamentos;
   if (updates.puedeVerAvisos !== undefined) payload.puede_ver_avisos = !!updates.puedeVerAvisos;
   if (updates.puedeVerEncuestas !== undefined) payload.puede_ver_encuestas = !!updates.puedeVerEncuestas;
+  // Sueldo semanal (mig. 156). Vaciar el campo debe poder volver a dejarlo "sin capturar",
+  // que es un null, no un cero: por eso la cadena vacía se traduce a null y no a Number("").
+  //
+  // El Number.isFinite NO es decorativo: sin él, un valor no numérico daba NaN, y JSON.stringify
+  // serializa NaN como null — o sea que mandar basura BORRABA el sueldo en silencio en vez de
+  // fallar. Un fallo ruidoso es lo correcto: aquí se está escribiendo lo que cobra una persona.
+  if (updates.sueldoSemanal !== undefined) {
+    if (updates.sueldoSemanal === null || updates.sueldoSemanal === "") {
+      payload.sueldo_semanal = null;
+    } else {
+      const n = Number(updates.sueldoSemanal);
+      if (!Number.isFinite(n) || n < 0) {
+        throw new Error("El sueldo semanal debe ser un número de 0 o más.");
+      }
+      payload.sueldo_semanal = Math.round(n * 100) / 100;
+    }
+  }
   // Organigrama (mig. 153). null explícito = "sin jefe"/"sin departamento" (la raíz,
   // o falta asignar) — por eso se compara con `!== undefined` y no con un `if (updates.x)`.
   if (updates.jefeId !== undefined) payload.jefe_id = updates.jefeId;

@@ -23,6 +23,7 @@ import PermisosRH from '../rh/PermisosRH';
 import VacacionesRH from '../rh/VacacionesRH';
 import PermisosEmpleado from '../empleados/PermisosEmpleado';
 import ComisionesRH from '../comisiones/ComisionesRH';
+import Nomina from '../rh/Nomina';
 import EventosPersonal from '../empleados/EventosPersonal';
 import Reportes from '../rh/Reportes';
 import Config from '../settings/Config';
@@ -67,6 +68,8 @@ export default function PsicologaLayout({ user, globals, actions }) {
             <Route path="intercambios" element={<IntercambiosRH intercambios={intercambios} festivos={festivos} onResolver={resolverIntercambio} onAddFestivo={addFestivo} onDeleteFestivo={deleteFestivo} />} />
             <Route path="mispermisos" element={<PermisosEmpleado user={user} vacaciones={vacaciones} permisos={permisos} horarios={horarios} onEnviarSolicitudEmpleado={agendarPropio} autoAprobar />} />
             <Route path="comisiones" element={<ComisionesRH comisiones={comisiones} onRevisar={revisarComision} />} />
+            {/* Nómina (mig. 156): la ve admin, rh y psicologa, por pedido del dueño. */}
+            <Route path="nomina" element={<Nomina usuarios={USERS} horarios={horarios} permisos={permisos} vacaciones={vacaciones} />} />
             <Route path="seguimiento" element={<PsicologaSeguimiento encuestas={encuestas} notas={notas} onUpdateNota={addNota} onDeleteNota={deleteNota}/>} />
             <Route path="confidenciales" element={<ReportesConfidencialesPanel reportes={reportesConfidenciales} />} />
             <Route path="empleados" element={<EmpleadosList encuestas={encuestas} notas={notas} role="psicologa" currentUser={user} onRestablecerPassword={restablecerPasswordUsuario} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} />} />

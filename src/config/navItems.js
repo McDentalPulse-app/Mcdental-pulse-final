@@ -14,6 +14,7 @@ export const NAV_ITEMS = {
     { key: "expedientes", icon: "folder", label: "Expedientes", group: "Equipo" },
     { key: "reconocimientos", icon: "award", label: "Reconocimientos", group: "Equipo" },
     { key: "eventospersonal", icon: "cake", label: "Cumpleaños y Aniversarios", group: "Equipo" },
+    { key: "nomina", icon: "dollar", label: "Nómina", group: "Equipo" },
     { key: "asistencia", icon: "clock", label: "Asistencia", group: "Asistencia y rostros" },
     { key: "sucursales", icon: "mapPin", label: "Sucursales", group: "Asistencia y rostros" },
     { key: "horarios", icon: "calendarDays", label: "Horarios", group: "Asistencia y rostros" },
@@ -46,6 +47,7 @@ export const NAV_ITEMS = {
     { key: "mispermisos", icon: "vacation", label: "Mis vacaciones/permisos", group: "Vacaciones y permisos" },
     { key: "intercambios", icon: "calendarDays", label: "Festivos", group: "Vacaciones y permisos" },
     { key: "comisiones", icon: "dollar", label: "Comisiones", group: "Vacaciones y permisos", requiere: "puedeVerComisiones" },
+    { key: "nomina", icon: "dollar", label: "Nómina", group: "Equipo" },
     { key: "empleados", icon: "users", label: "Empleados", group: "Equipo" },
     { key: "usuarios", icon: "userCog", label: "Gestión de Personal", group: "Equipo" },
     { key: "expedientes", icon: "folder", label: "Expedientes", group: "Equipo" },
@@ -91,6 +93,7 @@ export const NAV_ITEMS = {
     // mismo orden que la psicologa, que ya tiene estas cinco paginas juntas.
     { key: "intercambios", icon: "calendarDays", label: "Festivos", group: "Vacaciones y permisos" },
     { key: "comisiones", icon: "dollar", label: "Comisiones", group: "Vacaciones y permisos", requiere: "puedeVerComisiones" },
+    { key: "nomina", icon: "dollar", label: "Nómina", group: "RH" },
     { key: "descuentos", icon: "dollar", label: "Descuentos", group: "RH" },
     { key: "calendario", icon: "calendar", label: "Calendario", group: "RH" },
     { key: "reportesrh", icon: "trending", label: "Reportes RH", group: "RH" },
@@ -259,6 +262,7 @@ const DESCRIPCIONES = {
   reporteconfidencial: "Cuenta algo delicado. Solo lo lee la psicóloga.",
 
   // Dinero
+  nomina: "El pago de cada persona en la semana, con sus retardos y faltas descontados.",
   descuentos: "Descuentos aplicados a nómina y su motivo.",
   comisiones: "Lo que llevas ganado y el detalle de cada tratamiento.",
 
