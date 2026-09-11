@@ -273,6 +273,11 @@
   --mc-radio: 12px;
   --mc-radio-lg: 16px;
   --mc-radio-xl: 20px;
+  /* Curva de entrada/salida. NO es nueva: es exactamente la que ya usaba a mano la tarjeta de
+     login (`authCardIn`), ahora con nombre para que el resto de la app no la reinvente con un
+     cubic-bezier ligeramente distinto cada vez. Es un ease-out fuerte: arranca rápido y frena
+     al final, que es lo que hace que algo que ENTRA se sienta ágil. */
+  --mc-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --font-sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'Fira Code', monospace;
 

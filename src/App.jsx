@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState, useEffect } from "react";
+import { Suspense, lazy, useState, useEffect, useRef } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { refreshSemana } from "./utils/constants";
 import { rutaBaseDe } from "./config/navItems";
@@ -37,6 +37,36 @@ export default function App() {
     }, 60000);
     return () => clearInterval(id);
   }, []);
+
+  /**
+   * Animación de entrada: UNA vez, al abrir la app con sesión ya resuelta.
+   *
+   * Se marca el <body> y el CSS hace el resto (ver `.app-entrando` en App.css). Va por clase en
+   * el body, y no envolviendo la app en un <div> con la animación, a propósito: un contenedor
+   * con `transform` se vuelve el bloque contenedor de los `position: fixed` que tenga dentro, y
+   * eso ya rompió el detalle de sucursal del dashboard una vez (DESIGN.md, «Capas»). Sin
+   * elemento nuevo no hay nada que atrapar.
+   *
+   * El `ref` es lo que la hace de una sola vez: sin él, cualquier re-render que cambie `user`
+   * —refrescar la plantilla cada 60 s, por ejemplo— volvería a lanzarla, y el contenido se
+   * pondría a parpadear solo mientras alguien lo está leyendo.
+   */
+  const entradaAnimada = useRef(false);
+  useEffect(() => {
+    if (entradaAnimada.current || checkingSession || !user || requiereCambioPassword) return;
+    entradaAnimada.current = true;
+    document.body.classList.add("app-entrando");
+    // 600 ms, y el número importa. La última caja arranca a los 180 y dura 260: termina a los
+    // 440. Quitar la clase no es limpieza cosmética — mientras esté puesta, `fill-mode: both`
+    // mantiene el transform aplicado (medido: queda en la matriz identidad, no en `none`), y un
+    // transform distinto de `none` crea bloque contenedor para los `position: fixed` de dentro.
+    // Cuanto antes se retire, menor es esa ventana; 600 deja margen sobre los 440 sin alargarla.
+    const id = setTimeout(() => document.body.classList.remove("app-entrando"), 600);
+    return () => {
+      clearTimeout(id);
+      document.body.classList.remove("app-entrando");
+    };
+  }, [checkingSession, user, requiereCambioPassword]);
 
   /**
    * Marca el <body> cuando hay algún modal abierto.

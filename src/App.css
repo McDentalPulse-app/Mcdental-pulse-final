@@ -2395,6 +2395,58 @@
    Admin Premium Design System
    ══════════════════════════════════════════ */
 
+/* ── Entrada a la app ─────────────────────────────────────────────────────────
+   Al abrir la app se veía el `Loader` y, de golpe, la pantalla entera ya montada. Esto salva
+   ese salto: el contenido que YA está llegando aparece subiendo un poco, escalonado. No añade
+   ni un milisegundo de espera — no es una pantalla de bienvenida, es la misma carga de siempre
+   con una llegada menos brusca.
+
+   SOLO AL ENTRAR, no en cada navegación. La clase la pone `App.jsx` una vez y se quita sola.
+   Animar cada cambio de ruta sería otra cosa: se navega decenas de veces al día y a esa
+   frecuencia el movimiento estorba en vez de ayudar.
+
+   POR QUÉ SE ANIMAN LOS HIJOS DE `.admin-page` Y NO UN CONTENEDOR DE ARRIBA: un elemento con
+   `transform` se convierte en el bloque contenedor de los `position: fixed` que tenga dentro, y
+   eso ya rompió cosas en este proyecto — DESIGN.md lo documenta («el detalle de sucursal del
+   dashboard, atrapado por un transform de la animación de entrada»). `.app-main-inner` tiene un
+   `::before` fijo y la cabecera lleva la campana, también fija; los hijos de `.admin-page`, en
+   cambio, son contenido puro, y todo lo que flota vive en un portal a <body>.
+
+   SOBRE EL BLOQUE CONTENEDOR, medido y no supuesto: con `fill-mode: both` el navegador SIGUE
+   aplicando el último fotograma cuando la animación acaba, así que el transform computado no
+   queda en `none` sino en `matrix(1,0,0,1,0,0)` — la identidad. Y cualquier transform que no
+   sea `none` crea bloque contenedor, identidad incluida. Por eso `App.jsx` QUITA la clase del
+   body en cuanto termina: sin la clase no hay regla, sin regla no hay transform, y el bloque
+   contenedor desaparece. La ventana en la que existe es de medio segundo y dentro de ella no
+   hay nada `fixed` — todo lo que flota se renderiza en un portal a <body> (DESIGN.md, «Capas»),
+   y el `::before` fijo vive en `.app-main-inner`, que es ANCESTRO y no descendiente. */
+@keyframes appEntradaSube {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+body.app-entrando .admin-page > * {
+  animation: appEntradaSube 260ms var(--mc-ease-out) both;
+}
+/* Escalonado corto: lo justo para que se lea como una llegada y no como un parpadeo colectivo.
+   De la cuarta caja en adelante todas comparten retraso — encadenar más alarga la espera de lo
+   que está más abajo, que probablemente ni se está mirando. */
+body.app-entrando .admin-page > *:nth-child(2) { animation-delay: 60ms; }
+body.app-entrando .admin-page > *:nth-child(3) { animation-delay: 120ms; }
+body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
+
+/* Menos movimiento, no cero: se conserva la aparición (ayuda a entender que el contenido acaba
+   de llegar) y se quita el desplazamiento, que es lo que molesta a quien pide menos motion. */
+@keyframes appEntradaAparece {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.app-entrando .admin-page > * {
+    animation: appEntradaAparece 200ms var(--mc-ease-out) both;
+  }
+}
+
 .admin-page {
   max-width: 1080px;
   width: 100%;
