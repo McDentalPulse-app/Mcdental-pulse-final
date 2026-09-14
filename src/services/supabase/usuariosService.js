@@ -320,5 +320,12 @@ export const getEncuestaPreguntas = async () => {
     activa: row.activa,
     // null = pregunta del núcleo (cuenta para el Pulse Score).
     bloqueId: row.bloque_id ?? null,
+    // Cuánto pesa en ese score. `?? 1` cubre a una base que todavía no tenga la migración
+    // 159: sin él, `peso` llegaría undefined y la pregunta dejaría de contar lo que debe.
+    peso: row.peso ?? 1,
+    // Las encuestas migradas de Firestore guardaron la respuesta bajo este id numérico y no
+    // bajo el uuid (ver el comentario de `respuestas` en la migración 006). Sin él, la app
+    // cree que una pregunta con años de histórico no la ha contestado nadie.
+    legacyId: row.legacy_id ?? null,
   }));
 };

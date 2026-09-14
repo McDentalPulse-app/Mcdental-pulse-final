@@ -11,6 +11,7 @@ const toRow = (p) => {
     orden: base.orden,
     activa: base.activa,
     bloque_id: base.bloque_id,
+    peso: base.peso,
   };
 };
 
@@ -23,10 +24,52 @@ const fromRow = (row) => ({
   orden: row.orden,
   activa: row.activa,
   bloqueId: row.bloque_id ?? null,
+  peso: row.peso ?? 1,
+  // Clave con la que las encuestas migradas de Firestore guardaron la respuesta. Se lee,
+  // pero NO se manda de vuelta en preguntaToRow: la asigna la base y es única.
+  legacyId: row.legacy_id ?? null,
 });
 
-// Actualiza las preguntas que ya tienen id (uuid real) y crea las que no lo tienen.
-export const saveEncuestaPreguntas = async (preguntas) => {
+// Actualiza las preguntas que ya tienen id (uuid real), crea las que no lo tienen, y borra
+// las que `idsAEliminar` señale.
+export const saveEncuestaPreguntas = async (preguntas, idsAEliminar = []) => {
+  // Los borrados van PRIMERO: si la base rechaza alguno —el trigger de la migración 159 no
+  // deja borrar una pregunta que alguien ya contestó— se corta aquí, antes de haber escrito
+  // nada. Al revés quedarían las ediciones aplicadas y el borrado sin hacer, que es el
+  // estado más difícil de entender para quien está delante.
+  if (idsAEliminar.length) {
+    const { error } = await supabase
+      .from("encuesta_preguntas")
+      .delete()
+      .in("id", idsAEliminar);
+
+    if (error) {
+      console.error("Error al eliminar preguntas de encuesta:", error);
+      throw new Error(error.message || "No se pudieron eliminar las preguntas.");
+    }
+
+    // Se comprueba que las filas YA NO ESTÁN, en vez de contar las que devolvió el delete.
+    // Contarlas rompía el reintento: si el guardado fallaba DESPUÉS del borrado —un corte
+    // de red en el upsert—, al volver a pulsar Guardar el delete afectaba 0 filas (ya no
+    // existían) y la app respondía "no tienes permiso", que es falso, en bucle y sin salida.
+    // Preguntar si queda alguna es idempotente: si el borrado ocurrió, no queda ninguna,
+    // se reintente las veces que se reintente.
+    const { data: quedan, error: errorVerificacion } = await supabase
+      .from("encuesta_preguntas")
+      .select("id")
+      .in("id", idsAEliminar);
+
+    if (errorVerificacion) {
+      console.error("Error al verificar el borrado de preguntas:", errorVerificacion);
+      throw new Error("No se pudo confirmar que las preguntas se borraran.");
+    }
+    // Siguen ahí: el delete no llegó a la base. RLS no da error, simplemente no afecta
+    // nada, y la app cantaría un borrado que no ocurrió.
+    if (quedan.length) {
+      throw new Error("No tienes permiso para eliminar preguntas de la encuesta.");
+    }
+  }
+
   const existentes = preguntas.filter((p) => typeof p.id === "string");
   const nuevas = preguntas.filter((p) => typeof p.id !== "string");
   const resultados = [];

@@ -20,6 +20,7 @@ import {
 import {
   normalizePreguntasList,
   normalizePregunta,
+  normalizePeso,
   DEFAULT_OPCIONES_RIESGO,
 } from "../../utils/encuestaPreguntas";
 import { saveEncuestaPreguntas } from "../../services/supabase/encuestaPreguntasService";
@@ -30,6 +31,23 @@ const TIPOS = [
   { value: "opcion", label: "Opción múltiple" },
   { value: "abierta", label: "Respuesta abierta" },
 ];
+
+// Cuánto cuenta una pregunta en el Pulse Score. Los valores son los del CHECK de la columna
+// `peso` (migración 159): enteros del 1 al 5.
+const PESOS = [
+  { value: 1, label: "Normal — cuenta igual que las demás" },
+  { value: 2, label: "Cuenta doble (x2)" },
+  { value: 3, label: "Cuenta triple (x3)" },
+  { value: 4, label: "Cuenta x4" },
+  { value: 5, label: "Cuenta x5 — el máximo" },
+];
+
+// Id para una pregunta que todavía no existe en la base. Numérico a propósito:
+// saveEncuestaPreguntas distingue "hay que actualizarla" de "hay que crearla" por el tipo
+// del id, y los de la base son uuid (string). El contador evita que dos altas dentro del
+// mismo milisegundo compartan id y React trate las dos filas como una sola.
+let contadorNuevas = 0;
+const nuevoIdLocal = () => Date.now() + contadorNuevas++;
 
 const ADVERTENCIA_ENCUESTA =
   "Importante: modificar las preguntas puede afectar el cálculo del Pulse Score, los semáforos, los riesgos IA y la comparación histórica entre semanas. Los cambios aplicarán únicamente a próximas respuestas; las encuestas ya contestadas no se modifican.";
@@ -44,6 +62,7 @@ const serializarPreguntas = (list) =>
       orden: p.orden,
       activa: p.activa !== false,
       bloqueId: p.bloqueId ?? null,
+      peso: p.peso,
       ...(p.tipo === "opcion" ? { opciones: p.opciones || [] } : {}),
     }))
   );
@@ -66,6 +85,9 @@ const GestionEncuestas = ({ encuestas = [] }) => {
   const [editandoId, setEditandoId] = useState(null);
   const [form, setForm] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  // Ids de preguntas de la BASE que se han sacado del borrador. Se borran al guardar, no al
+  // pulsar: si se borrara en el acto, cerrar el modal con "Cancelar" no deshría nada.
+  const [eliminadas, setEliminadas] = useState([]);
 
   // El bloque de esta quincena se DERIVA de la semana, no se guarda en ningún sitio.
   const bloqueActivo = bloqueDeLaSemana(getISOWeek(), encuestaBloques);
@@ -74,7 +96,18 @@ const GestionEncuestas = ({ encuestas = [] }) => {
   // guardan por ID, así que cambiar la frase reescribe el pasado en silencio — alguien
   // respondió "8" a una pregunta que ya no existe. Para reformularla, se desactiva y se crea
   // otra. El orden, el área y el estado sí se pueden seguir cambiando.
-  const congelada = preguntaTieneRespuestas(form?.id, encuestas);
+  // Mira la clave uuid Y la legacy: las encuestas migradas de Firestore guardaron la
+  // respuesta bajo el id numérico viejo (ver el comentario de `respuestas` en la migración
+  // 006). Preguntando solo por el uuid, la app daba por no contestadas justo las preguntas
+  // con más histórico detrás — y ofrecía borrarlas.
+  const tieneRespuestas = (pregunta) =>
+    preguntaTieneRespuestas(pregunta?.id, encuestas) ||
+    preguntaTieneRespuestas(pregunta?.legacyId, encuestas);
+
+  const congelada = tieneRespuestas(form);
+
+  // Se está creando ahora mismo: todavía no ha entrado al borrador.
+  const esNueva = editandoId != null && !draftPreguntas.some((p) => p.id === editandoId);
 
   // Lo que el empleado va a ver esta semana: el núcleo más el bloque que toca. NO es lo
   // mismo que el catálogo completo, y confundirlos hacía que la tarjeta dijera "22
@@ -89,6 +122,7 @@ const GestionEncuestas = ({ encuestas = [] }) => {
     setDraftPreguntas(normalizePreguntasList(encuestaPreguntas));
     setEditandoId(null);
     setForm(null);
+    setEliminadas([]);
     setModalAbierto(true);
   };
 
@@ -115,6 +149,57 @@ const GestionEncuestas = ({ encuestas = [] }) => {
   const cancelarEdicionPregunta = () => {
     setEditandoId(null);
     setForm(null);
+  };
+
+  // La pregunta nueva NO entra al borrador hasta que se aplica. Si entrara aquí, salir con
+  // "Volver a la lista" dejaría una fila sin texto esperando a guardarse.
+  const agregarPregunta = () => {
+    const ordenMax = draftPreguntas.reduce(
+      (max, p) => Math.max(max, Number(p.orden) || 0),
+      0,
+    );
+    const nueva = normalizePregunta({
+      id: nuevoIdLocal(),
+      texto: "",
+      tipo: "escala",
+      area: "General",
+      orden: ordenMax + 1,
+    });
+
+    setEditandoId(nueva.id);
+    setForm({ ...nueva, opcionesTexto: "" });
+  };
+
+  const borrarPregunta = async (pregunta) => {
+    // El editor congela el texto de una pregunta contestada por este mismo motivo: las
+    // respuestas se guardan por ID, así que borrarla deja números que ningún reporte sabe ya
+    // a qué pregunta pertenecen. La base lo impide igual (trigger de la migración 159);
+    // esto ahorra el viaje y, sobre todo, explica qué hacer en su lugar.
+    if (tieneRespuestas(pregunta)) {
+      toast.error(
+        "Alguien ya contestó esta pregunta, así que borrarla dejaría sus respuestas sin dueño. " +
+          "Ponla en «Inactiva»: deja de aparecer en la encuesta y el histórico se conserva.",
+      );
+      return;
+    }
+
+    const ok = await confirm({
+      title: "Eliminar pregunta",
+      description:
+        `¿Eliminar "${pregunta.texto}"? Nadie la ha contestado, así que no se pierde ningún ` +
+        "dato. Se borra de la base al guardar los cambios.",
+      confirmText: "Eliminar",
+      cancelText: "Cancelar",
+      variant: "danger",
+    });
+    if (!ok) return;
+
+    setDraftPreguntas((prev) => prev.filter((p) => p.id !== pregunta.id));
+    // Solo hay que borrar en la base las que existen allí. Las de id numérico nunca llegaron
+    // a guardarse: sacarlas del borrador ya es todo el trabajo.
+    if (typeof pregunta.id === "string") {
+      setEliminadas((prev) => [...prev, pregunta.id]);
+    }
   };
 
   const aplicarEdicionPregunta = () => {
@@ -147,7 +232,9 @@ const GestionEncuestas = ({ encuestas = [] }) => {
 
     setDraftPreguntas((prev) =>
       normalizePreguntasList(
-        prev.map((p) => (p.id === actualizada.id ? { ...p, ...actualizada } : p))
+        prev.some((p) => p.id === actualizada.id)
+          ? prev.map((p) => (p.id === actualizada.id ? { ...p, ...actualizada } : p))
+          : [...prev, actualizada]
       )
     );
     setEditandoId(null);
@@ -179,11 +266,25 @@ const GestionEncuestas = ({ encuestas = [] }) => {
       return;
     }
 
+    // Sin ninguna escala activa en el núcleo no hay Pulse Score que calcular, y el trigger
+    // rechaza TODA encuesta que llegue: la plantilla entera se quedaría sin poder enviar la
+    // suya, con un error crudo de base de datos por toda explicación.
+    const hayEscalaEnNucleo = draftPreguntas.some(
+      (p) => !p.bloqueId && p.tipo === "escala" && p.activa !== false,
+    );
+    if (!hayEscalaEnNucleo) {
+      toast.error(
+        "La encuesta necesita al menos una pregunta de escala activa en el núcleo: es de donde sale el Pulse Score.",
+      );
+      return;
+    }
+
     setGuardando(true);
     try {
       const ordenadas = normalizePreguntasList(draftPreguntas);
-      const guardadas = await saveEncuestaPreguntas(ordenadas);
+      const guardadas = await saveEncuestaPreguntas(ordenadas, eliminadas);
       setEncuestaPreguntas(normalizePreguntasList(guardadas));
+      setEliminadas([]);
       toast.success("Preguntas de encuesta guardadas correctamente.");
       cerrarEditor();
     } catch (error) {
@@ -333,22 +434,36 @@ const GestionEncuestas = ({ encuestas = [] }) => {
                             {p.activa === false ? "Inactiva" : "Activa"}
                           </span>
                           <span className="encuesta-edit-orden">Orden {p.orden}</span>
+                          {!p.bloqueId && p.tipo === "escala" && p.peso > 1 && (
+                            <span className="encuesta-edit-peso">Pesa x{p.peso}</span>
+                          )}
                         </div>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      className="mc-btn-outline mc-btn-with-icon encuesta-edit-row-btn"
-                      onClick={() => iniciarEdicion(p)}
-                    >
-                      <Icon name="wand" size={14} /> Editar
-                    </button>
+                    <div className="encuesta-edit-row-actions">
+                      <button
+                        type="button"
+                        className="mc-btn-outline mc-btn-with-icon encuesta-edit-row-btn"
+                        onClick={() => iniciarEdicion(p)}
+                      >
+                        <Icon name="wand" size={14} /> Editar
+                      </button>
+                      <button
+                        type="button"
+                        className="mc-btn-outline mc-btn-with-icon encuesta-edit-row-btn encuesta-edit-row-btn--danger"
+                        onClick={() => borrarPregunta(p)}
+                      >
+                        <Icon name="trash" size={14} /> Eliminar
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="encuesta-edit-form">
-                <h3 className="encuesta-edit-form-title">Editar pregunta #{form?.id}</h3>
+                <h3 className="encuesta-edit-form-title">
+                  {esNueva ? "Nueva pregunta" : "Editar pregunta"}
+                </h3>
 
                 <div className="mc-form-group">
                   <label className="mc-form-label" htmlFor="ge-texto">Texto de la pregunta</label>
@@ -444,6 +559,33 @@ const GestionEncuestas = ({ encuestas = [] }) => {
                   </Select>
                 </div>
 
+                {/* Solo las escalas del núcleo puntúan, así que el peso solo significa algo
+                    ahí. Enseñarlo en una abierta o en una de bloque prometería un efecto
+                    que no existe. */}
+                {form?.tipo === "escala" && !form?.bloqueId && (
+                  <div className="mc-form-group">
+                    <label className="mc-form-label" htmlFor="ge-peso">
+                      Cuánto cuenta en el Pulse Score
+                    </label>
+                    <Select
+                      id="ge-peso"
+                      value={String(normalizePeso(form?.peso))}
+                      onChange={(valor) =>
+                        setForm((prev) => ({ ...prev, peso: Number(valor) }))
+                      }
+                    >
+                      {PESOS.map((p) => (
+                        <option key={p.value} value={String(p.value)}>{p.label}</option>
+                      ))}
+                    </Select>
+                    <span className="mc-hint">
+                      El score es el promedio ponderado de las escalas del núcleo. Subir el
+                      peso de una pregunta la hace pesar más que el resto de aquí en
+                      adelante; los scores ya guardados no se recalculan.
+                    </span>
+                  </div>
+                )}
+
                 {form?.tipo === "opcion" && (
                   <div className="mc-form-group">
                     <label className="mc-form-label" htmlFor="ge-opciones">Opciones (una por línea)</label>
@@ -486,6 +628,14 @@ const GestionEncuestas = ({ encuestas = [] }) => {
 
             {editandoId == null && (
               <div className="encuesta-edit-footer">
+                <button
+                  type="button"
+                  className="mc-btn-outline mc-btn-with-icon encuesta-edit-add"
+                  onClick={agregarPregunta}
+                  disabled={guardando}
+                >
+                  <Icon name="plus" size={16} /> Nueva pregunta
+                </button>
                 <button type="button" className="mc-btn-secondary" onClick={cerrarEditor} disabled={guardando}>
                   Cancelar
                 </button>

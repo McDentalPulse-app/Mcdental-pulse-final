@@ -3693,6 +3693,42 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   font-size: 12px;
 }
 
+.encuesta-edit-row-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.encuesta-edit-row-btn--danger {
+  color: var(--mc-rojo, #dc2626);
+  border-color: var(--mc-rojo, #dc2626);
+}
+
+.encuesta-edit-peso {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--mc-slate-700);
+  background: var(--mc-slate-200);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+/* El alta empuja a Cancelar y Guardar al otro extremo del pie del modal. */
+.encuesta-edit-add {
+  margin-right: auto;
+}
+
+@media (max-width: 768px) {
+  .encuesta-edit-row-actions,
+  .encuesta-edit-add {
+    width: 100%;
+  }
+
+  .encuesta-edit-row-actions .encuesta-edit-row-btn {
+    flex: 1;
+  }
+}
+
 .encuesta-edit-form {
   display: grid;
   gap: 14px;

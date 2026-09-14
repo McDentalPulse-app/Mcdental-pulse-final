@@ -25,6 +25,7 @@ const enc = (empleadoId, semana, score, respuestas = {}) => ({
 
 describe("calcularScoreEncuesta", () => {
   const escala = (id) => ({ id, tipo: "escala" });
+  const escalaConPeso = (id, peso) => ({ id, tipo: "escala", peso });
   const abierta = (id) => ({ id, tipo: "abierta" });
   const sino = (id) => ({ id, tipo: "sino" });
 
@@ -90,6 +91,104 @@ describe("calcularScoreEncuesta", () => {
 
     expect(r.ok).toBe(true);
     expect(r.score).toBe(0);
+  });
+
+  // Los pesos (migración 159) dejan que una pregunta cuente más que otra. La garantía que
+  // hay que sostener es doble: que con todos los pesos en 1 el número NO se mueve —si no,
+  // el histórico dejaría de ser comparable el día que se desplegó— y que el cálculo de aquí
+  // sigue coincidiendo con el del trigger, que es quien manda.
+  describe("pesos", () => {
+    it("con todos los pesos en 1 da exactamente la media simple de siempre", () => {
+      const sinPeso = calcularScoreEncuesta([escala(1), escala(2)], { 1: 8, 2: 6 });
+      const conPeso1 = calcularScoreEncuesta(
+        [escalaConPeso(1, 1), escalaConPeso(2, 1)],
+        { 1: 8, 2: 6 }
+      );
+
+      expect(conPeso1.score).toBe(sinPeso.score);
+      expect(conPeso1.score).toBe(70);
+    });
+
+    it("una pregunta con peso arrastra el score hacia su respuesta", () => {
+      // Ponderado: (10*3 + 2*1) / (4 * 10) * 100 = 80.
+      // Simple, para contraste: (10 + 2) / (2 * 10) * 100 = 60.
+      const r = calcularScoreEncuesta([escalaConPeso(1, 3), escala(2)], { 1: 10, 2: 2 });
+
+      expect(r.score).toBe(80);
+      expect(calcularScoreEncuesta([escala(1), escala(2)], { 1: 10, 2: 2 }).score).toBe(60);
+    });
+
+    it("el peso no cambia nada cuando todas las respuestas son iguales", () => {
+      // Un promedio ponderado de valores idénticos es ese mismo valor, pese lo que pese.
+      const r = calcularScoreEncuesta([escalaConPeso(1, 5), escala(2)], { 1: 7, 2: 7 });
+      expect(r.score).toBe(70);
+    });
+
+    it.each([
+      ["ausente", undefined],
+      ["null", null],
+      ["texto", "mucho"],
+      ["cero", 0],
+      ["negativo", -4],
+    ])("un peso %s cuenta como 1 en vez de romper el cálculo", (_, peso) => {
+      const r = calcularScoreEncuesta([escalaConPeso(1, peso), escala(2)], { 1: 8, 2: 6 });
+
+      expect(r.ok).toBe(true);
+      expect(r.score).toBe(70);
+    });
+
+    it("un peso por encima del máximo se recorta a 5, no se aplica tal cual", () => {
+      const recortado = calcularScoreEncuesta([escalaConPeso(1, 99), escala(2)], { 1: 10, 2: 2 });
+      const alMaximo = calcularScoreEncuesta([escalaConPeso(1, 5), escala(2)], { 1: 10, 2: 2 });
+
+      expect(recortado.score).toBe(alMaximo.score);
+    });
+  });
+
+  // El score que manda es el del trigger `encuestas_calcular_score()` (migración 159), que
+  // opera en `numeric` —decimal exacto— y redondea half-away-from-zero. Si el cálculo de
+  // aquí no da lo mismo, la app enseña un número que la base luego cambia.
+  //
+  // Esto no es hipotético: la primera versión hacía `(suma / (pesoTotal * 10)) * 100`, que
+  // divide en float64 ANTES de multiplicar. Con pesoTotal 8 y suma 46 el intermedio salía
+  // 57.49999999999999 en vez de 57.5, y devolvía 57 donde el servidor devuelve 58.
+  describe("coincide con el redondeo exacto del servidor", () => {
+    // round(suma * 100 / (pesoTotal * 10)) en aritmética entera exacta, sin coma flotante.
+    const scoreExacto = (suma, pesoTotal) => {
+      const numerador = 2n * BigInt(suma) * 100n + BigInt(pesoTotal) * 10n;
+      const denominador = 2n * BigInt(pesoTotal) * 10n;
+      return Number(numerador / denominador);
+    };
+
+    it("el caso concreto que divergía: dos escalas, pesoTotal 8, suma ponderada 46", () => {
+      // 10*3 + 8*2 = 46, pesos 3 y 5 -> pesoTotal 8. Exacto: 46*100/80 = 57.5 -> 58.
+      const r = calcularScoreEncuesta([escalaConPeso(1, 3), escalaConPeso(2, 5)], { 1: 10, 2: 3.2 });
+      expect(scoreExacto(46, 8)).toBe(58);
+      expect(r.score).toBe(scoreExacto(46, 8));
+    });
+
+    it("ninguna combinación de dos escalas del núcleo diverge del cálculo exacto", () => {
+      const divergencias = [];
+
+      for (let pesoA = 1; pesoA <= 5; pesoA++) {
+        for (let pesoB = 1; pesoB <= 5; pesoB++) {
+          for (let valorA = 0; valorA <= 10; valorA++) {
+            for (let valorB = 0; valorB <= 10; valorB++) {
+              const r = calcularScoreEncuesta(
+                [escalaConPeso(1, pesoA), escalaConPeso(2, pesoB)],
+                { 1: valorA, 2: valorB }
+              );
+              const esperado = scoreExacto(valorA * pesoA + valorB * pesoB, pesoA + pesoB);
+              if (r.score !== esperado) {
+                divergencias.push({ pesoA, pesoB, valorA, valorB, dio: r.score, esperado });
+              }
+            }
+          }
+        }
+      }
+
+      expect(divergencias).toEqual([]);
+    });
   });
 });
 

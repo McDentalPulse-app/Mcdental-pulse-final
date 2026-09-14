@@ -1,4 +1,5 @@
 import { readRiesgoRenuncia } from "./encuestaDetail";
+import { normalizePeso } from "./encuestaPreguntas";
 
 // OJO con `nivel`: en calcPulseScore es la ETIQUETA legible ("Estable"), y en
 // getPulseStatus es el SLUG ("verde"). Mismo nombre, dos significados — herencia del
@@ -41,8 +42,18 @@ export const semaforoDeScore = (score) =>
   score >= 80 ? "verde" : score >= 60 ? "amarillo" : "rojo";
 
 /**
- * Calcula el Pulse Score de una encuesta: media de las preguntas de escala (1-10),
- * normalizada a 0-100.
+ * Calcula el Pulse Score de una encuesta: promedio PONDERADO de las preguntas de escala
+ * (1-10), normalizado a 0-100.
+ *
+ * El `peso` (1 a 5) deja que una pregunta cuente más que las demás sin tener que
+ * duplicarla. Con todos los pesos en 1 —el default— esto es la media simple de siempre,
+ * así que introducir los pesos no movió ningún número por sí solo.
+ *
+ * Tiene que dar EXACTAMENTE lo mismo que `encuestas_calcular_score()` en la base
+ * (migración 159), que es quien manda: el trigger recalcula el score e ignora el que manda
+ * el cliente. Este cálculo solo sirve para validar antes de enviar y para no enseñar un
+ * número que luego cambie. Lo que sostiene esa igualdad es el ORDEN de las operaciones
+ * (multiplicar antes de dividir, ver abajo), no que los pesos sean enteros.
  *
  * Devuelve un resultado explícito en vez de un número suelto, porque hay dos formas
  * de NO poder calcularlo y la UI las distingue:
@@ -59,16 +70,25 @@ export const calcularScoreEncuesta = (preguntas = [], respuestas = {}) => {
     return { ok: false, motivo: "sin-preguntas-escala" };
   }
 
-  const valores = escala
-    .map((p) => Number(respuestas[p.id]))
-    .filter((valor) => Number.isFinite(valor));
+  const respondidas = escala
+    .map((p) => ({ peso: normalizePeso(p.peso), valor: Number(respuestas[p.id]) }))
+    .filter(({ valor }) => Number.isFinite(valor));
 
-  if (valores.length !== escala.length) {
+  if (respondidas.length !== escala.length) {
     return { ok: false, motivo: "faltan-respuestas" };
   }
 
-  const suma = valores.reduce((acc, valor) => acc + valor, 0);
-  const score = Math.round((suma / (escala.length * 10)) * 100);
+  const suma = respondidas.reduce((acc, { valor, peso }) => acc + valor * peso, 0);
+  // normalizePeso nunca devuelve 0, así que con al menos una escala esto no divide por cero.
+  const pesoTotal = respondidas.reduce((acc, { peso }) => acc + peso, 0);
+  // Multiplicar ANTES de dividir, y una sola división. `(suma / (pesoTotal * 10)) * 100`
+  // parece lo mismo y no lo es: divide primero en float64 y se come el medio punto exacto.
+  // Con las seis escalas del núcleo y una puesta en peso 3 (pesoTotal 8, suma 46) el valor
+  // exacto es 57.5, pero el intermedio sale 57.49999999999999 y Math.round devuelve 57,
+  // mientras el `numeric` del servidor —decimal exacto— devuelve 58. Divergían todas las
+  // combinaciones con pesoTotal múltiplo de 4, que son justo las que el selector de peso
+  // hace alcanzables. Con la multiplicación delante, ninguna.
+  const score = Math.round((suma * 100) / (pesoTotal * 10));
 
   return { ok: true, score, semaforo: semaforoDeScore(score) };
 };
