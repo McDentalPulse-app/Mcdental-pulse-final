@@ -165,6 +165,12 @@ begin
       from public.encuestas e
      where jsonb_typeof(e.respuestas) = 'array'
        and old.legacy_id is not null
+       -- Acotado antes de castear: `legacy_id` es bigint (la migración 018 lo ensanchó a
+       -- propósito), y un valor por encima de int32 reventaría el cast con un «integer out
+       -- of range» crudo — fallando el borrado de una pregunta que quizá nadie contestó, y
+       -- sin el mensaje explicativo del trigger. Fuera de este rango no hay array que mirar:
+       -- ningún array tiene 2.147 millones de posiciones.
+       and old.legacy_id between 1 and 2147483647
        and e.respuestas -> ((old.legacy_id - 1)::int) is not null
        and e.respuestas -> ((old.legacy_id - 1)::int) <> 'null'::jsonb
        and e.respuestas -> ((old.legacy_id - 1)::int) <> '""'::jsonb

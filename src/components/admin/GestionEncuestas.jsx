@@ -24,6 +24,7 @@ import {
   DEFAULT_OPCIONES_RIESGO,
 } from "../../utils/encuestaPreguntas";
 import { saveEncuestaPreguntas } from "../../services/supabase/encuestaPreguntasService";
+import { getEncuestaPreguntas } from "../../services/supabase/usuariosService";
 
 const TIPOS = [
   { value: "escala", label: "Escala (1–10)" },
@@ -289,6 +290,27 @@ const GestionEncuestas = ({ encuestas = [] }) => {
       cerrarEditor();
     } catch (error) {
       toast.error(error.message || "No se pudieron guardar los cambios.");
+
+      // El guardado puede haber fallado DESPUÉS de borrar: en ese caso el borrado sí ocurrió
+      // y la lista en memoria se quedó con preguntas que ya no existen en la base. Sin releer,
+      // al reabrir el editor el borrador partiría de esa lista vieja y el siguiente guardado
+      // las RESUCITARÍA, porque el upsert las reinserta con su uuid original (y sin legacy_id).
+      // Releer deja el borrador partiendo del estado real, que es el único desde el que el
+      // reintento significa lo que parece.
+      try {
+        const frescas = normalizePreguntasList(await getEncuestaPreguntas());
+        setEncuestaPreguntas(frescas);
+        // De `eliminadas` solo sobran los borrados que la base YA aplicó, o sea los ids que
+        // la relectura ya no encuentra. Los que siguen ahí NO se borraron —se cayó la red,
+        // o el trigger los rechazó— y hay que conservarlos para que el reintento vuelva a
+        // pedirlos. Vaciar la lista entera hacía que el segundo intento dejara de pedir el
+        // borrado, el upsert funcionara y la app cantara «guardadas correctamente» con la
+        // pregunta todavía viva en la base y ya desaparecida de la pantalla.
+        setEliminadas((prev) => prev.filter((id) => frescas.some((p) => p.id === id)));
+      } catch {
+        // Si ni releer se puede, se deja lo que hay: del fallo ya se avisó arriba, y pisar
+        // ese aviso con un segundo error solo taparía el primero.
+      }
     } finally {
       setGuardando(false);
     }
