@@ -200,6 +200,25 @@ describe("criterio de aceptación: un bloque no puede mover el Pulse Score", () 
 });
 
 describe("esAreaReservada", () => {
+  // Las ocho del núcleo que entró con la migración 161. Sin ellas en la lista, un bloque
+  // rotatorio podría llamarse "Visión" o "Conflictos" igual que una pregunta del núcleo, y
+  // `resumenEscalas` mandaría a la IA dos preguntas distintas bajo la misma etiqueta: la
+  // serie que compara semana a semana mezclaría cuestionarios sin que saltara ningún error.
+  it("las ocho áreas del núcleo nuevo están reservadas (migración 161)", () => {
+    for (const area of [
+      "Retroalimentación",
+      "Visión",
+      "Voz propia",
+      "Ambiente de equipo",
+      "Conflictos",
+      "Comunicación interna",
+      "Herramientas",
+      "Espacio de trabajo",
+    ]) {
+      expect(esAreaReservada(area), area).toBe(true);
+    }
+  });
+
   it("reconoce las áreas del núcleo", () => {
     expect(esAreaReservada("Riesgo")).toBe(true);
     expect(esAreaReservada("Comentarios")).toBe(true);

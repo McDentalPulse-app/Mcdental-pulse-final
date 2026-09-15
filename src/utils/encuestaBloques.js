@@ -86,6 +86,20 @@ export const AREAS_RESERVADAS = [
   "Satisfacción",
   "Carga",
   "Personal",
+  // Las ocho del núcleo nuevo (migración 161). Se reservan por el mismo motivo que las de
+  // arriba, y la protección va en las DOS direcciones: la 161 se aseguró de que ninguna de
+  // estas pisara un área vieja, pero sin esta lista nada impedía lo contrario — que un
+  // bloque futuro usara "Visión" o "Conflictos". Entonces `resumenEscalas` etiquetaría dos
+  // preguntas distintas con el mismo nombre en el contexto que lee la IA, y la serie que
+  // compara semana a semana mezclaría respuestas de cuestionarios diferentes.
+  "Retroalimentación",
+  "Visión",
+  "Voz propia",
+  "Ambiente de equipo",
+  "Conflictos",
+  "Comunicación interna",
+  "Herramientas",
+  "Espacio de trabajo",
 ];
 
 const normalizarArea = (area) =>
