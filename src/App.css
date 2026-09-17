@@ -3713,6 +3713,26 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   padding: 2px 8px;
 }
 
+.encuesta-edit-invertida {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--mc-ambar-texto, #92400e);
+  background: var(--mc-ambar-fondo, #fef3c7);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+/* Los extremos de la escala, debajo de los números de Mi Encuesta. */
+.empleado-scale-leyenda {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mc-slate-500);
+}
+
 /* El alta empuja a Cancelar y Guardar al otro extremo del pie del modal. */
 .encuesta-edit-add {
   margin-right: auto;

@@ -1,5 +1,5 @@
 import { readRiesgoRenuncia } from "./encuestaDetail";
-import { normalizePeso } from "./encuestaPreguntas";
+import { normalizePeso, valorOrientado } from "./encuestaPreguntas";
 
 // OJO con `nivel`: en calcPulseScore es la ETIQUETA legible ("Estable"), y en
 // getPulseStatus es el SLUG ("verde"). Mismo nombre, dos significados — herencia del
@@ -70,9 +70,19 @@ export const calcularScoreEncuesta = (preguntas = [], respuestas = {}) => {
     return { ok: false, motivo: "sin-preguntas-escala" };
   }
 
+  // Se valida el valor CRUDO y solo después se orienta. El orden importa: `Number("")` es
+  // 0 —finito— así que una respuesta vacía colaba como un 0 real; y al invertir colaba como
+  // `11 - 0 = 11`, que además está fuera de la escala. Una casilla sin contestar no puede
+  // convertirse en la respuesta más alta posible. `tieneScoreValido` es el único predicado
+  // de «esto es un dato real» que ya distingue null, undefined y "" del 0 legítimo.
   const respondidas = escala
-    .map((p) => ({ peso: normalizePeso(p.peso), valor: Number(respuestas[p.id]) }))
-    .filter(({ valor }) => Number.isFinite(valor));
+    .map((p) => ({
+      peso: normalizePeso(p.peso),
+      bruto: respuestas[p.id],
+      invertida: p.invertida,
+    }))
+    .filter(({ bruto }) => tieneScoreValido(bruto))
+    .map(({ peso, bruto, invertida }) => ({ peso, valor: valorOrientado(bruto, invertida) }));
 
   if (respondidas.length !== escala.length) {
     return { ok: false, motivo: "faltan-respuestas" };

@@ -145,6 +145,82 @@ describe("calcularScoreEncuesta", () => {
     });
   });
 
+  // Una escala invertida es aquella en la que 10 es lo PEOR («¿qué tan estresado/a te has
+  // sentido?»). Sumarla al derecho es el fallo que la migración 160 corrige: premiaba con
+  // hasta 15 puntos a quien peor estaba, y en los datos reales cambiaba de semáforo a 173
+  // de 615 encuestas sin mover la media más de 0.2 — por eso nadie lo vio en dos años.
+  describe("escalas invertidas", () => {
+    const invertida = (id, peso = 1) => ({ id, tipo: "escala", peso, invertida: true });
+
+    it("es simétrica en los dos extremos y en el centro", () => {
+      // 11 - valor mapea 1↔10, 2↔9 ... 5↔6. Si esto se rompe, se rompe en los bordes.
+      for (const [dado, equivalente] of [[10, 1], [1, 10], [2, 9], [9, 2], [5, 6], [6, 5]]) {
+        expect(calcularScoreEncuesta([invertida(1)], { 1: dado }).score).toBe(
+          calcularScoreEncuesta([escala(1)], { 1: equivalente }).score
+        );
+      }
+      // Y un valor absoluto, no solo la comparación entre dos: si las dos mitades se
+      // rompieran igual, lo de arriba seguiría pasando. Un 10 invertido es un 1 -> 10 puntos.
+      expect(calcularScoreEncuesta([invertida(1)], { 1: 10 }).score).toBe(10);
+    });
+
+    // LA REGRESIÓN QUE ESTE BLOQUE EXISTE PARA ATRAPAR, y que los 682 tests anteriores
+    // dejaban pasar en verde: si se valida DESPUÉS de orientar en vez de antes, una casilla
+    // vacía sobre una pregunta invertida se convierte en `11 - 0 = 11` — un valor fuera de
+    // la escala que además pasa el filtro de «es un número finito». Resultado medido:
+    // {ok: true, score: 110, semáforo: "verde"} para alguien que no contestó NADA.
+    //
+    // El caso de la clave AUSENTE (undefined) no sirve para vigilar esto: da NaN en los dos
+    // órdenes, así que se filtra igual y el test pasa con el fallo dentro. Los valores que
+    // de verdad discriminan son "" y null, y por eso están aquí nombrados uno a uno.
+    it.each([
+      ["una cadena vacía", ""],
+      ["null", null],
+    ])("%s en una pregunta invertida NO se convierte en un 11", (_caso, valor) => {
+      expect(calcularScoreEncuesta([invertida(1)], { 1: valor })).toEqual({
+        ok: false,
+        motivo: "faltan-respuestas",
+      });
+    });
+
+    it("tampoco con varias preguntas: una sola casilla vacía invalida el score", () => {
+      const r = calcularScoreEncuesta([invertida(1), escala(2)], { 1: "", 2: 8 });
+      expect(r.ok).toBe(false);
+      expect(r.score).toBeUndefined();
+    });
+
+    it("no marcar nada como invertida deja el score exactamente como estaba", () => {
+      // La garantía que permite desplegar la 160 sin mover ningún número.
+      const preguntas = [escala(1), escala(2), escala(3)];
+      const respuestas = { 1: 8, 2: 3, 3: 6 };
+      expect(calcularScoreEncuesta(preguntas, respuestas).score).toBe(57);
+    });
+
+    it("el caso real: la pregunta de estrés deja de premiar a quien peor está", () => {
+      // Seis escalas como el núcleo de producción. Alguien MUY estresado (10 en esa).
+      const sinCorregir = [escala(1), escala(2), escala(3), escala(4), escala(5), escala(6)];
+      const corregido = [escala(1), invertida(2), escala(3), escala(4), escala(5), escala(6)];
+      const respuestas = { 1: 8, 2: 10, 3: 8, 4: 8, 5: 8, 6: 8 };
+
+      // Hoy el 10 de estrés SUBE el score; corregido, lo baja 15 puntos.
+      expect(calcularScoreEncuesta(sinCorregir, respuestas).score).toBe(83);
+      expect(calcularScoreEncuesta(corregido, respuestas).score).toBe(68);
+    });
+
+    it("la inversión se aplica antes del peso, no después", () => {
+      // invertida con peso 3 y respuesta 10 -> (11-10)*3 = 3, no (11 - 10*3).
+      const r = calcularScoreEncuesta([invertida(1, 3), escala(2)], { 1: 10, 2: 10 });
+      // (1*3 + 10*1) / (4*10) * 100 = 32.5 -> 33
+      expect(r.score).toBe(33);
+    });
+
+    it("una respuesta que falta sigue faltando aunque la pregunta sea invertida", () => {
+      const r = calcularScoreEncuesta([invertida(1), escala(2)], { 2: 5 });
+      expect(r.ok).toBe(false);
+      expect(r.motivo).toBe("faltan-respuestas");
+    });
+  });
+
   // El score que manda es el del trigger `encuestas_calcular_score()` (migración 159), que
   // opera en `numeric` —decimal exacto— y redondea half-away-from-zero. Si el cálculo de
   // aquí no da lo mismo, la app enseña un número que la base luego cambia.

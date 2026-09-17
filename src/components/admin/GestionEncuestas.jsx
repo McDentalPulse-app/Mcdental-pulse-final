@@ -21,6 +21,7 @@ import {
   normalizePreguntasList,
   normalizePregunta,
   normalizePeso,
+  extremosDeEscala,
   DEFAULT_OPCIONES_RIESGO,
 } from "../../utils/encuestaPreguntas";
 import { saveEncuestaPreguntas } from "../../services/supabase/encuestaPreguntasService";
@@ -35,6 +36,13 @@ const TIPOS = [
 
 // Cuánto cuenta una pregunta en el Pulse Score. Los valores son los del CHECK de la columna
 // `peso` (migración 159): enteros del 1 al 5.
+// Hacia dónde va una escala de 1 a 10. Las palabras salen de `extremosDeEscala`, que es la
+// misma fuente que usa la pantalla del empleado: aquí se elige la frase que allí se lee.
+const DIRECCIONES = [false, true].map((invertida) => {
+  const { uno, diez } = extremosDeEscala(invertida);
+  return { value: invertida ? "invertida" : "normal", label: `1 = ${uno} · 10 = ${diez}` };
+});
+
 const PESOS = [
   { value: 1, label: "Normal — cuenta igual que las demás" },
   { value: 2, label: "Cuenta doble (x2)" },
@@ -64,6 +72,7 @@ const serializarPreguntas = (list) =>
       activa: p.activa !== false,
       bloqueId: p.bloqueId ?? null,
       peso: p.peso,
+      invertida: p.invertida === true,
       ...(p.tipo === "opcion" ? { opciones: p.opciones || [] } : {}),
     }))
   );
@@ -459,6 +468,9 @@ const GestionEncuestas = ({ encuestas = [] }) => {
                           {!p.bloqueId && p.tipo === "escala" && p.peso > 1 && (
                             <span className="encuesta-edit-peso">Pesa x{p.peso}</span>
                           )}
+                          {p.tipo === "escala" && p.invertida && (
+                            <span className="encuesta-edit-invertida">1 = lo bueno</span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -580,6 +592,35 @@ const GestionEncuestas = ({ encuestas = [] }) => {
                     <option value="inactiva">Inactiva</option>
                   </Select>
                 </div>
+
+                {/* La dirección se ofrece en TODA escala, también en las de bloque: aunque
+                    esas no puntúen, el empleado ve la leyenda igual y necesita saber hacia
+                    dónde contestar. */}
+                {form?.tipo === "escala" && (
+                  <div className="mc-form-group">
+                    <label className="mc-form-label" htmlFor="ge-direccion">
+                      Qué significa el 1 y qué el 10
+                    </label>
+                    <Select
+                      id="ge-direccion"
+                      value={form?.invertida ? "invertida" : "normal"}
+                      onChange={(valor) =>
+                        setForm((prev) => ({ ...prev, invertida: valor === "invertida" }))
+                      }
+                    >
+                      {DIRECCIONES.map((d) => (
+                        <option key={d.value} value={d.value}>{d.label}</option>
+                      ))}
+                    </Select>
+                    <span className="mc-hint">
+                      <Icon name="alert" size={14} />
+                      Márcala invertida cuando un número alto sea algo MALO — «¿qué tan
+                      estresado/a te has sentido?» es el caso típico. Sin esto, el Pulse
+                      Score suma ese 10 como si fuera bienestar y premia a quien peor está.
+                      El empleado ve esta misma frase debajo de los números.
+                    </span>
+                  </div>
+                )}
 
                 {/* Solo las escalas del núcleo puntúan, así que el peso solo significa algo
                     ahí. Enseñarlo en una abierta o en una de bloque prometería un efecto

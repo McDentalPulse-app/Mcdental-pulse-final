@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { normalizePregunta, normalizePreguntasList, preguntaToRow } from "./encuestaPreguntas";
+import {
+  normalizePregunta,
+  normalizePreguntasList,
+  preguntaToRow,
+  valorOrientado,
+  extremosDeEscala,
+} from "./encuestaPreguntas";
 import { repartirPreguntas } from "./encuestaBloques";
 
 // Estos tests existen por un motivo concreto: normalizePregunta y preguntaToRow construyen
@@ -103,6 +109,95 @@ describe("peso", () => {
 // bajo el uuid (migración 006). Si `legacyId` se pierde en el camino, el editor cree que esas
 // preguntas no las ha contestado nadie y ofrece borrarlas — justo las que más histórico
 // tienen detrás. El trigger de la 159 lo impide, pero después de haberlo prometido.
+// Si `invertida` se cae de uno de estos mapeos, una pregunta marcada vuelve a sumar al
+// derecho en silencio y el Pulse Score premia otra vez a quien peor está. No hay error,
+// no hay aviso: solo números equivocados. Por eso se vigila el viaje de ida y vuelta.
+describe("invertida", () => {
+  it("normalizePregunta la conserva", () => {
+    expect(normalizePregunta({ id: "x", texto: "t", invertida: true }).invertida).toBe(true);
+  });
+
+  it("una pregunta sin marcar NO es invertida", () => {
+    expect(normalizePregunta({ id: "x", texto: "t" }).invertida).toBe(false);
+  });
+
+  it.each([
+    { caso: "undefined", entrada: undefined },
+    { caso: "null", entrada: null },
+    { caso: "cadena vacia", entrada: "" },
+    { caso: "cero", entrada: 0 },
+    { caso: "la cadena false", entrada: "false" },
+  ])("un valor $caso no invierte la escala por accidente", ({ entrada }) => {
+    // `=== true` y no un booleano suelto: invertir por error el signo de una pregunta
+    // cambia el score de toda la plantilla, así que solo un true literal cuenta.
+    expect(normalizePregunta({ id: "x", texto: "t", invertida: entrada }).invertida).toBe(false);
+  });
+
+  it("preguntaToRow la manda a la base", () => {
+    expect(preguntaToRow({ id: "x", texto: "t", invertida: true }).invertida).toBe(true);
+    expect(preguntaToRow({ id: "x", texto: "t" }).invertida).toBe(false);
+  });
+
+  it("sobrevive a normalizePreguntasList", () => {
+    const lista = normalizePreguntasList([
+      { id: "a", texto: "A", orden: 1, invertida: true },
+      { id: "b", texto: "B", orden: 2 },
+    ]);
+    expect(lista.map((p) => p.invertida)).toEqual([true, false]);
+  });
+});
+
+describe("extremosDeEscala", () => {
+  // La dirección de estas palabras no la fijaba nada: intercambiar las dos ramas dejaba los
+  // 682 tests en verde. RH y el empleado seguirían de acuerdo —leen la misma función— pero
+  // los dos leyendo lo CONTRARIO de lo que el score aplica, y la plantilla entera
+  // contestaría al revés sin un solo error a la vista. Por eso se fija el texto exacto.
+  it("al derecho: el 1 es lo negativo", () => {
+    expect(extremosDeEscala(false)).toEqual({ uno: "muy negativo", diez: "muy positivo" });
+  });
+
+  it("invertida: el 1 es lo positivo", () => {
+    expect(extremosDeEscala(true)).toEqual({ uno: "muy positivo", diez: "muy negativo" });
+  });
+
+  it("las dos direcciones dicen cosas opuestas, nunca lo mismo", () => {
+    const normal = extremosDeEscala(false);
+    const alReves = extremosDeEscala(true);
+    expect(normal.uno).toBe(alReves.diez);
+    expect(normal.diez).toBe(alReves.uno);
+  });
+});
+
+describe("valorOrientado", () => {
+  it("al derecho devuelve el mismo valor", () => {
+    expect(valorOrientado(8, false)).toBe(8);
+  });
+
+  it("invertida mapea 1 a 10 y 10 a 1", () => {
+    expect(valorOrientado(10, true)).toBe(1);
+    expect(valorOrientado(1, true)).toBe(10);
+  });
+
+  it("aplicarla dos veces devuelve el original (es simétrica)", () => {
+    for (const v of [1, 2, 5, 6, 9, 10]) {
+      expect(valorOrientado(valorOrientado(v, true), true)).toBe(v);
+    }
+  });
+
+  it("con una respuesta ausente devuelve NaN", () => {
+    expect(Number.isNaN(valorOrientado(undefined, true))).toBe(true);
+    expect(Number.isNaN(valorOrientado(null, false))).toBe(false); // Number(null) === 0
+  });
+
+  it("NO protege por si sola contra una respuesta vacia: eso lo hace quien la llama", () => {
+    // `Number("")` es 0, así que invertir da 11 — una respuesta perfecta, fuera de la escala,
+    // para una casilla que nadie tocó. Esta función es aritmética pura y no lo puede saber;
+    // por eso calcularScoreEncuesta valida el valor CRUDO con tieneScoreValido ANTES de
+    // orientarlo. Este test deja escrito por qué ese orden no es casual.
+    expect(valorOrientado("", true)).toBe(11);
+  });
+});
+
 describe("legacyId", () => {
   it("normalizePregunta lo conserva", () => {
     expect(normalizePregunta({ id: "x", texto: "t", legacyId: 9 }).legacyId).toBe(9);

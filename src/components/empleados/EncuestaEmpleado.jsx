@@ -4,7 +4,11 @@ import Card from "../common/Card";
 import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import { useNotification } from "../../contexts/NotificationContext";
-import { getPreguntasActivas, DEFAULT_OPCIONES_RIESGO } from "../../utils/encuestaPreguntas";
+import {
+  getPreguntasActivas,
+  extremosDeEscala,
+  DEFAULT_OPCIONES_RIESGO,
+} from "../../utils/encuestaPreguntas";
 import { bloqueDeLaSemana, preguntasDeLaSemana, repartirPreguntas } from "../../utils/encuestaBloques";
 import { getISOWeek, periodoActual, esPeriodoActual, claveDelPeriodo } from "../../utils/constants";
 import { etiquetaDePeriodo } from "../../utils/periodos";
@@ -142,6 +146,18 @@ const EncuestaEmpleado = ({ user, encuestas = [], onSubmit }) => {
                   {num}
                 </button>
               ))}
+            </div>
+          )}
+
+          {/* La leyenda no es decoración: sin ella, una pregunta invertida solo cambia de
+              sitio la ambigüedad. El empleado tiene que saber si el 10 es lo bueno ANTES de
+              pulsar, porque el score lo va a interpretar según lo que RH marcó. Se enseña
+              siempre, no solo en las invertidas: una leyenda que aparece a veces hace dudar
+              justo de las preguntas donde no aparece. */}
+          {p.tipo === "escala" && (
+            <div className="empleado-scale-leyenda">
+              <span>1 · {extremosDeEscala(p.invertida).uno}</span>
+              <span>10 · {extremosDeEscala(p.invertida).diez}</span>
             </div>
           )}
 

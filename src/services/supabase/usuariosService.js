@@ -323,6 +323,10 @@ export const getEncuestaPreguntas = async () => {
     // Cuánto pesa en ese score. `?? 1` cubre a una base que todavía no tenga la migración
     // 159: sin él, `peso` llegaría undefined y la pregunta dejaría de contar lo que debe.
     peso: row.peso ?? 1,
+    // Hacia dónde va la escala (migración 160). `=== true` y no `?? false`: una base sin la
+    // migración devuelve undefined, y eso tiene que leerse como «no invertida», nunca como
+    // invertida por accidente — se invertiría el score de toda la plantilla.
+    invertida: row.invertida === true,
     // Las encuestas migradas de Firestore guardaron la respuesta bajo este id numérico y no
     // bajo el uuid (ver el comentario de `respuestas` en la migración 006). Sin él, la app
     // cree que una pregunta con años de histórico no la ha contestado nadie.

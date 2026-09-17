@@ -12,6 +12,7 @@ const toRow = (p) => {
     activa: base.activa,
     bloque_id: base.bloque_id,
     peso: base.peso,
+    invertida: base.invertida,
   };
 };
 
@@ -25,6 +26,7 @@ const fromRow = (row) => ({
   activa: row.activa,
   bloqueId: row.bloque_id ?? null,
   peso: row.peso ?? 1,
+  invertida: row.invertida === true,
   // Clave con la que las encuestas migradas de Firestore guardaron la respuesta. Se lee,
   // pero NO se manda de vuelta en preguntaToRow: la asigna la base y es única.
   legacyId: row.legacy_id ?? null,

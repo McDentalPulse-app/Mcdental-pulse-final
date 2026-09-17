@@ -16,6 +16,31 @@ export const normalizePeso = (peso) => {
   return Math.min(PESO_MAX, Math.max(PESO_MIN, n));
 };
 
+/**
+ * El valor de una escala ya orientado «más es mejor», que es como lo suma el Pulse Score.
+ *
+ * En una pregunta invertida —«¿qué tan estresado/a te has sentido?»— un 10 es lo PEOR, así
+ * que sumarlo tal cual premiaba a quien peor estaba. `11 - valor` mapea 1↔10, 2↔9, 3↔8...:
+ * exacto, simétrico y dentro del mismo rango, sin decimales que puedan redondear distinto
+ * en el servidor. Tiene que coincidir con el `case when invertida` del trigger de la
+ * migración 160, que es quien manda.
+ */
+export const valorOrientado = (valor, invertida) =>
+  invertida ? 11 - Number(valor) : Number(valor);
+
+/**
+ * Qué significan los extremos de una escala 1-10 según su dirección.
+ *
+ * Vive aquí, y no en cada pantalla, porque lo lee RH al configurar la pregunta y lo lee el
+ * empleado debajo de los números al contestarla. Son la MISMA frase: si se escribieran en
+ * dos sitios, el día que alguien retoque una de las dos, RH estaría marcando una cosa y el
+ * empleado leyendo otra — y las respuestas entrarían al revés sin que nadie viera un error.
+ */
+export const extremosDeEscala = (invertida) =>
+  invertida
+    ? { uno: "muy positivo", diez: "muy negativo" }
+    : { uno: "muy negativo", diez: "muy positivo" };
+
 export const normalizePregunta = (pregunta, index = 0) => {
   const id = pregunta?.id ?? index + 1;
   const tipo = TIPOS_VALIDOS.has(pregunta?.tipo) ? pregunta.tipo : "escala";
@@ -35,6 +60,10 @@ export const normalizePregunta = (pregunta, index = 0) => {
     // Mismo motivo que bloqueId: si no se enumera aquí desaparece, y una pregunta sin peso
     // deja de pesar lo que RH le puso. El default de 1 es la media simple de siempre.
     peso: normalizePeso(pregunta?.peso),
+    // Hacia dónde va la escala. Si esto se cae del mapeo, una pregunta invertida vuelve a
+    // sumar al derecho en silencio y el score premia a quien peor está — que es justo el
+    // fallo que la migración 160 corrige. `=== true` para que un undefined no cuele.
+    invertida: pregunta?.invertida === true,
     // Se preserva por el mismo motivo que bloqueId: si se cae aquí, el editor deja de ver
     // las respuestas viejas de esta pregunta y ofrece borrarla como si nadie la hubiera
     // contestado. La base lo impediría igual, pero después de haberlo prometido.
@@ -67,6 +96,7 @@ export const preguntaToRow = (pregunta) => {
     activa: pregunta.activa !== false,
     bloque_id: pregunta.bloqueId ?? null,
     peso: normalizePeso(pregunta.peso),
+    invertida: pregunta.invertida === true,
   };
 
   if (pregunta.tipo === "opcion") {
