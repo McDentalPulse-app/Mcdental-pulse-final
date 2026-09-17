@@ -1,5 +1,6 @@
 import { supabase } from "../../config/supabase";
 import { fetchAll } from "./fetchAll";
+import { motivoFallo } from "../../utils/errores";
 
 const SELECT_CON_EMPLEADO = "*, usuarios(name, sucursal, puesto)";
 
@@ -49,7 +50,17 @@ export const addVacacion = async ({ empleadoId, fechaInicio, fechaFin, dias, mot
 
   if (error) {
     console.error("Error solicitando vacaciones:", error);
-    throw new Error("No se pudo registrar la solicitud de vacaciones.");
+    // Se propaga el MOTIVO REAL, no un texto fijo. Importa especialmente desde la migración
+    // 162: el trigger de antigüedad redacta siete mensajes en español pensados para que los
+    // lea el empleado —«Tus vacaciones se desbloquean el 14/09/2027, al cumplir tu primer
+    // año», «Solo te quedan 3 días en el periodo que termina el…»— y con un texto fijo aquí
+    // no los vería NUNCA: recibiría «no se pudo» y tendría que preguntarle a RH por qué.
+    //
+    // Es justo el fallo que motivó utils/errores.js, cuyo comentario ya lo explica: el motivo
+    // llegaba intacto al catch y ahí se tiraba a la basura. motivoFallo() deja pasar el texto
+    // del servidor y solo cae al genérico cuando el fallo es de red de verdad, que es el único
+    // caso en el que «revisa la conexión» es la respuesta correcta.
+    throw new Error(motivoFallo(error, "No se pudo registrar la solicitud de vacaciones."));
   }
   return mapVacacion(data);
 };
