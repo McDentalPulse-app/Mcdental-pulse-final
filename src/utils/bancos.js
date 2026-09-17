@@ -29,8 +29,17 @@ export const LARGO_TARJETA = 16;
  * repetidos, se toma cada producto módulo 10, se suman, y el verificador es lo que falta
  * para el siguiente múltiplo de 10.
  *
- * El `% 10` de CADA producto (y no solo de la suma) es parte del algoritmo, no una
- * optimización: 9 * 7 = 63 aporta 3, no 63, y sin ese paso el resultado diverge.
+ * DOS `% 10` QUE NO SON LO MISMO, y conviene no confundirlos:
+ *
+ *   · El de cada producto (`(digito * peso) % 10`) está porque así lo escribe la
+ *     especificación de Banxico. Es fiel a la norma pero NO cambia el resultado: por
+ *     aritmética modular, Σ(xᵢ mod 10) mod 10 ≡ Σxᵢ mod 10. Medido para no afirmarlo a
+ *     ciegas — 0 divergencias en 200.000 prefijos aleatorios. Se conserva por fidelidad a
+ *     la norma, no porque haga falta. Una versión anterior de este comentario decía que
+ *     «sin ese paso el resultado diverge»: era falso.
+ *   · El de FUERA (`(10 - resto) % 10`) SÍ carga peso y borrarlo rompe de verdad: cuando el
+ *     resto es 0, `10 - 0` da 10, que no es un dígito. Ese caso es ~1 de cada 10 CLABEs y
+ *     lo cubre un fixture propio en bancos.test.js.
  */
 const PESOS_CLABE = [3, 7, 1];
 

@@ -18,8 +18,16 @@ const CLABE_PUBLICA = "032180000118359719";
 
 // Las demás sí se construyeron con el algoritmo, y solo sirven para cubrir variedad de
 // prefijos de banco una vez que el ancla de arriba demuestra que el algoritmo es el bueno.
+// Esta tiene DÍGITO VERIFICADOR 0 y está aquí por un motivo concreto: es el único caso que
+// ejercita el `% 10` EXTERIOR de digitoVerificadorClabe. Cuando la suma da resto 0, `10 - 0`
+// vale 10 —que no es un dígito— y sin ese `% 10` la función devolvería 10 y rechazaría una
+// CLABE buena. Pasa en ~1 de cada 10 CLABEs, o sea a una de cada diez personas de la
+// plantilla. Sin este fixture, borrar ese `% 10` no rompía ni una prueba.
+const CLABE_VERIFICADOR_CERO = "012180000000000060";
+
 const CLABES_VALIDAS = [
   CLABE_PUBLICA,
+  CLABE_VERIFICADOR_CERO,
   "012180000123456782",
   "002180000123456789",
   "072190000555444334",
