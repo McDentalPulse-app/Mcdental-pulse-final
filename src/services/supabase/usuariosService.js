@@ -59,6 +59,15 @@ const mapUsuario = (row) =>
     // usuarios_directorio: ahí queda undefined, como el resto de la PII. `null` significa
     // "sin capturar" y hay que conservarlo distinto de 0 — un 0 diría que no gana nada.
     sueldoSemanal: row.sueldo_semanal == null ? null : Number(row.sueldo_semanal),
+    // Datos bancarios para el depósito de nómina (mig. 163). Como `sueldo_semanal`, NO
+    // viajan en usuarios_directorio: ahí quedan undefined. Un empleado los recibe solo de su
+    // propia fila (RLS de la mig. 030); gestión, los de todos.
+    banco: row.banco ?? null,
+    clabe: row.clabe ?? null,
+    tarjeta: row.tarjeta ?? null,
+    // El sello lo pone el trigger de la 163, nunca el cliente: aquí solo se lee.
+    datosBancariosActualizadoEn: row.datos_bancarios_actualizado_en ?? null,
+    datosBancariosActualizadoPor: row.datos_bancarios_actualizado_por ?? null,
     // Organigrama (mig. 153): jefe directo y departamento. Vienen en ambas fuentes
     // (usuarios y usuarios_directorio), así que también los ve empleado/doctor.
     jefeId: row.jefe_id,
@@ -161,6 +170,56 @@ export const updateUsuario = async (id, updates) => {
   if (error) {
     console.error("Error actualizando usuario:", error);
     throw new Error("No se pudo actualizar el usuario.");
+  }
+  return mapUsuario(data);
+};
+
+/**
+ * Datos bancarios para el depósito de nómina (mig. 163).
+ *
+ * Va aparte de updateUsuario() a propósito: ese recibe un saco de campos y lo usa Gestión de
+ * Personal; este escribe TRES columnas y nada más, y lo llama cada quien sobre su propia fila
+ * desde Mi perfil. Mezclarlos obligaría a que la pantalla del empleado pudiera armar un
+ * payload con `role` dentro — el trigger lo rechazaría, pero el mejor momento para no mandar
+ * un campo es no tener forma de mandarlo.
+ *
+ * Quién puede escribir sobre quién lo decide la base, no esta función: RLS (fila propia) más
+ * el trigger de la 163 (datos bancarios ajenos solo admin/admin_plus/rh).
+ *
+ * El SELLO NO SE MANDA. Lo pone el trigger; si se mandara desde aquí sería falseable.
+ *
+ * Cadena vacía -> null: vaciar el campo debe poder volver a dejarlo "sin capturar", igual que
+ * el sueldo. Un '' rompería además el CHECK de formato de la migración.
+ */
+export const guardarDatosBancarios = async (id, { banco, clabe, tarjeta }) => {
+  const limpiar = (v) => {
+    const s = String(v ?? "").trim();
+    return s === "" ? null : s;
+  };
+  const soloDigitosONull = (v) => {
+    const s = String(v ?? "").replace(/\D/g, "");
+    return s === "" ? null : s;
+  };
+
+  const payload = {
+    banco: limpiar(banco),
+    clabe: soloDigitosONull(clabe),
+    tarjeta: soloDigitosONull(tarjeta),
+  };
+
+  const { data, error } = await supabase
+    .from("usuarios")
+    .update(payload)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error guardando datos bancarios:", error);
+    // El mensaje del servidor sí se propaga: los dos fallos posibles aquí ("solo
+    // Administración y RH pueden cambiar los datos bancarios de otra persona" y los CHECK de
+    // formato) le dicen a la persona algo accionable, a diferencia de un error de conexión.
+    throw new Error(error.message || "No se pudieron guardar tus datos bancarios.");
   }
   return mapUsuario(data);
 };

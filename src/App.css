@@ -14383,3 +14383,131 @@ button.cuenta-switch.cuenta-switch--on { background: var(--mc-aqua); }
 @media (max-width: 700px) {
   .departamentos-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ---------------------------------------------------------------------------
+   Datos bancarios para el depósito de nómina (migración 163).
+   Dos pantallas: la captura en Mi perfil (.banco-form) y la consulta en la ficha
+   del empleado (.banco-ficha). La leyenda de responsabilidad es la misma en las
+   dos y por eso comparte clase.
+   --------------------------------------------------------------------------- */
+
+.banco-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.banco-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.banco-campo-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mc-texto-secundario);
+}
+
+.banco-campo-error {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mc-semaforo-rojo);
+}
+
+/* Los números se leen de un papel y se comparan dígito a dígito: en tipografía
+   proporcional dos cuentas distintas se ven casi iguales. Tabular + un poco de
+   tracking es lo que hace que un dígito cambiado salte a la vista. */
+.banco-form input,
+.banco-ficha-valor {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.banco-leyenda {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--mc-superficie-sutil);
+  border-left: 3px solid var(--mc-semaforo-amarillo);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--mc-texto-secundario);
+}
+
+.banco-leyenda svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--mc-semaforo-amarillo);
+}
+
+/* --- Consulta en la ficha del empleado --- */
+
+.banco-ficha {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--mc-borde-suave);
+  border-radius: 12px;
+  background: var(--mc-superficie-sutil);
+}
+
+.banco-ficha-campo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.banco-ficha-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mc-texto-secundario);
+}
+
+.banco-ficha-valor {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mc-texto-fuerte);
+  /* Una CLABE de 18 dígitos no cabe en un teléfono estrecho: que parta antes de
+     desbordar la ficha entera. */
+  overflow-wrap: anywhere;
+}
+
+.banco-ficha-copiar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* 32px de área táctil: es un botón pequeño dentro de una fila densa y en el
+     teléfono hay que poder darle sin ampliar. */
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border: 1px solid var(--mc-borde-suave);
+  border-radius: 8px;
+  background: var(--mc-superficie);
+  color: var(--mc-texto-secundario);
+  cursor: pointer;
+}
+
+.banco-ficha-copiar:hover {
+  color: var(--mc-marca-texto);
+  border-color: var(--mc-marca-texto);
+}
+
+.banco-ficha-sello {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--mc-texto-apagado);
+}

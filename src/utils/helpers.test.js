@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveFechaIngreso, resolveFechaCumpleanos, esEmpleadoActivo } from "./helpers";
+import { resolveFechaIngreso, resolveFechaCumpleanos, esEmpleadoActivo, formatFechaHoraClinica } from "./helpers";
 import { normalizeEmployeeNameKey } from "./adminEmployeeDates";
 
 // Hasta ahora existía un override por nombre (ADMIN_EMPLOYEE_FECHAS) que pisaba a la
@@ -109,5 +109,48 @@ describe("esEmpleadoActivo", () => {
     expect(esEmpleadoActivo(null)).toBe(false);
     expect(esEmpleadoActivo(undefined)).toBe(false);
     expect(esEmpleadoActivo({})).toBe(false);
+  });
+});
+
+describe("formatFechaHoraClinica (timestamptz en hora de la clínica)", () => {
+  // EL BUG QUE ESTO FIJA: un cambio guardado el 17 a las 19:00 en Monterrey (UTC-6) llega de
+  // PostgREST como "2026-09-18T01:00:00+00:00". Recortar los 10 primeros caracteres —lo que
+  // hace formatFechaCorta— da el día 18, o sea MAÑANA. En un sello de auditoría de dinero eso
+  // es decir que la cuenta se cambió un día que no fue.
+  //
+  // CÓMO ESTÁN ESCRITAS ESTAS PRUEBAS, Y POR QUÉ. Una primera versión afirmaba lo mismo pero
+  // no lo comprobaba: pasaba en verde con la línea `timeZone` BORRADA de la función, y también
+  // con el cuerpo sustituido por una cadena constante. Dos motivos, los dos corregidos aquí:
+  //
+  //   1. La máquina donde se escribió está en la zona de la clínica, así que quitar `timeZone`
+  //      no cambiaba nada localmente. Ahora las pruebas corren fijadas a UTC (ver el bloque
+  //      `test` de vite.config.js), donde borrar la zona SÍ se nota.
+  //   2. Se comparaba el resultado consigo mismo en otro formato. Ahora se fija la cadena
+  //      EXACTA, y sobre TRES instantes que dan tres salidas distintas — una función que
+  //      devuelva una constante no puede satisfacer las tres.
+  it("ancla a la zona de la clínica: el instante decide el día y la hora mostrados", () => {
+    // 01:00 UTC del 18 es todavía el 17 por la tarde en Monterrey (UTC-6): el caso que
+    // formatFechaCorta mostraría como día 18.
+    expect(formatFechaHoraClinica("2026-09-18T01:00:00+00:00")).toBe("17 sep 2026, 19:00");
+    // En invierno el desfase es el mismo: Monterrey ya no cambia de horario desde 2022.
+    expect(formatFechaHoraClinica("2026-01-05T14:30:00+00:00")).toBe("05 ene 2026, 08:30");
+    // Y otro cruce de medianoche en el sentido contrario, un minuto antes.
+    expect(formatFechaHoraClinica("2026-07-04T05:59:00+00:00")).toBe("03 jul 2026, 23:59");
+  });
+
+  it("da igual cómo venga escrito el instante: lo que cuenta es el momento", () => {
+    // Mismo instante que el primer caso de arriba, escrito con offset en vez de en UTC. Sirve
+    // para dos cosas: que el parseo del offset sea correcto, y —por ser `toBe` contra una
+    // cadena exacta— también caza que se borre el anclaje de zona. Una versión anterior de
+    // este comentario decía que esto «no prueba el anclaje»; era falso, y al comprobarlo
+    // resultó ser una de las dos aserciones que sí lo cazan.
+    expect(formatFechaHoraClinica("2026-09-17T19:00:00-06:00")).toBe("17 sep 2026, 19:00");
+  });
+
+  it("devuelve cadena vacía en lugar de «Invalid Date» con basura o vacío", () => {
+    expect(formatFechaHoraClinica(null)).toBe("");
+    expect(formatFechaHoraClinica(undefined)).toBe("");
+    expect(formatFechaHoraClinica("")).toBe("");
+    expect(formatFechaHoraClinica("no es fecha")).toBe("");
   });
 });

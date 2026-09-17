@@ -66,6 +66,17 @@ const mapUsuarioRow = (row) =>
     avatarUrl: row.avatar_url,
     bannerUrl: row.banner_url,
     colorAcento: row.color_acento,
+    // Datos bancarios del depósito de nómina (mig. 163), que cada quien captura en Mi perfil.
+    // Esta fila es SIEMPRE la propia, así que aquí no hay nada ajeno que proteger.
+    banco: row.banco ?? null,
+    clabe: row.clabe ?? null,
+    tarjeta: row.tarjeta ?? null,
+    datosBancariosActualizadoEn: row.datos_bancarios_actualizado_en ?? null,
+    // También el autor, aunque esta pantalla no lo pinte: usuariosService.mapUsuario() sí lo
+    // expone, y DatosBancarios.jsx escribe ambos en este objeto al guardar. Si faltara aquí,
+    // el campo viviría en memoria hasta la siguiente recarga y luego desaparecería — los dos
+    // mappers de fila de usuario del repo tienen que coincidir en lo que sí comparten.
+    datosBancariosActualizadoPor: row.datos_bancarios_actualizado_por ?? null,
   };
 
 export const AuthProvider = ({ children }) => {

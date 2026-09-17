@@ -1,3 +1,7 @@
+// Única dependencia de este módulo, y deliberadamente hacia abajo: asistencia.js solo importa
+// constants.js, que no importa nada. Sin ciclo.
+import { TZ_CLINICA } from "./asistencia";
+
 export const calcularAntiguedad = (fechaIngreso) => {
   if (!fechaIngreso) return "No registrada";
 
@@ -204,6 +208,39 @@ export const formatFechaCorta = (fecha) => {
   const date = new Date(`${String(fecha).slice(0, 10)}T12:00:00`);
   if (Number.isNaN(date.getTime())) return "";
   return date.toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" });
+};
+
+/**
+ * Un INSTANTE (columna `timestamptz`) en hora de la clínica: "17 sep 2026, 19:04".
+ *
+ * NO USES formatFechaCorta PARA UN timestamptz. Esa se queda con los 10 primeros caracteres
+ * del ISO, que son la fecha en UTC: un cambio guardado a las 19:00 en Monterrey llega como
+ * "…T01:00:00+00:00" del día siguiente y se mostraría con fecha de mañana. Para una columna
+ * `date` (vacaciones, cumpleaños) el recorte es correcto y por eso aquella se queda como está;
+ * la diferencia es el TIPO de la columna, no el gusto de quien la pinta.
+ *
+ * Se fija la zona a la de la clínica en vez de usar la del navegador, por el mismo motivo que
+ * fechaChat.js: un teléfono en otra zona, o mal configurado, enseñaría horas que no cuadran.
+ *
+ * Y lleva HORA, no solo día: el primer uso es el sello de los datos bancarios, y cuando se
+ * revisa un depósito que salió mal, saber que la cuenta cambió "ese mismo día por la tarde"
+ * es justo el dato que se busca.
+ */
+const fmtFechaHoraClinica = new Intl.DateTimeFormat("es-MX", {
+  timeZone: TZ_CLINICA,
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
+export const formatFechaHoraClinica = (instante) => {
+  if (!instante) return "";
+  const date = new Date(instante);
+  if (Number.isNaN(date.getTime())) return "";
+  return fmtFechaHoraClinica.format(date);
 };
 
 /**

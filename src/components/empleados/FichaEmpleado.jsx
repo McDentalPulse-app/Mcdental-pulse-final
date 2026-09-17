@@ -17,6 +17,7 @@ import LineChart from "../common/LineChart";
 import RiskBar from "../common/RiskBar";
 import { formatAntiguedadEmpleado, formatEmpleadoIdForDisplay, formatFechaSolicitud } from "../../utils/helpers";
 import Icon from "../ui/Icon";
+import DatosBancariosFicha from "./DatosBancariosFicha";
 import { ETIQUETA_CAUSA } from "../../utils/permisos";
 
 /**
@@ -193,6 +194,12 @@ export default function FichaEmpleado({
                 <div className="detail-stat-value detail-stat-value--sm">Activo</div>
               </div>
             </div>
+
+            {/* Datos bancarios del depósito de nómina (mig. 163). Va aquí arriba, junto a los
+                datos duros, y no al final entre las gráficas: RH entra a la ficha para
+                depositar, no para leerlo al final de todo. El propio componente decide si se
+                pinta según el rol. */}
+            <DatosBancariosFicha empleado={empleado} role={role} />
 
             {role !== "rh" && (
               <>

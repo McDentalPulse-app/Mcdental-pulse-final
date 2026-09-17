@@ -14,6 +14,7 @@ import Avatar from "../ui/Avatar";
 import Icon from "../ui/Icon";
 import SelectorColor from "../settings/SelectorColor";
 import PermisosDispositivo from "../settings/PermisosDispositivo";
+import DatosBancarios from "../settings/DatosBancarios";
 import { mensajeDeFallo } from "../../utils/errores";
 
 // Etiqueta legible del rol (no hay un mapa central; local y pequeño).
@@ -243,6 +244,12 @@ export default function Perfil() {
           Para cambiar tus datos (nombre, puesto, sucursal…) contacta a Recursos Humanos.
         </p>
       </Card>
+
+      {/* Va justo debajo de «Información» y encima de los ajustes de la app: es el único
+          bloque de esta pantalla que la persona SÍ edita, y el aviso de arriba («contacta a
+          RH») acaba de decir lo contrario de todo lo demás. Separarlos evita leer una cosa
+          por la otra. */}
+      <DatosBancarios />
 
       <SelectorColor />
 
