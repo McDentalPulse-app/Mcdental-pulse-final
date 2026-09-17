@@ -8,6 +8,27 @@ import Icon from "../ui/Icon";
 import DateRangePicker from "../common/DateRangePicker";
 import { useNotification } from "../../contexts/NotificationContext";
 import { CAUSAS_PERMISO, CAUSA_SALIDA_ANTICIPADA } from "../../utils/permisos";
+import { saldoVacaciones, validarSolicitud, DIAS_VACACIONES_POR_ANIO } from "../../utils/vacaciones";
+import { formatFechaCorta } from "../../utils/helpers";
+
+// El util devuelve el motivo y el periodo culpable; la frase se compone aquí, que es donde
+// se sabe cómo se escriben las fechas para una persona.
+const avisoVacaciones = (v) => {
+  switch (v.motivo) {
+    case "sin_ingreso":
+      return "RH aún no tiene registrada tu fecha de ingreso, así que no se puede calcular tu derecho a vacaciones. Avísales para que la capturen.";
+    case "bloqueado":
+      return `Tus vacaciones se desbloquean el ${formatFechaCorta(v.proximoAniversario)}, al cumplir tu primer año. Mientras tanto puedes solicitar un permiso.`;
+    case "agotado":
+      return `Ya usaste tus ${DIAS_VACACIONES_POR_ANIO} días del periodo que termina el ${formatFechaCorta(v.periodo.fin)}.`;
+    case "excede":
+      return `Solo te quedan ${v.disponibles} ${v.disponibles === 1 ? "día" : "días"} en el periodo que termina el ${formatFechaCorta(v.periodo.fin)}, y ahí caen ${v.pide} de los que pides.`;
+    case "rango":
+      return "La fecha final debe ser igual o posterior a la fecha inicial.";
+    default:
+      return "Selecciona las fechas de tus vacaciones.";
+  }
+};
 import { minutosNoTrabajados, formatoDuracion, diaISO, TZ_CLINICA } from "../../utils/asistencia";
 
 const hoyClinica = () =>
@@ -71,12 +92,24 @@ export default function PermisosEmpleado({
     if (tipo === "Vacaciones") setCausaSeleccionada("");
   };
 
+  const vacacionesEmpleado = vacaciones.filter((v) => v.empleadoId === user?.id);
+
+  // Gestión (RH/psicóloga) se auto-agenda y queda fuera de la regla: no se le mide antigüedad
+  // ni se le descuentan días. Para el empleado, las vacaciones se desbloquean al año y son 8
+  // por periodo aniversario (utils/vacaciones.js).
+  const saldo = autoAprobar ? null : saldoVacaciones(user?.fechaIngreso, vacacionesEmpleado, hoyClinica());
+  const pideVacaciones = tipoSeleccionado === "Vacaciones";
+
+  // Se valida el rango ELEGIDO, no solo el saldo de hoy: unas vacaciones a caballo del
+  // aniversario gastan de los dos periodos y tienen que caber en los dos.
+  const validacion = saldo && pideVacaciones
+    ? validarSolicitud(user?.fechaIngreso, vacacionesEmpleado, fechaInicioPreview, fechaFinPreview, hoyClinica())
+    : { ok: true };
+
   // Los PERMISOS también, no solo las vacaciones: sin esto un permiso enviado desaparecía de la
   // vista del empleado y no podía saber si se lo habían aprobado.
   const solicitudesEmpleado = [
-    ...vacaciones
-      .filter((v) => v.empleadoId === user?.id)
-      .map((v) => ({ ...v, tipo: "Vacaciones" })),
+    ...vacacionesEmpleado.map((v) => ({ ...v, tipo: "Vacaciones" })),
     ...permisos
       .filter((p) => p.empleadoId === user?.id)
       .map((p) => ({ ...p, tipo: "Permiso", fechaInicio: p.fecha, fechaFin: p.fechaFin || p.fecha })),
@@ -122,6 +155,15 @@ export default function PermisosEmpleado({
       if (dias <= 0) {
         toast.warning("La fecha final debe ser igual o posterior a la fecha inicial.");
         return;
+      }
+      // El candado de verdad está en la base (migración 162); esto evita que se envíe una
+      // solicitud que ya se sabe que no procede y que el empleado se entere días después.
+      if (saldo) {
+        const veredicto = validarSolicitud(user?.fechaIngreso, vacacionesEmpleado, fechaInicio, fechaFin, hoyClinica());
+        if (!veredicto.ok) {
+          toast.warning(avisoVacaciones(veredicto));
+          return;
+        }
       }
     }
 
@@ -229,6 +271,28 @@ export default function PermisosEmpleado({
             </div>
           </div>
 
+          {/* Qué días le quedan, antes de que elija fechas. Sin esto, la única forma de saber
+              que no tenía derecho era enviar la solicitud y esperar a que RH la rechazara. */}
+          {saldo && pideVacaciones && (
+            <>
+              {saldo.desbloqueado && (
+                <div className="admin-info-box empleado-days-hint">
+                  <Icon name="vacation" size={16} />
+                  <span>
+                    Te quedan <strong>{saldo.disponibles}</strong> de {saldo.total} días en tu
+                    periodo actual (hasta el {formatFechaCorta(saldo.periodo.fin)}).
+                  </span>
+                </div>
+              )}
+              {!validacion.ok && (
+                <div className="aviso-descuento">
+                  <Icon name="alert" size={16} />
+                  <span>{avisoVacaciones(validacion)}</span>
+                </div>
+              )}
+            </>
+          )}
+
           {tipoSeleccionado === "Permisos" && (
             <div className="mc-form-group">
               <label className="mc-form-label" htmlFor="pe-causa">Causa</label>
@@ -326,7 +390,11 @@ export default function PermisosEmpleado({
             />
           </div>
 
-          <button type="submit" className="mc-btn-primary mc-btn-with-icon">
+          <button
+            type="submit"
+            className="mc-btn-primary mc-btn-with-icon"
+            disabled={!validacion.ok}
+          >
             <Icon name="check" size={16} /> {autoAprobar ? "Agendar" : "Enviar solicitud"}
           </button>
         </form>
