@@ -72,6 +72,20 @@ function devApiProxy(mode) {
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
+  // Las pruebas corren SIEMPRE en UTC, sin depender de la zona de quien las lance.
+  //
+  // El motivo es un defecto real que casi se cuela: una prueba de `formatFechaHoraClinica`
+  // —la función que existe justamente para fijar la zona de la clínica— pasaba con la línea
+  // `timeZone` BORRADA. Y pasaba porque la máquina donde se escribió está en la misma zona
+  // que la clínica, así que la aserción no podía distinguir «anclado a Monterrey» de «usa la
+  // zona de la máquina». En CI (ubuntu-latest, UTC) sí habría fallado, o sea que la prueba
+  // decía cosas distintas según dónde corriera, que es lo peor de los dos mundos.
+  //
+  // Fijando UTC aquí, local y CI comprueban lo mismo. Verificado antes de ponerlo: la suite
+  // entera (743) pasa igual en UTC, así que ninguna prueba dependía de la zona de la máquina.
+  test: {
+    env: { TZ: 'UTC' },
+  },
   // En producción quita console.* y debugger del bundle: no filtrar información al
   // cliente y no cargar 103 llamadas de log muertas. En dev se conservan.
   esbuild: { drop: mode === 'production' ? ['console', 'debugger'] : [] },
