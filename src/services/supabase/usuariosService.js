@@ -68,6 +68,10 @@ const mapUsuario = (row) =>
     // El sello lo pone el trigger de la 163, nunca el cliente: aquí solo se lee.
     datosBancariosActualizadoEn: row.datos_bancarios_actualizado_en ?? null,
     datosBancariosActualizadoPor: row.datos_bancarios_actualizado_por ?? null,
+    // Tasa de retardo personalizada (mig. 168): NULL = usa la regla que le toque por puesto o
+    // la tasa general de nomina_config, que es el caso normal. Ver descuentoDelDia() en
+    // utils/nomina.js — gana sobre todo lo demás cuando no es null.
+    montoRetardoPersonal: row.monto_retardo_personal == null ? null : Number(row.monto_retardo_personal),
     // Organigrama (mig. 153): jefe directo y departamento. Vienen en ambas fuentes
     // (usuarios y usuarios_directorio), así que también los ve empleado/doctor.
     jefeId: row.jefe_id,
@@ -153,6 +157,19 @@ export const updateUsuario = async (id, updates) => {
         throw new Error("El sueldo semanal debe ser un número de 0 o más.");
       }
       payload.sueldo_semanal = Math.round(n * 100) / 100;
+    }
+  }
+  // Tasa de retardo personalizada (mig. 164). Mismo criterio que sueldoSemanal arriba: vacío
+  // vuelve a null ("usa la regla normal"), no a cero ("le cuesta cero").
+  if (updates.montoRetardoPersonal !== undefined) {
+    if (updates.montoRetardoPersonal === null || updates.montoRetardoPersonal === "") {
+      payload.monto_retardo_personal = null;
+    } else {
+      const n = Number(updates.montoRetardoPersonal);
+      if (!Number.isFinite(n) || n < 0) {
+        throw new Error("La tasa de retardo debe ser un número de 0 o más.");
+      }
+      payload.monto_retardo_personal = Math.round(n * 100) / 100;
     }
   }
   // Organigrama (mig. 153). null explícito = "sin jefe"/"sin departamento" (la raíz,

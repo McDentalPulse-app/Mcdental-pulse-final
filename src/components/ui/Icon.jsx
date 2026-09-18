@@ -10,7 +10,7 @@ import {
   MarkerPin01, ChevronDown, AlertCircle, VolumeMax, VolumeX, Trash01, Edit05,
   Send01, FaceHappy, Microphone01, Image01, CornerUpLeft, CheckDone01, Check,
   Play, PauseCircle, Download01, XClose, Table, FileDownload03, Package, Truck01,
-  ArrowLeft, Upload01,
+  ArrowLeft, Upload01, Printer,
 } from "@untitledui/icons";
 
 // Iconos de la app con el set de Untitled UI (@untitledui/icons, MIT). Un único punto: cambiar
@@ -121,6 +121,7 @@ const ICON_MAP = {
   close: XClose,
   package: Package,
   truck: Truck01,
+  printer: Printer,
   upload: Upload01,
 };
 

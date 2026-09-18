@@ -3,7 +3,18 @@ import Card from "../common/Card";
 import SectionTitle from "../common/SectionTitle";
 import { getMovimientosInventario } from "../../services/supabase/inventarioService";
 
-const TIPO_LABEL = { entrega: "Entrega", consumo: "Consumo", ajuste: "Ajuste" };
+const TIPO_LABEL = {
+  entrega: "Entrega",
+  consumo: "Consumo",
+  ajuste: "Ajuste",
+  // Eventos de catálogo (materiales_log, migración 163): no tienen cantidad ni clínica, son
+  // sobre la ficha del material, no sobre su stock — ver el guard de `m.cantidad != null` abajo.
+  creado: "Material creado",
+  editado: "Material editado",
+  activado: "Material activado",
+  inactivado: "Material inactivado",
+  eliminado: "Material eliminado",
+};
 
 /**
  * "Cuándo se pide y cuándo se entrega" (bitácora que pidió el dueño): no es una tabla propia,
@@ -44,9 +55,13 @@ export default function BitacoraInventario({ sucursalId }) {
                   {m.sucursal && !sucursalId ? ` · ${m.sucursal}` : ""}
                 </div>
                 <div className="rh-data-row-sub">
-                  {m.cantidad > 0 ? "+" : ""}{m.cantidad} · {m.registradoPor || "sistema"} ·{" "}
+                  {/* Los eventos de catálogo (creado/editado/activado/...) no tienen cantidad: */}
+                  {m.cantidad !== null && <>{m.cantidad > 0 ? "+" : ""}{m.cantidad} · </>}
+                  {m.registradoPor || "sistema"} ·{" "}
                   {new Date(m.creadaEn).toLocaleString("es-MX")}
-                  {m.nota ? ` · "${m.nota}"` : ""}
+                  {/* El detalle de un evento de catálogo (migración 163) ya trae sus propias
+                      comillas ('nombre: "X" → "Y"'); envolverlo otra vez se ve anidado y feo. */}
+                  {m.nota ? (m.cantidad === null ? ` · ${m.nota}` : ` · "${m.nota}"`) : ""}
                 </div>
               </div>
             </div>

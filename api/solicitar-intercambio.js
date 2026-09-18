@@ -9,6 +9,15 @@ const hoyLocal = () => new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format
 
 const mesDe = (iso) => iso.slice(0, 7);
 
+// Un día antes de "YYYY-MM-DD", en UTC porque aquí solo interesa la fecha civil, no la hora
+// (mismo criterio que mesSiguienteDe: Date resuelve solo el cruce de mes/año, incluido
+// pasar del 1 de marzo al último día de febrero).
+const diaAntesDe = (iso) => {
+  const [anio, mes, dia] = iso.split("-").map(Number);
+  const d = new Date(Date.UTC(anio, mes - 1, dia - 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+};
+
 // Mes siguiente a "YYYY-MM". Se apoya en Date para no tener que tratar el salto de diciembre
 // a enero a mano; en UTC porque aquí solo interesan año y mes, no la hora.
 const mesSiguienteDe = (mes) => {
@@ -31,9 +40,19 @@ const mesSiguienteDe = (mes) => {
  * para que el cliente no pueda elegir en qué clínica cuenta su solicitud.
  *
  * Las DEMÁS reglas se comprueban abajo, en este mismo archivo: que el día cedido sea un
- * festivo intercambiable de verdad, la ventana de un mes de anticipación, y que el día que se
- * toma a cambio caiga en el mismo mes que el festivo. Estaban solo en la pantalla, y una regla
- * que solo vive en el navegador no es una regla: cualquiera con un POST a mano se la salta.
+ * festivo intercambiable de verdad, que caiga en el mes en curso o el siguiente, y que el día
+ * que se toma a cambio esté en el mismo mes que el festivo. Estaban solo en la pantalla, y una
+ * regla que solo vive en el navegador no es una regla: cualquiera con un POST a mano se la salta.
+ *
+ * Un festivo del mes en curso se puede pedir aunque YA HAYA PASADO (antes solo se podía apartar
+ * con anticipación; se reportó como falla que, pasado el 16 de septiembre, ya no dejaba
+ * intercambiarlo el resto del mes).
+ *
+ * Cada festivo se usa UNA sola vez por persona (si el mes trae dos, se puede usar dos veces —
+ * una por festivo). No se valida checada ni asistencia, a propósito: eso es un tema aparte. Lo
+ * que se comprueba es que ni este festivo ni el día anterior hayan sido YA parte de otro
+ * intercambio suyo sin rechazar — ni como festivo cedido (para no pedir el mismo dos veces) ni
+ * como fecha_destino (para no decir "lo trabajé" de un día que ya cobró libre por otra vía).
  */
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -85,10 +104,6 @@ export default async function handler(req, res) {
   if (cedido.tipo === "conmemorativo") {
     return res.status(400).json({ error: `${cedido.nombre} es conmemorativo: ese día se trabaja, no se puede intercambiar.` });
   }
-  if (fechaFestivo < hoy) {
-    return res.status(400).json({ error: "Ese festivo ya pasó." });
-  }
-
   // Un mes de anticipación: el festivo tiene que caer en el mes en curso o en el siguiente.
   const mesHoy = mesDe(hoy);
   const mesFestivo = mesDe(fechaFestivo);
@@ -108,6 +123,27 @@ export default async function handler(req, res) {
   // día (ver migración 152); lo único que sigue sin sentido es pedir un festivo DISTINTO.
   if (fechaDestino !== fechaFestivo && enDestino && enDestino.tipo !== "conmemorativo") {
     return res.status(400).json({ error: "No puedes pedir a cambio un día que ya es festivo." });
+  }
+
+  // Cada festivo se usa una sola vez: ni como festivo cedido (fecha_festivo) en otra solicitud
+  // suya, ni como fecha_destino de otra (ese día, o el anterior, ya se cobraron libres por otra
+  // vía). "sin rechazar" porque un intercambio rechazado no cuenta como usado.
+  const diaAnterior = diaAntesDe(fechaFestivo);
+  const { data: yaUsado, error: errorYaUsado } = await supabase
+    .from("intercambios_dia")
+    .select("id, fecha_festivo, fecha_destino")
+    .eq("empleado_id", quien.id)
+    .neq("estado", "rechazado")
+    .or(`fecha_festivo.eq.${fechaFestivo},fecha_destino.eq.${fechaFestivo},fecha_destino.eq.${diaAnterior}`);
+
+  if (errorYaUsado) {
+    console.error("Error validando intercambios previos:", errorYaUsado);
+    return res.status(500).json({ error: "No se pudo validar tu solicitud." });
+  }
+  if (yaUsado?.length) {
+    return res.status(400).json({
+      error: "Ese festivo (o el día anterior) ya lo usaste en otro intercambio: cada festivo se puede usar una sola vez.",
+    });
   }
 
   const { data: intercambio, error } = await supabase

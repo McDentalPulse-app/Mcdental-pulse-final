@@ -10939,6 +10939,11 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 }
 .nomina-filtros em { font-size: 0.8rem; color: var(--mc-texto-apagado); font-style: normal; }
 
+/* `.list-filter-input` trae `width: 100%` pensado para el grid de FilterBar — aquí vive suelto
+   en una fila flex junto a los WeekSelect, así que necesita su propio ancho o se estiraría a
+   ocupar toda la barra y empujaría "104 personas" a la siguiente línea. */
+.nomina-filtro-buscar { width: 200px; max-width: 100%; }
+
 .nomina-lista { display: flex; flex-direction: column; gap: 10px; }
 .nomina-fila {
   display: flex; flex-wrap: wrap; align-items: center; gap: 16px;
@@ -10982,6 +10987,25 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 }
 .nomina-sueldo input:disabled { opacity: 0.55; cursor: wait; }
 
+/* Mismo look que .nomina-sueldo (calcado), pero más angosto: es una excepción puntual, no un
+   dato que se espera que toda la plantilla tenga capturado. */
+.nomina-retardo-personal { display: flex; flex-direction: column; gap: 4px; flex: 0 0 auto; }
+.nomina-retardo-personal span { font-size: 0.75rem; font-weight: 700; color: var(--mc-texto-secundario); }
+.nomina-retardo-personal input {
+  width: 100px;
+  padding: 8px 10px;
+  border-radius: var(--mc-control-radio);
+  border: 1px solid var(--mc-control-borde);
+  background: var(--mc-control-fondo);
+  color: var(--mc-texto);
+  font-family: inherit; font-size: var(--mc-control-letra); font-weight: 700;
+}
+.nomina-retardo-personal input:focus {
+  outline: none; border-color: var(--mc-aqua);
+  box-shadow: 0 0 0 3px rgba(var(--mc-aqua-rgb) / 0.15);
+}
+.nomina-retardo-personal input:disabled { opacity: 0.55; cursor: wait; }
+
 .nomina-totales { margin-left: auto; text-align: right; min-width: 160px; }
 .nomina-total-linea {
   display: flex; justify-content: space-between; gap: 12px;
@@ -10997,10 +11021,102 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 .nomina-sin-sueldo { color: var(--mc-ambar, #b45309); font-size: 0.85rem; }
 .nomina-total-detalle { font-size: 0.72rem; color: var(--mc-texto-apagado); margin-top: 3px; }
 
+.nomina-btn-imprimir { margin-top: 8px; padding: 6px 10px; font-size: 0.78rem; }
+.nomina-btn-imprimir-todos { margin-left: auto; }
+
 @media (max-width: 760px) {
   .nomina-totales { margin-left: 0; text-align: left; width: 100%; }
   .nomina-semana { order: 3; width: 100%; justify-content: space-between; }
   .nomina-sueldo { order: 2; }
+  .nomina-retardo-personal { order: 2; }
+  .nomina-btn-imprimir-todos { margin-left: 0; }
+}
+
+/* ----------------------------------------------------------------------------------------
+   Acuerdo de conformidad de pago (AcuerdoConformidad.jsx) — SOLO existe para imprimirse.
+   `.nomina-imprimir-area` vive fuera de flujo (display:none) mientras no se imprime; en
+   @media print se vuelve visible y el resto de la página se esconde con el truco clásico de
+   visibility:hidden — así el navegador imprime nada más este contenedor, sin que la barra de
+   navegación, los modales ni el tema oscuro de la app aparezcan en el papel.
+   Colores fijos en negro sobre blanco A PROPÓSITO, fuera de los tokens --mc-*: es un
+   documento que alguien firma a mano, no debe depender del tema (oscuro/claro) de quien lo
+   imprime.
+   ---------------------------------------------------------------------------------------- */
+.nomina-imprimir-area { display: none; }
+
+@media print {
+  body * { visibility: hidden; }
+  .nomina-imprimir-area, .nomina-imprimir-area * { visibility: visible; }
+  /* `fixed`, no `absolute`: `.app-main` (el contenedor scrolleable de toda página admin) tiene
+     `position: relative` + `overflow-y: auto` + `height: 100vh`. Un `absolute` se posiciona y se
+     recorta contra ESA caja — a donde estuviera scrolleada la pantalla al imprimir — y el acuerdo
+     salía en blanco o cortado. `fixed` se ancla al viewport completo, sin que el overflow de
+     `.app-main` lo recorte. */
+  .nomina-imprimir-area { display: block; position: fixed; top: 0; left: 0; width: 100%; }
+}
+
+.nomina-acuerdo {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px;
+  background: #ffffff;
+  color: #111111;
+  font-family: Arial, Helvetica, sans-serif;
+  box-sizing: border-box;
+  page-break-after: always;
+}
+.nomina-acuerdo:last-child { page-break-after: auto; }
+
+.nomina-acuerdo-header { text-align: center; margin-bottom: 24px; }
+.nomina-acuerdo-titulo { font-size: 1.3rem; font-weight: 700; }
+.nomina-acuerdo-subtitulo { font-size: 1rem; font-weight: 600; margin-top: 2px; }
+.nomina-acuerdo-periodo { font-size: 0.85rem; color: #444444; margin-top: 4px; }
+
+.nomina-acuerdo-datos,
+.nomina-acuerdo-desglose {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 18px;
+  font-size: 0.9rem;
+}
+.nomina-acuerdo-datos th,
+.nomina-acuerdo-datos td,
+.nomina-acuerdo-desglose th,
+.nomina-acuerdo-desglose td {
+  border: 1px solid #999999;
+  padding: 6px 10px;
+  text-align: left;
+}
+.nomina-acuerdo-datos th { width: 140px; background: #f2f2f2; font-weight: 600; }
+.nomina-acuerdo-desglose th { background: #f2f2f2; font-weight: 600; }
+.nomina-acuerdo-desglose td:last-child,
+.nomina-acuerdo-desglose th:last-child { text-align: right; width: 160px; }
+.nomina-acuerdo-total td { font-weight: 700; border-top: 2px solid #111111; }
+
+.nomina-acuerdo-texto {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  text-align: justify;
+  margin: 18px 0;
+}
+
+.nomina-acuerdo-lugar-fecha { font-size: 0.85rem; margin: 28px 0 36px; }
+
+.nomina-acuerdo-firmas {
+  display: flex;
+  gap: 32px;
+  margin-top: 20px;
+}
+.nomina-acuerdo-firma { flex: 1; text-align: center; font-size: 0.78rem; color: #333333; }
+.nomina-acuerdo-firma-linea { border-top: 1px solid #111111; margin-bottom: 6px; height: 48px; }
+.nomina-acuerdo-firma--huella { flex: 0 0 140px; }
+.nomina-acuerdo-huella-caja {
+  width: 100px;
+  height: 48px;
+  margin: 0 auto 6px;
+  border: 1px solid #111111;
+  border-radius: 4px;
 }
 
 /* --- Enrolado de rostros (migración 041) --- */

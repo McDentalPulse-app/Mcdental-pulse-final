@@ -88,7 +88,14 @@ export const ajustarInventario = async ({ sucursalId, materialId, cantidad, nota
   return data;
 };
 
-/** Bitácora: movimientos de una clínica (o de todas si se omite sucursalId), más recientes primero. */
+/**
+ * Bitácora: movimientos de STOCK de una clínica (o de todas si se omite sucursalId), más
+ * recientes primero. Cuando se omite sucursalId (vista de admin/bodega), se mezclan también los
+ * eventos de CATÁLOGO (crear/editar/activar/inactivar/eliminar material, tabla
+ * materiales_log, migración 163) — son globales, no de una clínica, así que no tiene sentido
+ * pedirlos cuando se filtra por sucursal. RLS de materiales_log ya limita esa segunda consulta
+ * a admin/bodega: para quien no puede verla, `fetchAll` simplemente trae 0 filas.
+ */
 export const getMovimientosInventario = async (sucursalId) => {
   try {
     const rows = await fetchAll(() => {
@@ -98,7 +105,7 @@ export const getMovimientosInventario = async (sucursalId) => {
         .order("creada_en", { ascending: false });
       return sucursalId ? query.eq("sucursal_id", sucursalId) : query;
     });
-    return rows.map((row) => ({
+    const movimientos = rows.map((row) => ({
       id: row.id,
       sucursalId: row.sucursal_id,
       sucursal: row.sucursales?.nombre,
@@ -111,6 +118,27 @@ export const getMovimientosInventario = async (sucursalId) => {
       nota: row.nota,
       creadaEn: row.creada_en,
     }));
+
+    if (sucursalId) return movimientos;
+
+    const filasCatalogo = await fetchAll(() =>
+      supabase.from("materiales_log").select("*, usuarios(name)").order("creada_en", { ascending: false }),
+    );
+    const eventosCatalogo = filasCatalogo.map((row) => ({
+      id: row.id,
+      sucursalId: null,
+      sucursal: null,
+      materialId: row.material_id,
+      material: row.material_nombre,
+      tipo: row.accion,
+      cantidad: null,
+      pedidoId: null,
+      registradoPor: row.usuarios?.name,
+      nota: row.detalle,
+      creadaEn: row.creada_en,
+    }));
+
+    return [...movimientos, ...eventosCatalogo].sort((a, b) => new Date(b.creadaEn) - new Date(a.creadaEn));
   } catch (error) {
     console.error("Error al obtener los movimientos de inventario:", error);
     throw new Error("No se pudo cargar la bitácora de inventario.", { cause: error });

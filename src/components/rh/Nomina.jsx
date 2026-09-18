@@ -22,6 +22,7 @@ import {
   ETIQUETA_ESTADO,
 } from "../../utils/asistencia";
 import { calcularNomina, money } from "../../utils/nomina";
+import AcuerdoConformidad from "./AcuerdoConformidad";
 
 // ISO: 1=lunes … 7=domingo. La misma numeración que horarios.dia_semana.
 const DIAS = [
@@ -69,7 +70,17 @@ const semanasRecientes = (n = 12) => {
  * dígito a dígito y guardar en cada pulsación mandaría un UPDATE por tecla. El `key` lo vuelve a
  * montar cuando el servidor confirma otro valor, así que tampoco se queda desincronizado.
  */
-function FilaNomina({ empleado, recibo, porDia, columnas, guardando, onGuardarSueldo }) {
+function FilaNomina({
+  empleado,
+  recibo,
+  porDia,
+  columnas,
+  guardando,
+  onGuardarSueldo,
+  guardandoRetardoPersonal,
+  onGuardarRetardoPersonal,
+  onImprimir,
+}) {
   return (
     <div className="nomina-fila">
       <div className="nomina-persona">
@@ -116,6 +127,25 @@ function FilaNomina({ empleado, recibo, porDia, columnas, guardando, onGuardarSu
         />
       </label>
 
+      {/* Excepción puntual, no una columna que toda la plantilla necesite ver siempre llena:
+          por eso el placeholder dice "General" (usa la tasa normal / de becario) en vez de
+          "Sin capturar", que sonaría a que a todos les falta algo por llenar aquí. */}
+      <label className="nomina-retardo-personal" title="Tasa de retardo distinta a la general, solo para esta persona">
+        <span>Tasa de retardo</span>
+        <input
+          key={empleado.montoRetardoPersonal ?? "general"}
+          type="number"
+          min="0"
+          step="0.01"
+          inputMode="decimal"
+          placeholder="General"
+          defaultValue={empleado.montoRetardoPersonal ?? ""}
+          disabled={guardandoRetardoPersonal}
+          aria-label={`Tasa de retardo personalizada de ${empleado.name}`}
+          onBlur={(e) => onGuardarRetardoPersonal(empleado, e.target.value)}
+        />
+      </label>
+
       <div className="nomina-totales">
         <div className="nomina-total-linea">
           <span>Descuentos</span>
@@ -135,6 +165,13 @@ function FilaNomina({ empleado, recibo, porDia, columnas, guardando, onGuardarSu
           {recibo.retardos} retardo{recibo.retardos === 1 ? "" : "s"} · {recibo.faltas} falta
           {recibo.faltas === 1 ? "" : "s"}
         </div>
+        <button
+          type="button"
+          className="mc-btn-outline mc-btn-with-icon nomina-btn-imprimir"
+          onClick={() => onImprimir(empleado, recibo)}
+        >
+          <Icon name="printer" size={14} /> Imprimir acuerdo
+        </button>
       </div>
     </div>
   );
@@ -159,15 +196,23 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
   const opcionesSemana = useMemo(() => semanasRecientes(12), []);
   const [semana, setSemana] = useState(() => opcionesSemana[0]?.value);
   const [filtroSucursal, setFiltroSucursal] = useState("");
+  const [busquedaPersona, setBusquedaPersona] = useState("");
 
   const [checadas, setChecadas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
 
-  const [config, setConfig] = useState({ montoRetardo: 0, montoFalta: 0 });
+  const [config, setConfig] = useState({ montoRetardo: 0 });
   const [borrador, setBorrador] = useState(null); // montos que se están editando, sin guardar
   const [guardandoConfig, setGuardandoConfig] = useState(false);
   const [guardandoSueldo, setGuardandoSueldo] = useState(null);
+  const [guardandoRetardoPersonal, setGuardandoRetardoPersonal] = useState(null);
+
+  // Acuerdos de conformidad que se están imprimiendo ahora mismo: null cuando no hay nada
+  // que imprimir. `useEffect` de abajo dispara window.print() cuando esto deja de ser null, y
+  // `afterprint` lo limpia — así el contenedor imprimible (AcuerdoConformidad) solo vive en el
+  // DOM mientras hace falta, en vez de calcular el recibo de todos en cada render.
+  const [acuerdosImprimir, setAcuerdosImprimir] = useState(null);
 
   const lunes = useMemo(() => isoWeekToMonday(semana), [semana]);
   const desde = lunes ? aISO(lunes) : null;
@@ -217,10 +262,12 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
     [empleados]
   );
 
-  const visibles = useMemo(
-    () => (filtroSucursal ? empleados.filter((u) => normalizeSucursal(u.sucursal) === filtroSucursal) : empleados),
-    [empleados, filtroSucursal]
-  );
+  const visibles = useMemo(() => {
+    const buscado = busquedaPersona.trim().toLowerCase();
+    return empleados
+      .filter((u) => !filtroSucursal || normalizeSucursal(u.sucursal) === filtroSucursal)
+      .filter((u) => !buscado || (u.name || "").toLowerCase().includes(buscado));
+  }, [empleados, filtroSucursal, busquedaPersona]);
 
   // Cada persona se clasifica en la zona horaria de SU clínica: Hermosillo va una hora por
   // detrás del centro y Reynosa una por delante en verano. Con una sola zona para todos, a los
@@ -240,7 +287,13 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
         fechaIngreso: u.fechaIngreso,
         tz: zonaDe(zonas, u.sucursal),
       });
-      const recibo = calcularNomina({ dias, sueldoSemanal: u.sueldoSemanal, config });
+      const recibo = calcularNomina({
+        dias,
+        sueldoSemanal: u.sueldoSemanal,
+        config,
+        puesto: u.puesto,
+        montoRetardoPersonal: u.montoRetardoPersonal,
+      });
       // Indexado por día ISO para poder pintar cada uno bajo su letra. construirDias() puede
       // devolver menos de 7 días (alguien que entró a mitad de semana): los que falten quedan
       // sin celda, que es exactamente lo que pasó.
@@ -317,6 +370,49 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
     }
   };
 
+  // Tasa de retardo PERSONAL (mig. 164): gana sobre la general y sobre la de becario (ver
+  // esBecario() en utils/nomina.js) — es para el caso suelto de una persona en concreto, no
+  // para configurar la empresa entera. Mismo patrón que guardarSueldo: vaciar el campo vuelve
+  // al comportamiento normal (null), no a "le cuesta cero".
+  const guardarRetardoPersonal = async (empleado, valor) => {
+    const texto = String(valor ?? "").trim();
+    const actual = empleado.montoRetardoPersonal;
+    const nuevo = texto === "" ? null : Math.round(Number(texto) * 100) / 100;
+
+    if (nuevo !== null && (!Number.isFinite(nuevo) || nuevo < 0)) {
+      toast.error("La tasa de retardo debe ser un número de 0 o más.");
+      return;
+    }
+    if (nuevo === actual || (nuevo === null && actual == null)) return;
+
+    setGuardandoRetardoPersonal(empleado.id);
+    try {
+      await updateUsuario(empleado.id, { montoRetardoPersonal: nuevo });
+      await refreshUsuarios();
+    } catch (e) {
+      toast.error(e?.message || "No se pudo guardar la tasa de retardo.");
+    } finally {
+      setGuardandoRetardoPersonal(null);
+    }
+  };
+
+  // Dispara la impresión en cuanto AcuerdoConformidad ya está en el DOM (el efecto corre
+  // DESPUÉS del render que puso acuerdosImprimir), y limpia el estado cuando el diálogo de
+  // impresión se cierra — sea que la persona imprima o cancele, `afterprint` dispara igual.
+  useEffect(() => {
+    if (!acuerdosImprimir) return;
+    window.print();
+    const limpiar = () => setAcuerdosImprimir(null);
+    window.addEventListener("afterprint", limpiar);
+    return () => window.removeEventListener("afterprint", limpiar);
+  }, [acuerdosImprimir]);
+
+  const imprimirUno = (empleado, recibo) => setAcuerdosImprimir([{ empleado, recibo }]);
+  const imprimirTodos = () => {
+    if (!recibos.length) return;
+    setAcuerdosImprimir(recibos.map(({ empleado, recibo }) => ({ empleado, recibo })));
+  };
+
   return (
     <div className="admin-page">
       <PageHeader
@@ -333,10 +429,16 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
         <p className="mc-hint">
           <Icon name="alert" size={15} />
           <span>
-            Son fijos e iguales para toda la empresa. Un <strong>retardo</strong> es llegar pasada la
-            tolerancia de su horario; una <strong>falta</strong> es un día con turno sin checada y sin
-            permiso ni vacación aprobados. Un día justificado o de descanso no descuenta nada. Cambiar
-            estos montos recalcula lo que se ve en <em>todas</em> las semanas.
+            Un <strong>retardo</strong> es llegar pasada la tolerancia de su horario y descuenta un
+            monto fijo, igual para toda la empresa: se configura aquí. Hay dos excepciones: los{" "}
+            <strong>becarios</strong> siempre pagan $50 (se sabe quién es becario por su puesto), y
+            cualquier persona puede tener su propia <strong>tasa de retardo</strong> capturada en su
+            fila más abajo — gana sobre todo lo demás, para el caso suelto de alguien en concreto.
+            Una <strong>falta</strong> es un día con turno sin checada y sin permiso ni vacación
+            aprobados, y descuenta el sueldo diario de esa persona (su sueldo semanal entre 7) — no
+            hay nada que configurar, cada quien pierde su propio día. Un día justificado o de
+            descanso no descuenta nada. Cambiar el monto de retardo general recalcula lo que se ve
+            en <em>todas</em> las semanas, salvo para quien tenga su propia tasa.
           </span>
         </p>
         <div className="nomina-config-campos">
@@ -350,18 +452,6 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
               value={montos.montoRetardo}
               disabled={guardandoConfig}
               onChange={(e) => setBorrador({ ...montos, montoRetardo: e.target.value })}
-            />
-          </label>
-          <label>
-            Por falta
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              inputMode="decimal"
-              value={montos.montoFalta}
-              disabled={guardandoConfig}
-              onChange={(e) => setBorrador({ ...montos, montoFalta: e.target.value })}
             />
           </label>
           <button
@@ -387,7 +477,24 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
             onChange={setFiltroSucursal}
             icon={null}
           />
+          <span className="nomina-filtro-label"><Icon name="search" size={15} /> Persona</span>
+          <input
+            type="text"
+            className="list-filter-input nomina-filtro-buscar"
+            placeholder="Buscar por nombre…"
+            value={busquedaPersona}
+            onChange={(e) => setBusquedaPersona(e.target.value)}
+            aria-label="Buscar persona por nombre"
+          />
           <em>{visibles.length} {visibles.length === 1 ? "persona" : "personas"}</em>
+          <button
+            type="button"
+            className="mc-btn-outline mc-btn-with-icon nomina-btn-imprimir-todos"
+            onClick={imprimirTodos}
+            disabled={!recibos.length}
+          >
+            <Icon name="printer" size={15} /> Imprimir acuerdos ({recibos.length})
+          </button>
         </div>
       </Card>
 
@@ -432,10 +539,17 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
                 columnas={columnas}
                 guardando={guardandoSueldo === empleado.id}
                 onGuardarSueldo={guardarSueldo}
+                guardandoRetardoPersonal={guardandoRetardoPersonal === empleado.id}
+                onGuardarRetardoPersonal={guardarRetardoPersonal}
+                onImprimir={imprimirUno}
               />
             ))}
           </div>
         </Card>
+      )}
+
+      {acuerdosImprimir && (
+        <AcuerdoConformidad acuerdos={acuerdosImprimir} desde={desde} hasta={hasta} />
       )}
     </div>
   );
