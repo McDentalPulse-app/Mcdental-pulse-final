@@ -13,6 +13,10 @@ const mapAsistencia = (row) => ({
   tipo: row.tipo,
   fecha: row.fecha,
   marcadaEn: row.marcada_en,
+  // Fichada sin señal (mig. 165). Sin esto, la gracia de clasificarDia no se aplicaría nunca
+  // y la regla existiría solo sobre el papel.
+  origenOffline: row.origen_offline === true,
+  pendienteValidacion: row.pendiente_validacion === true,
   lat: row.lat,
   lng: row.lng,
   precisionM: row.precision_m,

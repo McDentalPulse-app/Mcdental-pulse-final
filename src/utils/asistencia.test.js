@@ -816,3 +816,53 @@ describe("zona horaria por sucursal", () => {
     expect(zonaDe(mapa, "McDental Tampico")).toBe(TZ_CLINICA);
   });
 });
+
+describe("gracia por fichaje sin señal (migración 165)", () => {
+  const horario = { horaEntrada: "09:00", horaSalida: "18:00", toleranciaMin: 10 };
+  const dia = (marcadaEn, origenOffline) => clasificarDia({
+    fecha: "2026-09-21",
+    horario,
+    hoy: "2026-09-22",
+    checadas: [
+      { tipo: "entrada", marcadaEn, origenOffline },
+      { tipo: "salida", marcadaEn: "2026-09-21T18:05:00-06:00" },
+    ],
+  });
+
+  it("en línea, 20 minutos tarde SIGUE siendo retardo", () => {
+    // Tolerancia 10. Llega 09:20 -> 20 > 10 -> retardo. Es el comportamiento de siempre y no
+    // debe cambiar por existir la regla nueva.
+    const r = dia("2026-09-21T09:20:00-06:00", false);
+    expect(r.estado).toBe(ESTADOS_DIA.RETARDO);
+    expect(r.minutosRetardo).toBe(20);
+  });
+
+  it("sin señal, esos mismos 20 minutos NO son retardo", () => {
+    // Tolerancia 10 + gracia 15 = 25. Llega 09:20 -> no es retardo.
+    const r = dia("2026-09-21T09:20:00-06:00", true);
+    expect(r.estado).toBe(ESTADOS_DIA.PRESENTE);
+  });
+
+  it("LA HORA REAL SE CONSERVA: la gracia perdona, no reescribe", () => {
+    // Es la diferencia con la entrada libre, que sí sustituye la hora. Aquí el registro sigue
+    // diciendo que llegó 20 minutos tarde; solo no cuenta como retardo.
+    const r = dia("2026-09-21T09:20:00-06:00", true);
+    expect(r.minutosRetardo).toBe(20);
+  });
+
+  it("la gracia tiene fondo: sin señal y MUY tarde sigue siendo retardo", () => {
+    // 09:40 -> 40 minutos, por encima de 10 + 15. Si esto pasara, apagar el wifi borraría
+    // cualquier retardo y la regla sería una puerta trasera.
+    const r = dia("2026-09-21T09:40:00-06:00", true);
+    expect(r.estado).toBe(ESTADOS_DIA.RETARDO);
+    expect(r.minutosRetardo).toBe(40);
+  });
+
+  it("la gracia se SUMA a la tolerancia del horario, no la sustituye", () => {
+    // Con tolerancia 10 el limite offline es 25, no 15. Quien ya tenia margen no lo pierde
+    // por haber fichado sin señal.
+    const r = dia("2026-09-21T09:24:00-06:00", true);
+    expect(r.estado).toBe(ESTADOS_DIA.PRESENTE);
+    expect(dia("2026-09-21T09:26:00-06:00", true).estado).toBe(ESTADOS_DIA.RETARDO);
+  });
+});
