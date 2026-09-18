@@ -378,6 +378,24 @@ $function$;
 -- antes de aplicar, con una cuenta con horario conocido.
 -- ----------------------------------------------------------------------------
 
+-- ⚠️ RESTAURAR LA REVOCACIÓN, porque arriba se hizo DROP y eso destruye la ACL.
+--
+-- Sin estas dos líneas esta migración REABRIRÍA el agujero que cierra la 166: `registrar_checada`
+-- volvería a ser llamable desde el navegador, y con ella se saltan la geocerca y el cotejo
+-- facial, que viven en api/checar.js y no dentro de la RPC.
+--
+-- Es la tercera vez hoy que un DROP se lleva por delante unos permisos (la vista del directorio
+-- en la 164, esta función en la 166, y esta misma migración si faltara esto).
+revoke all on function public.registrar_checada(
+  uuid, public.tipo_checada, numeric, numeric, integer, text, text, boolean,
+  timestamptz, uuid
+) from public, anon, authenticated;
+
+grant execute on function public.registrar_checada(
+  uuid, public.tipo_checada, numeric, numeric, integer, text, text, boolean,
+  timestamptz, uuid
+) to service_role;
+
 commit;
 
 -- ----------------------------------------------------------------------------
