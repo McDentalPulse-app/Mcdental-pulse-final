@@ -63,10 +63,10 @@ comment on column public.asistencias.desfase_segundos is
 -- ----------------------------------------------------------------------------
 -- 2. `registrar_checada`, con dos parámetros nuevos y NINGÚN cambio para el camino en línea.
 --
--- ⚠️ Se recrea a partir de la versión de la migración 136, íntegra. Todo lo que había sigue:
--- el advisory lock por empleado, la zona horaria por sucursal, el guard de 90 segundos, el de
--- la encuesta del viernes, el de salida sin entrada, la entrada libre y el alta de dispositivo.
--- Copiar aquí una versión más vieja habría borrado guardias vigentes.
+-- ⚠️ Se recrea a partir de la definición VIVA en producción, no de un archivo del repo. Todo lo
+-- que había sigue: el advisory lock por empleado, la zona horaria por sucursal, el guard de 90
+-- segundos, el de la encuesta del viernes, el de salida sin entrada, la entrada libre CON su
+-- hora aleatoria (mig. 137), el enforcement del módulo de checador (144) y el de rol (148).
 --
 -- LOS DOS PARÁMETROS SON OPCIONALES Y CON DEFAULT NULL, así que todas las llamadas actuales
 -- —api/checar.js, RH registrando a mano— siguen compilando y comportándose igual. Cuando
@@ -109,11 +109,14 @@ begin
 end;
 $$;
 
--- La función, recreada a partir de la versión ÍNTEGRA de la migración 136 con siete ediciones
--- quirúrgicas y ninguna más (verificado por diff: 43 líneas de código, todas de los cambios de
--- abajo). Siguen en pie el advisory lock por empleado, la zona horaria por sucursal, el guard de
--- 90 segundos, el de la encuesta del viernes, el de salida sin entrada, la entrada libre y el
--- alta de dispositivo.
+-- La función, recreada a partir de la DEFINICIÓN VIVA EN PRODUCCIÓN (`pg_get_functiondef`), con
+-- siete ediciones quirúrgicas y ninguna más.
+--
+-- ⚠️ NO se parte de un archivo del repo, y hay un motivo aprendido a golpes: una primera versión
+-- de esta migración se construyó sobre la 136 y habría BORRADO tres cosas vivas — la hora
+-- aleatoria de la entrada libre (137), el enforcement del módulo de checador (144) y el de rol
+-- (148). El repo y la VPS llevan meses divergiendo, así que para recrear una función la fuente
+-- de verdad es la base, no el archivo.
 --
 --   1. dos parámetros nuevos, ambos con default null
 --   2. variables de apoyo
@@ -136,33 +139,22 @@ drop function if exists public.registrar_checada(
   uuid, tipo_checada, numeric, numeric, integer, text, text, boolean
 );
 
-create or replace function public.registrar_checada(
-  p_empleado_id uuid,
-  p_tipo tipo_checada,
-  p_lat numeric default null::numeric,
-  p_lng numeric default null::numeric,
-  p_precision integer default null::integer,
-  p_selfie_path text default null::text,
-  p_device_id text default null::text,
-  p_entrada_libre boolean default false,
-  -- NUEVOS (mig. 165), los dos opcionales: con ambos en null la funcion hace EXACTAMENTE lo
-  -- de siempre, asi que api/checar.js y RH no cambian.
-  p_ocurrido_en timestamptz default null,   -- hora que AFIRMA el dispositivo (fichaje offline)
-  p_id_cliente uuid default null            -- uuid del dispositivo: anti-duplicado al reintentar
-)
-returns asistencias
-language plpgsql
-security definer
-set search_path to 'public'
-as $function$
+CREATE OR REPLACE FUNCTION public.registrar_checada(p_empleado_id uuid, p_tipo tipo_checada, p_lat numeric DEFAULT NULL::numeric, p_lng numeric DEFAULT NULL::numeric, p_precision integer DEFAULT NULL::integer, p_selfie_path text DEFAULT NULL::text, p_device_id text DEFAULT NULL::text, p_entrada_libre boolean DEFAULT false, p_ocurrido_en timestamptz DEFAULT NULL, p_id_cliente uuid DEFAULT NULL)
+ RETURNS asistencias
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
 declare
-  v_momento     timestamptz;  -- el instante que mandan las REGLAS (afirmado si es offline)
+  -- Anadidos por la migracion 165 (fichaje offline).
+  v_momento     timestamptz;  -- el instante que mandan las REGLAS (el afirmado, si es offline)
   v_offline     boolean;
   v_ok          boolean;
   v_motivo      text;
   v_existente   public.asistencias;
   c_jornada_minima constant interval := interval '30 minutes';
   c_tolerancia     constant interval := interval '30 minutes'; -- gracia para el aviso de salida
+  c_ventana_libre  constant interval := interval '30 minutes'; -- entrada libre: hasta 30 min antes del turno
 
   v_tz                 text;
   v_sucursal           public.sucursales%rowtype;
@@ -185,36 +177,36 @@ declare
   v_marcada_en         timestamptz;
   v_forzar_libre       boolean := false;
   v_hora_turno_entrada time;
+  v_rol_empleado       public.rol_usuario;
 begin
   if p_empleado_id is null then
     raise exception 'No autenticado.';
   end if;
 
+  select role into v_rol_empleado from public.usuarios where id = p_empleado_id;
+
+  if not coalesce((select puede_usar_checador from public.usuarios where id = p_empleado_id), true) then
+    raise exception 'El módulo de Checador está desactivado para tu cuenta. Contacta a Admin+.';
+  end if;
+
+  if not coalesce((select activo from public.modulos_rol where role = v_rol_empleado and item_key = 'checador'), true) then
+    raise exception 'El módulo de Checador está desactivado para tu rol. Contacta a Admin+.';
+  end if;
+
   perform pg_advisory_xact_lock(hashtext('checada:' || p_empleado_id::text));
 
-  -- IDEMPOTENCIA. Va DESPUES del lock a proposito: dos reintentos simultaneos del mismo
-  -- telefono se serializan aqui y el segundo ve la fila del primero.
-  --
-  -- Devolver la fila existente y NO lanzar es deliberado: para el telefono, reintentar tras un
-  -- corte de red tiene que ser inofensivo. Si esto fuera un error, la app no sabria distinguir
-  -- «ya estaba» de «fallo», y acabaria reencolandolo para siempre.
+  -- Idempotencia (mig. 165): un reintento tras un corte de red DEVUELVE la fila que ya existe
+  -- en vez de lanzar. Reintentar tiene que ser inofensivo, o la app no sabria distinguir
+  -- «ya estaba» de «fallo» y lo reencolaria para siempre.
   if p_id_cliente is not null then
     select * into v_existente from public.asistencias where id_cliente = p_id_cliente;
-    if found then
-      return v_existente;
-    end if;
+    if found then return v_existente; end if;
   end if;
 
   v_offline := p_ocurrido_en is not null;
-
-  -- La hora afirmada tiene limites. Hacia adelante no se acepta nada: una checada del futuro
-  -- es siempre un reloj manipulado. Hacia atras, 48 h — mas alla no es «se me fue el
-  -- internet», y para eso esta RH capturando a mano.
   if v_offline then
     select ok, motivo into v_ok, v_motivo from public.registrar_checada_offline_valida(p_ocurrido_en);
-    if not v_ok then
-      raise exception '%', v_motivo;
-    end if;
+    if not v_ok then raise exception '%', v_motivo; end if;
   end if;
 
   v_momento := coalesce(p_ocurrido_en, now());
@@ -228,9 +220,8 @@ begin
 
   v_tz := coalesce(v_sucursal.zona_horaria, 'America/Monterrey');
 
-  -- LAS REGLAS DE NEGOCIO USAN EL MOMENTO EN QUE OCURRIO, no aquel en que llego. Un fichaje
-  -- de las 8:02 enviado a mediodia tiene que evaluarse contra el turno de las 8:00, o el
-  -- retardo saldria de cuatro horas. La hora de recepcion se guarda aparte, para auditarla.
+  -- Las reglas usan el momento en que OCURRIO, no el de llegada: un fichaje de las 8:02
+  -- enviado a mediodia debe evaluarse contra el turno de las 8:00.
   v_fecha      := (v_momento at time zone v_tz)::date;
   v_hora_local := (v_momento at time zone v_tz)::time;
   v_marcada_en := v_momento;
@@ -257,13 +248,13 @@ begin
     end if;
   end if;
 
-  -- Entrada libre (mig. 135/136): con el permiso Y el interruptor prendido para ESTA
-  -- checada, la hora que se guarda pasa a ser la de inicio de turno — retardo nunca se
-  -- guarda como columna, se calcula al leer comparando marcada_en contra
-  -- horarios.hora_entrada (ver src/utils/asistencia.js), así que esto basta para que
-  -- cualquier pantalla la vea puntual sin tocar esa lógica en más de un sitio. Sin
-  -- horario para hoy no hay a qué hora "ser puntual": se ignora el flag y se guarda la
-  -- hora real, no revienta.
+  -- Entrada libre (mig. 135/136/137): con el permiso Y el interruptor prendido para ESTA
+  -- checada, la hora que se guarda pasa a ser aleatoria dentro de los 30 minutos antes del
+  -- turno (nunca justo la exacta, nunca después) — retardo nunca se guarda como columna,
+  -- se calcula al leer comparando marcada_en contra horarios.hora_entrada (ver
+  -- src/utils/asistencia.js), así que esto basta para que cualquier pantalla la vea
+  -- puntual sin tocar esa lógica en más de un sitio. Sin horario para hoy no hay a qué
+  -- hora "ser puntual": se ignora el flag y se guarda la hora real, no revienta.
   if p_tipo = 'entrada' and p_entrada_libre then
     select coalesce(u.puede_marcar_entrada_libre, false) into v_forzar_libre
     from public.usuarios u where u.id = p_empleado_id;
@@ -275,7 +266,8 @@ begin
         and h.dia_semana = extract(isodow from v_fecha);
 
       if v_hora_turno_entrada is not null then
-        v_marcada_en := (v_fecha::text || ' ' || v_hora_turno_entrada::text)::timestamp at time zone v_tz;
+        v_marcada_en := (v_fecha::text || ' ' || v_hora_turno_entrada::text)::timestamp at time zone v_tz
+                         - (floor(random() * 31)::int || ' minutes')::interval;
       else
         v_forzar_libre := false;
       end if;
@@ -359,9 +351,7 @@ begin
     case when v_offline then p_ocurrido_en end,
     case when v_offline then now() end,
     case when v_offline then extract(epoch from (now() - p_ocurrido_en))::integer end,
-    -- Offline entra PENDIENTE: el cotejo facial no se pudo hacer sin red y se hara al
-    -- reconectar. Hasta entonces existe la checada pero no esta validada, y la app debe
-    -- decir «pendiente de validacion», nunca «listo».
+    -- Offline entra PENDIENTE: el cotejo facial no se pudo hacer sin red.
     v_offline,
     p_id_cliente
   )
@@ -376,7 +366,7 @@ begin
              || ' (su turno termina a las ' || to_char(v_hora_turno, 'HH24:MI') || ').',
            case u.role when 'rh' then '/rh/asistencia' when 'psicologa' then '/psicologa/asistencia' else '/admin/asistencia' end
     from public.usuarios u
-    where coalesce(u.inactivo, false) = false and u.role in ('rh', 'admin', 'psicologa');
+    where coalesce(u.inactivo, false) = false and u.role in ('rh', 'admin', 'admin_plus', 'psicologa');
   end if;
 
   return v_fila;
