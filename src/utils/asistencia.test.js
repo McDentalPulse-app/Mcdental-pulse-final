@@ -817,7 +817,7 @@ describe("zona horaria por sucursal", () => {
   });
 });
 
-describe("gracia por fichaje sin señal (migración 165)", () => {
+describe("fichar sin señal NO cambia si algo es retardo (la gracia se retiró)", () => {
   const horario = { horaEntrada: "09:00", horaSalida: "18:00", toleranciaMin: 10 };
   const dia = (marcadaEn, origenOffline) => clasificarDia({
     fecha: "2026-09-21",
@@ -829,40 +829,25 @@ describe("gracia por fichaje sin señal (migración 165)", () => {
     ],
   });
 
-  it("en línea, 20 minutos tarde SIGUE siendo retardo", () => {
-    // Tolerancia 10. Llega 09:20 -> 20 > 10 -> retardo. Es el comportamiento de siempre y no
-    // debe cambiar por existir la regla nueva.
-    const r = dia("2026-09-21T09:20:00-06:00", false);
-    expect(r.estado).toBe(ESTADOS_DIA.RETARDO);
-    expect(r.minutosRetardo).toBe(20);
+  it("llegar a tiempo sin señal NO es retardo: la hora registrada es la de pulsar", () => {
+    // Es el caso honesto, y se resuelve SOLO con la captura offline. Quien llega 8:58 y ficha
+    // sin internet queda a las 8:58. Aqui, 09:05 con tolerancia 10 -> a tiempo.
+    expect(dia("2026-09-21T09:05:00-06:00", true).estado).toBe(ESTADOS_DIA.PRESENTE);
   });
 
-  it("sin señal, esos mismos 20 minutos NO son retardo", () => {
-    // Tolerancia 10 + gracia 15 = 25. Llega 09:20 -> no es retardo.
-    const r = dia("2026-09-21T09:20:00-06:00", true);
-    expect(r.estado).toBe(ESTADOS_DIA.PRESENTE);
+  it("llegar tarde sin señal SIGUE siendo retardo: apagar el wifi no perdona nada", () => {
+    // Es lo que hacia la gracia retirada y es justo lo que no debe pasar: el descuento por
+    // retardo es un monto fijo por dia, asi que cruzar el umbral borraba el descuento entero.
+    expect(dia("2026-09-21T09:20:00-06:00", true).estado).toBe(ESTADOS_DIA.RETARDO);
   });
 
-  it("LA HORA REAL SE CONSERVA: la gracia perdona, no reescribe", () => {
-    // Es la diferencia con la entrada libre, que sí sustituye la hora. Aquí el registro sigue
-    // diciendo que llegó 20 minutos tarde; solo no cuenta como retardo.
-    const r = dia("2026-09-21T09:20:00-06:00", true);
-    expect(r.minutosRetardo).toBe(20);
-  });
-
-  it("la gracia tiene fondo: sin señal y MUY tarde sigue siendo retardo", () => {
-    // 09:40 -> 40 minutos, por encima de 10 + 15. Si esto pasara, apagar el wifi borraría
-    // cualquier retardo y la regla sería una puerta trasera.
-    const r = dia("2026-09-21T09:40:00-06:00", true);
-    expect(r.estado).toBe(ESTADOS_DIA.RETARDO);
-    expect(r.minutosRetardo).toBe(40);
-  });
-
-  it("la gracia se SUMA a la tolerancia del horario, no la sustituye", () => {
-    // Con tolerancia 10 el limite offline es 25, no 15. Quien ya tenia margen no lo pierde
-    // por haber fichado sin señal.
-    const r = dia("2026-09-21T09:24:00-06:00", true);
-    expect(r.estado).toBe(ESTADOS_DIA.PRESENTE);
-    expect(dia("2026-09-21T09:26:00-06:00", true).estado).toBe(ESTADOS_DIA.RETARDO);
+  it("offline y en linea se juzgan EXACTAMENTE igual", () => {
+    // El flag de offline lo afirma el cliente, asi que no puede cambiar ninguna consecuencia
+    // economica. Si algun dia influye en algo, esta prueba debe ponerse roja.
+    for (const hora of ["09:05:00", "09:10:00", "09:11:00", "09:20:00", "09:40:00"]) {
+      const t = `2026-09-21T${hora}-06:00`;
+      expect(dia(t, true).estado, hora).toBe(dia(t, false).estado);
+      expect(dia(t, true).minutosRetardo, hora).toBe(dia(t, false).minutosRetardo);
+    }
   });
 });

@@ -264,22 +264,22 @@ export const minutosRetardo = (entrada, horario, tz = TZ_CLINICA) => {
 };
 
 /**
- * Gracia extra para una entrada que se fichó SIN SEÑAL (migración 165).
+ * NO HAY GRACIA POR FICHAR SIN SEÑAL, y la ausencia es deliberada. Se implementó una de 15
+ * minutos el 2026-09-17 y se retiró el mismo día, porque no protegía a nadie:
  *
- * POR QUÉ EXISTE: si el internet de la clínica se cae, la persona ficha offline y su registro
- * llega más tarde. El fichaje guarda la hora real —la que afirmó el teléfono— y eso es lo
- * correcto; pero castigarla con un retardo por una caída que no provocó, no lo es.
+ * Cuando se ficha sin red, `marcada_en` guarda LA HORA EN QUE LA PERSONA PULSÓ, no la del
+ * envío. Quien llega a las 8:58 y ficha sin internet queda registrado a las 8:58 y no tiene
+ * retardo — la captura offline ya resuelve el caso honesto por sí sola. La gracia solo podía
+ * activarse cuando la hora registrada YA era tarde, es decir, cuando la persona pulsó tarde.
  *
- * POR QUÉ ES PEQUEÑA, Y NO «sin señal no hay retardo nunca»: la regla NO puede distinguir a
- * quien llegó tarde teniendo además mala señal. Cuanto más ancha, más se parece a apagar el
- * wifi para borrar un retardo. Quince minutos cubre el rato de darse cuenta de que no hay
- * internet y fichar igual; no cubre llegar media hora tarde.
+ * Dicho de otro modo: lo único que perdonaba era el retardo de verdad. Y encima el flag de
+ * «offline» lo AFIRMA el cliente, así que cualquiera podía reclamarla estando en línea; como el
+ * descuento por retardo es un monto fijo por día (ver nomina.js), cruzar el umbral no ahorraba
+ * quince minutos, borraba el descuento entero.
  *
- * LO QUE ESTO NO HACE, y es deliberado: no toca la hora guardada. El registro sigue diciendo
- * que llegó a las 10:12. Lo único que cambia es si eso se cuenta como retardo. Un sistema que
- * reescribe la hora no se puede auditar; este sí.
+ * Si algún día un fichaje offline sale injustamente tarde, el arreglo es que la app capture la
+ * hora correcta, no que el informe la perdone.
  */
-export const GRACIA_OFFLINE_MIN = 15;
 
 /**
  * Clasifica un día. Este es el corazón del módulo.
@@ -347,10 +347,7 @@ export const clasificarDia = ({
   }
 
   const retardo = minutosRetardo(entrada, horario, tz);
-  const toleranciaBase = Number.isFinite(horario.toleranciaMin) ? horario.toleranciaMin : 0;
-  // La gracia se SUMA a la tolerancia del horario, no la sustituye: quien ya tenía 10 minutos
-  // de margen no debe perderlos por haber fichado sin señal.
-  const tolerancia = entrada.origenOffline ? toleranciaBase + GRACIA_OFFLINE_MIN : toleranciaBase;
+  const tolerancia = Number.isFinite(horario.toleranciaMin) ? horario.toleranciaMin : 0;
 
   // Estrictamente mayor: entrar en el minuto exacto del límite de tolerancia NO es
   // retardo. Con 9:00 y 10 min de gracia, las 9:10 llegan a tiempo; las 9:11, no.
