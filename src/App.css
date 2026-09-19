@@ -10952,6 +10952,8 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   border-radius: 12px;
   background: var(--mc-gris-fondo);
 }
+.nomina-check { flex: 0 0 auto; display: flex; align-items: center; }
+.nomina-check input { width: 18px; height: 18px; accent-color: var(--mc-aqua); cursor: pointer; }
 .nomina-persona { flex: 1 1 180px; min-width: 0; }
 .nomina-persona-nombre { font-weight: 800; color: var(--mc-texto-titulo); }
 .nomina-persona-sub { font-size: 0.78rem; color: var(--mc-texto-apagado); }

@@ -80,9 +80,20 @@ function FilaNomina({
   guardandoRetardoPersonal,
   onGuardarRetardoPersonal,
   onImprimir,
+  seleccionado,
+  onToggleSeleccion,
 }) {
   return (
     <div className="nomina-fila">
+      <label className="nomina-check" title="Marcar para imprimir en lote">
+        <input
+          type="checkbox"
+          checked={seleccionado}
+          onChange={() => onToggleSeleccion(empleado.id)}
+          aria-label={`Seleccionar a ${empleado.name} para imprimir`}
+        />
+      </label>
+
       <div className="nomina-persona">
         <div className="nomina-persona-nombre">{empleado.name}</div>
         <div className="nomina-persona-sub">{normalizeSucursal(empleado.sucursal)}</div>
@@ -214,6 +225,15 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
   // DOM mientras hace falta, en vez de calcular el recibo de todos en cada render.
   const [acuerdosImprimir, setAcuerdosImprimir] = useState(null);
 
+  // Selección para imprimir en lote (hallazgo real, 2026-09-19): el motor de impresión de
+  // Chrome falla al paginar un documento muy largo de una sola vez — con 25 acuerdos apilados
+  // (~20.000 px de alto) solo llegaban a salir unos 10, sin ningún error visible. Medido con
+  // getBoundingClientRect: el DOM y el CSS están perfectos, los 25 bloques quedan en su lugar
+  // exacto sin recortes — es el propio navegador el que no pagina bien algo tan largo al
+  // imprimir. La solución no es técnica (no hay CSS que se lo arregle a Chrome): es dejar
+  // elegir un lote más chico, de cualquier tamaño, sin depender del filtro de sucursal.
+  const [seleccionados, setSeleccionados] = useState(() => new Set());
+
   const lunes = useMemo(() => isoWeekToMonday(semana), [semana]);
   const desde = lunes ? aISO(lunes) : null;
   const hasta = lunes ? aISO(sumarDias(lunes, 6)) : null;
@@ -327,10 +347,13 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
   const montos = borrador || config;
 
   // Cambiar de semana vuelve a pedir las checadas: el spinner se enciende acá, en el evento,
-  // y `cargar` lo apaga en su .finally.
+  // y `cargar` lo apaga en su .finally. La selección de impresión también se limpia: es la
+  // semana anterior la que se había marcado, y arrastrarla a otra semana imprimiría acuerdos
+  // de la persona equivocada sin que nadie lo pidiera.
   const cambiarSemana = (valor) => {
     setCargando(true);
     setSemana(valor);
+    setSeleccionados(new Set());
   };
 
   const guardarConfig = async () => {
@@ -413,6 +436,37 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
     setAcuerdosImprimir(recibos.map(({ empleado, recibo }) => ({ empleado, recibo })));
   };
 
+  const toggleSeleccion = (empleadoId) => {
+    setSeleccionados((prev) => {
+      const next = new Set(prev);
+      if (next.has(empleadoId)) next.delete(empleadoId); else next.add(empleadoId);
+      return next;
+    });
+  };
+
+  // Cuenta cuántos de los VISIBLES (con el filtro actual) ya están marcados, para que el
+  // botón "Seleccionar visibles" sepa si le toca marcar o desmarcar. Adrede solo mira a
+  // `recibos` (lo que el filtro deja ver ahora) y no a `seleccionados` entero: alguien puede
+  // tener marcada gente de otra sucursal que ya no se ve, y este botón no debe tocarla.
+  const visiblesSeleccionados = recibos.filter(({ empleado }) => seleccionados.has(empleado.id)).length;
+
+  const toggleSeleccionVisibles = () => {
+    setSeleccionados((prev) => {
+      const next = new Set(prev);
+      const marcarTodos = visiblesSeleccionados < recibos.length;
+      for (const { empleado } of recibos) {
+        if (marcarTodos) next.add(empleado.id); else next.delete(empleado.id);
+      }
+      return next;
+    });
+  };
+
+  const imprimirSeleccionados = () => {
+    const elegidos = recibos.filter(({ empleado }) => seleccionados.has(empleado.id));
+    if (!elegidos.length) return;
+    setAcuerdosImprimir(elegidos.map(({ empleado, recibo }) => ({ empleado, recibo })));
+  };
+
   return (
     <div className="admin-page">
       <PageHeader
@@ -489,9 +543,28 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
           <em>{visibles.length} {visibles.length === 1 ? "persona" : "personas"}</em>
           <button
             type="button"
+            className="mc-btn-outline mc-btn-with-icon"
+            onClick={toggleSeleccionVisibles}
+            disabled={!recibos.length}
+          >
+            <Icon name="check" size={15} />{" "}
+            {visiblesSeleccionados < recibos.length ? "Seleccionar visibles" : "Quitar selección"}
+          </button>
+          <button
+            type="button"
+            className="mc-btn-primary mc-btn-with-icon"
+            onClick={imprimirSeleccionados}
+            disabled={!seleccionados.size}
+            title="Imprime solo a quien tenga la casilla marcada — en lotes chicos, la impresión sale bien siempre"
+          >
+            <Icon name="printer" size={15} /> Imprimir seleccionados ({seleccionados.size})
+          </button>
+          <button
+            type="button"
             className="mc-btn-outline mc-btn-with-icon nomina-btn-imprimir-todos"
             onClick={imprimirTodos}
             disabled={!recibos.length}
+            title="Con grupos grandes (20+), Chrome puede no imprimir todas las hojas — mejor seleccionar en lotes"
           >
             <Icon name="printer" size={15} /> Imprimir acuerdos ({recibos.length})
           </button>
@@ -542,6 +615,8 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
                 guardandoRetardoPersonal={guardandoRetardoPersonal === empleado.id}
                 onGuardarRetardoPersonal={guardarRetardoPersonal}
                 onImprimir={imprimirUno}
+                seleccionado={seleccionados.has(empleado.id)}
+                onToggleSeleccion={toggleSeleccion}
               />
             ))}
           </div>
