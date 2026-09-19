@@ -88,9 +88,10 @@ const tituloCeldaCalendario = (d, tz = TZ_CLINICA) => {
 };
 
 /** Un mes completo en cuadrícula (7 columnas, Lun-Dom). Cada celda se colorea por el estado del
- * día; clic en un día con checada lo anula, clic en una falta la justifica. Muestra la hora de
- * entrada/salida cuando la hay, y un punto si esa checada quedó marcada para revisión. */
-const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustificar, puedeMarcarRetardo, onJustificarDia, revisarIds, tz = TZ_CLINICA }) => {
+ * día; clic en un día con checada lo anula (o, si es retardo, pregunta anular vs justificar),
+ * clic en una falta la justifica. Muestra la hora de entrada/salida cuando la hay, y un punto
+ * si esa checada quedó marcada para revisión. */
+const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustificar, puedeMarcarRetardo, onJustificarDia, onRetardoDia, revisarIds, tz = TZ_CLINICA }) => {
   const [anio, mes] = mesInicio.split("-").map(Number);
   const diasEnMes = new Date(Date.UTC(anio, mes, 0)).getUTCDate();
   const columnaInicial = diaISO(mesInicio); // 1=lunes … 7=domingo
@@ -121,14 +122,27 @@ const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustifi
           );
         }
         const anulable = puedeAnular && (c.entrada || c.salida);
-        const justificable = !anulable && puedeJustificar && c.estado === ESTADOS_DIA.FALTA;
-        const accionable = anulable || justificable;
-        const accion = anulable ? () => onAnularDia(c) : justificable ? () => onJustificarDia(c) : undefined;
-        const pista = anulable
-          ? "clic para anular"
-          : justificable
-            ? (puedeMarcarRetardo ? "clic para justificar o marcar retardo" : "clic para justificar")
-            : null;
+        const justificableFalta = puedeJustificar && c.estado === ESTADOS_DIA.FALTA;
+        // Un retardo SÍ tiene checada, así que puede ser anulable y justificable a la vez —
+        // por eso no lleva el `!anulable &&` que sí lleva justificableFalta (una falta nunca
+        // tiene checada, nunca compite con anular). handleRetardoDia() resuelve cuál de las
+        // dos toca según qué permisos tenga quien mira la pantalla.
+        const justificableRetardo = puedeJustificar && c.estado === ESTADOS_DIA.RETARDO;
+        const accionable = anulable || justificableFalta || justificableRetardo;
+        const accion = justificableFalta
+          ? () => onJustificarDia(c)
+          : justificableRetardo
+            ? () => onRetardoDia(c)
+            : anulable
+              ? () => onAnularDia(c)
+              : undefined;
+        const pista = justificableFalta
+          ? (puedeMarcarRetardo ? "clic para justificar o marcar retardo" : "clic para justificar")
+          : justificableRetardo
+            ? (anulable ? "clic para justificar o anular" : "clic para justificar el retardo")
+            : anulable
+              ? "clic para anular"
+              : null;
         const porRevisar = !!revisarIds && ((c.entrada && revisarIds.has(c.entrada.id)) || (c.salida && revisarIds.has(c.salida.id)));
         const horaEntrada = c.entrada ? horaCorta(c.entrada.marcadaEn, tz).replace(/\s?[ap]\.?\s?m\.?/i, "") : null;
         return (
@@ -340,6 +354,48 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
     if (motivo === null) return;
     await onJustificarFalta?.({ empleadoId: dia.empleadoId, fecha: dia.fecha, motivo: motivo || "Sin especificar" });
     cargar();
+  };
+
+  // Justifica un retardo (día con checada, ya clasificado RETARDO): a diferencia de una
+  // falta, aquí sí hubo checada — clasificarDia() solo pasa a JUSTIFICADO un retardo con
+  // permiso aprobado de por medio, nunca un día en el que llegó a tiempo.
+  const handleJustificarRetardoDia = async (dia) => {
+    const motivo = await prompt({
+      title: "Justificar retardo",
+      description: `¿Por qué se justifica el retardo del ${dia.fecha}?`,
+      confirmText: "Justificar",
+    });
+    if (motivo === null) return;
+    await onJustificarFalta?.({ empleadoId: dia.empleadoId, fecha: dia.fecha, motivo: motivo || "Sin especificar", tipo: "retardo" });
+    cargar();
+  };
+
+  // Un retardo tiene checada, así que puede ser anulable Y justificable al mismo tiempo (a
+  // diferencia de una falta, que nunca tiene checada que anular). Con ambos permisos, se
+  // pregunta cuál de las dos se quiere; con uno solo, va directo a esa.
+  const handleRetardoDia = async (dia) => {
+    if (puedeAnular && puedeJustificar) {
+      const justificar = await confirm({
+        title: "Retardo del " + dia.fecha,
+        description: "¿Qué se hace con este día?",
+        confirmText: "Justificar retardo",
+        cancelText: "Anular checada",
+      });
+      if (justificar === null) return;
+      if (justificar) {
+        await handleJustificarRetardoDia(dia);
+      } else {
+        await handleAnularDia(dia);
+      }
+      return;
+    }
+    if (puedeJustificar) {
+      await handleJustificarRetardoDia(dia);
+      return;
+    }
+    if (puedeAnular) {
+      await handleAnularDia(dia);
+    }
   };
 
   // Marca una falta como retardo: da de alta una entrada y una salida manuales (RH), con
@@ -590,6 +646,7 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
                   puedeJustificar={puedeJustificar}
                   puedeMarcarRetardo={puedeMarcarRetardo}
                   onJustificarDia={(dia) => handleFaltaDia({ ...dia, empleadoId: seleccionado.empleado.id })}
+                  onRetardoDia={(dia) => handleRetardoDia({ ...dia, empleadoId: seleccionado.empleado.id })}
                   revisarIds={revisarIds}
                 />
               </Card>

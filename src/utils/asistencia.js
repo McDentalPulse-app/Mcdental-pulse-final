@@ -334,8 +334,12 @@ export const minutosRetardo = (entrada, horario, tz = TZ_CLINICA) => {
  * Orden de las reglas (importa):
  *  1. Sin horario ese día -> DESCANSO. La ausencia de renglón en `horarios` ES el
  *     descanso (migración 035); un domingo sin turno no puede ser falta.
- *  2. Con checadas -> se juzga lo que hizo (presente / retardo / incompleto). Un
- *     permiso aprobado NO borra el hecho de que vino: si vino, vino.
+ *  2. Con checadas y sin retardo -> PRESENTE. Un permiso aprobado no cambia nada aquí:
+ *     llegó a tiempo, no hay nada que perdonar.
+ *  2b. Con checadas y con retardo -> RETARDO, salvo que un permiso o vacación APROBADOS
+ *      cubran el día: entonces es JUSTIFICADO. Un retardo sí se puede justificar (cita
+ *      médica, trámite con motivo válido…), a diferencia del caso de arriba — aquí sí
+ *      hubo algo que perdonar: la tardanza.
  *  3. Sin checadas y con permiso o vacación APROBADOS que cubran el día -> JUSTIFICADO.
  *     Solo los aprobados: un permiso pendiente todavía no justifica nada.
  *  4. Sin checadas y sin justificante -> FALTA.
@@ -398,9 +402,16 @@ export const clasificarDia = ({
 
   // Estrictamente mayor: entrar en el minuto exacto del límite de tolerancia NO es
   // retardo. Con 9:00 y 10 min de gracia, las 9:10 llegan a tiempo; las 9:11, no.
-  const estado = retardo > tolerancia ? ESTADOS_DIA.RETARDO : ESTADOS_DIA.PRESENTE;
+  const esRetardo = retardo > tolerancia;
 
-  return { ...base, estado, minutosRetardo: retardo };
+  // Un retardo con permiso/vacación aprobados de por medio queda JUSTIFICADO — a
+  // diferencia de PRESENTE (arriba), aquí SÍ hay algo que perdonar. No aplica a llegar a
+  // tiempo: ese caso ya está resuelto como PRESENTE antes de llegar aquí.
+  if (esRetardo && justificacion) {
+    return { ...base, estado: ESTADOS_DIA.JUSTIFICADO, minutosRetardo: retardo };
+  }
+
+  return { ...base, estado: esRetardo ? ESTADOS_DIA.RETARDO : ESTADOS_DIA.PRESENTE, minutosRetardo: retardo };
 };
 
 /** Todas las fechas "YYYY-MM-DD" entre desde y hasta, ambas incluidas. */

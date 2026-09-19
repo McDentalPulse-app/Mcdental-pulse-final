@@ -270,14 +270,36 @@ describe("clasificarDia", () => {
     expect(d.estado).toBe(ESTADOS_DIA.JUSTIFICADO);
   });
 
-  it("si vino a trabajar, el permiso aprobado NO borra que vino", () => {
-    // Tenía permiso pero se presentó igual. Debe contar como presente: el permiso
-    // justifica una AUSENCIA, y aquí no hubo ausencia.
+  it("si vino a trabajar A TIEMPO, el permiso aprobado NO borra que vino", () => {
+    // Tenía permiso pero se presentó igual, y a tiempo. Debe contar como presente: el
+    // permiso justifica una AUSENCIA o un RETARDO, y aquí no hubo ninguno de los dos.
     const permisos = [{ estado: "aprobado", fecha: "2026-07-13", fechaFin: null }];
     const e = checada("entrada", "2026-07-13T15:00:00Z");
     const s = checada("salida", "2026-07-14T00:00:00Z");
     const d = clasificarDia({ fecha: "2026-07-13", checadas: [e, s], horario: horarioNormal, permisos });
     expect(d.estado).toBe(ESTADOS_DIA.PRESENTE);
+  });
+
+  it("un permiso APROBADO convierte un retardo en justificado", () => {
+    // A diferencia de llegar a tiempo (arriba), aquí sí hubo algo que perdonar: la
+    // tardanza. Un retardo también se puede justificar, igual que una falta.
+    const permisos = [{ estado: "aprobado", fecha: "2026-07-13", fechaFin: null }];
+    const e = checada("entrada", "2026-07-13T15:11:00Z"); // 09:11, retardo
+    const s = checada("salida", "2026-07-14T00:00:00Z");
+    const d = clasificarDia({ fecha: "2026-07-13", checadas: [e, s], horario: horarioNormal, permisos });
+    expect(d.estado).toBe(ESTADOS_DIA.JUSTIFICADO);
+    expect(d.justificacion).toBeTruthy();
+    // La checada sigue ahí: un permiso no borra que vino, solo perdona la tardanza.
+    expect(d.entrada).toBe(e);
+    expect(d.minutosRetardo).toBe(11);
+  });
+
+  it("un permiso PENDIENTE no justifica un retardo", () => {
+    const permisos = [{ estado: "pendiente", fecha: "2026-07-13", fechaFin: null }];
+    const e = checada("entrada", "2026-07-13T15:11:00Z");
+    const s = checada("salida", "2026-07-14T00:00:00Z");
+    const d = clasificarDia({ fecha: "2026-07-13", checadas: [e, s], horario: horarioNormal, permisos });
+    expect(d.estado).toBe(ESTADOS_DIA.RETARDO);
   });
 });
 
