@@ -318,13 +318,14 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
     if (!dia.entrada && !dia.salida) return;
     let objetivo = dia.entrada || dia.salida;
     if (dia.entrada && dia.salida) {
-      const esEntrada = await confirm({
+      const eleccion = await confirm({
         title: "¿Qué checada anular?",
         description: `${dia.fecha} tiene entrada y salida registradas.`,
         confirmText: "Anular entrada",
         cancelText: "Anular salida",
       });
-      objetivo = esEntrada ? dia.entrada : dia.salida;
+      if (eleccion === null) return; // cerrado con la X/Escape: no elegir es no anular nada
+      objetivo = eleccion ? dia.entrada : dia.salida;
     }
     handleAnular(objetivo);
   };
@@ -399,6 +400,7 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
       confirmText: "Marcar como retardo",
       cancelText: "Justificar falta",
     });
+    if (marcarRetardo === null) return; // cerrado con la X/Escape: no hacer nada
     if (marcarRetardo) {
       await handleMarcarRetardoDia(dia);
     } else {

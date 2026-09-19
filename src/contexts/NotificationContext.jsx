@@ -102,6 +102,7 @@ export const NotificationProvider = ({ children }) => {
           {...confirmState}
           onConfirm={() => closeConfirm(true)}
           onCancel={() => closeConfirm(false)}
+          onClose={() => closeConfirm(null)}
         />
       )}
       {promptState && (

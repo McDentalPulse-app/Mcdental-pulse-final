@@ -469,6 +469,15 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
 
   return (
     <div className="admin-page">
+      {/* Mientras se imprime, el resto de la pantalla NO se monta (no solo se oculta con CSS):
+          con la lista completa oculta por visibility:hidden pero ocupando su espacio, una
+          sucursal de 20+ personas dejaba página en blanco tras página en blanco después del
+          último acuerdo real — el documento impreso mide tanto como la lista escondida, no
+          como lo que de verdad se ve. Sin la lista en el DOM, no hay espacio que medir. */}
+      {acuerdosImprimir ? (
+        <AcuerdoConformidad acuerdos={acuerdosImprimir} desde={desde} hasta={hasta} />
+      ) : (
+        <>
       <PageHeader
         icon="dollar"
         title="Nómina"
@@ -623,8 +632,7 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
         </Card>
       )}
 
-      {acuerdosImprimir && (
-        <AcuerdoConformidad acuerdos={acuerdosImprimir} desde={desde} hasta={hasta} />
+        </>
       )}
     </div>
   );

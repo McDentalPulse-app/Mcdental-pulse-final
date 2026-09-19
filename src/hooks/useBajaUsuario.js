@@ -52,6 +52,7 @@ export const useBajaUsuario = () => {
       confirmText: "Archivar",
       cancelText: "Solo desactivar",
     });
+    if (quiereArchivar === null) return false; // cerrado con la X/Escape: no dar de baja a nadie
 
     if (!quiereArchivar) {
       return aplicar(empleado, { inactivo: true }, `${empleado.name} quedó inactivo.`);

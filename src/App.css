@@ -2943,6 +2943,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 }
 
 .mc-notify-modal {
+  position: relative;
   width: min(440px, 100%);
   max-width: 100%;
   max-height: min(90vh, calc(100dvh - 40px));
@@ -2950,6 +2951,30 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   padding: 28px 28px 24px;
   text-align: center;
   margin: auto;
+}
+
+/* Botón de cerrar (X): un tercer camino distinto de Cancelar/Confirmar, para cuando el texto
+   de "Cancelar" en realidad es otra elección (p.ej. "Solo desactivar") y no un simple "salir
+   sin hacer nada" — ver el comentario en ConfirmModal.jsx. */
+.mc-notify-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--mc-slate-500);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.mc-notify-modal-close:hover {
+  background: var(--mc-gris-perla);
+  color: var(--mc-texto-titulo);
 }
 
 .mc-notify-modal-icon {
