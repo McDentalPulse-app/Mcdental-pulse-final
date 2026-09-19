@@ -5,28 +5,45 @@ import { TZ_CLINICA } from "./asistencia";
 export const calcularAntiguedad = (fechaIngreso) => {
   if (!fechaIngreso) return "No registrada";
 
-  const inicio = new Date(fechaIngreso);
+  // Ancla a mediodía, igual que formatFechaIngreso: "YYYY-MM-DD" se interpreta como
+  // medianoche UTC, y en cualquier huso detrás de UTC (todo México lo está) eso cae en la
+  // TARDE del día anterior en hora local — inicio.getDate() daría un día de menos. Antes
+  // esto solo podía correr un mes en casos raros de borde; ahora que se cuentan días
+  // exactos, sin el ancla el conteo de días quedaría mal para todo el mundo, siempre.
+  const inicio = new Date(`${fechaIngreso}T12:00:00`);
   if (Number.isNaN(inicio.getTime())) return "No registrada";
 
   const hoy = new Date();
 
+  // Comparar por CALENDARIO, no por instante: `inicio` queda anclado a mediodía y `hoy` es la
+  // hora exacta de ahora — comparar los Date tal cual marcaría "futuro" a alguien que ingresó
+  // HOY mismo si todavía no es mediodía.
+  const hoyFecha = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
+  if (fechaIngreso > hoyFecha) return "No registrada";
+
   let años = hoy.getFullYear() - inicio.getFullYear();
   let meses = hoy.getMonth() - inicio.getMonth();
+  let dias = hoy.getDate() - inicio.getDate();
 
-  if (hoy.getDate() < inicio.getDate()) {
+  if (dias < 0) {
     meses--;
+    // El día 0 de un mes en JS es el último día del mes anterior — exactamente el mes que
+    // se acaba de "tomar prestado" al bajar `dias` por debajo de cero.
+    dias += new Date(hoy.getFullYear(), hoy.getMonth(), 0).getDate();
   }
-
   if (meses < 0) {
     años--;
     meses += 12;
   }
 
-  let str = "";
-  if (años > 0) str += `${años} año${años > 1 ? "s" : ""} `;
-  if (meses > 0) str += `${meses} mes${meses > 1 ? "es" : ""}`;
+  const partes = [];
+  if (años > 0) partes.push(`${años} año${años > 1 ? "s" : ""}`);
+  if (meses > 0) partes.push(`${meses} mes${meses > 1 ? "es" : ""}`);
+  if (dias > 0) partes.push(`${dias} día${dias > 1 ? "s" : ""}`);
 
-  return str.trim() || "Menos de 1 mes";
+  if (partes.length === 0) return "Hoy";
+  if (partes.length === 1) return partes[0];
+  return `${partes.slice(0, -1).join(", ")} y ${partes[partes.length - 1]}`;
 };
 
 /**

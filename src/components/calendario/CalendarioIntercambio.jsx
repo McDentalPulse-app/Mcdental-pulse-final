@@ -47,16 +47,21 @@ const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados,
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   }, [mesActual]);
 
-  // Solo los días NO laborables se pueden ceder. Aun con dos meses de ventana la lista puede
-  // quedar vacía —solo los festivos `oficial` son intercambiables, y hay tramos sin ninguno—,
-  // así que abajo se pinta un mensaje en lugar del formulario: un desplegable vacío sin
-  // explicación acaba reportado como una falla.
+  // Solo los días NO laborables se pueden ceder. El festivo del mes EN CURSO sigue eligible
+  // aunque ya haya pasado —se puede pedir durante el resto del mes, no solo con anticipación—;
+  // el del mes siguiente, por ser futuro, nunca necesita ese permiso. El servidor
+  // (api/solicitar-intercambio.js) es quien de verdad exige, para un festivo ya pasado, que haya
+  // checada de entrada ese día.
+  //
+  // Aun con dos meses de ventana la lista puede quedar vacía —solo los festivos `oficial` son
+  // intercambiables, y hay tramos sin ninguno—, así que abajo se pinta un mensaje en lugar del
+  // formulario: un desplegable vacío sin explicación acaba reportado como una falla.
   const festivosDelMes = useMemo(
     () => festivos
-      .filter((f) => f.fecha >= hoy && esNoLaborable(f)
+      .filter((f) => esNoLaborable(f)
         && (f.fecha.startsWith(mesActual) || f.fecha.startsWith(mesSiguiente)))
       .sort((a, b) => a.fecha.localeCompare(b.fecha)),
-    [festivos, hoy, mesActual, mesSiguiente],
+    [festivos, mesActual, mesSiguiente],
   );
 
   // <WeekSelect> no tiene opción vacía propia, así que el "sin elegir" va como primera opción.

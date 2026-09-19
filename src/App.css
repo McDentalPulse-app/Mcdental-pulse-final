@@ -2943,6 +2943,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 }
 
 .mc-notify-modal {
+  position: relative;
   width: min(440px, 100%);
   max-width: 100%;
   max-height: min(90vh, calc(100dvh - 40px));
@@ -2950,6 +2951,30 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   padding: 28px 28px 24px;
   text-align: center;
   margin: auto;
+}
+
+/* Botón de cerrar (X): un tercer camino distinto de Cancelar/Confirmar, para cuando el texto
+   de "Cancelar" en realidad es otra elección (p.ej. "Solo desactivar") y no un simple "salir
+   sin hacer nada" — ver el comentario en ConfirmModal.jsx. */
+.mc-notify-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--mc-slate-500);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.mc-notify-modal-close:hover {
+  background: var(--mc-gris-perla);
+  color: var(--mc-texto-titulo);
 }
 
 .mc-notify-modal-icon {
@@ -10939,6 +10964,11 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 }
 .nomina-filtros em { font-size: 0.8rem; color: var(--mc-texto-apagado); font-style: normal; }
 
+/* `.list-filter-input` trae `width: 100%` pensado para el grid de FilterBar — aquí vive suelto
+   en una fila flex junto a los WeekSelect, así que necesita su propio ancho o se estiraría a
+   ocupar toda la barra y empujaría "104 personas" a la siguiente línea. */
+.nomina-filtro-buscar { width: 200px; max-width: 100%; }
+
 .nomina-lista { display: flex; flex-direction: column; gap: 10px; }
 .nomina-fila {
   display: flex; flex-wrap: wrap; align-items: center; gap: 16px;
@@ -10947,6 +10977,8 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   border-radius: 12px;
   background: var(--mc-gris-fondo);
 }
+.nomina-check { flex: 0 0 auto; display: flex; align-items: center; }
+.nomina-check input { width: 18px; height: 18px; accent-color: var(--mc-aqua); cursor: pointer; }
 .nomina-persona { flex: 1 1 180px; min-width: 0; }
 .nomina-persona-nombre { font-weight: 800; color: var(--mc-texto-titulo); }
 .nomina-persona-sub { font-size: 0.78rem; color: var(--mc-texto-apagado); }
@@ -10982,6 +11014,25 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 }
 .nomina-sueldo input:disabled { opacity: 0.55; cursor: wait; }
 
+/* Mismo look que .nomina-sueldo (calcado), pero más angosto: es una excepción puntual, no un
+   dato que se espera que toda la plantilla tenga capturado. */
+.nomina-retardo-personal { display: flex; flex-direction: column; gap: 4px; flex: 0 0 auto; }
+.nomina-retardo-personal span { font-size: 0.75rem; font-weight: 700; color: var(--mc-texto-secundario); }
+.nomina-retardo-personal input {
+  width: 100px;
+  padding: 8px 10px;
+  border-radius: var(--mc-control-radio);
+  border: 1px solid var(--mc-control-borde);
+  background: var(--mc-control-fondo);
+  color: var(--mc-texto);
+  font-family: inherit; font-size: var(--mc-control-letra); font-weight: 700;
+}
+.nomina-retardo-personal input:focus {
+  outline: none; border-color: var(--mc-aqua);
+  box-shadow: 0 0 0 3px rgba(var(--mc-aqua-rgb) / 0.15);
+}
+.nomina-retardo-personal input:disabled { opacity: 0.55; cursor: wait; }
+
 .nomina-totales { margin-left: auto; text-align: right; min-width: 160px; }
 .nomina-total-linea {
   display: flex; justify-content: space-between; gap: 12px;
@@ -10997,10 +11048,139 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 .nomina-sin-sueldo { color: var(--mc-ambar, #b45309); font-size: 0.85rem; }
 .nomina-total-detalle { font-size: 0.72rem; color: var(--mc-texto-apagado); margin-top: 3px; }
 
+.nomina-btn-imprimir { margin-top: 8px; padding: 6px 10px; font-size: 0.78rem; }
+.nomina-btn-imprimir-todos { margin-left: auto; }
+
 @media (max-width: 760px) {
   .nomina-totales { margin-left: 0; text-align: left; width: 100%; }
   .nomina-semana { order: 3; width: 100%; justify-content: space-between; }
   .nomina-sueldo { order: 2; }
+  .nomina-retardo-personal { order: 2; }
+  .nomina-btn-imprimir-todos { margin-left: 0; }
+}
+
+/* ----------------------------------------------------------------------------------------
+   Acuerdo de conformidad de pago (AcuerdoConformidad.jsx) — SOLO existe para imprimirse.
+   `.nomina-imprimir-area` vive fuera de flujo (display:none) mientras no se imprime; en
+   @media print se vuelve visible y el resto de la página se esconde con el truco clásico de
+   visibility:hidden — así el navegador imprime nada más este contenedor, sin que la barra de
+   navegación, los modales ni el tema oscuro de la app aparezcan en el papel.
+   Colores fijos en negro sobre blanco A PROPÓSITO, fuera de los tokens --mc-*: es un
+   documento que alguien firma a mano, no debe depender del tema (oscuro/claro) de quien lo
+   imprime.
+   ---------------------------------------------------------------------------------------- */
+.nomina-imprimir-area { display: none; }
+
+@media print {
+  body * { visibility: hidden; }
+  .nomina-imprimir-area, .nomina-imprimir-area * { visibility: visible; }
+  /* Historial de esta regla — CUATRO bugs reales, cada arreglo reveló el siguiente:
+     1) `position: absolute` a secas: se posiciona y se RECORTA contra `.app-main` (el
+        contenedor scrolleable de toda página admin), a donde estuviera scrolleada la
+        pantalla al imprimir. El acuerdo salía en blanco o cortado.
+     2) `position: fixed` arregló el recorte, pero en impresión `fixed` se comporta como un
+        encabezado que se repite en cada hoja, atado a UNA sola página: con dos o más
+        acuerdos apilados, solo salía el primero y los demás nunca llegaban a imprimirse.
+     3) Sin `position` (flujo normal): `.nomina-imprimir-area` quedaba DESPUÉS de toda la
+        pantalla de Nómina en el DOM, y `visibility: hidden` NO le quita el espacio a lo que
+        oculta — el acuerdo heredaba el alto entero de la pantalla como margen en blanco.
+     4) Volver a `position: absolute` (con el overflow/alto de `.app-shell`/`.app-main`/
+        `.app-main-inner`/`.admin-page` apagado) arreglaba el nº3, pero reintroducía una
+        variante del nº1: Chromium decide CUÁNTAS páginas imprimir según el alto del FLUJO
+        NORMAL del documento; contenido `absolute` que se sale de ese alto no genera más
+        páginas por sí solo, aunque no esté recortado visualmente. Con la pantalla de Nómina
+        montada (aunque oculta), su alto en flujo normal era enorme y de sobra alcanzaba para
+        paginar cualquier cantidad de acuerdos — a costa de páginas en blanco extra al final.
+     5) Nomina.jsx deja de MONTAR el resto de SU PANTALLA mientras se imprime (ver el
+        `acuerdosImprimir ? ... : ...` en su return), y con eso `.nomina-imprimir-area` puede
+        volver a flujo normal (nº3 ya no aplica: no hay nada DENTRO de `.admin-page` antes
+        que deje margen en blanco, y su alto real ahora SÍ es el alto que Chromium pagina).
+        Pero `.admin-page` no es lo único que queda montado y oculto: `<Navegacion />` (la
+        barra de arriba) vive FUERA de Nomina.jsx, en `AdminLayout.jsx`, hermana de
+        `.app-main` dentro de `.app-shell` — sigue en el DOM, sigue ocupando su alto real
+        aunque `visibility: hidden` la esconda, y por estar ANTES de `.app-main` empujaba el
+        acuerdo hacia abajo con un margen en blanco del alto de la barra (el nº3, otra vez,
+        un nivel más arriba en el árbol). Por eso se colapsa aparte, a `display: none` (no
+        solo invisible: sin alto), en vez de intentar meterla en la lista de arriba —esa
+        lista necesita QUEDAR VISIBLE-ish (overflow:visible/height:auto) porque son
+        ANCESTROS de `.nomina-imprimir-area` y recortarlos se lo llevaría por delante; la
+        barra de navegación no es ancestro de nada aquí, así que puede desaparecer entera.
+        Mismo cuento un nivel más adentro: `.app-main-inner` puede traer, ANTES de
+        `.admin-page`, las tarjetas de "Activa tu ubicación" / "¿Quieres recibir tus avisos?"
+        (AdminLayout.jsx) — también hermanas, no ancestras, así que también a `display: none`.
+        ADVERTENCIA para quien agregue otro banner persistente ahí: cualquier hermano nuevo
+        de `.admin-page` (en cualquiera de estos niveles) va a repetir este mismo bug si no
+        se suma aquí. */
+  .app-shell, .app-main, .app-main-inner, .admin-page {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+  .app-shell > *:not(.app-main) { display: none !important; }
+  .app-main-inner > *:not(.admin-page) { display: none !important; }
+  .nomina-imprimir-area { display: block; width: 100%; }
+}
+
+.nomina-acuerdo {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px;
+  background: #ffffff;
+  color: #111111;
+  font-family: Arial, Helvetica, sans-serif;
+  box-sizing: border-box;
+  page-break-after: always;
+}
+.nomina-acuerdo:last-child { page-break-after: auto; }
+
+.nomina-acuerdo-header { text-align: center; margin-bottom: 24px; }
+.nomina-acuerdo-titulo { font-size: 1.3rem; font-weight: 700; }
+.nomina-acuerdo-subtitulo { font-size: 1rem; font-weight: 600; margin-top: 2px; }
+.nomina-acuerdo-periodo { font-size: 0.85rem; color: #444444; margin-top: 4px; }
+
+.nomina-acuerdo-datos,
+.nomina-acuerdo-desglose {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 18px;
+  font-size: 0.9rem;
+}
+.nomina-acuerdo-datos th,
+.nomina-acuerdo-datos td,
+.nomina-acuerdo-desglose th,
+.nomina-acuerdo-desglose td {
+  border: 1px solid #999999;
+  padding: 6px 10px;
+  text-align: left;
+}
+.nomina-acuerdo-datos th { width: 140px; background: #f2f2f2; font-weight: 600; }
+.nomina-acuerdo-desglose th { background: #f2f2f2; font-weight: 600; }
+.nomina-acuerdo-desglose td:last-child,
+.nomina-acuerdo-desglose th:last-child { text-align: right; width: 160px; }
+.nomina-acuerdo-total td { font-weight: 700; border-top: 2px solid #111111; }
+
+.nomina-acuerdo-texto {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  text-align: justify;
+  margin: 18px 0;
+}
+
+.nomina-acuerdo-firmas {
+  display: flex;
+  gap: 32px;
+  margin-top: 64px;
+}
+.nomina-acuerdo-firma { flex: 1; text-align: center; font-size: 0.78rem; color: #333333; }
+.nomina-acuerdo-firma-linea { border-top: 1px solid #111111; margin-bottom: 6px; height: 48px; }
+.nomina-acuerdo-firma--huella { flex: 0 0 140px; }
+.nomina-acuerdo-huella-caja {
+  width: 120px;
+  height: 68px;
+  margin: -18px auto 6px;
+  border: 1px solid #111111;
+  border-radius: 4px;
 }
 
 /* --- Enrolado de rostros (migración 041) --- */

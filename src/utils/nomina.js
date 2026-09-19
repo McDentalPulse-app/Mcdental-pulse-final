@@ -8,10 +8,19 @@ import { ESTADOS_DIA } from "./asistencia";
  * Supabase, porque es lo único que se puede testear — y esto decide cuánto cobra alguien, así
  * que es justo lo que no puede vivir sin pruebas dentro de un .jsx.
  *
- * LA REGLA DE NEGOCIO (decisión del dueño, 2026-09-10):
+ * LA REGLA DE NEGOCIO (decisión del dueño, 2026-09-10, ajustada el 2026-09-19):
  *  · El sueldo capturado es SEMANAL y fijo. No se prorratea por días trabajados.
- *  · Un retardo descuenta un monto fijo. Una falta descuenta otro monto fijo.
- *  · La falta NO resta además el día de sueldo. Se descuenta ese monto y nada más.
+ *  · Un retardo descuenta un monto FIJO, igual para toda la empresa (se configura en pantalla),
+ *    con dos excepciones que ganan sobre la general, en este orden de prioridad:
+ *      1. El monto PERSONAL de la persona (`usuarios.monto_retardo_personal`, mig. 164), si lo
+ *         tiene capturado — un caso suelto, de una persona en concreto.
+ *      2. Si no tiene monto personal, la tasa fija de BECARIO (ver MONTO_RETARDO_BECARIO) si su
+ *         puesto lo dice — una categoría, no una persona.
+ *  · Una falta descuenta el SALARIO DIARIO de la propia persona: su sueldo semanal entre 7. Ya
+ *    no es un monto fijo como el retardo — perder un día no vale lo mismo para quien gana 1500
+ *    a la semana que para quien gana 4000, así que cada quien pierde SU día, no un número
+ *    inventado igual para todos.
+ *  · La falta NO resta nada además de ese día. Se descuenta el salario diario y nada más.
  *
  * Lo que NO descuenta, y por qué:
  *  · JUSTIFICADO — hay un permiso o una vacación aprobados. Justificar es precisamente decir
@@ -27,7 +36,7 @@ import { ESTADOS_DIA } from "./asistencia";
  */
 
 /** Montos cuando todavía no se ha configurado nada: no descontar. */
-export const DESCUENTOS_DEFECTO = { montoRetardo: 0, montoFalta: 0 };
+export const DESCUENTOS_DEFECTO = { montoRetardo: 0 };
 
 /** Número no negativo, o 0. Un monto en null/undefined/"abc" no puede tumbar el cálculo. */
 const monto = (v) => {
@@ -43,10 +52,42 @@ const monto = (v) => {
  */
 const pesos = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
-/** Lo que descuenta UN día, según cómo quedó clasificado. */
-export const descuentoDelDia = (estado, config = DESCUENTOS_DEFECTO) => {
-  if (estado === ESTADOS_DIA.RETARDO) return monto(config?.montoRetardo);
-  if (estado === ESTADOS_DIA.FALTA) return monto(config?.montoFalta);
+/**
+ * Tasa fija de retardo para becarios (decisión del dueño, 2026-09-19): $50, contra el monto
+ * general que se configura en pantalla (hoy $100). No es un campo configurable aparte — es una
+ * excepción puntual para un grupo chico, no una política de toda la empresa como la tasa
+ * general, así que un número fijo aquí es más simple que otro input que nadie más va a tocar.
+ */
+const MONTO_RETARDO_BECARIO = 50;
+
+/**
+ * Alguien es becario si su PUESTO lo dice ("Becario Sistemas", "Becaria marketing"…).
+ *
+ * Por puesto y no por nombre, a propósito: este mismo proyecto ya tuvo datos personales
+ * viviendo en el código (ver el historial de helpers.js, `ADMIN_EMPLOYEE_FECHAS`) y se quitó
+ * por eso mismo. Un becario nuevo que se dé de alta con "Becario" en el puesto queda cubierto
+ * solo; a alguien que deja de serlo le basta con que RH le cambie el puesto.
+ */
+const esBecario = (puesto) => /becari/i.test(puesto || "");
+
+/**
+ * Lo que descuenta UN día, según cómo quedó clasificado.
+ *
+ * `sueldoSemanal` solo hace falta para la FALTA: el salario diario de la persona, su sueldo
+ * semanal entre los 7 días de la semana. `puesto` y `montoRetardoPersonal` solo hacen falta
+ * para el RETARDO — el personal gana sobre el de becario, que gana sobre el general de
+ * `config` (ver la prioridad documentada arriba, en el encabezado del archivo).
+ */
+export const descuentoDelDia = (
+  estado,
+  { config = DESCUENTOS_DEFECTO, sueldoSemanal = null, puesto = null, montoRetardoPersonal = null } = {},
+) => {
+  if (estado === ESTADOS_DIA.RETARDO) {
+    if (montoRetardoPersonal !== null && montoRetardoPersonal !== undefined) return monto(montoRetardoPersonal);
+    if (esBecario(puesto)) return MONTO_RETARDO_BECARIO;
+    return monto(config?.montoRetardo);
+  }
+  if (estado === ESTADOS_DIA.FALTA) return pesos(monto(sueldoSemanal) / 7);
   return 0;
 };
 
@@ -61,8 +102,15 @@ export const descuentoDelDia = (estado, config = DESCUENTOS_DEFECTO) => {
  * que cero. Se devuelve `sinSueldo: true` para que la pantalla lo diga con esas palabras en vez
  * de enseñar un pago final de $0.00, que parecería un cálculo hecho y da un dato falso.
  */
-export const calcularNomina = ({ dias = [], sueldoSemanal = null, config = DESCUENTOS_DEFECTO } = {}) => {
-  const detalle = dias.map((d) => ({ ...d, descuento: descuentoDelDia(d.estado, config) }));
+export const calcularNomina = ({
+  dias = [],
+  sueldoSemanal = null,
+  config = DESCUENTOS_DEFECTO,
+  puesto = null,
+  montoRetardoPersonal = null,
+} = {}) => {
+  const opciones = { config, sueldoSemanal, puesto, montoRetardoPersonal };
+  const detalle = dias.map((d) => ({ ...d, descuento: descuentoDelDia(d.estado, opciones) }));
 
   const retardos = detalle.filter((d) => d.estado === ESTADOS_DIA.RETARDO).length;
   const faltas = detalle.filter((d) => d.estado === ESTADOS_DIA.FALTA).length;

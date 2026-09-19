@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   horaAMinutos,
   minutosLocales,
+  minutosAUtc,
   diaISO,
   emparejarChecadas,
   minutosTrabajados,
@@ -77,6 +78,29 @@ describe("minutosLocales", () => {
 
   it("medianoche local da 0, no 1440", () => {
     expect(minutosLocales("2026-07-14T06:00:00Z")).toBe(0);
+  });
+});
+
+describe("minutosAUtc", () => {
+  // Es la inversa de minutosLocales: los mismos pares de arriba, pero de minutos locales a UTC.
+  it.each([
+    ["2026-07-13", 545, "2026-07-13T15:05:00.000Z"], // 09:05 en la clínica
+    ["2026-07-13", 540, "2026-07-13T15:00:00.000Z"], // 09:00
+    ["2026-07-13", 1050, "2026-07-13T23:30:00.000Z"], // 17:30
+  ])("%s + %i min locales => %s", (fecha, minutos, esperado) => {
+    expect(minutosAUtc(fecha, minutos)).toBe(esperado);
+  });
+
+  it("redondea el viaje de ida y vuelta con minutosLocales", () => {
+    const utc = minutosAUtc("2026-07-13", 545, "America/Hermosillo");
+    expect(minutosLocales(utc, "America/Hermosillo")).toBe(545);
+  });
+
+  it("minutos >= 1440 se corren al día siguiente, no se quedan en el mismo día", () => {
+    // 23:59 del 13 + 2 min locales = 00:01 del 14, no una hora inválida del 13.
+    const utc = minutosAUtc("2026-07-13", 1439 + 2);
+    expect(minutosLocales(utc)).toBe(1); // 00:01 local
+    expect(utc.slice(0, 10)).toBe("2026-07-14");
   });
 });
 
@@ -246,14 +270,36 @@ describe("clasificarDia", () => {
     expect(d.estado).toBe(ESTADOS_DIA.JUSTIFICADO);
   });
 
-  it("si vino a trabajar, el permiso aprobado NO borra que vino", () => {
-    // Tenía permiso pero se presentó igual. Debe contar como presente: el permiso
-    // justifica una AUSENCIA, y aquí no hubo ausencia.
+  it("si vino a trabajar A TIEMPO, el permiso aprobado NO borra que vino", () => {
+    // Tenía permiso pero se presentó igual, y a tiempo. Debe contar como presente: el
+    // permiso justifica una AUSENCIA o un RETARDO, y aquí no hubo ninguno de los dos.
     const permisos = [{ estado: "aprobado", fecha: "2026-07-13", fechaFin: null }];
     const e = checada("entrada", "2026-07-13T15:00:00Z");
     const s = checada("salida", "2026-07-14T00:00:00Z");
     const d = clasificarDia({ fecha: "2026-07-13", checadas: [e, s], horario: horarioNormal, permisos });
     expect(d.estado).toBe(ESTADOS_DIA.PRESENTE);
+  });
+
+  it("un permiso APROBADO convierte un retardo en justificado", () => {
+    // A diferencia de llegar a tiempo (arriba), aquí sí hubo algo que perdonar: la
+    // tardanza. Un retardo también se puede justificar, igual que una falta.
+    const permisos = [{ estado: "aprobado", fecha: "2026-07-13", fechaFin: null }];
+    const e = checada("entrada", "2026-07-13T15:11:00Z"); // 09:11, retardo
+    const s = checada("salida", "2026-07-14T00:00:00Z");
+    const d = clasificarDia({ fecha: "2026-07-13", checadas: [e, s], horario: horarioNormal, permisos });
+    expect(d.estado).toBe(ESTADOS_DIA.JUSTIFICADO);
+    expect(d.justificacion).toBeTruthy();
+    // La checada sigue ahí: un permiso no borra que vino, solo perdona la tardanza.
+    expect(d.entrada).toBe(e);
+    expect(d.minutosRetardo).toBe(11);
+  });
+
+  it("un permiso PENDIENTE no justifica un retardo", () => {
+    const permisos = [{ estado: "pendiente", fecha: "2026-07-13", fechaFin: null }];
+    const e = checada("entrada", "2026-07-13T15:11:00Z");
+    const s = checada("salida", "2026-07-14T00:00:00Z");
+    const d = clasificarDia({ fecha: "2026-07-13", checadas: [e, s], horario: horarioNormal, permisos });
+    expect(d.estado).toBe(ESTADOS_DIA.RETARDO);
   });
 });
 

@@ -1,6 +1,52 @@
 import { describe, it, expect } from "vitest";
-import { resolveFechaIngreso, resolveFechaCumpleanos, esEmpleadoActivo, formatFechaHoraClinica } from "./helpers";
+import {
+  resolveFechaIngreso,
+  resolveFechaCumpleanos,
+  esEmpleadoActivo,
+  formatFechaHoraClinica,
+  calcularAntiguedad,
+} from "./helpers";
 import { normalizeEmployeeNameKey } from "./adminEmployeeDates";
+
+// Fecha de ingreso a partir de "hace tantos años/meses/días" contados desde HOY, para no fijar
+// una fecha de calendario que un año después haría fallar el test solo por el paso del tiempo.
+const hace = ({ años = 0, meses = 0, dias = 0 }) => {
+  const d = new Date();
+  d.setDate(d.getDate() - dias);
+  d.setMonth(d.getMonth() - meses);
+  d.setFullYear(d.getFullYear() - años);
+  return d.toISOString().slice(0, 10);
+};
+
+describe("calcularAntiguedad", () => {
+  it("sin fecha, dice que no está registrada", () => {
+    expect(calcularAntiguedad("")).toBe("No registrada");
+    expect(calcularAntiguedad(null)).toBe("No registrada");
+  });
+
+  it("cuenta años, meses Y DÍAS exactos, no solo años y meses", () => {
+    expect(calcularAntiguedad(hace({ meses: 3, dias: 3 }))).toBe("3 meses y 3 días");
+  });
+
+  it("un solo componente no lleva 'y'", () => {
+    expect(calcularAntiguedad(hace({ dias: 5 }))).toBe("5 días");
+    expect(calcularAntiguedad(hace({ años: 1 }))).toBe("1 año");
+  });
+
+  it("tres componentes: coma entre los dos primeros, 'y' antes del último", () => {
+    expect(calcularAntiguedad(hace({ años: 2, meses: 1, dias: 10 }))).toBe("2 años, 1 mes y 10 días");
+  });
+
+  it("ingresó hoy mismo", () => {
+    expect(calcularAntiguedad(hace({}))).toBe("Hoy");
+  });
+
+  it("una fecha de ingreso en el futuro no se cuenta como antigüedad", () => {
+    const manana = new Date();
+    manana.setDate(manana.getDate() + 1);
+    expect(calcularAntiguedad(manana.toISOString().slice(0, 10))).toBe("No registrada");
+  });
+});
 
 // Hasta ahora existía un override por nombre (ADMIN_EMPLOYEE_FECHAS) que pisaba a la
 // base de datos para 14 empleados administrativos. Era PII dentro del código —y por

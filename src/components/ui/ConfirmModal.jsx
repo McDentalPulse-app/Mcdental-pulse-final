@@ -27,21 +27,28 @@ const ConfirmModal = ({
   cancelText = "Cancelar",
   onConfirm,
   onCancel,
+  onClose,
 }) => {
   const cancelRef = useRef(null);
   const config = variantConfig[variant] || variantConfig.default;
+  // Cuando cancelText lleva un significado propio (p.ej. "Solo desactivar" en vez de
+  // "Cancelar"), cerrar sin elegir NO puede reusar ese botón: quien pulsa Escape o hace clic
+  // fuera para salirse sin querer no está eligiendo esa opción. onClose es ese tercer camino,
+  // separado de Cancelar; si no se da (diálogos donde cancelText de verdad es "no hacer nada")
+  // cae de vuelta en onCancel, que ahí significa lo mismo.
+  const cerrar = onClose || onCancel;
 
   useEffect(() => {
     cancelRef.current?.focus();
     const onKey = (e) => {
-      if (e.key === "Escape") onCancel();
+      if (e.key === "Escape") cerrar();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onCancel]);
+  }, [cerrar]);
 
   return (
-    <div className="mc-modal-overlay mc-notify-overlay" onClick={onCancel} role="presentation">
+    <div className="mc-modal-overlay mc-notify-overlay" onClick={cerrar} role="presentation">
       <div
         className="mc-modal mc-notify-modal"
         onClick={(e) => e.stopPropagation()}
@@ -49,6 +56,14 @@ const ConfirmModal = ({
         aria-modal="true"
         aria-labelledby="confirm-modal-title"
       >
+        <button
+          type="button"
+          className="mc-notify-modal-close"
+          onClick={cerrar}
+          aria-label="Cerrar"
+        >
+          <Icon name="close" size={18} />
+        </button>
         <div className={`mc-notify-modal-icon ${config.iconClass}`}>
           <Icon name={config.icon} size={22} />
         </div>

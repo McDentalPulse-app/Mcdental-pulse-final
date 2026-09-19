@@ -24,7 +24,7 @@ const ESTADO_PILL = { pendiente: "pendiente", enviado: "aprobado", rechazado: "r
 // veía vacío aunque el material sí tenía unidad guardada.
 const UNIDADES = ["unidad", "pqt", "set", "pieza", "caja", "paquete", "frasco", "rollo", "kg", "litro"];
 
-const MATERIAL_VACIO = { nombre: "", unidadMedida: UNIDADES[0], umbralStockBajo: "" };
+const MATERIAL_VACIO = { nombre: "", unidadMedida: UNIDADES[0], umbralStockBajo: "", estado: "activo" };
 const AJUSTE_VACIO = { sucursal: "", cantidad: "", nota: "" };
 const FILAS_POR_PAGINA = 10;
 
@@ -121,12 +121,36 @@ export default function InventarioAdmin() {
     setMaterialEditando(material);
     setFormMaterial(
       material
-        ? { nombre: material.nombre, unidadMedida: material.unidadMedida, umbralStockBajo: String(material.umbralStockBajo) }
+        ? {
+            nombre: material.nombre,
+            unidadMedida: material.unidadMedida,
+            umbralStockBajo: String(material.umbralStockBajo),
+            estado: material.activo ? "activo" : "inactivo",
+          }
         : MATERIAL_VACIO,
     );
     setModalMaterial(true);
   };
   const cerrarModalMaterial = () => { setModalMaterial(false); setMaterialEditando(null); };
+
+  // El toggle Activo/Inactivo confirma antes de aplicar: inactivar saca el material de los
+  // <select> de pedido y consumo (getMateriales filtra por activo en Recepción/Bodega), así
+  // que no es un cambio cosmético — conviene que no pase por un clic de más al recorrer el
+  // combobox con el teclado.
+  const cambiarEstadoMaterial = async (nuevoEstado) => {
+    if (nuevoEstado === formMaterial.estado) return;
+    const activando = nuevoEstado === "activo";
+    const confirmar = await confirm({
+      title: activando ? "Activar material" : "Inactivar material",
+      description: activando
+        ? `"${formMaterial.nombre}" volverá a estar disponible para pedidos y registro de consumo.`
+        : `"${formMaterial.nombre}" dejará de aparecer disponible para pedidos y registro de consumo hasta que lo actives de nuevo.`,
+      variant: activando ? "default" : "danger",
+      confirmText: activando ? "Activar" : "Inactivar",
+    });
+    if (!confirmar) return;
+    setFormMaterial((p) => ({ ...p, estado: nuevoEstado }));
+  };
 
   const guardarMaterial = async (e) => {
     e.preventDefault();
@@ -139,6 +163,7 @@ export default function InventarioAdmin() {
           nombre: formMaterial.nombre,
           unidadMedida: formMaterial.unidadMedida,
           umbralStockBajo: Number(formMaterial.umbralStockBajo) || 0,
+          activo: formMaterial.estado === "activo",
         });
         toast.success("Material actualizado.");
       } else {
@@ -462,6 +487,19 @@ export default function InventarioAdmin() {
                   />
                 </div>
               </div>
+              {materialEditando && (
+                <div className="mc-form-group">
+                  <label className="mc-form-label" htmlFor="mat-estado">Estado</label>
+                  <Select
+                    id="mat-estado"
+                    value={formMaterial.estado}
+                    onChange={cambiarEstadoMaterial}
+                  >
+                    <option value="activo">Activo</option>
+                    <option value="inactivo">Inactivo</option>
+                  </Select>
+                </div>
+              )}
               <div className="mc-form-actions">
                 <button type="button" className="mc-btn-secondary" onClick={cerrarModalMaterial}>Cancelar</button>
                 <button type="submit" className="mc-btn-primary" disabled={guardandoMaterial}>

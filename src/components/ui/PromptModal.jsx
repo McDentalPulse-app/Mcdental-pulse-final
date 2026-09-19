@@ -37,6 +37,14 @@ const PromptModal = ({
         aria-modal="true"
         aria-labelledby="prompt-modal-title"
       >
+        <button
+          type="button"
+          className="mc-notify-modal-close"
+          onClick={onCancel}
+          aria-label="Cerrar"
+        >
+          <Icon name="close" size={18} />
+        </button>
         <div className="mc-notify-modal-icon mc-notify-modal-icon--info">
           <Icon name="note" size={22} />
         </div>

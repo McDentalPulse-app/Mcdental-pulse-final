@@ -182,6 +182,53 @@ export const minutosLocales = (timestamp, tz = TZ_CLINICA) => {
   return (h % 24) * 60 + m;
 };
 
+/** Reinterpreta, como si fuera UTC, la fecha y hora que ESE instante marca en `tz`. */
+const comoUtcElInstanteEn = (instante, tz) => {
+  const partes = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+  }).formatToParts(instante);
+  const valor = (tipo) => Number(partes.find((p) => p.type === tipo)?.value);
+  const anio = valor("year");
+  const mes = valor("month");
+  const dia = valor("day");
+  const hora = valor("hour") % 24; // Intl puede devolver "24" a medianoche en algunos entornos.
+  const min = valor("minute");
+  const seg = valor("second");
+  return Date.UTC(anio, mes - 1, dia, hora, min, seg);
+};
+
+/**
+ * Inversa de `minutosLocales`: dada una fecha, unos minutos desde medianoche EN LA HORA
+ * DE LA CLÍNICA y su zona, devuelve el instante UTC (ISO) que la persona vivió.
+ *
+ * Hace falta para dar de alta una checada manual con una hora de reloj concreta (p.ej.
+ * "marcar como retardo"): Supabase guarda `marcada_en` en UTC, así que "9:15 en
+ * Hermosillo" hay que convertirlo antes de insertar.
+ *
+ * NO se puede resolver comparando solo "minutos desde medianoche" (sin la fecha): a las
+ * 00:01 la diferencia de zona empuja al tanteo inicial al día de calendario ANTERIOR, y
+ * comparar nada más los minutos del reloj perdía ese cruce de día y devolvía la fecha
+ * equivocada. Por eso el tanteo se reinterpreta completo (año-mes-día-hora) y no solo su
+ * hora.
+ */
+export const minutosAUtc = (fecha, minutos, tz = TZ_CLINICA) => {
+  const diasExtra = Math.floor(minutos / MIN_POR_DIA);
+  const minutosDia = ((minutos % MIN_POR_DIA) + MIN_POR_DIA) % MIN_POR_DIA;
+  const horas = Math.floor(minutosDia / 60);
+  const mins = minutosDia % 60;
+  const base = new Date(`${String(fecha).slice(0, 10)}T00:00:00Z`);
+  base.setUTCDate(base.getUTCDate() + diasExtra);
+  const fechaAjustada = base.toISOString().slice(0, 10);
+  const hhmm = `${String(horas).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+  // Primer tanteo: tratar la hora local como si ya fuera UTC.
+  const tanteo = new Date(`${fechaAjustada}T${hhmm}:00Z`);
+  // Cuánto se corrió ese tanteo al leerlo en la zona de la clínica: la diferencia ES el offset.
+  const diferenciaMs = tanteo.getTime() - comoUtcElInstanteEn(tanteo, tz);
+  return new Date(tanteo.getTime() + diferenciaMs).toISOString();
+};
+
 /**
  * Día ISO (1=lunes … 7=domingo) de una fecha "YYYY-MM-DD".
  *
@@ -287,8 +334,12 @@ export const minutosRetardo = (entrada, horario, tz = TZ_CLINICA) => {
  * Orden de las reglas (importa):
  *  1. Sin horario ese día -> DESCANSO. La ausencia de renglón en `horarios` ES el
  *     descanso (migración 035); un domingo sin turno no puede ser falta.
- *  2. Con checadas -> se juzga lo que hizo (presente / retardo / incompleto). Un
- *     permiso aprobado NO borra el hecho de que vino: si vino, vino.
+ *  2. Con checadas y sin retardo -> PRESENTE. Un permiso aprobado no cambia nada aquí:
+ *     llegó a tiempo, no hay nada que perdonar.
+ *  2b. Con checadas y con retardo -> RETARDO, salvo que un permiso o vacación APROBADOS
+ *      cubran el día: entonces es JUSTIFICADO. Un retardo sí se puede justificar (cita
+ *      médica, trámite con motivo válido…), a diferencia del caso de arriba — aquí sí
+ *      hubo algo que perdonar: la tardanza.
  *  3. Sin checadas y con permiso o vacación APROBADOS que cubran el día -> JUSTIFICADO.
  *     Solo los aprobados: un permiso pendiente todavía no justifica nada.
  *  4. Sin checadas y sin justificante -> FALTA.
@@ -351,9 +402,16 @@ export const clasificarDia = ({
 
   // Estrictamente mayor: entrar en el minuto exacto del límite de tolerancia NO es
   // retardo. Con 9:00 y 10 min de gracia, las 9:10 llegan a tiempo; las 9:11, no.
-  const estado = retardo > tolerancia ? ESTADOS_DIA.RETARDO : ESTADOS_DIA.PRESENTE;
+  const esRetardo = retardo > tolerancia;
 
-  return { ...base, estado, minutosRetardo: retardo };
+  // Un retardo con permiso/vacación aprobados de por medio queda JUSTIFICADO — a
+  // diferencia de PRESENTE (arriba), aquí SÍ hay algo que perdonar. No aplica a llegar a
+  // tiempo: ese caso ya está resuelto como PRESENTE antes de llegar aquí.
+  if (esRetardo && justificacion) {
+    return { ...base, estado: ESTADOS_DIA.JUSTIFICADO, minutosRetardo: retardo };
+  }
+
+  return { ...base, estado: esRetardo ? ESTADOS_DIA.RETARDO : ESTADOS_DIA.PRESENTE, minutosRetardo: retardo };
 };
 
 /** Todas las fechas "YYYY-MM-DD" entre desde y hasta, ambas incluidas. */
