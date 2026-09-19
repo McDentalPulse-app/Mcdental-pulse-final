@@ -29,16 +29,44 @@
 
 begin;
 
+-- ⚠️ TOLERA QUE LA FIRMA NO EXISTA, y no es paranoia: la migración 165 BORRA la firma de ocho
+-- argumentos para sustituirla por una de diez. Escrito sin esta tolerancia, reproducir las
+-- migraciones desde cero en orden numérico —`supabase db reset`, CI, un staging nuevo, una
+-- recuperación— se detenía aquí con «function ... does not exist». En producción no se notó
+-- porque la 166 se aplicó cuando la 165 todavía no estaba.
+--
+-- Se revocan AMBAS firmas: la vieja si sigue viva, y la nueva si la 165 ya pasó. La 165 trae
+-- además su propio revoke, así que el agujero queda cerrado en cualquiera de los dos órdenes.
+--
 -- Se revoca a PUBLIC además de a los dos roles: la ACL real en producción mostraba `=X/postgres`,
 -- que es PUBLIC con EXECUTE. Revocar solo a anon y authenticated dejaría esa puerta abierta.
-revoke all on function public.registrar_checada(
-  uuid, public.tipo_checada, numeric, numeric, integer, text, text, boolean
-) from public, anon, authenticated;
+do $$
+begin
+  execute 'revoke all on function public.registrar_checada('
+       || 'uuid, public.tipo_checada, numeric, numeric, integer, text, text, boolean'
+       || ') from public, anon, authenticated';
+  execute 'grant execute on function public.registrar_checada('
+       || 'uuid, public.tipo_checada, numeric, numeric, integer, text, text, boolean'
+       || ') to service_role';
+exception
+  when undefined_function then
+    raise notice 'La firma de 8 argumentos ya no existe (la 165 ya se aplicó); se revoca la de 10.';
+end $$;
 
--- El único que debe poder llamarla es el servidor, que es quien ya comprobó geocerca y cara.
-grant execute on function public.registrar_checada(
-  uuid, public.tipo_checada, numeric, numeric, integer, text, text, boolean
-) to service_role;
+do $$
+begin
+  execute 'revoke all on function public.registrar_checada('
+       || 'uuid, public.tipo_checada, numeric, numeric, integer, text, text, boolean,'
+       || 'timestamptz, uuid'
+       || ') from public, anon, authenticated';
+  execute 'grant execute on function public.registrar_checada('
+       || 'uuid, public.tipo_checada, numeric, numeric, integer, text, text, boolean,'
+       || 'timestamptz, uuid'
+       || ') to service_role';
+exception
+  when undefined_function then
+    raise notice 'La firma de 10 argumentos todavía no existe (la 165 no se ha aplicado).';
+end $$;
 
 commit;
 
