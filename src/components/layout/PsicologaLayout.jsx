@@ -77,7 +77,7 @@ export default function PsicologaLayout({ user, globals, actions }) {
             <Route path="mensajes" element={<Mensajes user={user} mensajes={mensajes} onSend={sendMensaje} onMarkRead={marcarMensajesLeidos}/>} />
             <Route path="reuniones" element={<PaginaReuniones user={user} />} />
             <Route path="usuarios" element={<GestionUsuarios />} />
-            <Route path="asistencia" element={<AsistenciaPanel usuarios={USERS} horarios={horarios} permisos={permisos} vacaciones={vacaciones} puedeJustificar onJustificarFalta={justificarFalta} />} />
+            <Route path="asistencia" element={<AsistenciaPanel usuarios={USERS} horarios={horarios} permisos={permisos} vacaciones={vacaciones} puedeJustificar puedeMarcarRetardo onJustificarFalta={justificarFalta} />} />
             <Route path="checador" element={<ChecadorEmpleado user={user} checadasHoy={checadasHoy} horarios={horarios} permisos={permisos} onChecar={registrarChecada} />} />
             <Route path="sucursales" element={<GestionSucursales />} />
             <Route path="horarios" element={<GestionHorarios usuarios={USERS} horarios={horarios} setHorarios={setHorarios} />} />

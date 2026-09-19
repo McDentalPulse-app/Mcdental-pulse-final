@@ -385,10 +385,9 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
   };
 
   // Al hacer clic en una falta: primero se pregunta qué hacer con ella, en vez de ir
-  // directo a justificar. Marcar como retardo da de alta una checada manual, y esa policy
-  // de la base (asistencias_insert_rh, migración 036) es EXCLUSIVA de rh a propósito —
-  // admin y psicóloga solo tienen anular/justificar, así que a ellos no se les ofrece la
-  // opción y se conserva el flujo de siempre.
+  // directo a justificar. Marcar como retardo da de alta una checada manual; el INSERT en
+  // la base lo permiten admin/rh/psicologa (policy asistencias_insert_gestion, migración
+  // 169). Sin puedeMarcarRetardo (nadie más lo llama hoy) se conserva el flujo de siempre.
   const handleFaltaDia = async (dia) => {
     if (!puedeMarcarRetardo) {
       await handleJustificarDia(dia);
