@@ -421,13 +421,26 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
 
   // Dispara la impresión en cuanto AcuerdoConformidad ya está en el DOM (el efecto corre
   // DESPUÉS del render que puso acuerdosImprimir), y limpia el estado cuando el diálogo de
-  // impresión se cierra — sea que la persona imprima o cancele, `afterprint` dispara igual.
+  // impresión se cierra — imprima o cancele la persona.
+  //
+  // Mientras acuerdosImprimir tiene algo, el return de este componente NO monta el resto de
+  // la pantalla (ver más abajo — es lo que arregla las páginas en blanco y el contenido
+  // empujado hacia abajo al imprimir). Eso vuelve CRÍTICO limpiar el estado siempre: si nada
+  // lo hiciera, la pantalla se quedaría en blanco para siempre, viéndose como si "no cargara".
+  // `afterprint` no siempre dispara (cancelar con Escape, o el navegador que sea, es un caso
+  // conocido de que no lo haga) — así que `focus` es la red de seguridad: recuperar el foco
+  // de la ventana es justo lo que pasa siempre que el diálogo de impresión se cierra, se haya
+  // impreso o cancelado, y no depende de que el navegador dispare `afterprint` bien.
   useEffect(() => {
     if (!acuerdosImprimir) return;
-    window.print();
     const limpiar = () => setAcuerdosImprimir(null);
     window.addEventListener("afterprint", limpiar);
-    return () => window.removeEventListener("afterprint", limpiar);
+    window.addEventListener("focus", limpiar);
+    window.print();
+    return () => {
+      window.removeEventListener("afterprint", limpiar);
+      window.removeEventListener("focus", limpiar);
+    };
   }, [acuerdosImprimir]);
 
   const imprimirUno = (empleado, recibo) => setAcuerdosImprimir([{ empleado, recibo }]);

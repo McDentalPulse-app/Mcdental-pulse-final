@@ -11074,31 +11074,51 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 @media print {
   body * { visibility: hidden; }
   .nomina-imprimir-area, .nomina-imprimir-area * { visibility: visible; }
-  /* Tres bugs reales, encontrados en este orden — el arreglo de cada uno reveló el siguiente:
+  /* Historial de esta regla — CUATRO bugs reales, cada arreglo reveló el siguiente:
      1) `position: absolute` a secas: se posiciona y se RECORTA contra `.app-main` (el
-        contenedor scrolleable de toda página admin — `position: relative` + `overflow-y:
-        auto` + `height: 100vh`), a donde estuviera scrolleada la pantalla al imprimir. El
-        acuerdo salía en blanco o cortado.
-     2) Cambiarlo a `position: fixed` arregló el recorte, pero en impresión `fixed` se
-        comporta como un encabezado que se repite en cada hoja, atado a UNA sola página: con
-        dos o más acuerdos apilados, solo salía el primero (o se cortaba a la mitad) y los
-        demás nunca llegaban a imprimirse.
-     3) Quitar el `position` (dejarlo en flujo normal, para que SÍ pagine varias hojas) trae un
-        tercer problema: `.nomina-imprimir-area` queda DESPUÉS de toda la pantalla de Nómina en
-        el DOM, y `visibility: hidden` (a diferencia de `display: none`) NO le quita el espacio
-        a lo que oculta — el acuerdo heredaba el alto entero de la pantalla como margen en
-        blanco antes de empezar a imprimirse de verdad.
-     La combinación que sí funciona: `position: absolute` (NO fixed — absolute sí pagina bien
-     en varias hojas, es fixed el que se ata a una sola) para escapar el flujo normal sin el
-     problema de paginación, y apagar el overflow/alto de TODA la cadena de contenedores con
-     scroll (`.app-shell`, `.app-main`, `.app-main-inner`, `.admin-page`) para que el `absolute`
-     ya no tenga nada contra qué recortarse, sea cual sea la posición de scroll al imprimir. */
+        contenedor scrolleable de toda página admin), a donde estuviera scrolleada la
+        pantalla al imprimir. El acuerdo salía en blanco o cortado.
+     2) `position: fixed` arregló el recorte, pero en impresión `fixed` se comporta como un
+        encabezado que se repite en cada hoja, atado a UNA sola página: con dos o más
+        acuerdos apilados, solo salía el primero y los demás nunca llegaban a imprimirse.
+     3) Sin `position` (flujo normal): `.nomina-imprimir-area` quedaba DESPUÉS de toda la
+        pantalla de Nómina en el DOM, y `visibility: hidden` NO le quita el espacio a lo que
+        oculta — el acuerdo heredaba el alto entero de la pantalla como margen en blanco.
+     4) Volver a `position: absolute` (con el overflow/alto de `.app-shell`/`.app-main`/
+        `.app-main-inner`/`.admin-page` apagado) arreglaba el nº3, pero reintroducía una
+        variante del nº1: Chromium decide CUÁNTAS páginas imprimir según el alto del FLUJO
+        NORMAL del documento; contenido `absolute` que se sale de ese alto no genera más
+        páginas por sí solo, aunque no esté recortado visualmente. Con la pantalla de Nómina
+        montada (aunque oculta), su alto en flujo normal era enorme y de sobra alcanzaba para
+        paginar cualquier cantidad de acuerdos — a costa de páginas en blanco extra al final.
+     5) Nomina.jsx deja de MONTAR el resto de SU PANTALLA mientras se imprime (ver el
+        `acuerdosImprimir ? ... : ...` en su return), y con eso `.nomina-imprimir-area` puede
+        volver a flujo normal (nº3 ya no aplica: no hay nada DENTRO de `.admin-page` antes
+        que deje margen en blanco, y su alto real ahora SÍ es el alto que Chromium pagina).
+        Pero `.admin-page` no es lo único que queda montado y oculto: `<Navegacion />` (la
+        barra de arriba) vive FUERA de Nomina.jsx, en `AdminLayout.jsx`, hermana de
+        `.app-main` dentro de `.app-shell` — sigue en el DOM, sigue ocupando su alto real
+        aunque `visibility: hidden` la esconda, y por estar ANTES de `.app-main` empujaba el
+        acuerdo hacia abajo con un margen en blanco del alto de la barra (el nº3, otra vez,
+        un nivel más arriba en el árbol). Por eso se colapsa aparte, a `display: none` (no
+        solo invisible: sin alto), en vez de intentar meterla en la lista de arriba —esa
+        lista necesita QUEDAR VISIBLE-ish (overflow:visible/height:auto) porque son
+        ANCESTROS de `.nomina-imprimir-area` y recortarlos se lo llevaría por delante; la
+        barra de navegación no es ancestro de nada aquí, así que puede desaparecer entera.
+        Mismo cuento un nivel más adentro: `.app-main-inner` puede traer, ANTES de
+        `.admin-page`, las tarjetas de "Activa tu ubicación" / "¿Quieres recibir tus avisos?"
+        (AdminLayout.jsx) — también hermanas, no ancestras, así que también a `display: none`.
+        ADVERTENCIA para quien agregue otro banner persistente ahí: cualquier hermano nuevo
+        de `.admin-page` (en cualquiera de estos niveles) va a repetir este mismo bug si no
+        se suma aquí. */
   .app-shell, .app-main, .app-main-inner, .admin-page {
     overflow: visible !important;
     height: auto !important;
     max-height: none !important;
   }
-  .nomina-imprimir-area { display: block; position: absolute; top: 0; left: 0; width: 100%; }
+  .app-shell > *:not(.app-main) { display: none !important; }
+  .app-main-inner > *:not(.admin-page) { display: none !important; }
+  .nomina-imprimir-area { display: block; width: 100%; }
 }
 
 .nomina-acuerdo {
