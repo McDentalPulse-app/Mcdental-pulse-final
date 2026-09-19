@@ -61,7 +61,9 @@ export default function AdminLayout({ user, globals, actions }) {
             <Route path="usuarios" element={<GestionUsuarios />} />
             {/* puedeAnular: admin también puede anular checadas (migración 060 amplía el
                 UPDATE de asistencias, antes exclusivo de RH). puedeJustificar: admin/rh/
-                psicologa pueden justificar una falta directo (migración 061). */}
+                psicologa pueden justificar una falta directo (migración 061). Sin
+                puedeMarcarRetardo: esa opción da de alta una checada manual, y el INSERT
+                de asistencias sigue siendo exclusivo de rh (migración 036, a propósito). */}
             <Route path="asistencia" element={<AsistenciaPanel usuarios={USERS} horarios={horarios} permisos={permisos} vacaciones={vacaciones} puedeAnular puedeJustificar onJustificarFalta={justificarFalta} />} />
             <Route path="sucursales" element={<GestionSucursales />} />
             <Route path="horarios" element={<GestionHorarios usuarios={USERS} horarios={horarios} setHorarios={setHorarios} />} />

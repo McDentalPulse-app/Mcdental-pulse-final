@@ -182,6 +182,53 @@ export const minutosLocales = (timestamp, tz = TZ_CLINICA) => {
   return (h % 24) * 60 + m;
 };
 
+/** Reinterpreta, como si fuera UTC, la fecha y hora que ESE instante marca en `tz`. */
+const comoUtcElInstanteEn = (instante, tz) => {
+  const partes = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+  }).formatToParts(instante);
+  const valor = (tipo) => Number(partes.find((p) => p.type === tipo)?.value);
+  const anio = valor("year");
+  const mes = valor("month");
+  const dia = valor("day");
+  const hora = valor("hour") % 24; // Intl puede devolver "24" a medianoche en algunos entornos.
+  const min = valor("minute");
+  const seg = valor("second");
+  return Date.UTC(anio, mes - 1, dia, hora, min, seg);
+};
+
+/**
+ * Inversa de `minutosLocales`: dada una fecha, unos minutos desde medianoche EN LA HORA
+ * DE LA CLÍNICA y su zona, devuelve el instante UTC (ISO) que la persona vivió.
+ *
+ * Hace falta para dar de alta una checada manual con una hora de reloj concreta (p.ej.
+ * "marcar como retardo"): Supabase guarda `marcada_en` en UTC, así que "9:15 en
+ * Hermosillo" hay que convertirlo antes de insertar.
+ *
+ * NO se puede resolver comparando solo "minutos desde medianoche" (sin la fecha): a las
+ * 00:01 la diferencia de zona empuja al tanteo inicial al día de calendario ANTERIOR, y
+ * comparar nada más los minutos del reloj perdía ese cruce de día y devolvía la fecha
+ * equivocada. Por eso el tanteo se reinterpreta completo (año-mes-día-hora) y no solo su
+ * hora.
+ */
+export const minutosAUtc = (fecha, minutos, tz = TZ_CLINICA) => {
+  const diasExtra = Math.floor(minutos / MIN_POR_DIA);
+  const minutosDia = ((minutos % MIN_POR_DIA) + MIN_POR_DIA) % MIN_POR_DIA;
+  const horas = Math.floor(minutosDia / 60);
+  const mins = minutosDia % 60;
+  const base = new Date(`${String(fecha).slice(0, 10)}T00:00:00Z`);
+  base.setUTCDate(base.getUTCDate() + diasExtra);
+  const fechaAjustada = base.toISOString().slice(0, 10);
+  const hhmm = `${String(horas).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+  // Primer tanteo: tratar la hora local como si ya fuera UTC.
+  const tanteo = new Date(`${fechaAjustada}T${hhmm}:00Z`);
+  // Cuánto se corrió ese tanteo al leerlo en la zona de la clínica: la diferencia ES el offset.
+  const diferenciaMs = tanteo.getTime() - comoUtcElInstanteEn(tanteo, tz);
+  return new Date(tanteo.getTime() + diferenciaMs).toISOString();
+};
+
 /**
  * Día ISO (1=lunes … 7=domingo) de una fecha "YYYY-MM-DD".
  *

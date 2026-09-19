@@ -9,6 +9,7 @@ import {
   getAsistencias,
   subscribeAsistencias,
   anularChecada,
+  addChecadaManual,
 } from "../../services/supabase/asistenciasService";
 import {
   construirDias,
@@ -19,6 +20,8 @@ import {
   requiereRevision,
   detectarDispositivosCompartidos,
   diaISO,
+  horaAMinutos,
+  minutosAUtc,
   ESTADOS_DIA,
   ETIQUETA_ESTADO,
   TZ_CLINICA,
@@ -87,7 +90,7 @@ const tituloCeldaCalendario = (d, tz = TZ_CLINICA) => {
 /** Un mes completo en cuadrícula (7 columnas, Lun-Dom). Cada celda se colorea por el estado del
  * día; clic en un día con checada lo anula, clic en una falta la justifica. Muestra la hora de
  * entrada/salida cuando la hay, y un punto si esa checada quedó marcada para revisión. */
-const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustificar, onJustificarDia, revisarIds, tz = TZ_CLINICA }) => {
+const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustificar, puedeMarcarRetardo, onJustificarDia, revisarIds, tz = TZ_CLINICA }) => {
   const [anio, mes] = mesInicio.split("-").map(Number);
   const diasEnMes = new Date(Date.UTC(anio, mes, 0)).getUTCDate();
   const columnaInicial = diaISO(mesInicio); // 1=lunes … 7=domingo
@@ -121,7 +124,11 @@ const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustifi
         const justificable = !anulable && puedeJustificar && c.estado === ESTADOS_DIA.FALTA;
         const accionable = anulable || justificable;
         const accion = anulable ? () => onAnularDia(c) : justificable ? () => onJustificarDia(c) : undefined;
-        const pista = anulable ? "clic para anular" : justificable ? "clic para justificar" : null;
+        const pista = anulable
+          ? "clic para anular"
+          : justificable
+            ? (puedeMarcarRetardo ? "clic para justificar o marcar retardo" : "clic para justificar")
+            : null;
         const porRevisar = !!revisarIds && ((c.entrada && revisarIds.has(c.entrada.id)) || (c.salida && revisarIds.has(c.salida.id)));
         const horaEntrada = c.entrada ? horaCorta(c.entrada.marcadaEn, tz).replace(/\s?[ap]\.?\s?m\.?/i, "") : null;
         return (
@@ -146,7 +153,7 @@ const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustifi
   );
 };
 
-export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos = [], vacaciones = [], puedeAnular = false, puedeJustificar = false, onJustificarFalta }) {
+export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos = [], vacaciones = [], puedeAnular = false, puedeJustificar = false, puedeMarcarRetardo = false, onJustificarFalta }) {
   const { toast, prompt, confirm } = useNotification();
   const { nombresSucursales, sucursales = [] } = useGlobal();
 
@@ -334,6 +341,72 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
     cargar();
   };
 
+  // Marca una falta como retardo: da de alta una entrada y una salida manuales (RH), con
+  // la entrada justo pasada la tolerancia del horario de ese día, para que clasificarDia()
+  // la clasifique sola como RETARDO. No se pide hora exacta: el descuento por retardo es un
+  // monto fijo, así que los minutos de más no cambian nada en la nómina.
+  const handleMarcarRetardoDia = async (dia) => {
+    const empleado = seleccionado?.empleado;
+    if (!empleado) return;
+    const tz = zonaDe(zonas, empleado.sucursal);
+    const horario = horarios.find((h) => h.empleadoId === empleado.id && h.diaSemana === diaISO(dia.fecha));
+    const minutosEntradaEsperada = horaAMinutos(horario?.horaEntrada);
+    if (!horario || minutosEntradaEsperada == null) {
+      toast.error("Este día no tiene horario asignado: no se puede marcar como retardo.");
+      return;
+    }
+    const tolerancia = Number.isFinite(horario.toleranciaMin) ? horario.toleranciaMin : 0;
+    const minutosEntrada = minutosEntradaEsperada + tolerancia + 1;
+    const minutosSalidaHorario = horaAMinutos(horario.horaSalida);
+    const minutosSalida = minutosSalidaHorario != null && minutosSalidaHorario > minutosEntrada
+      ? minutosSalidaHorario
+      : minutosEntrada + 60;
+    const notaRh = "Marcado como retardo por RH (corrección de falta)";
+    try {
+      await addChecadaManual({
+        empleadoId: empleado.id,
+        tipo: "entrada",
+        fecha: dia.fecha,
+        marcadaEn: minutosAUtc(dia.fecha, minutosEntrada, tz),
+        notaRh,
+      });
+      await addChecadaManual({
+        empleadoId: empleado.id,
+        tipo: "salida",
+        fecha: dia.fecha,
+        marcadaEn: minutosAUtc(dia.fecha, minutosSalida, tz),
+        notaRh,
+      });
+      toast.success("Día marcado como retardo.");
+      cargar();
+    } catch (e) {
+      toast.error(e?.message || "No se pudo marcar el día como retardo.");
+    }
+  };
+
+  // Al hacer clic en una falta: primero se pregunta qué hacer con ella, en vez de ir
+  // directo a justificar. Marcar como retardo da de alta una checada manual, y esa policy
+  // de la base (asistencias_insert_rh, migración 036) es EXCLUSIVA de rh a propósito —
+  // admin y psicóloga solo tienen anular/justificar, así que a ellos no se les ofrece la
+  // opción y se conserva el flujo de siempre.
+  const handleFaltaDia = async (dia) => {
+    if (!puedeMarcarRetardo) {
+      await handleJustificarDia(dia);
+      return;
+    }
+    const marcarRetardo = await confirm({
+      title: "Falta del " + dia.fecha,
+      description: "¿Qué se hace con este día?",
+      confirmText: "Marcar como retardo",
+      cancelText: "Justificar falta",
+    });
+    if (marcarRetardo) {
+      await handleMarcarRetardoDia(dia);
+    } else {
+      await handleJustificarDia(dia);
+    }
+  };
+
   // Justificar TODAS las faltas visibles de una (respeta los filtros puestos).
   const handleJustificarTodas = async () => {
     if (!faltasVisibles.length) return;
@@ -514,7 +587,8 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
                   puedeAnular={puedeAnular}
                   onAnularDia={handleAnularDia}
                   puedeJustificar={puedeJustificar}
-                  onJustificarDia={(dia) => handleJustificarDia({ ...dia, empleadoId: seleccionado.empleado.id })}
+                  puedeMarcarRetardo={puedeMarcarRetardo}
+                  onJustificarDia={(dia) => handleFaltaDia({ ...dia, empleadoId: seleccionado.empleado.id })}
                   revisarIds={revisarIds}
                 />
               </Card>

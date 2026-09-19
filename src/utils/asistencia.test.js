@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   horaAMinutos,
   minutosLocales,
+  minutosAUtc,
   diaISO,
   emparejarChecadas,
   minutosTrabajados,
@@ -77,6 +78,29 @@ describe("minutosLocales", () => {
 
   it("medianoche local da 0, no 1440", () => {
     expect(minutosLocales("2026-07-14T06:00:00Z")).toBe(0);
+  });
+});
+
+describe("minutosAUtc", () => {
+  // Es la inversa de minutosLocales: los mismos pares de arriba, pero de minutos locales a UTC.
+  it.each([
+    ["2026-07-13", 545, "2026-07-13T15:05:00.000Z"], // 09:05 en la clínica
+    ["2026-07-13", 540, "2026-07-13T15:00:00.000Z"], // 09:00
+    ["2026-07-13", 1050, "2026-07-13T23:30:00.000Z"], // 17:30
+  ])("%s + %i min locales => %s", (fecha, minutos, esperado) => {
+    expect(minutosAUtc(fecha, minutos)).toBe(esperado);
+  });
+
+  it("redondea el viaje de ida y vuelta con minutosLocales", () => {
+    const utc = minutosAUtc("2026-07-13", 545, "America/Hermosillo");
+    expect(minutosLocales(utc, "America/Hermosillo")).toBe(545);
+  });
+
+  it("minutos >= 1440 se corren al día siguiente, no se quedan en el mismo día", () => {
+    // 23:59 del 13 + 2 min locales = 00:01 del 14, no una hora inválida del 13.
+    const utc = minutosAUtc("2026-07-13", 1439 + 2);
+    expect(minutosLocales(utc)).toBe(1); // 00:01 local
+    expect(utc.slice(0, 10)).toBe("2026-07-14");
   });
 });
 
