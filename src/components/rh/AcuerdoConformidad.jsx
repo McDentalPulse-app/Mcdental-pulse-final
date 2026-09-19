@@ -102,10 +102,6 @@ export default function AcuerdoConformidad({ acuerdos, desde, hasta }) {
 
             <p className="nomina-acuerdo-texto">{TEXTO_CONFORMIDAD}</p>
 
-            <div className="nomina-acuerdo-lugar-fecha">
-              Lugar y fecha: ______________________________________________
-            </div>
-
             <div className="nomina-acuerdo-firmas">
               <div className="nomina-acuerdo-firma">
                 <div className="nomina-acuerdo-firma-linea" />
@@ -114,13 +110,6 @@ export default function AcuerdoConformidad({ acuerdos, desde, hasta }) {
               <div className="nomina-acuerdo-firma nomina-acuerdo-firma--huella">
                 <div className="nomina-acuerdo-huella-caja" />
                 <span>Huella digital</span>
-              </div>
-            </div>
-
-            <div className="nomina-acuerdo-firmas">
-              <div className="nomina-acuerdo-firma">
-                <div className="nomina-acuerdo-firma-linea" />
-                <span>Nombre y firma de quien entrega (RH / Admin)</span>
               </div>
             </div>
           </div>
