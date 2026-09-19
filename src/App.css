@@ -11047,12 +11047,31 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 @media print {
   body * { visibility: hidden; }
   .nomina-imprimir-area, .nomina-imprimir-area * { visibility: visible; }
-  /* `fixed`, no `absolute`: `.app-main` (el contenedor scrolleable de toda página admin) tiene
-     `position: relative` + `overflow-y: auto` + `height: 100vh`. Un `absolute` se posiciona y se
-     recorta contra ESA caja — a donde estuviera scrolleada la pantalla al imprimir — y el acuerdo
-     salía en blanco o cortado. `fixed` se ancla al viewport completo, sin que el overflow de
-     `.app-main` lo recorte. */
-  .nomina-imprimir-area { display: block; position: fixed; top: 0; left: 0; width: 100%; }
+  /* Tres bugs reales, encontrados en este orden — el arreglo de cada uno reveló el siguiente:
+     1) `position: absolute` a secas: se posiciona y se RECORTA contra `.app-main` (el
+        contenedor scrolleable de toda página admin — `position: relative` + `overflow-y:
+        auto` + `height: 100vh`), a donde estuviera scrolleada la pantalla al imprimir. El
+        acuerdo salía en blanco o cortado.
+     2) Cambiarlo a `position: fixed` arregló el recorte, pero en impresión `fixed` se
+        comporta como un encabezado que se repite en cada hoja, atado a UNA sola página: con
+        dos o más acuerdos apilados, solo salía el primero (o se cortaba a la mitad) y los
+        demás nunca llegaban a imprimirse.
+     3) Quitar el `position` (dejarlo en flujo normal, para que SÍ pagine varias hojas) trae un
+        tercer problema: `.nomina-imprimir-area` queda DESPUÉS de toda la pantalla de Nómina en
+        el DOM, y `visibility: hidden` (a diferencia de `display: none`) NO le quita el espacio
+        a lo que oculta — el acuerdo heredaba el alto entero de la pantalla como margen en
+        blanco antes de empezar a imprimirse de verdad.
+     La combinación que sí funciona: `position: absolute` (NO fixed — absolute sí pagina bien
+     en varias hojas, es fixed el que se ata a una sola) para escapar el flujo normal sin el
+     problema de paginación, y apagar el overflow/alto de TODA la cadena de contenedores con
+     scroll (`.app-shell`, `.app-main`, `.app-main-inner`, `.admin-page`) para que el `absolute`
+     ya no tenga nada contra qué recortarse, sea cual sea la posición de scroll al imprimir. */
+  .app-shell, .app-main, .app-main-inner, .admin-page {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+  .nomina-imprimir-area { display: block; position: absolute; top: 0; left: 0; width: 100%; }
 }
 
 .nomina-acuerdo {
