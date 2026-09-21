@@ -1,4 +1,5 @@
 import { configOk, admin, quienLlama } from "./_auth.js";
+import { selfieValida } from "./_selfie.js";
 import { analizarFoto, similitud, UMBRAL_MISMA_PERSONA, UMBRAL_ANTISPOOF_OBVIO } from "./_rostro.js";
 import { giroCorrecto } from "./_pose.js";
 import { notificarGestion } from "./_notificaciones.js";
@@ -59,7 +60,8 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: "Sesión inválida." });
   }
 
-  const { tipo, selfiePath, lat, lng, precision, deviceId, retoFoto, entradaLibre } = req.body || {};
+  const { tipo, selfiePath, lat, lng, precision, deviceId, retoFoto, entradaLibre, idCliente } =
+    req.body || {};
   if (tipo !== "entrada" && tipo !== "salida") {
     return res.status(400).json({ error: "Tipo de checada inválido." });
   }
@@ -67,19 +69,13 @@ export default async function handler(req, res) {
   // El selfiePath tiene que ser DE ESTE empleado y de HACE UN MOMENTO: si no se exige
   // ninguna de las dos cosas, cualquiera puede reenviar la ruta de una selfie vieja ya
   // aprobada (la ve en su propio historial) y volver a pasar el cotejo sin haber estado
-  // frente a la cámara. Formato del path, fijado por asistenciasService.js: `${empleadoId}/${Date.now()}.jpg`.
-  if (selfiePath) {
-    const [carpeta, archivo] = String(selfiePath).split("/");
-    const marca = Number(archivo?.split(".")[0]);
-    // 10 minutos, no 60 segundos: sigue acotando el replay (no se puede reusar una selfie
-    // de hace horas/días, que era el ataque real) sin depender de que el reloj del teléfono
-    // esté sincronizado al segundo con el servidor — un desfase de más de 10 min en un
-    // teléfono ya sería en sí mismo un problema mayor del dispositivo. 60s rechazaba
-    // checadas reales en teléfonos con el reloj desincronizado.
-    const FRESCURA_MS = 10 * 60 * 1000;
-    if (carpeta !== quien.id || !marca || Date.now() - marca > FRESCURA_MS) {
-      return res.status(403).json({ error: "La foto debe ser tuya y reciente. Vuelve a intentarlo." });
-    }
+  // frente a la cámara.
+  //
+  // La comprobación vive en `_selfie.js` para poder PROBARLA. Estaba escrita aquí en línea, y
+  // por eso su fallo pasó desapercibido: la ventana solo acotaba el pasado, así que una marca
+  // de tiempo en el FUTURO la saltaba entera. Ver el módulo.
+  if (selfiePath && !selfieValida(selfiePath, quien.id)) {
+    return res.status(403).json({ error: "La foto debe ser tuya y reciente. Vuelve a intentarlo." });
   }
 
   // Tope de tamaño de la foto del reto (viaja como base64 en el body, no por Storage):
@@ -419,6 +415,16 @@ export default async function handler(req, res) {
     p_selfie_path: selfiePath ?? null,
     p_device_id: deviceId ?? null,
     p_entrada_libre: !!entradaLibre,
+    // LA PIEZA QUE EVITA LA CHECADA DUPLICADA, y que llevaba desde la migración 165 creada sin
+    // enchufar. Si la red se corta DESPUÉS de que esta RPC escriba la fila pero antes de que la
+    // respuesta llegue al teléfono, el cliente cree que no pasó nada y reintenta. Con el mismo
+    // uuid, el índice único parcial de `asistencias.id_cliente` hace que la segunda no entre.
+    //
+    // Sin esto, el único freno era la ventana de 90 segundos de la propia RPC, y repetir dos
+    // fotos con encuadre y giro tarda más que eso: la entrada se duplicaba, y eso se paga en
+    // nómina. La PWA todavía no lo manda y sigue funcionando igual — el parámetro es opcional y
+    // el índice es parcial (`where id_cliente is not null`) justo para eso.
+    p_id_cliente: idCliente ?? null,
   });
 
   if (errorRpc) {
