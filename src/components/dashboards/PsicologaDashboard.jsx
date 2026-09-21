@@ -7,6 +7,7 @@ import SectionTitle from "../common/SectionTitle";
 import Badge from "../common/Badge";
 import Icon from "../ui/Icon";
 import TendenciaBienestar from "./TendenciaBienestar";
+import FaltasJustificadasHoy from "./FaltasJustificadasHoy";
 import SucursalesEnRiesgo from "./SucursalesEnRiesgo";
 import ScorePorSucursal from "./ScorePorSucursal";
 import WeekSelect from "../common/WeekSelect";
@@ -38,12 +39,15 @@ const PsicologaDashboard = ({
   permisos = [],
   descuentos = [],
   reconocimientos = [],
+  intercambios = [],
+  horarios = [],
+  checadasHoy = [],
 }) => {
   // La ficha completa, sin salir del dashboard: esta pantalla es para decidir a quién
   // llamar hoy, y tener que ir a Empleados y buscar a la persona a mano es justo la
   // fricción que hace que no se mire.
   const [fichaAbierta, setFichaAbierta] = useState(null);
-  const { usuarios: USERS, nombresSucursales } = useGlobal();
+  const { usuarios: USERS, nombresSucursales, sucursales } = useGlobal();
   const { user } = useAuth();
 
   const {
@@ -125,6 +129,18 @@ const PsicologaDashboard = ({
           <div className="pulse-hero-sub">Promedio del equipo en el periodo</div>
         </Card>
       </div>
+
+      <Card>
+        <FaltasJustificadasHoy
+          empleados={empleados}
+          permisos={permisos}
+          vacaciones={vacaciones}
+          intercambios={intercambios}
+          horarios={horarios}
+          checadasHoy={checadasHoy}
+          sucursales={sucursales}
+        />
+      </Card>
 
       <TendenciaBienestar encuestas={encuestas} usuarios={USERS} semana={semana} />
 

@@ -10,6 +10,7 @@ import Icon from "../ui/Icon";
 import TendenciaBienestar from "./TendenciaBienestar";
 import SucursalesEnRiesgo from "./SucursalesEnRiesgo";
 import FocoRojo from "./FocoRojo";
+import FaltasJustificadasHoy from "./FaltasJustificadasHoy";
 import ScorePorSucursal from "./ScorePorSucursal";
 import { usePulseSemana } from "../../hooks/usePulseSemana";
 import { getAsistencias } from "../../services/supabase/asistenciasService";
@@ -37,6 +38,7 @@ const HRDashboard = () => {
   const {
     usuarios = [], sucursales = [], encuestas = [],
     vacaciones = [], permisos = [], descuentos = [], horarios = [], nombresSucursales = [],
+    intercambios = [], checadasHoy = [],
   } = useGlobal();
 
   // El mismo calculo que usan admin y psicologa: semana, semaforo, sucursales en riesgo y
@@ -221,6 +223,18 @@ const HRDashboard = () => {
           <div className="pulse-hero-sub">{`Promedio de ${semana}`}</div>
         </Card>
       </div>
+
+      <Card>
+        <FaltasJustificadasHoy
+          empleados={empleados}
+          permisos={permisos}
+          vacaciones={vacaciones}
+          intercambios={intercambios}
+          horarios={horarios}
+          checadasHoy={checadasHoy}
+          sucursales={sucursales}
+        />
+      </Card>
 
       <TendenciaBienestar encuestas={encuestas} usuarios={usuarios} semana={formatSemanaDisplay(semana)} />
 
