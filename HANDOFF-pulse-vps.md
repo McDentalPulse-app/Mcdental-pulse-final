@@ -1,11 +1,77 @@
 # HANDOFF — McDental Pulse en VPS propia
 
-> Para la próxima sesión de Claude. Última actualización: **2026-09-02**.
+> Para la próxima sesión de Claude. Última actualización: **2026-09-21**.
 > Este archivo vive en dos lados y hay que mantenerlos iguales: `/opt/pulse/HANDOFF.md`
 > (en la VPS) y `HANDOFF-pulse-vps.md` (en el repo del usuario). ⚠️ Pese a lo que decía esta
 > misma línea antes: **sí está versionado** (confirmado con `git log`, commit `0e3b7f9` en
 > adelante) — corregido el 2026-09-02, no repetir que no lo está.
 
+> ## 🔴 LEER PRIMERO — cambios del 2026-09-21 (dejado por la sesión que lleva la app nativa)
+>
+> Hola. Esto lo escribe la Claude que trabaja con el dueño en la app nativa de Android. Hoy
+> tocamos cosas que afectan a la PWA, así que te las dejo por escrito antes de que te muerdan.
+>
+> **1. `/opt/pulse/app` YA NO ES LA FUENTE DE VERDAD. Ahora sigue a `prod/main`.**
+> Más abajo, en §3, hay un apartado del 2026-07-31 que dice lo contrario. **Está obsoleto desde
+> hoy.** Esa carpeta tenía 198 commits de retraso y 52 que no existían en ningún otro sitio, y
+> se sincronizó con `git reset --hard prod/main`. Ahora tiene el remoto `prod` puesto.
+>
+> Lo que eso significa para ti: **editar ahí a mano ya no basta**. Lo que no llegue a GitHub se
+> perderá en la próxima sincronización. Commitea y empuja; luego despliega.
+>
+> Si necesitas recuperar algo de antes: el tag `vps-antes-de-sincronizar-20260921` conserva los
+> 52 commits, y `/tmp/opt-pulse-app-antes-de-sincronizar-20260921.tgz` el árbol entero.
+>
+> **2. POR QUÉ importa, con el caso real de hoy.** El repositorio llamaba a
+> `personas_que_dejaron_de_fichar` (`api/tareas-programadas.js:695`) y **no contenía el SQL que
+> la crea**: su migración existía SOLO en la carpeta de la VPS. Reconstruir la base desde el
+> repo daba una base sin esa función. Eran cinco migraciones en esa situación (115-119), ya
+> rescatadas y commiteadas. Ese es el agujero que la sincronización cierra.
+>
+> **3. `build-api.sh` AHORA TIENE UN PREFLIGHT que puede abortar tu despliegue.**
+> Antes de construir nada ejecuta `node scripts/verificar-rpc.mjs`, que comprueba contra la base
+> real que existan todas las funciones que `api/` va a llamar, con los parámetros que les pasa.
+> Si falta algo, el despliegue **no empieza** y te dice cuál es la firma viva.
+>
+> Si te aborta: casi siempre significa que **falta aplicar una migración en producción**, no que
+> tu código esté mal. Aplícala y vuelve a desplegar. Si el mensaje dice que no se pudo consultar
+> la base, es infraestructura (¿está arriba `pulse-db`?), no tu código — el script distingue los
+> dos casos a propósito.
+>
+> **4. NO HAY REGISTRO DE MIGRACIONES APLICADAS, y el número no te lo dice.**
+> No existe `supabase_migrations.schema_migrations` en esta base. Hoy la 166 estaba aplicada y
+> la 165 no. Desplegar un `api/` que llamaba a la firma de la 165 dejó **a toda la clínica sin
+> poder fichar** durante media mañana, PWA y app nativa a la vez.
+>
+> Antes de desplegar algo que dependa de una migración, **sondea producción en solo lectura**:
+>
+> ```bash
+> # ¿existe la firma?  42501 permission denied = SÍ existe;  PGRST202 = NO existe
+> curl -s -X POST "$URL/rest/v1/rpc/<funcion>" -H "apikey: $ANON" \
+>      -H "Authorization: Bearer $ANON" -H "Content-Type: application/json" \
+>      -d '{"p_empleado_id":"NO-ES-UUID", ...}'
+> # ¿existe la columna?  42703 = no existe
+> curl -s "$URL/rest/v1/<tabla>?select=<columna>&limit=1" -H "apikey: $ANON" -H "Authorization: Bearer $ANON"
+> ```
+>
+> El uuid inválido hace que falle en el cast **antes** de ejecutar la función: la sonda no
+> escribe nada.
+>
+> **5. Colisión de numeración, resuelta.** Los ficheros `164/165/166` de la carpeta de la VPS
+> eran `materiales_log`, `retardo_personal` y `asistencias_insert_gestion`; en el repo esos tres
+> viven como **167/168/169**, y 164/165/166 son otra cosa. Borré los duplicados viejos de la VPS
+> tras verificar por md5 que eran idénticos. Ahora hay un fichero por número. **Si creas una
+> migración nueva, mira el número más alto en `prod/main`, no el de tu carpeta.**
+>
+> **6. Dos arreglos en `api/checar.js` que afectan a la PWA** (commit `2a435d0`): la ventana de
+> frescura de la selfie solo acotaba el pasado —una ruta con marca futura pasaba siempre, y eso
+> es fichar desde cualquier sitio con la cara correcta—, y faltaba pasar `p_id_cliente` a la RPC,
+> que es la pieza anti-duplicado. La PWA todavía no manda `idCliente`; el parámetro es opcional
+> y el índice es parcial, así que convive sin cambios. Si algún día la PWA lo manda, gana lo
+> mismo que la app nativa: un corte de red a mitad del fichaje deja de poder duplicar la checada.
+>
+> ---
+>
 > ## 🔴 LEER PRIMERO — cambios del 2026-09-02
 >
 > 1. **Admin+**: rol nuevo arriba de admin (hereda todo automático vía `current_role()`, único
@@ -269,7 +335,16 @@ Datos reales migrados el 2026-07-25 (102 usuarios, 15 rostros, 52 encuestas, 197
 de storage). **Los hashes de contraseña son idénticos a producción** — la gente entra con
 su contraseña de siempre.
 
-### `/opt/pulse/app` ahora ES la fuente de verdad (resuelto el 2026-07-31)
+### ~~`/opt/pulse/app` ahora ES la fuente de verdad~~ — ⛔ OBSOLETO DESDE EL 2026-09-21
+
+> **Ya no.** Esa carpeta sigue ahora a `prod/main` y tiene el remoto puesto. Lo que se edite
+> ahí sin empujar a GitHub se pierde en la próxima sincronización — y eso ya pasó: cinco
+> migraciones existieron solo ahí durante meses, una de ellas creando una función que el
+> repositorio llamaba sin saber crear. Ver «LEER PRIMERO — cambios del 2026-09-21» arriba.
+>
+> Lo que sigue se conserva por el contexto histórico de cómo se llegó a aquello.
+
+### `/opt/pulse/app` era la fuente de verdad (resuelto el 2026-07-31, revertido el 2026-09-21)
 Entre el 2026-07-25 y el 2026-07-31 el trabajo de UI se hizo **directo en
 `/opt/pulse/app`**, y el repo local quedó divergente. **Eso ya se resolvió:** el árbol de
 la VPS se publicó como `main` del repo `prod`.
