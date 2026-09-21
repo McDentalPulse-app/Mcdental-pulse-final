@@ -194,7 +194,7 @@ function FilaNomina({
 export default function Nomina({ usuarios = [], horarios = [], permisos = [], vacaciones = [] }) {
   const { sucursales = [], refreshUsuarios } = useGlobal();
   const { user } = useAuth();
-  const { toast } = useNotification();
+  const { toast, confirm } = useNotification();
 
   const opcionesSemana = useMemo(() => semanasRecientes(12), []);
   const [semana, setSemana] = useState(() => opcionesSemana[0]?.value);
@@ -499,9 +499,17 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
           onCambiarComentario={(empleadoId, valor) =>
             setComentariosSucursal((prev) => ({ ...prev, [empleadoId]: valor }))
           }
-          onQuitarEmpleado={(empleadoId) =>
-            setExcluidosSucursal((prev) => new Set(prev).add(empleadoId))
-          }
+          onQuitarEmpleado={async (empleadoId) => {
+            const persona = recibosImpresionSucursal.find((r) => r.empleado.id === empleadoId)?.empleado;
+            const ok = await confirm({
+              title: "Quitar de la nómina",
+              description: `¿Quitar a ${persona?.name || "esta persona"} de esta impresión? Solo afecta esta hoja — no le toca nada a su nómina real, y vuelve a aparecer si cierras y abres de nuevo este paso.`,
+              variant: "warning",
+              confirmText: "Quitar",
+            });
+            if (!ok) return;
+            setExcluidosSucursal((prev) => new Set(prev).add(empleadoId));
+          }}
           onImprimir={() => {
             setMostrarComentariosSucursal(false);
             setImprimirSucursal(true);
