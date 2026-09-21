@@ -30,14 +30,14 @@ export default function PanelPersona({ persona, usuarios, areas, puedeEditar, on
   const jefe = persona.jefeId ? usuariosPorId.get(persona.jefeId) : null;
   const area = persona.areaId ? areas.find((a) => a.id === persona.areaId) : null;
   const reportes = useMemo(
-    () => usuarios.filter((u) => u.jefeId === persona.id && !u.archivado),
+    () => usuarios.filter((u) => u.jefeId === persona.id && !u.archivado && !u.oculto),
     [usuarios, persona.id]
   );
 
   const candidatosJefe = useMemo(
     () =>
       usuarios
-        .filter((u) => !u.archivado && u.id !== persona.id && !dependeDe(u.id, persona.id, usuariosPorId))
+        .filter((u) => !u.archivado && !u.oculto && u.id !== persona.id && !dependeDe(u.id, persona.id, usuariosPorId))
         .sort((a, b) => (a.name || "").localeCompare(b.name || "")),
     [usuarios, persona.id, usuariosPorId]
   );

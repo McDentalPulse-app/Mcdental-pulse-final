@@ -236,7 +236,7 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
   const empleados = useMemo(() => {
     const texto = busqueda.trim().toLowerCase();
     return usuarios
-      .filter((u) => !u.inactivo)
+      .filter((u) => !u.inactivo && !u.oculto)
       .filter((u) => !texto || (u.name || "").toLowerCase().includes(texto))
       .filter((u) => filtroSucursal === "Todas" || normalizeSucursal(u.sucursal) === filtroSucursal)
       .sort((a, b) => (a.name || "").localeCompare(b.name || ""));

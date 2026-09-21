@@ -98,11 +98,11 @@ export const getMiembros = async (departamentoId) => {
 // agregar gente. Cruza toda la empresa (un departamento no es cosa de un solo rol).
 export const getUsuariosParaAgregar = async (departamentoId) => {
   const [usuarios, miembros] = await Promise.all([
-    fetchAll(() => supabase.from("usuarios").select("id, name, puesto").eq("inactivo", false)),
+    fetchAll(() => supabase.from("usuarios").select("id, name, puesto, oculto").eq("inactivo", false)),
     fetchAll(() => supabase.from("departamento_miembros").select("usuario_id").eq("departamento_id", departamentoId)),
   ]);
   const yaDentro = new Set(miembros.map((m) => m.usuario_id));
-  return usuarios.filter((u) => !yaDentro.has(u.id)).map((u) => ({ id: u.id, nombre: u.name, puesto: u.puesto }));
+  return usuarios.filter((u) => !yaDentro.has(u.id) && !u.oculto).map((u) => ({ id: u.id, nombre: u.name, puesto: u.puesto }));
 };
 
 export const agregarMiembro = async (departamentoId, usuarioId) => {

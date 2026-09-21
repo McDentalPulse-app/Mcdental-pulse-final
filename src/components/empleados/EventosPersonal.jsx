@@ -33,7 +33,7 @@ import {
 } from "../../utils/helpers";
 
 const EventosPersonal = ({ users }) => {
-  const empleados = users.filter(u => ["empleado", "doctor", "rh", "psicologa", "admin", "admin_plus"].includes(u.role) && !u.inactivo);
+  const empleados = users.filter(u => ["empleado", "doctor", "rh", "psicologa", "admin", "admin_plus"].includes(u.role) && !u.inactivo && !u.oculto);
 
   const eventos = [
     ...empleados.map(u => {

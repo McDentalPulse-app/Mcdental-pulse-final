@@ -3384,6 +3384,9 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 
 .mc-status-pill--activo { background: var(--mc-badge-verde-bg); color: var(--mc-badge-verde-texto); }
 .mc-status-pill--inactivo { background: var(--mc-badge-rojo-bg); color: var(--mc-badge-rojo-texto); }
+/* Oculto (mig. 170): ni activo ni de baja, así que no reusa esos tonos — la cuenta sigue
+   funcionando igual, solo no aparece en listas. Gris neutro a propósito. */
+.mc-status-pill--oculto { background: var(--mc-slate-100); color: var(--mc-slate-500); }
 
 .mc-tag-grid {
   display: flex;
@@ -4786,6 +4789,10 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   gap: 10px;
   margin-bottom: 8px;
 }
+
+/* Estado + "Oculto" (mig. 170) pueden coexistir — a diferencia de estado, que es uno
+   de tres, oculto es independiente y se muestra aparte cuando aplica. */
+.gestion-personal-badges { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
 .gestion-personal-mobile-main {
   min-width: 0;

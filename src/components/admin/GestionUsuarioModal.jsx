@@ -275,6 +275,27 @@ const GestionUsuarioModal = ({
           </div>
         )}
 
+        {usuarioEditando && (
+          // Distinto de archivar/desactivar: la cuenta sigue funcionando igual (checador,
+          // login, nómina se le sigue calculando), solo deja de aparecer en las listas.
+          <div className="mc-form-group">
+            <label className="mc-form-check" htmlFor="gu-oculto">
+              <input
+                id="gu-oculto"
+                type="checkbox"
+                checked={formData.oculto}
+                onChange={(e) => cambiarCampo("oculto", e.target.checked)}
+              />
+              <span>Ocultar de listas y reportes</span>
+            </label>
+            <p className="mc-form-hint">
+              No la desactiva: sigue pudiendo entrar, fichar y se le sigue calculando la
+              nómina. Solo deja de aparecer en Nómina, Asistencia, el directorio y los demás
+              listados — acá se sigue viendo, con la etiqueta "Oculto".
+            </p>
+          </div>
+        )}
+
         {!usuarioEditando && (
           <p className="mc-form-hint mc-form-hint--warn">
             <Icon name="key" size={14} />

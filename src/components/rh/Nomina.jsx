@@ -267,7 +267,7 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
   // Toda la plantilla activa, no solo empleado/doctor: RH y la psicóloga también cobran.
   const empleados = useMemo(
     () => usuarios
-      .filter((u) => !u.inactivo && !u.archivado)
+      .filter((u) => !u.inactivo && !u.archivado && !u.oculto)
       .sort((a, b) => (a.name || "").localeCompare(b.name || "")),
     [usuarios]
   );

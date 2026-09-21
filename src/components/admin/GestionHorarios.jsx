@@ -248,7 +248,7 @@ export default function GestionHorarios({ usuarios = [], horarios = [], setHorar
   // saca de esta grilla de asignación de horario, a pedido del dueño.
   const empleados = useMemo(
     () => usuarios
-      .filter((u) => !u.inactivo && !["admin", "admin_plus", "psicologa"].includes(u.role))
+      .filter((u) => !u.inactivo && !u.oculto && !["admin", "admin_plus", "psicologa"].includes(u.role))
       .sort((a, b) => (a.name || "").localeCompare(b.name || "")),
     [usuarios]
   );

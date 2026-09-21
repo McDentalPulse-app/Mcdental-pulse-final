@@ -210,8 +210,12 @@ const ROLES_PLANTILLA = ["empleado", "doctor"];
  *  una categoría aparte. Al crearse el rol se quedó fuera de este filtro y eso
  *  borraba a 54 de las 99 personas de la plantilla en las 10 pantallas que lo
  *  usan (listas, dashboards, reportes RH, reconocimientos, descuentos,
- *  mensajes y AI Engine). */
-export const esEmpleadoActivo = (u) => ROLES_PLANTILLA.includes(u?.role) && !u?.inactivo;
+ *  mensajes y AI Engine).
+ *
+ *  `oculto` (mig. 170) es DISTINTO de inactivo: la cuenta sigue funcionando (login,
+ *  checador, nómina se le sigue calculando) pero no debe aparecer en estas mismas
+ *  pantallas — así que se excluye aquí también, sin tocar nada de lo demás. */
+export const esEmpleadoActivo = (u) => ROLES_PLANTILLA.includes(u?.role) && !u?.inactivo && !u?.oculto;
 
 /**
  * Una fecha suelta ("2026-08-20") en corto y legible: "20 ago 2026".

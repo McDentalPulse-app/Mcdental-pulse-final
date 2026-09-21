@@ -46,7 +46,7 @@ export default function FiniquitosLiquidaciones({ usuarios = [], vacaciones = []
   const [reciboImprimir, setReciboImprimir] = useState(null);
 
   const empleados = useMemo(
-    () => usuarios.slice().sort((a, b) => (a.name || "").localeCompare(b.name || "")),
+    () => usuarios.filter((u) => !u.oculto).sort((a, b) => (a.name || "").localeCompare(b.name || "")),
     [usuarios]
   );
   const empleado = empleados.find((u) => u.id === empleadoId) || null;

@@ -87,6 +87,7 @@ const GestionUsuarios = () => {
     puedeMarcarEnCualquierClinica: false,
     puedeMarcarSalidaSinGeocerca: false,
     puedeMarcarEntradaLibre: false,
+    oculto: false,
   });
 
   // Gestión (admin/rh/psicologa) puede asignar cualquier rol; el resto solo "empleado".
@@ -175,6 +176,7 @@ const GestionUsuarios = () => {
         puedeMarcarEnCualquierClinica: !!empleado.puedeMarcarEnCualquierClinica,
         puedeMarcarSalidaSinGeocerca: !!empleado.puedeMarcarSalidaSinGeocerca,
         puedeMarcarEntradaLibre: !!empleado.puedeMarcarEntradaLibre,
+        oculto: !!empleado.oculto,
       });
     } else {
       setUsuarioEditando(null);
@@ -194,6 +196,7 @@ const GestionUsuarios = () => {
         puedeMarcarEnCualquierClinica: false,
         puedeMarcarSalidaSinGeocerca: false,
         puedeMarcarEntradaLibre: false,
+        oculto: false,
       });
     }
     setMostrarModal(true);
@@ -339,9 +342,12 @@ const GestionUsuarios = () => {
                     </span>
                   </td>
                   <td>
-                    <Badge variant={emp.archivado ? "rechazado" : emp.inactivo ? "inactivo" : "activo"}>
-                      {emp.archivado ? "Archivado" : emp.inactivo ? "Inactivo" : "Activo"}
-                    </Badge>
+                    <span className="gestion-personal-badges">
+                      <Badge variant={emp.archivado ? "rechazado" : emp.inactivo ? "inactivo" : "activo"}>
+                        {emp.archivado ? "Archivado" : emp.inactivo ? "Inactivo" : "Activo"}
+                      </Badge>
+                      {emp.oculto && <Badge variant="oculto">Oculto</Badge>}
+                    </span>
                   </td>
                   <td className="emp-table-acciones">
                     <div className="emp-table-acciones-grupo">
@@ -438,9 +444,12 @@ const GestionUsuarios = () => {
                     <div className="gestion-personal-mobile-name">{emp.name}</div>
                     <div className="gestion-personal-mobile-user">@{emp.user}</div>
                   </div>
-                  <Badge variant={emp.archivado ? "rechazado" : emp.inactivo ? "inactivo" : "activo"}>
-                    {emp.archivado ? "Archivado" : emp.inactivo ? "Inactivo" : "Activo"}
-                  </Badge>
+                  <span className="gestion-personal-badges">
+                    <Badge variant={emp.archivado ? "rechazado" : emp.inactivo ? "inactivo" : "activo"}>
+                      {emp.archivado ? "Archivado" : emp.inactivo ? "Inactivo" : "Activo"}
+                    </Badge>
+                    {emp.oculto && <Badge variant="oculto">Oculto</Badge>}
+                  </span>
                 </div>
                 <div className="gestion-personal-mobile-meta">
                   <span className={`mc-tag ${!["empleado", "doctor"].includes(emp.role) ? "mc-tag--role-privileged" : ""}`}>{emp.role}</span>
