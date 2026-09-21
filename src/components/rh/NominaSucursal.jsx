@@ -1,5 +1,6 @@
 import logoMcDental from "../../assets/logos/mcdental-logo.png";
 import { money } from "../../utils/nomina";
+import Icon from "../ui/Icon";
 
 const MESES = [
   "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -25,7 +26,7 @@ const formatFecha = (iso) => {
  *  · `editable`: se monta normal, en un modal, y la celda de Comentarios es un <input> en vez
  *    de texto — para escribir el comentario de cada quien viendo ya el mismo diseño del papel.
  */
-export default function NominaSucursal({ sucursal, recibos, desde, hasta, comentarios = {}, editable = false, onCambiarComentario }) {
+export default function NominaSucursal({ sucursal, recibos, desde, hasta, comentarios = {}, editable = false, onCambiarComentario, onQuitarEmpleado }) {
   const totalSueldo = recibos.reduce((suma, { recibo }) => suma + (recibo.sinSueldo ? 0 : recibo.sueldo), 0);
   const totalConDescuentos = recibos.reduce((suma, { recibo }) => suma + (recibo.sinSueldo ? 0 : recibo.pagoFinal), 0);
   const anio = desde ? new Date(`${desde}T12:00:00`).getFullYear() : new Date().getFullYear();
@@ -60,7 +61,22 @@ export default function NominaSucursal({ sucursal, recibos, desde, hasta, coment
         <tbody>
           {recibos.map(({ empleado, recibo }) => (
             <tr key={empleado.id}>
-              <td>{empleado.name}</td>
+              <td>
+                {editable ? (
+                  <span className="nomina-sucursal-nombre-editable">
+                    <span>{empleado.name}</span>
+                    <button
+                      type="button"
+                      className="nomina-sucursal-quitar-btn"
+                      onClick={() => onQuitarEmpleado(empleado.id)}
+                      title={`Quitar a ${empleado.name} de esta impresión`}
+                      aria-label={`Quitar a ${empleado.name} de esta impresión`}
+                    >
+                      <Icon name="trash" size={13} />
+                    </button>
+                  </span>
+                ) : empleado.name}
+              </td>
               <td>{recibo.sinSueldo ? "Sin capturar" : money(recibo.sueldo)}</td>
               <td>
                 {editable ? (

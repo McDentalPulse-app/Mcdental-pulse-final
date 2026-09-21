@@ -11211,6 +11211,26 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 }
 .nomina-sucursal-comentario-input:focus { border-style: solid; border-color: #111111; outline: none; }
 
+/* Quitar a alguien de la impresión (solo en la vista editable — nunca sale en el papel,
+   ver el `editable ?` en NominaSucursal.jsx). Rojo suave a propósito: es la ÚNICA acción
+   destructiva de esta hoja, aunque sea reversible (basta con cerrar y volver a abrir el
+   modal — Nomina.jsx reinicia la lista de quitados cada vez que se abre). */
+.nomina-sucursal-nombre-editable { display: inline-flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; }
+.nomina-sucursal-quitar-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #b91c1c;
+  cursor: pointer;
+}
+.nomina-sucursal-quitar-btn:hover { background: #fee2e2; }
+
 /* Recibo de finiquito/liquidación/gratificación (ReciboFiniquito.jsx): trae UNA tabla más
    que el acuerdo de nómina (datos + desglose, contra solo desglose) y hasta 7 renglones de
    concepto en liquidación — con el espaciado de arriba (pensado para el acuerdo de nómina,

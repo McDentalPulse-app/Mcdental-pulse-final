@@ -7,7 +7,7 @@ import NominaSucursal from "./NominaSucursal";
  * hoja, viendo ya el mismo diseño del recibo (mismo NominaSucursal.jsx, en modo `editable`)
  * en vez de una lista de campos aparte que no se parece a lo que sale impreso.
  */
-export default function ComentariosSucursalModal({ sucursal, recibos, desde, hasta, comentarios, onCambiarComentario, onImprimir, onCerrar }) {
+export default function ComentariosSucursalModal({ sucursal, recibos, desde, hasta, comentarios, onCambiarComentario, onQuitarEmpleado, onImprimir, onCerrar }) {
   return (
     <div className="mc-modal-overlay" onClick={onCerrar} role="presentation">
       <div
@@ -23,7 +23,7 @@ export default function ComentariosSucursalModal({ sucursal, recibos, desde, has
         </h2>
         <p className="mc-hint">
           <Icon name="alert" size={15} />
-          <span>Si quieres, dale clic a la celda de "Comentarios" de cada quien y escribe — es opcional, puedes dejarla en blanco.</span>
+          <span>Si quieres, dale clic a la celda de "Comentarios" de cada quien y escribe — es opcional, puedes dejarla en blanco. El bote de basura junto al nombre la quita de esta impresión.</span>
         </p>
 
         <div className="nomina-comentarios-preview">
@@ -34,6 +34,7 @@ export default function ComentariosSucursalModal({ sucursal, recibos, desde, has
             hasta={hasta}
             comentarios={comentarios}
             onCambiarComentario={onCambiarComentario}
+            onQuitarEmpleado={onQuitarEmpleado}
             editable
           />
         </div>

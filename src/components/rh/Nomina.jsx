@@ -228,6 +228,11 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
   // recibo (AcuerdoConformidad no tiene columna de comentarios).
   const [mostrarComentariosSucursal, setMostrarComentariosSucursal] = useState(false);
   const [comentariosSucursal, setComentariosSucursal] = useState({});
+  // Quitar a alguien de ESTA impresión (botón de basura junto al nombre): no lo oculta ni lo
+  // toca en ningún otro lado, solo lo saca de la hoja que se está a punto de imprimir. Se
+  // reinicia cada vez que se abre el paso de comentarios, para no dejar a alguien fuera "sin
+  // querer" en una impresión futura sin que se note.
+  const [excluidosSucursal, setExcluidosSucursal] = useState(() => new Set());
 
   const lunes = useMemo(() => isoWeekToMonday(semana), [semana]);
   const desde = lunes ? aISO(lunes) : null;
@@ -316,6 +321,14 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
       return { empleado: u, recibo, porDia };
     });
   }, [visibles, checadas, horarios, permisos, vacaciones, desde, hasta, zonas, config]);
+
+  // Solo para la hoja de sucursal (vista previa + impresión): el resto de la pantalla
+  // (tabla principal, "Imprimir acuerdos", tarjetas de total) sigue usando `recibos` completo
+  // — quitar a alguien aquí es "no sale en ESTA hoja", no "ya no existe en la nómina".
+  const recibosImpresionSucursal = useMemo(
+    () => recibos.filter(({ empleado }) => !excluidosSucursal.has(empleado.id)),
+    [recibos, excluidosSucursal]
+  );
 
   // El domingo solo ocupa columna si alguien trabaja en domingo. Con la plantilla de siempre
   // (lunes a sábado) son seis columnas —L M M J V S, lo que se pidió— y no una columna muerta.
@@ -473,18 +486,21 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
       {acuerdosImprimir ? (
         <AcuerdoConformidad acuerdos={acuerdosImprimir} desde={desde} hasta={hasta} />
       ) : imprimirSucursal ? (
-        <NominaSucursal sucursal={filtroSucursal} recibos={recibos} desde={desde} hasta={hasta} comentarios={comentariosSucursal} />
+        <NominaSucursal sucursal={filtroSucursal} recibos={recibosImpresionSucursal} desde={desde} hasta={hasta} comentarios={comentariosSucursal} />
       ) : (
         <>
       {mostrarComentariosSucursal && (
         <ComentariosSucursalModal
           sucursal={filtroSucursal}
-          recibos={recibos}
+          recibos={recibosImpresionSucursal}
           desde={desde}
           hasta={hasta}
           comentarios={comentariosSucursal}
           onCambiarComentario={(empleadoId, valor) =>
             setComentariosSucursal((prev) => ({ ...prev, [empleadoId]: valor }))
+          }
+          onQuitarEmpleado={(empleadoId) =>
+            setExcluidosSucursal((prev) => new Set(prev).add(empleadoId))
           }
           onImprimir={() => {
             setMostrarComentariosSucursal(false);
@@ -568,7 +584,10 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
           <button
             type="button"
             className="mc-btn-outline mc-btn-with-icon"
-            onClick={() => setMostrarComentariosSucursal(true)}
+            onClick={() => {
+              setExcluidosSucursal(new Set());
+              setMostrarComentariosSucursal(true);
+            }}
             disabled={!filtroSucursal || !recibos.length}
             title={filtroSucursal ? "Imprime la nómina completa de esta sucursal en una sola hoja" : "Elige una sucursal para imprimir su nómina"}
           >
