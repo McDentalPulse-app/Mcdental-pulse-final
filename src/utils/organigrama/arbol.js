@@ -9,7 +9,9 @@
  *
  * Los `inactivo = true` (de baja temporal) SÍ entran al árbol — se pintan distinto, no
  * desaparecen (decisión del dueño, plan-organigrama.md §9-P4). Los `archivado = true` no
- * entran: ya no son personal vigente.
+ * entran: ya no son personal vigente. Los `oculto = true` (mig. 170) tampoco entran: a
+ * diferencia de inactivo, oculto es justo lo contrario de "pintar distinto" — es "que no
+ * salga en ningún lado", aunque la cuenta siga funcionando normal por dentro.
  */
 
 /** "Recepcionista", " recepcionista ", "RECEPCIONISTA" -> misma clave de grupo. */
@@ -41,7 +43,7 @@ const ordenarNodos = (nodos) =>
   });
 
 export const construirArbol = (usuarios = []) => {
-  const vigentes = usuarios.filter((u) => u && u.id && !u.archivado);
+  const vigentes = usuarios.filter((u) => u && u.id && !u.archivado && !u.oculto);
   const porId = new Set(vigentes.map((u) => u.id));
 
   const hijosPorJefe = new Map();

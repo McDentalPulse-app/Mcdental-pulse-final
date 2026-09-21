@@ -23,6 +23,9 @@ import {
 } from "../../utils/asistencia";
 import { calcularNomina, money } from "../../utils/nomina";
 import AcuerdoConformidad from "./AcuerdoConformidad";
+import NominaSucursal from "./NominaSucursal";
+import ComentariosSucursalModal from "./ComentariosSucursalModal";
+import logoMcDental from "../../assets/logos/mcdental-logo.png";
 
 // ISO: 1=lunes … 7=domingo. La misma numeración que horarios.dia_semana.
 const DIAS = [
@@ -80,20 +83,9 @@ function FilaNomina({
   guardandoRetardoPersonal,
   onGuardarRetardoPersonal,
   onImprimir,
-  seleccionado,
-  onToggleSeleccion,
 }) {
   return (
     <div className="nomina-fila">
-      <label className="nomina-check" title="Marcar para imprimir en lote">
-        <input
-          type="checkbox"
-          checked={seleccionado}
-          onChange={() => onToggleSeleccion(empleado.id)}
-          aria-label={`Seleccionar a ${empleado.name} para imprimir`}
-        />
-      </label>
-
       <div className="nomina-persona">
         <div className="nomina-persona-nombre">{empleado.name}</div>
         <div className="nomina-persona-sub">{normalizeSucursal(empleado.sucursal)}</div>
@@ -202,7 +194,7 @@ function FilaNomina({
 export default function Nomina({ usuarios = [], horarios = [], permisos = [], vacaciones = [] }) {
   const { sucursales = [], refreshUsuarios } = useGlobal();
   const { user } = useAuth();
-  const { toast } = useNotification();
+  const { toast, confirm } = useNotification();
 
   const opcionesSemana = useMemo(() => semanasRecientes(12), []);
   const [semana, setSemana] = useState(() => opcionesSemana[0]?.value);
@@ -225,14 +217,22 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
   // DOM mientras hace falta, en vez de calcular el recibo de todos en cada render.
   const [acuerdosImprimir, setAcuerdosImprimir] = useState(null);
 
-  // Selección para imprimir en lote (hallazgo real, 2026-09-19): el motor de impresión de
-  // Chrome falla al paginar un documento muy largo de una sola vez — con 25 acuerdos apilados
-  // (~20.000 px de alto) solo llegaban a salir unos 10, sin ningún error visible. Medido con
-  // getBoundingClientRect: el DOM y el CSS están perfectos, los 25 bloques quedan en su lugar
-  // exacto sin recortes — es el propio navegador el que no pagina bien algo tan largo al
-  // imprimir. La solución no es técnica (no hay CSS que se lo arregle a Chrome): es dejar
-  // elegir un lote más chico, de cualquier tamaño, sin depender del filtro de sucursal.
-  const [seleccionados, setSeleccionados] = useState(() => new Set());
+  // Hoja de nómina de LA sucursal filtrada (NominaSucursal.jsx): a diferencia de acuerdosImprimir
+  // (un recibo por persona), esta es una sola hoja con todos los de la oficina — solo tiene
+  // sentido con una sucursal concreta elegida en el filtro, nunca con "Todas las sucursales".
+  const [imprimirSucursal, setImprimirSucursal] = useState(false);
+
+  // Paso previo al botón de arriba: antes de imprimir, deja poner un comentario por persona
+  // (opcional). `mostrarComentariosSucursal` abre ese paso; `comentariosSucursal` guarda lo
+  // escrito por id de empleado, y solo se lee al armar NominaSucursal — no toca ningún otro
+  // recibo (AcuerdoConformidad no tiene columna de comentarios).
+  const [mostrarComentariosSucursal, setMostrarComentariosSucursal] = useState(false);
+  const [comentariosSucursal, setComentariosSucursal] = useState({});
+  // Quitar a alguien de ESTA impresión (botón de basura junto al nombre): no lo oculta ni lo
+  // toca en ningún otro lado, solo lo saca de la hoja que se está a punto de imprimir. Se
+  // reinicia cada vez que se abre el paso de comentarios, para no dejar a alguien fuera "sin
+  // querer" en una impresión futura sin que se note.
+  const [excluidosSucursal, setExcluidosSucursal] = useState(() => new Set());
 
   const lunes = useMemo(() => isoWeekToMonday(semana), [semana]);
   const desde = lunes ? aISO(lunes) : null;
@@ -272,7 +272,7 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
   // Toda la plantilla activa, no solo empleado/doctor: RH y la psicóloga también cobran.
   const empleados = useMemo(
     () => usuarios
-      .filter((u) => !u.inactivo && !u.archivado)
+      .filter((u) => !u.inactivo && !u.archivado && !u.oculto)
       .sort((a, b) => (a.name || "").localeCompare(b.name || "")),
     [usuarios]
   );
@@ -322,6 +322,14 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
     });
   }, [visibles, checadas, horarios, permisos, vacaciones, desde, hasta, zonas, config]);
 
+  // Solo para la hoja de sucursal (vista previa + impresión): el resto de la pantalla
+  // (tabla principal, "Imprimir acuerdos", tarjetas de total) sigue usando `recibos` completo
+  // — quitar a alguien aquí es "no sale en ESTA hoja", no "ya no existe en la nómina".
+  const recibosImpresionSucursal = useMemo(
+    () => recibos.filter(({ empleado }) => !excluidosSucursal.has(empleado.id)),
+    [recibos, excluidosSucursal]
+  );
+
   // El domingo solo ocupa columna si alguien trabaja en domingo. Con la plantilla de siempre
   // (lunes a sábado) son seis columnas —L M M J V S, lo que se pidió— y no una columna muerta.
   const hayDomingo = useMemo(
@@ -347,13 +355,10 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
   const montos = borrador || config;
 
   // Cambiar de semana vuelve a pedir las checadas: el spinner se enciende acá, en el evento,
-  // y `cargar` lo apaga en su .finally. La selección de impresión también se limpia: es la
-  // semana anterior la que se había marcado, y arrastrarla a otra semana imprimiría acuerdos
-  // de la persona equivocada sin que nadie lo pidiera.
+  // y `cargar` lo apaga en su .finally.
   const cambiarSemana = (valor) => {
     setCargando(true);
     setSemana(valor);
-    setSeleccionados(new Set());
   };
 
   const guardarConfig = async () => {
@@ -443,41 +448,32 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
     };
   }, [acuerdosImprimir]);
 
+  // Mismo mecanismo que el efecto de arriba, para la hoja de la sucursal — con un paso extra:
+  // esta hoja es la ÚNICA de las que se imprimen aquí que lleva un <img> (el logo). El resto
+  // solo escribe "McDental Pulse" en texto, así que este problema nunca había aparecido: si
+  // window.print() dispara antes de que el navegador termine de decodificar la imagen, el
+  // logo sale en blanco en el papel — sin ningún error visible, se ve como si no existiera.
+  // La vista previa editable (ComentariosSucursalModal) ya la pintó antes de llegar aquí, así
+  // que normalmente ya está en caché, pero se espera el decode() de todas formas por si acaso
+  // (p. ej. alguien le da a "Imprimir" muy rápido).
+  useEffect(() => {
+    if (!imprimirSucursal) return;
+    const limpiar = () => setImprimirSucursal(false);
+    window.addEventListener("afterprint", limpiar);
+    window.addEventListener("focus", limpiar);
+    const logo = new Image();
+    logo.src = logoMcDental;
+    Promise.resolve(logo.decode ? logo.decode().catch(() => {}) : null).then(() => window.print());
+    return () => {
+      window.removeEventListener("afterprint", limpiar);
+      window.removeEventListener("focus", limpiar);
+    };
+  }, [imprimirSucursal]);
+
   const imprimirUno = (empleado, recibo) => setAcuerdosImprimir([{ empleado, recibo }]);
   const imprimirTodos = () => {
     if (!recibos.length) return;
     setAcuerdosImprimir(recibos.map(({ empleado, recibo }) => ({ empleado, recibo })));
-  };
-
-  const toggleSeleccion = (empleadoId) => {
-    setSeleccionados((prev) => {
-      const next = new Set(prev);
-      if (next.has(empleadoId)) next.delete(empleadoId); else next.add(empleadoId);
-      return next;
-    });
-  };
-
-  // Cuenta cuántos de los VISIBLES (con el filtro actual) ya están marcados, para que el
-  // botón "Seleccionar visibles" sepa si le toca marcar o desmarcar. Adrede solo mira a
-  // `recibos` (lo que el filtro deja ver ahora) y no a `seleccionados` entero: alguien puede
-  // tener marcada gente de otra sucursal que ya no se ve, y este botón no debe tocarla.
-  const visiblesSeleccionados = recibos.filter(({ empleado }) => seleccionados.has(empleado.id)).length;
-
-  const toggleSeleccionVisibles = () => {
-    setSeleccionados((prev) => {
-      const next = new Set(prev);
-      const marcarTodos = visiblesSeleccionados < recibos.length;
-      for (const { empleado } of recibos) {
-        if (marcarTodos) next.add(empleado.id); else next.delete(empleado.id);
-      }
-      return next;
-    });
-  };
-
-  const imprimirSeleccionados = () => {
-    const elegidos = recibos.filter(({ empleado }) => seleccionados.has(empleado.id));
-    if (!elegidos.length) return;
-    setAcuerdosImprimir(elegidos.map(({ empleado, recibo }) => ({ empleado, recibo })));
   };
 
   return (
@@ -489,8 +485,38 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
           como lo que de verdad se ve. Sin la lista en el DOM, no hay espacio que medir. */}
       {acuerdosImprimir ? (
         <AcuerdoConformidad acuerdos={acuerdosImprimir} desde={desde} hasta={hasta} />
+      ) : imprimirSucursal ? (
+        <NominaSucursal sucursal={filtroSucursal} recibos={recibosImpresionSucursal} desde={desde} hasta={hasta} comentarios={comentariosSucursal} />
       ) : (
         <>
+      {mostrarComentariosSucursal && (
+        <ComentariosSucursalModal
+          sucursal={filtroSucursal}
+          recibos={recibosImpresionSucursal}
+          desde={desde}
+          hasta={hasta}
+          comentarios={comentariosSucursal}
+          onCambiarComentario={(empleadoId, valor) =>
+            setComentariosSucursal((prev) => ({ ...prev, [empleadoId]: valor }))
+          }
+          onQuitarEmpleado={async (empleadoId) => {
+            const persona = recibosImpresionSucursal.find((r) => r.empleado.id === empleadoId)?.empleado;
+            const ok = await confirm({
+              title: "Quitar de la nómina",
+              description: `¿Quitar a ${persona?.name || "esta persona"} de esta impresión? Solo afecta esta hoja — no le toca nada a su nómina real, y vuelve a aparecer si cierras y abres de nuevo este paso.`,
+              variant: "warning",
+              confirmText: "Quitar",
+            });
+            if (!ok) return;
+            setExcluidosSucursal((prev) => new Set(prev).add(empleadoId));
+          }}
+          onImprimir={() => {
+            setMostrarComentariosSucursal(false);
+            setImprimirSucursal(true);
+          }}
+          onCerrar={() => setMostrarComentariosSucursal(false)}
+        />
+      )}
       <PageHeader
         icon="dollar"
         title="Nómina"
@@ -566,20 +592,14 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
           <button
             type="button"
             className="mc-btn-outline mc-btn-with-icon"
-            onClick={toggleSeleccionVisibles}
-            disabled={!recibos.length}
+            onClick={() => {
+              setExcluidosSucursal(new Set());
+              setMostrarComentariosSucursal(true);
+            }}
+            disabled={!filtroSucursal || !recibos.length}
+            title={filtroSucursal ? "Imprime la nómina completa de esta sucursal en una sola hoja" : "Elige una sucursal para imprimir su nómina"}
           >
-            <Icon name="check" size={15} />{" "}
-            {visiblesSeleccionados < recibos.length ? "Seleccionar visibles" : "Quitar selección"}
-          </button>
-          <button
-            type="button"
-            className="mc-btn-primary mc-btn-with-icon"
-            onClick={imprimirSeleccionados}
-            disabled={!seleccionados.size}
-            title="Imprime solo a quien tenga la casilla marcada — en lotes chicos, la impresión sale bien siempre"
-          >
-            <Icon name="printer" size={15} /> Imprimir seleccionados ({seleccionados.size})
+            <Icon name="printer" size={15} /> Imprimir nómina de sucursal
           </button>
           <button
             type="button"
@@ -637,8 +657,6 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
                 guardandoRetardoPersonal={guardandoRetardoPersonal === empleado.id}
                 onGuardarRetardoPersonal={guardarRetardoPersonal}
                 onImprimir={imprimirUno}
-                seleccionado={seleccionados.has(empleado.id)}
-                onToggleSeleccion={toggleSeleccion}
               />
             ))}
           </div>

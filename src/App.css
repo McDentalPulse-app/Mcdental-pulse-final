@@ -3384,6 +3384,9 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 
 .mc-status-pill--activo { background: var(--mc-badge-verde-bg); color: var(--mc-badge-verde-texto); }
 .mc-status-pill--inactivo { background: var(--mc-badge-rojo-bg); color: var(--mc-badge-rojo-texto); }
+/* Oculto (mig. 170): ni activo ni de baja, así que no reusa esos tonos — la cuenta sigue
+   funcionando igual, solo no aparece en listas. Gris neutro a propósito. */
+.mc-status-pill--oculto { background: var(--mc-slate-100); color: var(--mc-slate-500); }
 
 .mc-tag-grid {
   display: flex;
@@ -4786,6 +4789,10 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   gap: 10px;
   margin-bottom: 8px;
 }
+
+/* Estado + "Oculto" (mig. 170) pueden coexistir — a diferencia de estado, que es uno
+   de tres, oculto es independiente y se muestra aparte cuando aplica. */
+.gestion-personal-badges { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
 .gestion-personal-mobile-main {
   min-width: 0;
@@ -10977,8 +10984,6 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   border-radius: 12px;
   background: var(--mc-gris-fondo);
 }
-.nomina-check { flex: 0 0 auto; display: flex; align-items: center; }
-.nomina-check input { width: 18px; height: 18px; accent-color: var(--mc-aqua); cursor: pointer; }
 .nomina-persona { flex: 1 1 180px; min-width: 0; }
 .nomina-persona-nombre { font-weight: 800; color: var(--mc-texto-titulo); }
 .nomina-persona-sub { font-size: 0.78rem; color: var(--mc-texto-apagado); }
@@ -11160,12 +11165,115 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 .nomina-acuerdo-desglose th:last-child { text-align: right; width: 160px; }
 .nomina-acuerdo-total td { font-weight: 700; border-top: 2px solid #111111; }
 
+/* Hoja de nómina de una sucursal (NominaSucursal.jsx): a diferencia de .nomina-acuerdo-header
+   (centrado, para UN recibo por persona), este encabezado va a tres columnas — logo+nombre a
+   la izquierda, el bloque de título centrado y la fecha a la derecha, como un membrete. */
+.nomina-sucursal-hoja { max-width: 760px; }
+.nomina-sucursal-encabezado {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.nomina-sucursal-marca img { height: 34px; display: block; }
+.nomina-sucursal-titulo { text-align: center; font-weight: 700; line-height: 1.45; white-space: nowrap; }
+.nomina-sucursal-titulo div:first-child { font-size: 1rem; }
+.nomina-sucursal-fecha { text-align: right; font-size: 0.85rem; color: #444444; justify-self: end; }
+
+.nomina-sucursal-tabla { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.nomina-sucursal-tabla th,
+.nomina-sucursal-tabla td { border: 1px solid #999999; padding: 6px 8px; text-align: left; }
+.nomina-sucursal-tabla th { background: #f2f2f2; font-weight: 600; }
+.nomina-sucursal-tabla th:nth-child(2), .nomina-sucursal-tabla td:nth-child(2),
+.nomina-sucursal-tabla th:nth-child(4), .nomina-sucursal-tabla td:nth-child(4),
+.nomina-sucursal-tabla th:nth-child(5), .nomina-sucursal-tabla td:nth-child(5) { text-align: right; }
+.nomina-sucursal-tabla td:nth-child(3) { min-width: 110px; }
+.nomina-sucursal-totales td { font-weight: 700; border-top: 2px solid #111111; }
+
+/* Paso de comentarios antes de "Imprimir nómina de sucursal" (ComentariosSucursalModal.jsx):
+   el modal muestra la MISMA hoja (NominaSucursal.jsx en modo `editable`), no una lista de
+   campos aparte que no se parece al papel — así lo que se ve aquí es lo que sale impreso.
+   `.nomina-comentarios-modal` ensancha el `.mc-modal` genérico (520px) para que quepa la hoja
+   completa (720px + su padding); `.nomina-comentarios-preview` es el único que hace scroll si
+   la hoja es más alta que el modal, para no arrastrar el título ni los botones con ella. */
+.mc-modal.nomina-comentarios-modal { width: min(820px, 96vw); }
+.nomina-comentarios-preview { max-height: 60vh; overflow-y: auto; margin: 18px 0; border-radius: 8px; }
+.nomina-sucursal-comentario-input {
+  width: 100%;
+  border: 1px dashed #999999;
+  border-radius: 3px;
+  background: #ffffff;
+  color: #111111;
+  font: inherit;
+  font-size: inherit;
+  padding: 2px 4px;
+}
+.nomina-sucursal-comentario-input:focus { border-style: solid; border-color: #111111; outline: none; }
+
+/* Quitar a alguien de la impresión (solo en la vista editable — nunca sale en el papel,
+   ver el `editable ?` en NominaSucursal.jsx). Rojo suave a propósito: es la ÚNICA acción
+   destructiva de esta hoja, aunque sea reversible (basta con cerrar y volver a abrir el
+   modal — Nomina.jsx reinicia la lista de quitados cada vez que se abre). */
+.nomina-sucursal-nombre-editable { display: inline-flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; }
+.nomina-sucursal-quitar-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #b91c1c;
+  cursor: pointer;
+}
+.nomina-sucursal-quitar-btn:hover { background: #fee2e2; }
+
+/* Recibo de finiquito/liquidación/gratificación (ReciboFiniquito.jsx): trae UNA tabla más
+   que el acuerdo de nómina (datos + desglose, contra solo desglose) y hasta 7 renglones de
+   concepto en liquidación — con el espaciado de arriba (pensado para el acuerdo de nómina,
+   una sola tabla corta) se salía a una segunda página y la firma quedaba huérfana ahí sola.
+   Espaciado más apretado, SOLO para este recibo — el de nómina no se toca, ya se dejó así
+   a propósito (ver el historial arriba de .nomina-acuerdo-firmas). */
+.recibo-finiquito { padding: 22px 32px; }
+.recibo-finiquito .nomina-acuerdo-header { margin-bottom: 12px; }
+.recibo-finiquito .nomina-acuerdo-datos,
+.recibo-finiquito .nomina-acuerdo-desglose { margin-bottom: 10px; }
+.recibo-finiquito .nomina-acuerdo-datos th,
+.recibo-finiquito .nomina-acuerdo-datos td,
+.recibo-finiquito .nomina-acuerdo-desglose th,
+.recibo-finiquito .nomina-acuerdo-desglose td { padding: 3px 10px; }
+.recibo-finiquito .nomina-acuerdo-texto { margin: 8px 0; }
+.recibo-finiquito .nomina-acuerdo-elaborado { margin: 0 0 4px; }
+/* Adivinar un min-height en px para empujar la firma hacia abajo (lo que había aquí antes)
+   nunca dio con el número exacto: 796 cabía en una hoja, 840 y 900 ya se pasaban a una
+   segunda — la ventana seguía siendo muy angosta y distinta entre finiquito/liquidación/
+   gratificación según cuántos renglones traiga cada una. Arreglo distinto y definitivo:
+   la firma sale del flujo normal (position: fixed) y se ancla al PIE DE LA HOJA de verdad,
+   sin importar cuánto contenido haya arriba — como el resto del recibo ya no necesita
+   reservarle espacio a la firma, el alto en flujo normal que Chromium usa para paginar
+   siempre es corto (cabe de sobra en una sola hoja para los tres tipos). El ancho/left
+   replican el max-width:720px + padding:32px de .nomina-acuerdo para que quede alineada
+   con el resto del recibo en vez de pegada al borde físico del papel. */
+.recibo-finiquito .nomina-acuerdo-firmas {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(720px - 64px);
+  margin-top: 0;
+}
+
 .nomina-acuerdo-texto {
   font-size: 0.85rem;
   line-height: 1.5;
   text-align: justify;
   margin: 18px 0;
 }
+
+.nomina-acuerdo-elaborado { font-size: 0.78rem; color: #444444; margin: 0 0 8px; }
 
 .nomina-acuerdo-firmas {
   display: flex;

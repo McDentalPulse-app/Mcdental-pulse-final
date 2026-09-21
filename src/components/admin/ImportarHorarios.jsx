@@ -40,7 +40,7 @@ export default function ImportarHorarios({ usuarios = [], onImportado }) {
   const [aplicando, setAplicando] = useState(false);
 
   const empleados = useMemo(
-    () => usuarios.filter((u) => !u.inactivo && ["empleado", "doctor"].includes(u.role)),
+    () => usuarios.filter((u) => !u.inactivo && !u.oculto && ["empleado", "doctor"].includes(u.role)),
     [usuarios]
   );
 

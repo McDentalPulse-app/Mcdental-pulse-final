@@ -17,6 +17,9 @@ const mapUsuario = (row) =>
     fechaNacimiento: row.fecha_nacimiento,
     inactivo: row.inactivo,
     archivado: row.archivado,
+    // Oculta a la persona de listas y reportes (mig. 170) sin tocar login ni checador —
+    // distinto de inactivo/archivado, que sí los bloquean. Ver el comentario de la columna.
+    oculto: !!row.oculto,
     debeCambiarPassword: row.debe_cambiar_password,
     avatarUrl: row.avatar_url,
     bannerUrl: row.banner_url,
@@ -123,6 +126,7 @@ export const updateUsuario = async (id, updates) => {
   if (updates.fechaCumpleanos !== undefined) payload.fecha_cumpleanos = updates.fechaCumpleanos || null;
   if (updates.inactivo !== undefined) payload.inactivo = updates.inactivo;
   if (updates.archivado !== undefined) payload.archivado = updates.archivado;
+  if (updates.oculto !== undefined) payload.oculto = !!updates.oculto;
   if (updates.puedeUbicarSucursal !== undefined) payload.puede_ubicar_sucursal = !!updates.puedeUbicarSucursal;
   if (updates.puedeGestionarBodega !== undefined) payload.puede_gestionar_bodega = updates.puedeGestionarBodega;
   if (updates.puedeGestionarInventario !== undefined) payload.puede_gestionar_inventario = updates.puedeGestionarInventario;

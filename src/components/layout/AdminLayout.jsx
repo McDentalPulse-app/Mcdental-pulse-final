@@ -8,6 +8,7 @@ import ExpedienteIntegral from '../empleados/ExpedienteIntegral';
 import ReconocimientosGestion from '../rh/ReconocimientosGestion';
 import EventosPersonal from '../empleados/EventosPersonal';
 import Nomina from '../rh/Nomina';
+import FiniquitosLiquidaciones from '../rh/FiniquitosLiquidaciones';
 import Reportes from '../rh/Reportes';
 import ReportesConfidencialesPanel from '../psicologia/ReportesConfidencialesPanel';
 import Config from '../settings/Config';
@@ -77,6 +78,7 @@ export default function AdminLayout({ user, globals, actions }) {
             {/* Nómina: la ve admin, rh y psicologa (mig. 156). El recibo se deriva de las
                 mismas checadas y horarios que Asistencia, no de una tabla aparte. */}
             <Route path="nomina" element={<Nomina usuarios={USERS} horarios={horarios} permisos={permisos} vacaciones={vacaciones} />} />
+            <Route path="finiquitos" element={<FiniquitosLiquidaciones usuarios={USERS} vacaciones={vacaciones} />} />
             <Route path="reportes" element={<Reportes users={USERS} encuestas={encuestas} preguntas={encuestaPreguntas} />} />
             <Route path="confidenciales" element={<ReportesConfidencialesPanel reportes={reportesConfidenciales} />} />
             <Route path="inventario" element={<InventarioAdmin />} />

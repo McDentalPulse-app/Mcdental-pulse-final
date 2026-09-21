@@ -24,6 +24,7 @@ import VacacionesRH from '../rh/VacacionesRH';
 import PermisosEmpleado from '../empleados/PermisosEmpleado';
 import ComisionesRH from '../comisiones/ComisionesRH';
 import Nomina from '../rh/Nomina';
+import FiniquitosLiquidaciones from '../rh/FiniquitosLiquidaciones';
 import EventosPersonal from '../empleados/EventosPersonal';
 import Reportes from '../rh/Reportes';
 import Config from '../settings/Config';
@@ -60,7 +61,7 @@ export default function PsicologaLayout({ user, globals, actions }) {
           )}
           {ofrecerPush && <AvisoPush onActivar={activarAvisos} onCerrar={cerrarOfertaPush} />}
           <Routes>
-            <Route path="dashboard" element={<PsicologaDashboard encuestas={encuestas} mensajes={mensajes} reportesConfidenciales={reportesConfidenciales} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} />} />
+            <Route path="dashboard" element={<PsicologaDashboard encuestas={encuestas} mensajes={mensajes} reportesConfidenciales={reportesConfidenciales} notas={notas} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} intercambios={intercambios} horarios={horarios} checadasHoy={checadasHoy} />} />
             <Route path="ai" element={<AIEngine encuestas={encuestas} mensajes={mensajes} notas={notas} userRole="psicologa" permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales}/>} />
             {/* La psicóloga (jefa de RH) también aprueba permisos y vacaciones. */}
             <Route path="vacaciones" element={<VacacionesRH vacaciones={vacaciones} onUpdateEstado={updateVacacionEstado} />} />
@@ -70,6 +71,7 @@ export default function PsicologaLayout({ user, globals, actions }) {
             <Route path="comisiones" element={<ComisionesRH comisiones={comisiones} onRevisar={revisarComision} />} />
             {/* Nómina (mig. 156): la ve admin, rh y psicologa, por pedido del dueño. */}
             <Route path="nomina" element={<Nomina usuarios={USERS} horarios={horarios} permisos={permisos} vacaciones={vacaciones} />} />
+            <Route path="finiquitos" element={<FiniquitosLiquidaciones usuarios={USERS} vacaciones={vacaciones} />} />
             <Route path="seguimiento" element={<PsicologaSeguimiento encuestas={encuestas} notas={notas} onUpdateNota={addNota} onDeleteNota={deleteNota}/>} />
             <Route path="confidenciales" element={<ReportesConfidencialesPanel reportes={reportesConfidenciales} />} />
             <Route path="empleados" element={<EmpleadosList encuestas={encuestas} notas={notas} role="psicologa" currentUser={user} onRestablecerPassword={restablecerPasswordUsuario} vacaciones={vacaciones} permisos={permisos} descuentos={descuentos} reconocimientos={reconocimientos} reportesConfidenciales={reportesConfidenciales} />} />
