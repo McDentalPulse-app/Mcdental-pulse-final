@@ -7,6 +7,7 @@ import PermisosRH from '../rh/PermisosRH';
 import PermisosEmpleado from '../empleados/PermisosEmpleado';
 import DescuentosRH from '../rh/DescuentosRH';
 import Nomina from '../rh/Nomina';
+import FiniquitosLiquidaciones from '../rh/FiniquitosLiquidaciones';
 import ComisionesRH from '../comisiones/ComisionesRH';
 import AsistenciaPanel from '../asistencia/AsistenciaPanel';
 import ChecadorEmpleado from '../asistencia/ChecadorEmpleado';
@@ -79,6 +80,7 @@ export default function HRLayout({ user, globals, actions }) {
             {/* Nómina (mig. 156): el pago de la semana con retardos y faltas descontados.
                 Distinta de Descuentos, que son cargos administrativos capturados a mano. */}
             <Route path="nomina" element={<Nomina usuarios={USERS} horarios={horarios} permisos={permisos} vacaciones={vacaciones} />} />
+            <Route path="finiquitos" element={<FiniquitosLiquidaciones usuarios={USERS} vacaciones={vacaciones} />} />
             <Route path="descuentos" element={<DescuentosRH descuentos={descuentos} empleados={USERS} user={user} onUpdateEstado={updateDescuentoEstado} onAddDescuento={addDescuento} />} />
             <Route path="comisiones" element={<ComisionesRH comisiones={comisiones} onRevisar={revisarComision} />} />
             <Route path="calendario" element={<CalendarioRH vacaciones={vacaciones} permisos={permisos} festivos={festivos} intercambios={intercambios} eventosCalendario={eventosCalendario} onGuardarEvento={guardarEvento} onEliminarEvento={deleteEvento} />} />

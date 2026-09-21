@@ -7,6 +7,7 @@ import PageHeader from "../common/PageHeader";
 import TendenciaBienestar from "./TendenciaBienestar";
 import SucursalesEnRiesgo from "./SucursalesEnRiesgo";
 import FocoRojo from "./FocoRojo";
+import FaltasJustificadasHoy from "./FaltasJustificadasHoy";
 import ScorePorSucursal from "./ScorePorSucursal";
 import { usePulseSemana } from "../../hooks/usePulseSemana";
 import { nivelColor } from "../../config/theme";
@@ -20,7 +21,10 @@ import "./AdminDashboard.css";
  * duplicado y ya habian empezado a divergir. Aqui solo queda la composicion.
  */
 const AdminDashboard = ({ encuestas = [] }) => {
-  const { usuarios: USERS, nombresSucursales } = useGlobal();
+  const {
+    usuarios: USERS, nombresSucursales, sucursales,
+    permisos, vacaciones, intercambios, horarios, checadasHoy,
+  } = useGlobal();
   const {
     empleados, semana, setWeekSel, labelActual, opcionesSemana,
     pulsePorEmpleado, contestaron, verdes, amarillos, rojos,
@@ -73,6 +77,18 @@ const AdminDashboard = ({ encuestas = [] }) => {
           <div className="pulse-hero-sub">Promedio organizacional del periodo</div>
         </Card>
       </div>
+
+      <Card>
+        <FaltasJustificadasHoy
+          empleados={empleados}
+          permisos={permisos}
+          vacaciones={vacaciones}
+          intercambios={intercambios}
+          horarios={horarios}
+          checadasHoy={checadasHoy}
+          sucursales={sucursales}
+        />
+      </Card>
 
       <TendenciaBienestar encuestas={encuestas} usuarios={USERS} semana={semana} />
 

@@ -15,6 +15,7 @@ export const NAV_ITEMS = {
     { key: "reconocimientos", icon: "award", label: "Reconocimientos", group: "Equipo" },
     { key: "eventospersonal", icon: "cake", label: "Cumpleaños y Aniversarios", group: "Equipo" },
     { key: "nomina", icon: "dollar", label: "Nómina", group: "Equipo" },
+    { key: "finiquitos", icon: "dollar", label: "Finiquitos y liquidaciones", group: "Equipo" },
     { key: "asistencia", icon: "clock", label: "Asistencia", group: "Asistencia y rostros" },
     { key: "sucursales", icon: "mapPin", label: "Sucursales", group: "Asistencia y rostros" },
     { key: "horarios", icon: "calendarDays", label: "Horarios", group: "Asistencia y rostros" },
@@ -48,6 +49,7 @@ export const NAV_ITEMS = {
     { key: "intercambios", icon: "calendarDays", label: "Festivos", group: "Vacaciones y permisos" },
     { key: "comisiones", icon: "dollar", label: "Comisiones", group: "Vacaciones y permisos", requiere: "puedeVerComisiones" },
     { key: "nomina", icon: "dollar", label: "Nómina", group: "Equipo" },
+    { key: "finiquitos", icon: "dollar", label: "Finiquitos y liquidaciones", group: "Equipo" },
     { key: "empleados", icon: "users", label: "Empleados", group: "Equipo" },
     { key: "usuarios", icon: "userCog", label: "Gestión de Personal", group: "Equipo" },
     { key: "expedientes", icon: "folder", label: "Expedientes", group: "Equipo" },
@@ -94,6 +96,7 @@ export const NAV_ITEMS = {
     { key: "intercambios", icon: "calendarDays", label: "Festivos", group: "Vacaciones y permisos" },
     { key: "comisiones", icon: "dollar", label: "Comisiones", group: "Vacaciones y permisos", requiere: "puedeVerComisiones" },
     { key: "nomina", icon: "dollar", label: "Nómina", group: "RH" },
+    { key: "finiquitos", icon: "dollar", label: "Finiquitos y liquidaciones", group: "RH" },
     { key: "descuentos", icon: "dollar", label: "Descuentos", group: "RH" },
     { key: "calendario", icon: "calendar", label: "Calendario", group: "RH" },
     { key: "reportesrh", icon: "trending", label: "Reportes RH", group: "RH" },
@@ -263,6 +266,7 @@ const DESCRIPCIONES = {
 
   // Dinero
   nomina: "El pago de cada persona en la semana, con sus retardos y faltas descontados.",
+  finiquitos: "Calculadora de finiquito, liquidación y aguinaldo, con recibo listo para imprimir.",
   descuentos: "Descuentos aplicados a nómina y su motivo.",
   comisiones: "Lo que llevas ganado y el detalle de cada tratamiento.",
 
