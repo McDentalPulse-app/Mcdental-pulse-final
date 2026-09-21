@@ -199,7 +199,22 @@ begin
   -- en vez de lanzar. Reintentar tiene que ser inofensivo, o la app no sabria distinguir
   -- «ya estaba» de «fallo» y lo reencolaria para siempre.
   if p_id_cliente is not null then
-    select * into v_existente from public.asistencias where id_cliente = p_id_cliente;
+    -- ACOTADO POR EMPLEADO Y TIPO (hallazgo 4), y excluyendo anuladas (hallazgo 5).
+    --
+    -- Sin el empleado: alguien que mande el id_cliente de OTRA persona recibe la fila entera de
+    -- esa persona y no se registra nada para el; la API lo da por bueno. Es una fuga de datos
+    -- ajenos y un fichaje que se pierde en silencio.
+    -- Sin el tipo: reusar el uuid de una entrada para una salida devolveria la entrada.
+    -- Sin `anulada`: RH anula una checada, el dispositivo reintenta, y la funcion confirma una
+    -- fila muerta como si el fichaje hubiera entrado.
+    --
+    -- Una colision de uuid que NO cumpla estas condiciones ya no pasa desapercibida: choca
+    -- contra el indice unico y falla en voz alta, que es lo correcto.
+    select * into v_existente from public.asistencias
+     where id_cliente = p_id_cliente
+       and empleado_id = p_empleado_id
+       and tipo = p_tipo
+       and anulada = false;
     if found then return v_existente; end if;
   end if;
 
@@ -232,7 +247,12 @@ begin
   order by marcada_en desc
   limit 1;
 
-  if found and v_ultima.marcada_en > v_momento - interval '90 seconds' then
+  -- DISTANCIA ABSOLUTA, que es lo que este guard quiso decir siempre. Con `>` a secas y un
+  -- v_momento en el pasado, la condicion pasaba a significar «rechaza si existe CUALQUIER
+  -- checada del mismo tipo posterior a la afirmada», sin tope: un fichaje offline de hace 24 h
+  -- se perdia con el mensaje «Ya registraste tu entrada hace unos segundos», que ademas miente,
+  -- y ese dia quedaba FALTA. Con now() era inofensivo porque now() siempre era lo mas nuevo.
+  if found and abs(extract(epoch from (v_ultima.marcada_en - v_momento))) < 90 then
     raise exception 'Ya registraste tu % hace unos segundos.', p_tipo;
   end if;
 
@@ -284,7 +304,12 @@ begin
       raise exception 'No puedes registrar tu salida: hoy no tienes una entrada registrada.';
     end if;
 
-    if now() < v_entrada_en + c_jornada_minima then
+    -- v_momento y NO now(): era la ÚNICA de las cinco referencias temporales que se quedó sin
+    -- convertir, y abría un agujero real. Con now(), una entrada offline afirmando hace 6 horas
+    -- y una salida offline afirmando 10 minutos después pasaban las dos —porque `now()` sí está
+    -- a 6 horas de la entrada—, y quedaba una jornada «presente» de diez minutos hecha desde
+    -- casa en modo avión. Lo mismo en línea se rechaza. Reproducido por la revisión adversarial.
+    if v_momento < v_entrada_en + c_jornada_minima then
       raise exception
         'Acabas de registrar tu entrada. Podrás fichar la salida a partir de las %.',
         to_char((v_entrada_en + c_jornada_minima) at time zone v_tz, 'HH24:MI');
