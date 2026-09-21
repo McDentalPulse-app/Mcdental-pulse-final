@@ -12,6 +12,19 @@ set -eu
 
 cd /opt/pulse/app
 
+# PREFLIGHT: que la base tenga las funciones que este codigo va a llamar.
+#
+# Va ANTES de tocar nada, y con `set -e` un fallo aborta sin haber construido ni parado el
+# contenedor: el despliegue no llega a empezar, en vez de terminar con el API en pie sirviendo
+# 400 a todo el mundo.
+#
+# Esto existe por el 2026-09-21: se desplego un checar.js que llamaba a `registrar_checada` con
+# `p_id_cliente`, un parametro de la migracion 165 que llevaba cuatro dias en el repositorio y
+# NO estaba aplicada en produccion. Toda la clinica se quedo sin fichar, PWA y app nativa, hasta
+# que alguien lo desconecto a mano. El fallo no estaba en el codigo ni en la base: estaba en que
+# nadie habia comparado una con el otro, y no habia forma de hacerlo.
+node scripts/verificar-rpc.mjs
+
 docker tag pulse-api:latest pulse-api:previa 2>/dev/null || true
 docker build -f Dockerfile.api -t pulse-api:latest .
 
