@@ -52,6 +52,29 @@
 >    compilador igual se rinde con la cadena de memos que depende de `userId`) — no bloquea
 >    tests ni build, ver el comentario en el propio archivo antes de intentar "arreglarlo" con
 >    otro disable de más.
+> 7. **Nuevo: "Generar contrato" en el Expediente Integral** (`admin/expedientes`, botón junto a
+>    "Subir archivo"). Se agregaron los tipos `RFC` y `CURP` al selector de archivos (ya existían
+>    `INE`/`Comprobante`). Al abrir `GenerarContratoModal.jsx` LEE SOLO los documentos ya subidos
+>    con IA (`api/extraer-datos-documento.js`, Gemini Vision, mismo patrón de auth/cuota que
+>    `api/gemini.js`) y prellena el contrato — nada de capturar a mano primero. Las cláusulas
+>    (`utils/contrato.js`, tres tipos: indeterminado/determinado/obra, basadas en arts. 20-28 y 25
+>    LFT) alimentan tanto la vista previa en vivo (`ContratoLaboral.jsx`, mismo texto que ve RH
+>    mientras corrige) como el PDF real (`utils/contratoPdf.js`, con `jsPDF` — dependencia nueva).
+>    Al generar, el PDF se sube solo a "Archivos del expediente" con tipo `Contrato` y se abre en
+>    pestaña nueva. Ningún dato se inventa: lo que la IA no lee con certeza queda en blanco (una
+>    raya `___`) para completarse a mano. **No se agregaron columnas de RFC/CURP/domicilio a
+>    `usuarios`** — decisión explícita del dueño: se releen de los documentos cada vez, nunca se
+>    guardan aparte.
+> 8. **"Cambiar festivo" ya no es un módulo de menú aparte.** Vivía en su propia entrada
+>    ("Calendario", `CalendarioIntercambio.jsx`) separada de donde se piden vacaciones y permisos,
+>    y la gente no encontraba dónde pedir el cambio de un festivo. Ahora es la tercera tarjeta de
+>    "Nueva solicitud" en `PermisosEmpleado.jsx` (junto a Vacaciones y Permiso); su UI completa
+>    (calendario del mes, formulario de intercambio, "mis intercambios") se extrajo intacta a
+>    `IntercambioFestivoPanel.jsx`, sin PageHeader propio, y se muestra cuando se elige esa
+>    tarjeta. La ruta vieja `.../calendario` quedó como `<Navigate>` hacia `permisosempleado` por
+>    si alguien tiene el enlace guardado; el ítem de menú "Calendario" se quitó del grupo "Tiempo
+>    libre" de empleado y doctor (el de gestión, en el grupo "RH", es un componente distinto —
+>    `CalendarioRH.jsx` — y no se tocó).
 >
 > Hola. Esto lo escribe la Claude que trabaja con el dueño en la app nativa de Android. Hoy
 > tocamos cosas que afectan a la PWA, así que te las dejo por escrito antes de que te muerdan.

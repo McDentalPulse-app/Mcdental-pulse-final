@@ -106,6 +106,18 @@ export const eliminarArchivoExpediente = async ({ id, rutaArchivo }) => {
   return true;
 };
 
+/**
+ * Baja el contenido real de un archivo ya subido (para mandarlo a Gemini Vision, por
+ * ejemplo). `blob.type` trae el mime tal cual se guardó al subir (`mimeDeArchivo`, ver
+ * arriba), así que no hace falta adivinarlo de la extensión.
+ */
+export const descargarArchivoExpediente = async (rutaArchivo) => {
+  const url = await getSignedUrlArchivoExpediente(rutaArchivo);
+  const respuesta = await fetch(url);
+  if (!respuesta.ok) throw new Error("No se pudo descargar el archivo.");
+  return respuesta.blob();
+};
+
 // El bucket es privado: no hay URL pública persistida, se genera on-demand.
 export const getSignedUrlArchivoExpediente = async (rutaArchivo, expiresInSeconds = 300) => {
   const { data, error } = await supabase.storage

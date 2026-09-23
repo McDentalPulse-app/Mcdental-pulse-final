@@ -4467,6 +4467,15 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   margin-top: 12px;
 }
 
+.expediente-archivos-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.expediente-archivos-acciones .expediente-subir-btn {
+  margin-top: 12px;
+}
+
 .expediente-ficha {
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -11429,6 +11438,24 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
    la hoja es más alta que el modal, para no arrastrar el título ni los botones con ella. */
 .mc-modal.nomina-comentarios-modal { width: min(820px, 96vw); }
 .nomina-comentarios-preview { max-height: 60vh; overflow-y: auto; margin: 18px 0; border-radius: 8px; }
+
+/* Generar contrato (GenerarContratoModal.jsx): mismo criterio que el paso de comentarios de
+   arriba — los campos que faltan van en un bloque compacto, pero el documento de abajo
+   (ContratoLaboral.jsx) es EL MISMO texto que termina en el PDF, actualizado en vivo, no una
+   maqueta aparte. `.contrato-hoja` reusa `.nomina-acuerdo` (fondo blanco/texto negro, "papel"
+   real) para que ya en pantalla se vea como lo que va a salir. */
+.mc-modal.contrato-modal { width: min(820px, 96vw); }
+.contrato-controles { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+.contrato-grid-campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px 14px;
+}
+.contrato-extraer-btn { align-self: flex-start; }
+.contrato-preview-wrap { max-height: 50vh; overflow-y: auto; border-radius: 8px; margin-bottom: 16px; }
+.contrato-hoja { max-width: 100%; }
+.contrato-seccion-titulo { font-size: 0.95rem; font-weight: 700; margin: 16px 0 8px; }
+.contrato-parrafo { font-size: 0.85rem; line-height: 1.6; text-align: justify; margin: 0 0 10px; }
 .nomina-sucursal-comentario-input {
   width: 100%;
   border: 1px dashed #999999;

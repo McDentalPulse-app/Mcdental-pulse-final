@@ -17,8 +17,6 @@ import AvisosPanel from '../avisos/AvisosPanel';
 import NotasPanel from '../notas/NotasPanel';
 import DepartamentosPanel from '../departamentos/DepartamentosPanel';
 import Organigrama from '../organigrama/Organigrama';
-import CalendarioIntercambio from '../calendario/CalendarioIntercambio';
-
 
 import InventarioClinica from '../inventario/InventarioClinica';
 import BodegaPanel from '../inventario/BodegaPanel';
@@ -64,8 +62,12 @@ export default function EmpleadoLayout({ user, globals, actions }) {
             <Route path="bodega" element={<BodegaPanel />} />
             <Route path="encuesta" element={<EncuestaEmpleado user={user} encuestas={encuestas} onSubmit={addEncuesta}/>} />
             <Route path="historial" element={<HistorialEmpleado user={user} encuestas={encuestas} />} />
-            <Route path="permisosempleado" element={<PermisosEmpleado user={user} vacaciones={vacaciones} permisos={permisos} horarios={horarios} onEnviarSolicitudEmpleado={addSolicitudEmpleadoRH}/>} />
-            <Route path="calendario" element={<CalendarioIntercambio user={user} festivos={festivos} intercambios={intercambios} destinosOcupados={destinosOcupados} onSolicitar={solicitarIntercambio} />} />
+            <Route path="permisosempleado" element={<PermisosEmpleado user={user} vacaciones={vacaciones} permisos={permisos} horarios={horarios} festivos={festivos} intercambios={intercambios} destinosOcupados={destinosOcupados} onEnviarSolicitudEmpleado={addSolicitudEmpleadoRH} onSolicitarIntercambio={solicitarIntercambio}/>} />
+            {/* "Cambiar festivo" ahora vive DENTRO de permisosempleado (tercera tarjeta de "Nueva
+                solicitud"), junto a Vacaciones y Permisos, para que la gente no busque en dos
+                módulos distintos para pedir tiempo libre. Se conserva la ruta vieja como redirect
+                por si alguien tiene el enlace guardado. */}
+            <Route path="calendario" element={<Navigate to="/empleado/permisosempleado" replace />} />
             <Route path="reconocimientos" element={<ReconocimientosEmpleado user={user} reconocimientos={reconocimientos} />} />
             <Route path="reporteconfidencial" element={<ReporteConfidencialEmpleado user={user} onSubmit={addReporteConfidencial} />} />
             <Route path="soporte" element={<SoporteTI user={user} />} />

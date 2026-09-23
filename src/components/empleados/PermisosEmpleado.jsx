@@ -30,6 +30,7 @@ const avisoVacaciones = (v) => {
   }
 };
 import { minutosNoTrabajados, formatoDuracion, diaISO, TZ_CLINICA } from "../../utils/asistencia";
+import IntercambioFestivoPanel from "./IntercambioFestivoPanel";
 
 const hoyClinica = () =>
   new Intl.DateTimeFormat("en-CA", { timeZone: TZ_CLINICA }).format(new Date());
@@ -57,7 +58,11 @@ export default function PermisosEmpleado({
   vacaciones = [],
   permisos = [],
   horarios = [],
+  festivos = [],
+  intercambios = [],
+  destinosOcupados = [],
   onEnviarSolicitudEmpleado,
+  onSolicitarIntercambio,
   autoAprobar = false, // gestión (RH/psicóloga) se auto-agenda: crea ya aprobado, sin pedir a RH
 }) {
   const { toast, confirm } = useNotification();
@@ -89,7 +94,7 @@ export default function PermisosEmpleado({
 
   const elegirTipo = (tipo) => {
     setTipoSeleccionado(tipo);
-    if (tipo === "Vacaciones") setCausaSeleccionada("");
+    if (tipo !== "Permisos") setCausaSeleccionada("");
   };
 
   const vacacionesEmpleado = vacaciones.filter((v) => v.empleadoId === user?.id);
@@ -230,47 +235,52 @@ export default function PermisosEmpleado({
   };
 
   const pideHora = CAUSAS_PERMISO.find((c) => c.valor === causaSeleccionada)?.pideHora;
+  const esFestivo = tipoSeleccionado === "Festivo";
 
   return (
-    <div className="admin-page empleado-page empleado-form-narrow">
+    <div className={`admin-page empleado-page${esFestivo ? "" : " empleado-form-narrow"}`}>
       <PageHeader
         icon="vacation"
         title="Vacaciones y permisos"
         subtitle={autoAprobar
-          ? "Agenda tus propios días de descanso o permisos. Quedan registrados como aprobados."
-          : "Solicita días de descanso o un permiso. RH revisará tu petición y te notificará el estatus."}
+          ? "Agenda tus propios días de descanso, permisos o cambios de festivo. Quedan registrados como aprobados."
+          : "Solicita días de descanso, un permiso o el cambio de un festivo. RH revisará tu petición y te notificará el estatus."}
       />
 
       <Card className="empleado-form-card">
         <SectionTitle icon="vacation">Nueva solicitud</SectionTitle>
 
-        <form className="mc-form-grid" onSubmit={handleSubmit}>
-          {/* Tipo como dos tarjetas grandes, en vez de un desplegable: se ve de un vistazo qué
-              estás pidiendo, y cada opción explica qué es. */}
-          <div className="mc-form-group">
-            <label className="mc-form-label">Tipo de solicitud</label>
-            <div className="solicitud-tipo-grid">
-              {[
-                { valor: "Vacaciones", icono: "vacation", titulo: "Vacaciones", sub: "Días de descanso" },
-                { valor: "Permisos", icono: "clipboardCheck", titulo: "Permiso", sub: "Ausencia puntual o salida" },
-              ].map((op) => (
-                <button
-                  key={op.valor}
-                  type="button"
-                  className={`solicitud-tipo-card${tipoSeleccionado === op.valor ? " solicitud-tipo-card--activa" : ""}`}
-                  aria-pressed={tipoSeleccionado === op.valor}
-                  onClick={() => elegirTipo(op.valor)}
-                >
-                  <span className="solicitud-tipo-ico"><Icon name={op.icono} size={20} /></span>
-                  <span className="solicitud-tipo-txt">
-                    <strong>{op.titulo}</strong>
-                    <span>{op.sub}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
+        {/* Tipo como tarjetas grandes, en vez de un desplegable: se ve de un vistazo qué estás
+            pidiendo, y cada opción explica qué es. Las tres viven aquí — antes "Cambiar festivo"
+            era un módulo de menú aparte ("Calendario") y la gente no sabía que ahí era donde
+            se pedía, separado de vacaciones y permisos sin ningún motivo real. */}
+        <div className="mc-form-group">
+          <label className="mc-form-label">Tipo de solicitud</label>
+          <div className="solicitud-tipo-grid">
+            {[
+              { valor: "Vacaciones", icono: "vacation", titulo: "Vacaciones", sub: "Días de descanso" },
+              { valor: "Permisos", icono: "clipboardCheck", titulo: "Permiso", sub: "Ausencia puntual o salida" },
+              { valor: "Festivo", icono: "calendarDays", titulo: "Cambiar festivo", sub: "Trabaja un festivo, pide otro día" },
+            ].map((op) => (
+              <button
+                key={op.valor}
+                type="button"
+                className={`solicitud-tipo-card${tipoSeleccionado === op.valor ? " solicitud-tipo-card--activa" : ""}`}
+                aria-pressed={tipoSeleccionado === op.valor}
+                onClick={() => elegirTipo(op.valor)}
+              >
+                <span className="solicitud-tipo-ico"><Icon name={op.icono} size={20} /></span>
+                <span className="solicitud-tipo-txt">
+                  <strong>{op.titulo}</strong>
+                  <span>{op.sub}</span>
+                </span>
+              </button>
+            ))}
           </div>
+        </div>
 
+        {!esFestivo && (
+        <form className="mc-form-grid" onSubmit={handleSubmit}>
           {/* Qué días le quedan, antes de que elija fechas. Sin esto, la única forma de saber
               que no tenía derecho era enviar la solicitud y esperar a que RH la rechazara. */}
           {saldo && pideVacaciones && (
@@ -398,8 +408,18 @@ export default function PermisosEmpleado({
             <Icon name="check" size={16} /> {autoAprobar ? "Agendar" : "Enviar solicitud"}
           </button>
         </form>
+        )}
       </Card>
 
+      {esFestivo ? (
+        <IntercambioFestivoPanel
+          user={user}
+          festivos={festivos}
+          intercambios={intercambios}
+          destinosOcupados={destinosOcupados}
+          onSolicitar={onSolicitarIntercambio}
+        />
+      ) : (
       <Card>
         <SectionTitle icon="clipboard">Mis solicitudes</SectionTitle>
 
@@ -434,6 +454,7 @@ export default function PermisosEmpleado({
           </div>
         )}
       </Card>
+      )}
     </div>
   );
 }

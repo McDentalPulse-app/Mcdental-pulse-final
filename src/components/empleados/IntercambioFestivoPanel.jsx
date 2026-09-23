@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
-import PageHeader from "../common/PageHeader";
 import Icon from "../ui/Icon";
 import CalendarioMensual from "../common/CalendarioMensual";
 import WeekSelect from "../common/WeekSelect";
@@ -19,9 +18,15 @@ const legibleCorto = (f) =>
 const ESTADO_LABEL = { pendiente: "Pendiente", aprobado: "Aprobado", rechazado: "Rechazado" };
 const colorEstado = { pendiente: "azul", aprobado: "verde", rechazado: "rojo" };
 
-// Calendario de festivos + intercambio de día, compartido por empleado y doctor. El usuario ve
-// los días no laborables y puede apartar uno para cambiarlo por otro día que quiera; RH aprueba.
-const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados, onSolicitar }) => {
+/**
+ * El intercambio de festivo, empotrado dentro de "Vacaciones y permisos" (PermisosEmpleado.jsx)
+ * como una tercera opción de "Nueva solicitud" — antes vivía en su propio módulo del menú
+ * ("Calendario"), separado de donde se piden vacaciones y permisos, y la gente no sabía que
+ * ahí era donde se cambiaba un festivo. Mismo componente y misma lógica que tenía
+ * CalendarioIntercambio.jsx, solo que sin su propio PageHeader: el título de la pantalla ya lo
+ * pone quien lo embebe.
+ */
+const IntercambioFestivoPanel = ({ user, festivos, intercambios, destinosOcupados, onSolicitar }) => {
   const mios = useMemo(
     () => intercambios.filter((i) => i.empleadoId === user.id),
     [intercambios, user.id],
@@ -139,13 +144,7 @@ const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados,
   const aprobados = mios.filter((i) => i.estado === "aprobado").length;
 
   return (
-    <div className="admin-page empleado-page">
-      <PageHeader
-        icon="calendar"
-        title="Calendario"
-        subtitle="Días festivos y no laborables. Puedes apartar un festivo para cambiarlo por otro día; RH lo aprueba."
-      />
-
+    <>
       <div className="admin-stat-grid">
         <StatCard iconName="calendar" value={festivos.length} label="Días no laborables" valueClass="admin-stat-value--red" />
         <StatCard iconName="clock" value={pendientes} label="Mis solicitudes pendientes" valueClass="admin-stat-value--amber" />
@@ -220,7 +219,7 @@ const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados,
       </Card>
 
       <Card>
-        <SectionTitle icon="clipboardCheck">Mis solicitudes</SectionTitle>
+        <SectionTitle icon="clipboardCheck">Mis intercambios de festivo</SectionTitle>
         {mios.length === 0 ? (
           <p className="rh-data-row-muted">Aún no has solicitado ningún intercambio.</p>
         ) : (
@@ -246,8 +245,8 @@ const CalendarioIntercambio = ({ user, festivos, intercambios, destinosOcupados,
           </div>
         )}
       </Card>
-    </div>
+    </>
   );
 };
 
-export default CalendarioIntercambio;
+export default IntercambioFestivoPanel;

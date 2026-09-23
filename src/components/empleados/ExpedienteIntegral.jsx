@@ -15,6 +15,7 @@ import { normalizeSucursal, formatSemanaDisplay } from "../../utils/constants";
 import { calcPulseScore, getPulseStatus, tieneScoreValido } from "../../utils/pulseScore";
 import { filtrarEmpleadosExpediente, estatusEmpleado } from "../../utils/expediente";
 import { getSignedUrlArchivoExpediente } from "../../services/supabase/archivosExpedienteService";
+import GenerarContratoModal from "../rh/GenerarContratoModal";
 import { subirAvatarUsuario, quitarAvatarUsuario } from "../../services/supabase/avatarService";
 import { notify } from "../../utils/notify";
 import { getEncuestasEmpleado, getEncuestaSemaforo } from "../../utils/encuestaDetail";
@@ -90,6 +91,7 @@ const ExpedienteIntegral = ({
   const [tipoArchivoExpediente, setTipoArchivoExpediente] = useState("General");
   const [subiendoArchivo, setSubiendoArchivo] = useState(false);
   const [encuestaDetalle, setEncuestaDetalle] = useState(null);
+  const [mostrarGenerarContrato, setMostrarGenerarContrato] = useState(false);
 
   const empleadosFiltrados = filtrarEmpleadosExpediente(empleados, {
     sucursal: filtroSucursalExp,
@@ -108,6 +110,7 @@ const ExpedienteIntegral = ({
     // derivable del render actual, es "olvidar" lo que había quedado abierto al cambiar de foco.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setEncuestaDetalle(null);
+    setMostrarGenerarContrato(false);
   }, [empleado?.id]);
 
   if (!empleado) {
@@ -363,6 +366,8 @@ const ExpedienteIntegral = ({
                         <option value="General">General</option>
                         <option value="Contrato">Contrato</option>
                         <option value="INE">INE</option>
+                        <option value="CURP">CURP</option>
+                        <option value="RFC">RFC</option>
                         <option value="Comprobante">Comprobante</option>
                         <option value="PDF">PDF</option>
                       </Select>
@@ -424,13 +429,22 @@ const ExpedienteIntegral = ({
                     </div>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    className="mc-btn-outline mc-btn-with-icon expediente-subir-btn"
-                    onClick={() => setMostrarSubirArchivo(true)}
-                  >
-                    <Icon name="plus" size={16} /> Subir archivo
-                  </button>
+                  <div className="expediente-archivos-acciones">
+                    <button
+                      type="button"
+                      className="mc-btn-outline mc-btn-with-icon expediente-subir-btn"
+                      onClick={() => setMostrarSubirArchivo(true)}
+                    >
+                      <Icon name="plus" size={16} /> Subir archivo
+                    </button>
+                    <button
+                      type="button"
+                      className="mc-btn-outline mc-btn-with-icon expediente-subir-btn"
+                      onClick={() => setMostrarGenerarContrato(true)}
+                    >
+                      <Icon name="file" size={16} /> Generar contrato
+                    </button>
+                  </div>
                 )
               }
             >
@@ -606,6 +620,15 @@ const ExpedienteIntegral = ({
           empleado={empleado}
           preguntas={encuestaPreguntas}
           onClose={() => setEncuestaDetalle(null)}
+        />
+      )}
+
+      {mostrarGenerarContrato && (
+        <GenerarContratoModal
+          empleado={empleado}
+          archivosEmpleado={archivosEmpleado}
+          onSubirArchivoExpediente={onSubirArchivoExpediente}
+          onCerrar={() => setMostrarGenerarContrato(false)}
         />
       )}
     </div>

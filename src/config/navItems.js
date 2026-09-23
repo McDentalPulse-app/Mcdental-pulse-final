@@ -140,8 +140,11 @@ export const NAV_ITEMS = {
     // puede tener uno, otro, los dos o ninguno (mig. 120).
     { key: "inventario", icon: "package", label: "Inventario de mi clínica", group: "Asistencia", requiere: "puedeGestionarInventario" },
     { key: "bodega", icon: "truck", label: "Pedidos (Bodega)", group: "Asistencia", requiere: "puedeGestionarBodega" },
+    // "Vacaciones" ya incluye pedir permisos y cambiar un festivo (tres pestañas de "Nueva
+    // solicitud" en PermisosEmpleado.jsx): antes "Calendario" era un ítem aparte para lo
+    // mismo, y separar en dos módulos algo que es un solo trámite ("pedir tiempo libre")
+    // hacía que la gente no encontrara dónde cambiar un festivo.
     { key: "permisosempleado", icon: "vacation", label: "Vacaciones", group: "Tiempo libre" },
-    { key: "calendario", icon: "calendar", label: "Calendario", group: "Tiempo libre" },
     { key: "encuesta", icon: "clipboardCheck", label: "Mi Encuesta", group: "Bienestar", requiere: "puedeVerEncuestas" },
     { key: "reconocimientos", icon: "award", label: "Reconocimientos", group: "Bienestar" },
     { key: "reporteconfidencial", icon: "lock", label: "Reporte Confidencial", group: "Bienestar" },
@@ -166,7 +169,6 @@ export const NAV_ITEMS = {
     // El `requiere` lo mantiene oculto para el resto (el permiso se da persona a persona).
     { key: "miclinica", icon: "mapPin", label: "Ubicación de mi clínica", group: "Asistencia", requiere: "puedeUbicarSucursal" },
     { key: "permisosempleado", icon: "vacation", label: "Vacaciones", group: "Tiempo libre" },
-    { key: "calendario", icon: "calendar", label: "Calendario", group: "Tiempo libre" },
     { key: "encuesta", icon: "clipboardCheck", label: "Mi Encuesta", group: "Bienestar", requiere: "puedeVerEncuestas" },
     { key: "reconocimientos", icon: "award", label: "Reconocimientos", group: "Bienestar" },
     { key: "reporteconfidencial", icon: "lock", label: "Reporte Confidencial", group: "Bienestar" },
@@ -251,7 +253,7 @@ const DESCRIPCIONES = {
   vacaciones: "Aprueba o rechaza las solicitudes de vacaciones.",
   permisos: "Aprueba o rechaza los permisos del equipo.",
   mispermisos: "Tus solicitudes y en qué estado están.",
-  permisosempleado: "Pide vacaciones o un permiso y sigue tu solicitud.",
+  permisosempleado: "Pide vacaciones, un permiso o el cambio de un festivo, y sigue tu solicitud.",
   calendario: "Festivos, eventos y quién está fuera cada día.",
   intercambios: "Los días festivos de la empresa y los cambios de día que pide el equipo.",
 

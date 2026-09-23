@@ -18,8 +18,6 @@ import NotasPanel from '../notas/NotasPanel';
 import DepartamentosPanel from '../departamentos/DepartamentosPanel';
 import Organigrama from '../organigrama/Organigrama';
 import ComisionesDoctor from '../comisiones/ComisionesDoctor';
-import CalendarioIntercambio from '../calendario/CalendarioIntercambio';
-
 
 import AvisoUbicacion from '../asistencia/AvisoUbicacion';
 import { useAvisoUbicacion } from '../../hooks/useAvisoUbicacion';
@@ -62,9 +60,11 @@ export default function DoctorLayout({ user, globals, actions }) {
             <Route path="miclinica" element={<MiClinica user={user} />} />
             <Route path="encuesta" element={<EncuestaEmpleado user={user} encuestas={encuestas} onSubmit={addEncuesta}/>} />
             <Route path="historial" element={<HistorialEmpleado user={user} encuestas={encuestas} />} />
-            <Route path="permisosempleado" element={<PermisosEmpleado user={user} vacaciones={vacaciones} permisos={permisos} horarios={horarios} onEnviarSolicitudEmpleado={addSolicitudEmpleadoRH}/>} />
+            <Route path="permisosempleado" element={<PermisosEmpleado user={user} vacaciones={vacaciones} permisos={permisos} horarios={horarios} festivos={festivos} intercambios={intercambios} destinosOcupados={destinosOcupados} onEnviarSolicitudEmpleado={addSolicitudEmpleadoRH} onSolicitarIntercambio={solicitarIntercambio}/>} />
             <Route path="comisiones" element={<ComisionesDoctor user={user} comisiones={comisiones} onCrear={crearComision} />} />
-            <Route path="calendario" element={<CalendarioIntercambio user={user} festivos={festivos} intercambios={intercambios} destinosOcupados={destinosOcupados} onSolicitar={solicitarIntercambio} />} />
+            {/* "Cambiar festivo" ahora vive DENTRO de permisosempleado, junto a Vacaciones y
+                Permisos — ver el comentario en EmpleadoLayout.jsx. */}
+            <Route path="calendario" element={<Navigate to="/doctor/permisosempleado" replace />} />
             <Route path="reconocimientos" element={<ReconocimientosEmpleado user={user} reconocimientos={reconocimientos} />} />
             <Route path="reporteconfidencial" element={<ReporteConfidencialEmpleado user={user} onSubmit={addReporteConfidencial} />} />
             <Route path="soporte" element={<SoporteTI user={user} />} />
