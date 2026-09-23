@@ -93,7 +93,7 @@ for (const clase of ["mc-select-menu", "mc-daterange-pop"]) {
   );
 }
 
-// Los dos botones FLOTANTES del teléfono (Mensajes y Reuniones) no pueden acabar apagados.
+// Mensajes y Reuniones en el teléfono no pueden acabar apagados.
 //
 // El 17 de agosto de 2026 nadie veía Reuniones en el móvil, y el botón se pintaba perfectamente:
 // el `display:none` que lo esconde en escritorio estaba escrito AL FINAL del CSS, por debajo del
@@ -102,22 +102,22 @@ for (const clase of ["mc-select-menu", "mc-daterange-pop"]) {
 // aparece en la barra de abajo ni en la hoja "Más" — solo existe este botón —, así que apagarlo
 // dejaba el módulo entero inalcanzable, y ninguna prueba de lógica podía notarlo.
 //
-// Se mide sobre el CSS YA COMPILADO y por POSICIÓN, que es lo único que decide aquí: si el
-// último `display:none` de una de esas clases viene DESPUÉS del que la enciende, está apagada.
-for (const clase of ["mensajes-flotante", "reuniones-flotante"]) {
-  // Se buscan reglas por su LISTA de selectores, no por `.clase{`: el compilador funde las dos
-  // clases en una sola regla (`.mensajes-flotante,.reuniones-flotante{display:none}`), y un
-  // patrón que exigiera la llave pegada no encontraría el apagado — daría verde justo en el
-  // caso que esto vigila. El `(?![\w-])` evita picar en `.reuniones-flotante-punto`.
+// Hasta el 2026-09-21 cada botón vivía suelto (`.mensajes-flotante`/`.reuniones-flotante`,
+// position:fixed cada uno). Ahora comparten `.mobile-topbar` (Navegacion.jsx), un solo
+// contenedor fijo que los agrupa con la campana — mismo riesgo, un solo sitio que vigilar en
+// vez de dos. Se mide sobre el CSS YA COMPILADO y por POSICIÓN, que es lo único que decide
+// aquí: si el último `display:none` de la clase viene DESPUÉS del que la enciende, está apagada.
+{
+  const clase = "mobile-topbar";
   const conLaClase = new RegExp(`\\.${clase}(?![\\w-])`);
   const reglas = [...css.matchAll(/([^{}]*)\{([^{}]*)\}/g)].filter((m) => conLaClase.test(m[1]));
   const enciende = reglas.filter((m) => /display:\s*(inline-)?flex/.test(m[2])).at(-1);
   const apaga = reglas.filter((m) => /display:\s*none/.test(m[2])).at(-1);
   const bien = Boolean(enciende) && (!apaga || apaga.index < enciende.index);
   comprobar(
-    `.${clase} sigue encendido en el teléfono`,
+    `.${clase} (Mensajes/Reuniones/campana) sigue encendida en el teléfono`,
     bien,
-    !enciende ? "no hay ninguna regla que lo encienda" : (bien ? "" : "un display:none posterior lo apaga")
+    !enciende ? "no hay ninguna regla que la encienda" : (bien ? "" : "un display:none posterior la apaga")
   );
 }
 
