@@ -18,8 +18,10 @@ import CampanaNotificaciones from "../notificaciones/CampanaNotificaciones";
 // dedicada solo a los enlaces, con todo el ancho de la pantalla para sí sola — así "Más" casi
 // nunca hace falta, en vez de competir por espacio con el logo y el buscador en una sola fila.
 // Los ítems sueltos son enlaces directos; los agrupados van en menús desplegables por grupo. El
-// perfil y cerrar sesión, en el menú del usuario (derecha). En móvil, un botón hamburguesa abre
-// el panel con todo agrupado.
+// perfil y cerrar sesión, en el menú del usuario (derecha). La fila de enlaces nunca desaparece
+// del todo por falta de ancho: lo que no cabe se junta solo en "Más" (ver el ResizeObserver de
+// abajo) — por debajo de 1024px deja de existir este header (Navegacion.jsx monta la navegación
+// de teléfono/tablet en su lugar), así que no hace falta una hamburguesa intermedia.
 export default function HeaderNav() {
   const { user, logout } = useAuth();
   const { modulosRol } = useGlobal();
@@ -29,7 +31,6 @@ export default function HeaderNav() {
   const active = location.pathname.split("/").pop() || "";
 
   const [abierto, setAbierto] = useState(null); // nombre de grupo | 'usuario' | 'mas' | null
-  const [movilOpen, setMovilOpen] = useState(false);
   const navRef = useRef(null);
 
   const items = navItemsPara(user, modulosRol);
@@ -42,15 +43,12 @@ export default function HeaderNav() {
   // Mensajes y Reuniones se sacan de la barra y del panel móvil: los representan SOLO sus botones
   // permanentes de la derecha (junto a la campana). Pintarlos también como enlace daría dos
   // entradas para lo mismo en escritorio, y el icono con su indicador se reconoce mejor que un
-  // enlace de texto — además de ser lo único que sigue visible por debajo de 1100 px, donde la
-  // barra se oculta. La lista de cuáles vive en navItems.js, junto a los ítems.
+  // enlace de texto. La lista de cuáles vive en navItems.js, junto a los ítems.
   const sueltos = items.filter((i) => !i.group && !tieneBotonPropio(i));
   const gruposBarra = agruparPorCampo(items.filter((i) => i.group && i.group !== "Cuenta"));
-  const cuenta = items.filter((i) => i.group === "Cuenta");
   // El menu del usuario tambien ofrece soporte: el rotulo sale del item, no fijo, porque
   // segun el rol es "Soporte TI" (empleado/doctor) o "Ideas de mejora" (gestion).
   const soporte = items.find((i) => i.key === "soporte");
-  const gruposMovil = agruparPorCampo(items.filter((i) => i.group !== "Cuenta" && !tieneBotonPropio(i)));
 
   // Todo lo que va en la barra horizontal, en el orden en que se pinta: sueltos primero,
   // luego los grupos. Lo que no entra en una línea se junta al final en "Más" — reemplaza
@@ -111,10 +109,10 @@ export default function HeaderNav() {
   // Volver arriba al cambiar de pantalla.
   useEffect(() => { document.querySelector(".app-main")?.scrollTo({ top: 0 }); }, [location.pathname]);
 
-  const ir = (key) => { setAbierto(null); setMovilOpen(false); navigate(`/${rutaBaseDe(user.role)}/${key}`); };
+  const ir = (key) => { setAbierto(null); navigate(`/${rutaBaseDe(user.role)}/${key}`); };
 
   const cerrarSesion = async () => {
-    setAbierto(null); setMovilOpen(false);
+    setAbierto(null);
     const ok = await notify.confirm({
       title: "Cerrar sesión", description: "¿Seguro que quieres cerrar tu sesión?",
       variant: "danger", confirmText: "Cerrar sesión",
@@ -243,10 +241,6 @@ export default function HeaderNav() {
               </div>
             )}
           </div>
-
-          <button type="button" className="topnav-hamburguesa" onClick={() => setMovilOpen((v) => !v)} aria-label="Menú" aria-expanded={movilOpen}>
-            <span /><span /><span />
-          </button>
         </div>
       </div>
 
@@ -314,42 +308,6 @@ export default function HeaderNav() {
           ))}
         </div>
       </div>
-
-      {movilOpen && (
-        <div className="topnav-movil-overlay" onClick={() => setMovilOpen(false)}>
-          <nav className="topnav-movil" onClick={(e) => e.stopPropagation()}>
-            {gruposMovil.map((g, gi) => (
-              <div className="topnav-movil-grupo" key={g.nombre || `sin-${gi}`}>
-                {g.nombre && <div className="topnav-movil-titulo">{g.nombre}</div>}
-                {g.items.map((item) => (
-                  <button
-                    key={item.key}
-                    type="button"
-                    className={`topnav-movil-item${active === item.key ? " topnav-movil-item--activo" : ""}`}
-                    onClick={() => ir(item.key)}
-                  >
-                    <Icon name={item.icon} size={18} /> {item.label}
-                  </button>
-                ))}
-              </div>
-            ))}
-            <div className="topnav-movil-grupo">
-              {cuenta.map((item) => (
-                <button key={item.key} type="button" className="topnav-movil-item" onClick={() => ir(item.key)}>
-                  <Icon name={item.icon} size={18} /> {item.label}
-                </button>
-              ))}
-              <button type="button" className="topnav-movil-item cuenta-switch-row" onClick={toggleTheme}>
-                <span className="cuenta-switch-label"><Icon name="moon" size={18} /> Modo oscuro</span>
-                <span className={`cuenta-switch${theme === "dark" ? " cuenta-switch--on" : ""}`} aria-hidden="true"><span /></span>
-              </button>
-              <button type="button" className="topnav-movil-item topnav-movil-item--danger" onClick={cerrarSesion}>
-                <Icon name="logout" size={18} /> Cerrar sesión
-              </button>
-            </div>
-          </nav>
-        </div>
-      )}
     </header>
   );
 }

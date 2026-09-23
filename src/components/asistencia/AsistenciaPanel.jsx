@@ -38,6 +38,7 @@ const LEYENDA = [
   { estado: "justificado", label: "Justificado" },
   { estado: "incompleto", label: "Sin salida" },
   { estado: "descanso", label: "Descanso" },
+  { estado: "festivo", label: "Festivo" },
   { estado: "pendiente", label: "En curso" },
   { estado: "prueba", label: "Periodo de prueba" },
 ];
@@ -169,7 +170,7 @@ const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustifi
 
 export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos = [], vacaciones = [], puedeAnular = false, puedeJustificar = false, puedeMarcarRetardo = false, onJustificarFalta }) {
   const { toast, prompt, confirm } = useNotification();
-  const { nombresSucursales, sucursales = [] } = useGlobal();
+  const { nombresSucursales, sucursales = [], festivos = [], intercambios = [] } = useGlobal();
 
   const [desde, setDesde] = useState(() => primerDiaDeMes(hoyClinica()));
   const [hasta, setHasta] = useState(() => {
@@ -259,12 +260,14 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
         horarios: horarios.filter((h) => h.empleadoId === u.id),
         permisos: permisos.filter((p) => p.empleadoId === u.id),
         vacaciones: vacaciones.filter((v) => v.empleadoId === u.id),
+        festivos,
+        intercambios: intercambios.filter((i) => i.empleadoId === u.id),
         fechaIngreso: u.fechaIngreso,
         tz: zonaDe(zonas, u.sucursal),
       });
       return { empleado: u, dias, resumen: resumen(dias), grupos: agruparPor(dias, "dia") };
     }),
-    [empleados, checadas, horarios, permisos, vacaciones, desde, hasta, zonas]
+    [empleados, checadas, horarios, permisos, vacaciones, festivos, intercambios, desde, hasta, zonas]
   );
 
   // El empleado que se está viendo: el elegido, o el primero de la lista por defecto.

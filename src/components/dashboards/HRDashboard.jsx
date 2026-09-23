@@ -38,7 +38,7 @@ const HRDashboard = () => {
   const {
     usuarios = [], sucursales = [], encuestas = [],
     vacaciones = [], permisos = [], descuentos = [], horarios = [], nombresSucursales = [],
-    intercambios = [], checadasHoy = [],
+    intercambios = [], checadasHoy = [], festivos = [],
   } = useGlobal();
 
   // El mismo calculo que usan admin y psicologa: semana, semaforo, sucursales en riesgo y
@@ -106,6 +106,8 @@ const HRDashboard = () => {
         horarios: horarios.filter((h) => h.empleadoId === u.id),
         permisos: permisos.filter((p) => p.empleadoId === u.id),
         vacaciones: vacaciones.filter((v) => v.empleadoId === u.id),
+        festivos,
+        intercambios: intercambios.filter((i) => i.empleadoId === u.id),
         fechaIngreso: u.fechaIngreso,
         tz: zonaDe(zonas, u.sucursal),
       });
@@ -115,7 +117,7 @@ const HRDashboard = () => {
       incompletos += r.incompletos;
     }
     return { retardos, faltas, incompletos };
-  }, [rango, empleados, checadas, horarios, permisos, vacaciones, zonas]);
+  }, [rango, empleados, checadas, horarios, permisos, vacaciones, festivos, intercambios, zonas]);
 
   // ── Solicitudes que esperan a RH ──────────────────────────────────────────
   const vacacionesPend = useMemo(() => vacaciones.filter((v) => v.estado === "pendiente"), [vacaciones]);
@@ -229,6 +231,7 @@ const HRDashboard = () => {
           empleados={empleados}
           permisos={permisos}
           vacaciones={vacaciones}
+          festivos={festivos}
           intercambios={intercambios}
           horarios={horarios}
           checadasHoy={checadasHoy}

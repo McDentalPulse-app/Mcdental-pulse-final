@@ -57,7 +57,7 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
   const [periodoElegido, setPeriodoElegido] = useState(null);
   const [tipoReporte, setTipoReporte] = useState("asistencia");
   const [bajando, setBajando] = useState(false);
-  const { horarios = [], permisos = [], vacaciones = [], descuentos = [], sucursales = [] } = useGlobal();
+  const { horarios = [], permisos = [], vacaciones = [], descuentos = [], sucursales = [], festivos = [], intercambios = [] } = useGlobal();
 
   // Cada clinica tiene su zona horaria (mig. 107): un reporte que mezcla Hermosillo, Reynosa y
   // el centro tiene que leer cada checada en la hora de SU sucursal, o dice horas que nadie
@@ -310,6 +310,8 @@ const Reportes = ({ users = [], encuestas = [], preguntas = [] }) => {
           horarios: horarios.filter((h) => h.empleadoId === u.id),
           permisos: permisos.filter((p) => p.empleadoId === u.id),
           vacaciones: vacaciones.filter((v) => v.empleadoId === u.id),
+          festivos,
+          intercambios: intercambios.filter((i) => i.empleadoId === u.id),
           fechaIngreso: u.fechaIngreso,
           tz: zonaDe(zonas, u.sucursal),
         });

@@ -7,10 +7,10 @@ import Icon from "../ui/Icon";
 /**
  * Acceso permanente a Mensajes, con el contador de no leídos.
  *
- * UN SOLO COMPONENTE para las navegaciones que lo muestran —el header de escritorio, el tab fijo
- * de la barra inferior del teléfono (roles con checador) y el flotante de admin/admin_plus, que
- * no tienen esa barra— porque son sitios distintos que muestran lo MISMO. Tener el contador
- * escrito dos veces es exactamente cómo el móvil se quedó atrás la primera vez.
+ * UN SOLO COMPONENTE para las navegaciones que lo muestran —el header de escritorio, la barra de
+ * arriba del teléfono (Navegacion.jsx) y el tab fijo de la barra inferior (roles con checador)—
+ * porque son sitios distintos que muestran lo MISMO. Tener el contador escrito dos veces es
+ * exactamente cómo el móvil se quedó atrás la primera vez.
  *
  * `variante` solo cambia dónde se coloca y el tamaño; el contenido y la cuenta son idénticos.
  */
@@ -49,7 +49,6 @@ export default function BotonMensajes({ variante = "header", activo = false }) {
 
   const noLeidos = (mensajes || []).filter(meToca).length;
 
-  const esFlotante = variante === "flotante";
   const esTab = variante === "tab";
 
   if (esTab) {
@@ -77,20 +76,14 @@ export default function BotonMensajes({ variante = "header", activo = false }) {
   return (
     <button
       type="button"
-      className={
-        esFlotante
-          ? "mensajes-flotante"
-          : `topnav-mensajes${activo ? " topnav-mensajes--activo" : ""}`
-      }
+      className={`topnav-mensajes${activo ? " topnav-mensajes--activo" : ""}`}
       onClick={() => navigate(`/${rutaBaseDe(user.role)}/mensajes`)}
       title="Mensajes"
       aria-label={noLeidos ? `Mensajes, ${noLeidos} sin leer` : "Mensajes"}
     >
-      <Icon name="message" size={esFlotante ? 20 : 19} />
+      <Icon name="message" size={19} />
       {noLeidos > 0 && (
-        <span className={esFlotante ? "mensajes-flotante-badge" : "topnav-mensajes-badge"}>
-          {noLeidos > 9 ? "9+" : noLeidos}
-        </span>
+        <span className="topnav-mensajes-badge">{noLeidos > 9 ? "9+" : noLeidos}</span>
       )}
     </button>
   );

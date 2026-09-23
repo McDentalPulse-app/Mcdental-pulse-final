@@ -25,6 +25,9 @@ import { ESTADOS_DIA } from "./asistencia";
  * Lo que NO descuenta, y por qué:
  *  · JUSTIFICADO — hay un permiso o una vacación aprobados. Justificar es precisamente decir
  *    "este día no cuenta en contra"; cobrarlo igual vaciaría de sentido la aprobación.
+ *  · FESTIVO — el calendario de festivos (o el día destino de un intercambio aprobado) dice
+ *    que ese día no se trabaja. Igual que DESCANSO: no hay nada que perdonar porque nunca
+ *    hubo jornada que cumplir (ver `esFestivoEfectivo` en utils/asistencia.js).
  *  · DESCANSO — ese día no trabaja. No hay nada que descontar (mig. 035: sin fila de horario,
  *    el día es descanso, no falta).
  *  · PENDIENTE — el día en curso todavía no ha terminado; la persona aún puede llegar.

@@ -9,8 +9,8 @@ import Icon from "../ui/Icon";
 /**
  * Acceso permanente a Reuniones, con el indicador de si hay una.
  *
- * Gemelo de BotonMensajes: UN SOLO COMPONENTE para el header de escritorio y el flotante del
- * teléfono, por el mismo motivo que allí — dos sitios que muestran lo MISMO. `variante` solo
+ * Gemelo de BotonMensajes: UN SOLO COMPONENTE para el header de escritorio y la barra de arriba
+ * del teléfono, por el mismo motivo que allí — dos sitios que muestran lo MISMO. `variante` solo
  * cambia dónde se coloca y el tamaño.
  *
  * DOS NIVELES, no uno:
@@ -23,7 +23,7 @@ import Icon from "../ui/Icon";
  * cambiara la ventana el icono pulsaría cuando ya no se puede entrar — o peor, se quedaría
  * apagado con la reunión abierta.
  */
-export default function BotonReuniones({ variante = "header", activo = false, cerca = false }) {
+export default function BotonReuniones({ activo = false }) {
   const { user } = useAuth();
   const { reuniones, modulosRol } = useGlobal();
   const navigate = useNavigate();
@@ -41,12 +41,6 @@ export default function BotonReuniones({ variante = "header", activo = false, ce
   if (!navItemsPara(user, modulosRol).some((i) => i.key === "reuniones")) return null;
 
   const estado = estadoParaElIcono(reuniones, ahora);
-  const esFlotante = variante === "flotante";
-  const base = esFlotante ? "reuniones-flotante" : "topnav-reuniones";
-  // "cerca" es para cuando Mensajes ya no flota junto a ella (roles con checador central, ver
-  // Navegacion.jsx): sin ese vecino, se acerca a la campana en vez de dejar el hueco vacío. Va
-  // como clase aparte (no dentro de `base`) porque `base` también arma el nombre de `-punto`.
-  const modificadorCerca = esFlotante && cerca ? " reuniones-flotante--cerca" : "";
 
   const etiqueta =
     estado === "en_curso" ? "Reuniones, hay una en curso"
@@ -56,15 +50,15 @@ export default function BotonReuniones({ variante = "header", activo = false, ce
   return (
     <button
       type="button"
-      className={`${base}${modificadorCerca}${activo && !esFlotante ? " topnav-reuniones--activo" : ""}`}
+      className={`topnav-reuniones${activo ? " topnav-reuniones--activo" : ""}`}
       onClick={() => navigate(`/${rutaBaseDe(user.role)}/reuniones`)}
       title={etiqueta}
       aria-label={etiqueta}
     >
-      <Icon name="camera" size={esFlotante ? 20 : 19} />
+      <Icon name="camera" size={19} />
       {estado && (
         <span
-          className={`${base}-punto${estado === "en_curso" ? ` ${base}-punto--encurso` : ""}`}
+          className={`topnav-reuniones-punto${estado === "en_curso" ? " topnav-reuniones-punto--encurso" : ""}`}
           // El punto es decorativo: lo que dice se lo lleva el aria-label del botón, así que
           // anunciarlo dos veces solo estorba a quien usa lector de pantalla.
           aria-hidden="true"

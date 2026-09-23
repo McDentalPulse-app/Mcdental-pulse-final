@@ -8,6 +8,7 @@ import {
   minutosTrabajados,
   minutosRetardo,
   clasificarDia,
+  esFestivoEfectivo,
   rangoDeFechas,
   construirDias,
   claveDe,
@@ -198,6 +199,42 @@ describe("minutosRetardo", () => {
   });
 });
 
+describe("esFestivoEfectivo", () => {
+  const festivos = [{ fecha: "2026-12-25", nombre: "Navidad" }];
+
+  it("un festivo del calendario es efectivo si nadie lo cedió", () => {
+    expect(esFestivoEfectivo("2026-12-25", festivos, [])).toBe(true);
+  });
+
+  it("acepta también un arreglo de strings, no solo objetos", () => {
+    expect(esFestivoEfectivo("2026-12-25", ["2026-12-25"], [])).toBe(true);
+  });
+
+  it("un día que no es festivo ni destino de nadie no es efectivo", () => {
+    expect(esFestivoEfectivo("2026-12-24", festivos, [])).toBe(false);
+  });
+
+  it("si la persona CEDIÓ ese festivo con un intercambio aprobado, deja de ser festivo para ella", () => {
+    const intercambios = [{ estado: "aprobado", fechaFestivo: "2026-12-25", fechaDestino: "2026-12-28" }];
+    expect(esFestivoEfectivo("2026-12-25", festivos, intercambios)).toBe(false);
+  });
+
+  it("un intercambio PENDIENTE (sin aprobar) no le quita el festivo a nadie", () => {
+    const intercambios = [{ estado: "pendiente", fechaFestivo: "2026-12-25", fechaDestino: "2026-12-28" }];
+    expect(esFestivoEfectivo("2026-12-25", festivos, intercambios)).toBe(true);
+  });
+
+  it("el día DESTINO de un intercambio aprobado es festivo aunque no esté en el calendario", () => {
+    const intercambios = [{ estado: "aprobado", fechaFestivo: "2026-12-25", fechaDestino: "2026-12-28" }];
+    expect(esFestivoEfectivo("2026-12-28", festivos, intercambios)).toBe(true);
+  });
+
+  it("el destino de un intercambio PENDIENTE no cuenta todavía", () => {
+    const intercambios = [{ estado: "pendiente", fechaFestivo: "2026-12-25", fechaDestino: "2026-12-28" }];
+    expect(esFestivoEfectivo("2026-12-28", festivos, intercambios)).toBe(false);
+  });
+});
+
 describe("clasificarDia", () => {
   it("sin horario ese día => descanso, aunque no haya checado", () => {
     // La ausencia de renglón en `horarios` ES el descanso (migración 035). Sin esta
@@ -301,6 +338,38 @@ describe("clasificarDia", () => {
     const d = clasificarDia({ fecha: "2026-07-13", checadas: [e, s], horario: horarioNormal, permisos });
     expect(d.estado).toBe(ESTADOS_DIA.RETARDO);
   });
+
+  it("un festivo sin checadas es FESTIVO, no falta, aunque tenga horario asignado ese día", () => {
+    const festivos = [{ fecha: "2026-12-25", nombre: "Navidad" }];
+    const d = clasificarDia({ fecha: "2026-12-25", checadas: [], horario: horarioNormal, festivos, hoy: "2026-12-26" });
+    expect(d.estado).toBe(ESTADOS_DIA.FESTIVO);
+  });
+
+  it("si CEDIÓ el festivo con un intercambio aprobado, ese día vuelve a evaluarse normal (falta si no checa)", () => {
+    const festivos = [{ fecha: "2026-12-25", nombre: "Navidad" }];
+    const intercambios = [{ estado: "aprobado", fechaFestivo: "2026-12-25", fechaDestino: "2026-12-28" }];
+    const d = clasificarDia({
+      fecha: "2026-12-25", checadas: [], horario: horarioNormal, festivos, intercambios, hoy: "2026-12-26",
+    });
+    expect(d.estado).toBe(ESTADOS_DIA.FALTA);
+  });
+
+  it("el día DESTINO del intercambio aprobado es FESTIVO para ella, aunque tenga horario normal", () => {
+    const intercambios = [{ estado: "aprobado", fechaFestivo: "2026-12-25", fechaDestino: "2026-12-28" }];
+    const d = clasificarDia({
+      fecha: "2026-12-28", checadas: [], horario: horarioNormal, intercambios, hoy: "2026-12-29",
+    });
+    expect(d.estado).toBe(ESTADOS_DIA.FESTIVO);
+  });
+
+  it("si vino a trabajar el festivo A TIEMPO, cuenta presente igual que cualquier otro día", () => {
+    // Mismo principio que con permiso/vacación: el festivo perdona no venir, no borra que vino.
+    const festivos = [{ fecha: "2026-12-25", nombre: "Navidad" }];
+    const e = checada("entrada", "2026-12-25T15:00:00Z");
+    const s = checada("salida", "2026-12-26T00:00:00Z");
+    const d = clasificarDia({ fecha: "2026-12-25", checadas: [e, s], horario: horarioNormal, festivos });
+    expect(d.estado).toBe(ESTADOS_DIA.PRESENTE);
+  });
 });
 
 describe("rangoDeFechas", () => {
@@ -383,6 +452,32 @@ describe("construirDias", () => {
     const dias = construirDias({ desde: "2026-07-13", hasta: "2026-07-14", checadas: [], horarios });
 
     expect(dias).toHaveLength(0);
+  });
+
+  it("un festivo no cuenta como falta aunque haya horario cargado ese día de la semana", () => {
+    const fecha = "2026-12-25";
+    const horarios = [{ diaSemana: diaISO(fecha), horaEntrada: "09:00:00", horaSalida: "18:00:00", toleranciaMin: 10 }];
+    const festivos = [{ fecha, nombre: "Navidad" }];
+    const dias = construirDias({ desde: fecha, hasta: fecha, checadas: [], horarios, festivos, hoy: "2026-12-26" });
+
+    expect(dias).toHaveLength(1);
+    expect(dias[0].estado).toBe(ESTADOS_DIA.FESTIVO);
+  });
+
+  it("un intercambio aprobado pasado por construirDias mueve el festivo a su día destino", () => {
+    const horarios = [
+      { diaSemana: diaISO("2026-12-25"), horaEntrada: "09:00:00", horaSalida: "18:00:00", toleranciaMin: 10 },
+      { diaSemana: diaISO("2026-12-28"), horaEntrada: "09:00:00", horaSalida: "18:00:00", toleranciaMin: 10 },
+    ];
+    const festivos = [{ fecha: "2026-12-25", nombre: "Navidad" }];
+    const intercambios = [{ estado: "aprobado", fechaFestivo: "2026-12-25", fechaDestino: "2026-12-28" }];
+    const dias = construirDias({
+      desde: "2026-12-25", hasta: "2026-12-28", checadas: [], horarios, festivos, intercambios, hoy: "2026-12-29",
+    });
+    const porFecha = new Map(dias.map((d) => [d.fecha, d]));
+
+    expect(porFecha.get("2026-12-25").estado).toBe(ESTADOS_DIA.FALTA); // cedió el festivo: tenía que venir
+    expect(porFecha.get("2026-12-28").estado).toBe(ESTADOS_DIA.FESTIVO); // y aquí cobra su descanso
   });
 });
 

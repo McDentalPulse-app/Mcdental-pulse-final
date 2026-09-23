@@ -19,7 +19,7 @@ a,
   touch-action: manipulation;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   html {
     /* iOS Safari: no inflar tipografías al rotar */
     -webkit-text-size-adjust: 100%;
@@ -27,9 +27,16 @@ a,
 
   /* Área segura superior: con viewport-fit=cover (PWA/notch) el contenido va
      edge-to-edge y el header de cada página quedaba bajo la barra de estado.
-     En navegador sin notch, inset-top=0 → sin cambio. */
+     En navegador sin notch, inset-top=0 → sin cambio.
+
+     Los 62px son, además, la franja que ocupan los botones flotantes (mensajes,
+     reuniones y campana: 12px desde arriba + 42px de alto + aire). Son
+     position:fixed y en móvil no hay barra superior que los contenga, así que
+     estaban quedando ENCIMA del contenido: en /empleado/inicio tapaban el título
+     del primer aviso y en los dashboards, el encabezado de la página. Reservando
+     su franja, ninguna página vuelve a nacer debajo de ellos. */
   .app-main {
-    padding-top: calc(14px + env(safe-area-inset-top));
+    padding-top: calc(62px + env(safe-area-inset-top));
   }
 
   body {
@@ -111,7 +118,7 @@ a,
    (detectados en auditoría móvil): selector de semana, pestañas del AI Engine,
    botón generar, filtros de listas/búsqueda y el composer de mensajes. En claro
    y oscuro. No cambia el ancho ni el diseño, solo asegura el alto cómodo. */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .week-select-trigger,
   .ai-engine-tab,
   .ai-gen-btn,
@@ -124,13 +131,39 @@ a,
   }
 }
 
+/* El zoom de iOS NO lo dispara la clase, lo dispara la tipografía: Safari hace zoom
+   al enfocar CUALQUIER campo con fuente < 16px y deja la pantalla descuadrada (hay
+   que volver a alejar con los dedos). Arriba, la auditoría anterior les dio alto
+   táctil a estos campos pero no tipografía, así que seguían provocándolo: el
+   buscador de listas, el de Notas, el composer de Mensajes, y los number/time de
+   Nómina y Horarios. Se declara por TIPO de campo y no clase por clase justamente
+   para que el próximo campo que se agregue no se vuelva a colar.
+   Fuera: checkbox, radio y range, que no reciben texto y sí cambiarían de tamaño.
+
+   La segunda condición del @media NO sobra: un iPad Pro en horizontal mide 1194-1366px
+   de ancho, o sea que se sale del breakpoint de 1024px y los campos volvían a 14px —
+   bastaba girar la tablet para que reapareciera el zoom. `(hover:none) and
+   (pointer:coarse)` describe "esto se toca con el dedo" sin depender del ancho, y
+   deja fuera al escritorio (hover + puntero fino), donde se conservan los 14px. */
+@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea,
+  /* `textarea` a secas (0,0,1) pierde contra `.chat-composer-campo` (0,1,0), así que
+     el campo de escribir mensajes se quedaba en 14px y seguía haciendo zoom. Va
+     nombrado para empatar en especificidad. */
+  .chat-composer-campo {
+    font-size: 16px;
+  }
+}
+
 /* Modales en móvil: el tabbar inferior (position:fixed) tapaba los botones de
    acción del modal (Guardar/Cancelar) — el overlay queda atrapado en el
    stacking-context de .app-main, por debajo del tabbar. Con un modal abierto se
    oculta el tabbar (patrón estándar: el modal toma el foco). Cubre TODOS los
    modales de una vez vía la clase compartida .mc-modal-overlay; reaparece al
    cerrar. Además, el modal y sus botones respetan el área segura inferior. */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   /* La clase la pone App.jsx con un MutationObserver, no `:has()`. Ese selector no existe
      antes de iOS 15.4 ni Chrome Android 105, y al descartarse la regla entera la barra flotante
      seguía tapando los botones de Guardar/Cancelar en esos teléfonos, en silencio. */

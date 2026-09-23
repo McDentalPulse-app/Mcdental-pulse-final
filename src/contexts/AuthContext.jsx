@@ -66,6 +66,14 @@ const mapUsuarioRow = (row) =>
     avatarUrl: row.avatar_url,
     bannerUrl: row.banner_url,
     colorAcento: row.color_acento,
+    // Sueldo semanal y tasa de retardo personal (migs. 156/168): la RLS de `usuarios` ya deja
+    // que cada quien lea su PROPIA fila completa (`usuarios_select_own`) — "cada persona ve el
+    // suyo y el de nadie más", por diseño (ver el encabezado de la migración 156). Faltaban en
+    // este mapeador, así que la pantalla de Inicio del empleado no podía enseñar su propio
+    // estimado semanal aunque el dato ya viajaba en `row`. Mismo criterio que banco/clabe/tarjeta
+    // abajo: es la fila propia, no hay nada ajeno que proteger.
+    sueldoSemanal: row.sueldo_semanal == null ? null : Number(row.sueldo_semanal),
+    montoRetardoPersonal: row.monto_retardo_personal == null ? null : Number(row.monto_retardo_personal),
     // Datos bancarios del depósito de nómina (mig. 163), que cada quien captura en Mi perfil.
     // Esta fila es SIEMPRE la propia, así que aquí no hay nada ajeno que proteger.
     banco: row.banco ?? null,

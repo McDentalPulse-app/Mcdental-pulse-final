@@ -192,7 +192,7 @@ function FilaNomina({
  * lógica estuviera en dos sitios, la nómina y el calendario acabarían diciendo cosas distintas.
  */
 export default function Nomina({ usuarios = [], horarios = [], permisos = [], vacaciones = [] }) {
-  const { sucursales = [], refreshUsuarios } = useGlobal();
+  const { sucursales = [], refreshUsuarios, festivos = [], intercambios = [] } = useGlobal();
   const { user } = useAuth();
   const { toast, confirm } = useNotification();
 
@@ -304,6 +304,8 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
         horarios: horarios.filter((h) => h.empleadoId === u.id),
         permisos: permisos.filter((p) => p.empleadoId === u.id),
         vacaciones: vacaciones.filter((v) => v.empleadoId === u.id),
+        festivos,
+        intercambios: intercambios.filter((i) => i.empleadoId === u.id),
         fechaIngreso: u.fechaIngreso,
         tz: zonaDe(zonas, u.sucursal),
       });
@@ -320,7 +322,7 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
       const porDia = new Map(recibo.detalle.map((d) => [diaISO(d.fecha), d]));
       return { empleado: u, recibo, porDia };
     });
-  }, [visibles, checadas, horarios, permisos, vacaciones, desde, hasta, zonas, config]);
+  }, [visibles, checadas, horarios, permisos, vacaciones, festivos, intercambios, desde, hasta, zonas, config]);
 
   // Solo para la hoja de sucursal (vista previa + impresión): el resto de la pantalla
   // (tabla principal, "Imprimir acuerdos", tarjetas de total) sigue usando `recibos` completo

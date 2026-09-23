@@ -54,7 +54,7 @@ export default function DoctorLayout({ user, globals, actions }) {
             <AvisoUbicacion estado={estadoUbicacion} onActivar={activarUbicacion} onCerrar={cerrarAviso} />
           )}
           <Routes>
-            <Route path="inicio" element={<InicioEmpleado user={user} encuestas={encuestas} mensajes={userMensajes} setActive={(view) => navigate(`/doctor/${view}`)} />} />
+            <Route path="inicio" element={<InicioEmpleado user={user} encuestas={encuestas} mensajes={userMensajes} horarios={horarios} permisos={permisos} vacaciones={vacaciones} checadasHoy={checadasHoy} setActive={(view) => navigate(`/doctor/${view}`)} />} />
             <Route path="checador" element={<ChecadorEmpleado user={user} checadasHoy={checadasHoy} horarios={horarios} permisos={permisos} encuestas={encuestas} onChecar={registrarChecada} />} />
             <Route path="rostro" element={<MiRostro user={user} />} />
             {/* Igual que en empleado: la ruta se monta para todos, pero el menú solo la

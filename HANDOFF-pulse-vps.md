@@ -1,12 +1,57 @@
 # HANDOFF — McDental Pulse en VPS propia
 
-> Para la próxima sesión de Claude. Última actualización: **2026-09-21**.
+> Para la próxima sesión de Claude. Última actualización: **2026-09-23**.
 > Este archivo vive en dos lados y hay que mantenerlos iguales: `/opt/pulse/HANDOFF.md`
 > (en la VPS) y `HANDOFF-pulse-vps.md` (en el repo del usuario). ⚠️ Pese a lo que decía esta
 > misma línea antes: **sí está versionado** (confirmado con `git log`, commit `0e3b7f9` en
 > adelante) — corregido el 2026-09-02, no repetir que no lo está.
 
-> ## 🔴 LEER PRIMERO — cambios del 2026-09-21 (dejado por la sesión que lleva la app nativa)
+> ## 🔴 LEER PRIMERO — cambios del 2026-09-23
+>
+> 1. **Festivos e intercambios ya se descuentan bien.** `clasificarDia()`/`construirDias()`
+>    (`utils/asistencia.js`) solo sabían de permisos y vacaciones aprobados: un festivo real del
+>    calendario, o el día que alguien ganó a cambio de trabajar uno (`intercambios_dia`), se
+>    marcaban como `FALTA` y se descontaban en Nómina como cualquier ausencia sin justificar.
+>    Nuevo estado `FESTIVO` (`esFestivoEfectivo()`): un festivo cuenta para todos salvo que la
+>    propia persona lo haya cedido con un intercambio aprobado (`fecha_festivo` = ese día, vuelve
+>    a ser laboral solo para ella), y el `fecha_destino` de un intercambio aprobado cuenta como
+>    festivo igual. Conectado en los 5 sitios que calculan asistencia/nómina: Nómina, Reportes,
+>    el calendario de Asistencia, "Tu semana" del empleado y los dashboards de RH/Admin/Psicóloga.
+>    El parche manual que tenía `FaltasJustificadasHoy.jsx` (solo cubría el caso del día
+>    destino, no el festivo real) se simplificó para usar el mismo criterio central. 14 tests
+>    nuevos en `asistencia.test.js`/`nomina.test.js`.
+> 2. **El breakpoint móvil subió de 768px a 1024px** (`Navegacion.jsx` + todas las `@media` de
+>    `App.css`/`mobile-polish.css` ligadas al mismo corte): un iPad en vertical (mini, Air, Pro
+>    11" y hasta el Pro 12.9") ahora usa la tabbar de abajo igual que el teléfono, en vez del
+>    header de escritorio con categorías. En horizontal, un iPad Air/Pro sigue viendo el header
+>    de escritorio (mide 1194-1366px, por encima del corte) — pendiente si algún día se pide
+>    también ahí.
+> 3. **`origin/main` estaba 5 commits detrás en este checkout** (el de `b9f1425`/`a742f12`/
+>    `4ee7c25` — migraciones 115-119 rescatadas, nómina por sucursal, cuentas ocultas, este mismo
+>    aviso). Al sincronizar hubo UN conflicto real: la copia local de `api/checar.js` tenía
+>    `p_id_cliente` sin conectar (comentario "falta migración"), más vieja que el fix ya en
+>    GitHub (commit `2a435d0`) que sí lo conecta. Se descartó la copia local a favor de la de
+>    GitHub — confirmado que quedaron byte a byte idénticos.
+> 4. **Limpieza de basura que había reaparecido suelta** en la raíz del checkout, ya decidida
+>    antes: los 4 `plan-*.md` (idénticos a sus copias en `plans/`, archivadas el 2026-09-07),
+>    `replace_colors.js` y `temp.txt` (los dos ya borrados como código muerto confirmado en
+>    commits anteriores). Se volvieron a borrar.
+> 5. **Cuatro archivos quedaron SIN subir, a propósito:** `src/components/common/MiniBar.jsx`,
+>    `src/components/common/Tabs.jsx`, `src/utils/rh.js` y `src/components/inventario/App.css`
+>    — ninguno lo importa nada en el proyecto (confirmado con grep), así que no son parte de
+>    ninguna pantalla real. Siguen en el disco del checkout sin commitear, sin tocar, por si son
+>    trabajo en progreso de alguien; si nadie los reclama, son candidatos a "código muerto
+>    confirmado" en la próxima limpieza.
+> 6. **Se incluyó en este mismo push el trabajo de "Tu semana"** en `InicioEmpleado.jsx` (nómina
+>    estimada del propio empleado con `construirDias()`/`calcularNomina()`, `PulseScoreRing` y
+>    `PulseTrendChart` nuevos, y los datos de sueldo/retardo personal agregados al mapeo de
+>    `AuthContext.jsx`) — estaba completo en el checkout sin commitear, con tests y build en
+>    verde, así que se subió junto. **Pendiente, no introducido hoy:** ese `useMemo` de "Tu
+>    semana" dispara `Compilation Skipped: Existing memoization could not be preserved` del
+>    React Compiler (ya tiene su propio `eslint-disable-next-line`, el problema es que el
+>    compilador igual se rinde con la cadena de memos que depende de `userId`) — no bloquea
+>    tests ni build, ver el comentario en el propio archivo antes de intentar "arreglarlo" con
+>    otro disable de más.
 >
 > Hola. Esto lo escribe la Claude que trabaja con el dueño en la app nativa de Android. Hoy
 > tocamos cosas que afectan a la PWA, así que te las dejo por escrito antes de que te muerdan.

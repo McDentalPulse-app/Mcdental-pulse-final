@@ -89,6 +89,10 @@ export const ESTADOS_DIA = {
   // Día sin checada dentro del periodo de prueba de la app: no es falta ni presente, es
   // "todavía no usábamos esto". Ver FIN_PERIODO_PRUEBA.
   PRUEBA: "prueba",
+  // Festivo del calendario (tabla `festivos`) que la persona no vendió por un intercambio
+  // aprobado, o el día DESTINO de un intercambio aprobado suyo (el descanso que ganó a
+  // cambio de trabajar el festivo). En ambos casos no viene y está bien: no es falta.
+  FESTIVO: "festivo",
 };
 
 /**
@@ -129,6 +133,7 @@ export const ETIQUETA_ESTADO = {
   [ESTADOS_DIA.INCOMPLETO]: "Sin salida",
   [ESTADOS_DIA.PENDIENTE]: "En curso",
   [ESTADOS_DIA.PRUEBA]: "Periodo de prueba",
+  [ESTADOS_DIA.FESTIVO]: "Festivo",
 };
 
 /** "YYYY-MM-DD" de hoy en la zona de la clínica. Es el corte para "día en curso". */
@@ -245,12 +250,37 @@ export const diaISO = (fecha) => {
 };
 
 /** ¿La fecha cae dentro del rango [inicio, fin]? Fin ausente = rango de un solo día. */
-const cubreFecha = (fecha, inicio, fin) => {
+export const cubreFecha = (fecha, inicio, fin) => {
   if (!inicio) return false;
   const f = String(fecha).slice(0, 10);
   const desde = String(inicio).slice(0, 10);
   const hasta = String(fin || inicio).slice(0, 10);
   return f >= desde && f <= hasta;
+};
+
+/**
+ * ¿Es este día un festivo "libre" para ESTA persona?
+ *
+ * Un festivo del calendario (`festivos`, tabla plana con columna `fecha`) es libre para
+ * todos salvo que la propia persona lo haya CEDIDO con un intercambio aprobado
+ * (`fecha_festivo` = este día): ese día vuelve a ser laboral solo para ella, así que el
+ * festivo no aplica. El DESTINO de un intercambio aprobado (`fecha_destino`) funciona al
+ * revés: no es festivo de calendario, pero es el descanso que ganó a cambio de trabajar
+ * el que cedió, así que cuenta igual que uno.
+ *
+ * `festivos` acepta tanto strings "YYYY-MM-DD" como los objetos {fecha, nombre, ...} de
+ * festivosService, para no obligar a cada llamador a mapear antes de pasarlos.
+ */
+export const esFestivoEfectivo = (fecha, festivos = [], intercambios = []) => {
+  const f = String(fecha).slice(0, 10);
+  const esOficial = festivos.some((x) => String(x?.fecha ?? x).slice(0, 10) === f);
+  const loCedio = intercambios.some(
+    (i) => i?.estado === "aprobado" && String(i.fechaFestivo).slice(0, 10) === f,
+  );
+  const loGano = intercambios.some(
+    (i) => i?.estado === "aprobado" && String(i.fechaDestino).slice(0, 10) === f,
+  );
+  return (esOficial && !loCedio) || loGano;
 };
 
 /**
@@ -340,8 +370,10 @@ export const minutosRetardo = (entrada, horario, tz = TZ_CLINICA) => {
  *      cubran el día: entonces es JUSTIFICADO. Un retardo sí se puede justificar (cita
  *      médica, trámite con motivo válido…), a diferencia del caso de arriba — aquí sí
  *      hubo algo que perdonar: la tardanza.
- *  3. Sin checadas y con permiso o vacación APROBADOS que cubran el día -> JUSTIFICADO.
- *     Solo los aprobados: un permiso pendiente todavía no justifica nada.
+ *  3. Sin checadas y con permiso, vacación o FESTIVO (efectivo) -> JUSTIFICADO/FESTIVO.
+ *     De permisos y vacaciones solo cuentan los aprobados: uno pendiente todavía no
+ *     justifica nada. El festivo no necesita aprobación de nadie — sale del calendario y
+ *     de los intercambios ya aprobados (ver `esFestivoEfectivo`).
  *  4. Sin checadas y sin justificante -> FALTA.
  */
 export const clasificarDia = ({
@@ -350,6 +382,8 @@ export const clasificarDia = ({
   horario = null,
   permisos = [],
   vacaciones = [],
+  festivos = [],
+  intercambios = [],
   tz = TZ_CLINICA,
   hoy = hoyEnClinica(tz),
 } = {}) => {
@@ -359,6 +393,8 @@ export const clasificarDia = ({
     permisos.find((p) => p?.estado === "aprobado" && cubreFecha(fecha, p.fecha, p.fechaFin)) ||
     vacaciones.find((v) => v?.estado === "aprobado" && cubreFecha(fecha, v.fechaInicio, v.fechaFin)) ||
     null;
+
+  const esFestivo = esFestivoEfectivo(fecha, festivos, intercambios);
 
   const base = {
     fecha,
@@ -378,6 +414,10 @@ export const clasificarDia = ({
   }
 
   if (!entrada && !salida) {
+    // El festivo (propio o ganado por intercambio) va ANTES que permiso/vacación: no
+    // depende de que nadie lo apruebe, y si además hubiera un permiso encimado da igual
+    // cuál se muestre — ninguno de los dos es falta.
+    if (esFestivo) return { ...base, estado: ESTADOS_DIA.FESTIVO };
     // Un permiso/vacación aprobado justifica el día venga o no venga.
     if (justificacion) return { ...base, estado: ESTADOS_DIA.JUSTIFICADO };
     // Sin checada y sin justificación: es FALTA solo si el día ya pasó. El día en curso
@@ -454,6 +494,8 @@ export const construirDias = ({
   horarios = [],
   permisos = [],
   vacaciones = [],
+  festivos = [],
+  intercambios = [],
   fechaIngreso = null,
   tz = TZ_CLINICA,
   hoy = hoyEnClinica(tz),
@@ -479,6 +521,8 @@ export const construirDias = ({
         horario: porDia.get(diaISO(fecha)) || null,
         permisos,
         vacaciones,
+        festivos,
+        intercambios,
         tz,
         hoy,
       })
@@ -529,6 +573,7 @@ export const resumen = (dias = []) => {
     incompletos: 0,
     pendientes: 0,
     prueba: 0,
+    festivos: 0,
     minutosTrabajados: 0,
     minutosRetardo: 0,
     puntualidad: 0,
@@ -543,6 +588,7 @@ export const resumen = (dias = []) => {
     else if (d.estado === ESTADOS_DIA.INCOMPLETO) r.incompletos += 1;
     else if (d.estado === ESTADOS_DIA.PENDIENTE) r.pendientes += 1;
     else if (d.estado === ESTADOS_DIA.PRUEBA) r.prueba += 1;
+    else if (d.estado === ESTADOS_DIA.FESTIVO) r.festivos += 1;
 
     r.minutosTrabajados += d.minutosTrabajados || 0;
     r.minutosRetardo += d.minutosRetardo || 0;

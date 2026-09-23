@@ -23,7 +23,7 @@ import "./AdminDashboard.css";
 const AdminDashboard = ({ encuestas = [] }) => {
   const {
     usuarios: USERS, nombresSucursales, sucursales,
-    permisos, vacaciones, intercambios, horarios, checadasHoy,
+    permisos, vacaciones, festivos, intercambios, horarios, checadasHoy,
   } = useGlobal();
   const {
     empleados, semana, setWeekSel, labelActual, opcionesSemana,
@@ -83,6 +83,7 @@ const AdminDashboard = ({ encuestas = [] }) => {
           empleados={empleados}
           permisos={permisos}
           vacaciones={vacaciones}
+          festivos={festivos}
           intercambios={intercambios}
           horarios={horarios}
           checadasHoy={checadasHoy}

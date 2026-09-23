@@ -76,6 +76,7 @@ describe("descuentoDelDia", () => {
       ESTADOS_DIA.PRESENTE,
       ESTADOS_DIA.JUSTIFICADO,
       ESTADOS_DIA.DESCANSO,
+      ESTADOS_DIA.FESTIVO,
       ESTADOS_DIA.PENDIENTE,
       ESTADOS_DIA.PRUEBA,
       // "Sin salida" es un caso que RH tiene que mirar, no un descuento automático.

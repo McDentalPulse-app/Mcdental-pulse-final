@@ -649,7 +649,13 @@ img {
 /* ── Auth (Login, y campos compartidos con el panel de cambio de contraseña de la landing) ── */
 .auth-page {
   position: relative;
+  /* En Safari de iPhone, 100vh mide la pantalla SIN la barra del navegador, así que
+     es más alta que lo que de verdad se ve: la tarjeta de login quedaba descentrada
+     y su parte baja, debajo de la barra. `dvh` mide el alto real y se ajusta cuando
+     la barra se esconde. El 100vh se queda como respaldo para navegadores viejos:
+     el que no entiende dvh ignora la segunda línea. */
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;

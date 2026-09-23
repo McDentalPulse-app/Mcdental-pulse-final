@@ -77,7 +77,7 @@
 /* Cinta de aurora: un brillo cónico que barre en diagonal detrás de las tarjetas. Solo se ve
    en oscuro, pero la regla vive aquí, no en un archivo de overrides: en claro el token vale
    `transparent` y sencillamente no se pinta nada. Misma regla, un solo sitio. */
-@media (min-width: 769px) {
+@media (min-width: 1025px) {
   .app-main-inner::before {
     content: "";
     position: fixed;
@@ -115,7 +115,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .app-shell {
     flex-direction: column;
     height: 100dvh;
@@ -367,7 +367,7 @@
   background: rgba(255, 255, 255, 0.16);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .sidebar {
     width: 100%;
     height: auto;
@@ -1326,7 +1326,10 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  /* dvh por el mismo motivo que .auth-page: en iPhone 100vh se pasa del alto visible
+     y el spinner queda descentrado hacia abajo. 100vh primero, como respaldo. */
   min-height: 100vh;
+  min-height: 100dvh;
   background: linear-gradient(135deg, var(--mc-slate-50) 0%, var(--mc-slate-50) 42%, var(--mc-superficie) 100%);
 }
 
@@ -2802,6 +2805,13 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 /* Forms */
 .mc-form-grid {
   display: grid;
+  /* minmax(0,1fr) y no el `auto` implícito: una columna `auto` nunca se encoge por
+     debajo del contenido más ancho, así que un <Select> con texto largo ("Beto
+     Impuntual · McDental Palmas · Puesto…") estiraba la columna a 415px dentro de
+     una tarjeta de 329px y el campo se salía, cortado, en pantalla de teléfono.
+     Con minmax(0,…) la columna puede encogerse y el texto ya recorta con puntos
+     suspensivos, que es lo que .mc-select-valor espera. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
 
@@ -3766,7 +3776,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   margin-right: auto;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .encuesta-edit-row-actions,
   .encuesta-edit-add {
     width: 100%;
@@ -3810,7 +3820,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   margin-top: 8px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .encuesta-edit-modal {
     width: calc(100vw - 16px) !important;
     max-width: calc(100vw - 16px) !important;
@@ -4625,7 +4635,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   align-items: center;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .expediente-ficha {
     grid-template-columns: auto 1fr;
     gap: 14px;
@@ -5627,7 +5637,10 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 .psico-inbox-evidence { margin-top: 8px; }
 
 .mensajes-page {
+  /* dvh: con 100vh, en el iPhone el chat se calculaba más alto que la pantalla
+     visible y el campo para escribir quedaba tapado por la barra de Safari. */
   max-height: calc(100vh - 56px);
+  max-height: calc(100dvh - 56px);
   overflow: hidden;
   gap: 16px;
   display: flex;
@@ -5683,6 +5696,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   flex: 1 1 auto;
   min-height: 0;
   height: min(620px, calc(100vh - 200px));
+  height: min(620px, calc(100dvh - 200px));
   max-height: 620px;
   overflow: hidden;
 }
@@ -6374,17 +6388,17 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 }
 
 /* En el teléfono este menú se salía ENTERO de la pantalla (medido: empezaba en x = -157px).
-   No era cosa del margen. `.chat-composer-ayuda` se oculta a ≤768px, así que el pie se queda
+   No era cosa del margen. `.chat-composer-ayuda` se oculta a ≤1024px, así que el pie se queda
    con un solo hijo y el `justify-content: space-between` lo alinea a la IZQUIERDA; el menú,
    anclado con `right: 0` a ese contenedor, se extendía 232px hacia la izquierda desde ahí. Y
    `.mensajes-chat-card` tiene `overflow: hidden`, así que lo que se salía no se podía ni ver
    ni alcanzar.
 
    Se ancla al COMPOSITOR en vez de al botón: con el envoltorio en `static`, el bloque
-   contenedor pasa a ser `.chat-composer` (que a ≤768px es `sticky`, o sea posicionado), y el
+   contenedor pasa a ser `.chat-composer` (que a ≤1024px es `sticky`, o sea posicionado), y el
    menú ocupa su ancho menos 10px por lado. Así deja de depender de dónde caigan los botones,
    que es lo que lo rompió. */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .chat-composer-menu-wrap { position: static; }
 
   .chat-composer-menu {
@@ -6485,7 +6499,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 
 /* En pantallas estrechas el recordatorio del teclado sobra: no hay teclado físico y le está
    quitando el sitio al nombre del archivo. */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .chat-composer-ayuda { display: none; }
   .chat-adjunto-imagen { max-width: 100%; }
 }
@@ -6680,6 +6694,218 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   font-weight: 800;
   color: var(--mc-marca-texto);
   white-space: nowrap;
+}
+
+/* ============================================================
+   Inicio del empleado — rediseño 2026-09 (referencia: app de asistencia
+   del becario). Ver InicioEmpleado.jsx para el porqué de cada bloque.
+   ============================================================ */
+
+.empleado-home-puesto {
+  margin-top: -2px;
+}
+
+.mc-pulse-ring-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0 10px;
+}
+
+.mc-pulse-ring-valor {
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.mc-pulse-ring-caption {
+  font-size: 13px;
+  color: var(--mc-texto-secundario);
+  text-align: center;
+}
+
+.mc-pulse-trend {
+  width: 100%;
+}
+
+.mc-pulse-trend-valor {
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--mc-texto-secundario);
+}
+
+.mc-pulse-trend-caption {
+  text-align: center;
+  margin-top: 2px;
+}
+
+.empleado-hoy-horas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.empleado-hoy-hora {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--mc-gris-perla);
+  border: 1px solid var(--mc-borde-suave);
+}
+
+.empleado-hoy-hora span {
+  font-size: 12px;
+  color: var(--mc-texto-secundario);
+  font-weight: 600;
+}
+
+.empleado-hoy-hora strong {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--mc-texto-titulo);
+}
+
+.empleado-hoy-estado {
+  margin: 12px 0 0;
+  font-size: 13.5px;
+  color: var(--mc-texto-secundario);
+}
+
+.empleado-semana-sueldo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.empleado-semana-sueldo span {
+  font-size: 13px;
+  color: var(--mc-texto-secundario);
+  font-weight: 600;
+}
+
+.empleado-semana-sueldo strong {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--mc-texto-titulo);
+}
+
+.empleado-semana-resumen {
+  margin: 4px 0 12px;
+  font-size: 13px;
+  color: var(--mc-texto-secundario);
+}
+
+.empleado-semana-dias {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--mc-borde-suave);
+}
+
+.empleado-semana-dia-row {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--mc-borde-suave);
+  font-size: 13px;
+}
+
+.empleado-semana-dia-row:last-child {
+  border-bottom: none;
+}
+
+.empleado-semana-dia-fecha {
+  font-weight: 700;
+  color: var(--mc-slate-700);
+  text-transform: capitalize;
+}
+
+.empleado-semana-dia-estado {
+  justify-self: start;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.empleado-semana-dia-monto {
+  color: var(--mc-texto-secundario);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.empleado-semana-dia-monto--cobra {
+  color: var(--mc-rojo, #b91c1c);
+}
+
+.empleado-semana-descuento-box {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--mc-aviso-bg-suave);
+  border: 1px solid rgba(154, 107, 31, 0.25);
+  display: grid;
+  gap: 6px;
+}
+
+.empleado-semana-descuento-box > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13.5px;
+}
+
+.empleado-semana-descuento-box strong {
+  font-weight: 800;
+}
+
+.empleado-permisos-lista {
+  display: grid;
+  gap: 0;
+}
+
+.empleado-permiso-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--mc-borde-suave);
+  font-size: 13px;
+}
+
+.empleado-permiso-row:last-child {
+  border-bottom: none;
+}
+
+.empleado-permiso-tipo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--mc-slate-700);
+}
+
+.empleado-permiso-fechas {
+  color: var(--mc-texto-secundario);
+  white-space: nowrap;
+}
+
+.empleado-encuesta-card--pendiente {
+  border-color: rgba(154, 107, 31, 0.3) !important;
+  background: var(--mc-aviso-bg-suave);
+}
+
+.empleado-encuesta-texto {
+  margin: 0 0 12px;
+  font-size: 13.5px;
+  color: var(--mc-texto-secundario);
+  line-height: 1.5;
 }
 
 .empleado-progress-card {
@@ -7323,7 +7549,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 }
 
 /* ── Mobile app polish (tablet + phone, PWA-ready) ── */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   /* .dashboard-page.admin-page { gap: 12px } — ya lo da --mc-ritmo-pagina, que vale 12px en
      este mismo breakpoint. Era una de las tres reglas que se pisaban entre sí. */
 
@@ -7924,7 +8150,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
     padding-bottom: max(12px, env(safe-area-inset-bottom));
   }
 
-  /* .admin-page { gap: 12px } — lo da --mc-ritmo-pagina desde 768px. */
+  /* .admin-page { gap: 12px } — lo da --mc-ritmo-pagina desde 1024px. */
 
   .mc-card {
     padding: 14px 12px;
@@ -8114,7 +8340,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 }
 
 /* ── PWA mobile polish: Mensajes, Nav, Sucursal modal ── */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .sidebar {
     box-shadow:
       0 4px 18px rgba(26, 61, 55, 0.2),
@@ -8858,7 +9084,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   border-top: 1px solid var(--mc-slate-100);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .expediente-encuesta-row {
     flex-direction: column;
     align-items: stretch;
@@ -8998,7 +9224,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   transition: width 0.4s ease;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .psico-dash-grid { grid-template-columns: 1fr; }
   .psico-dist-legend { grid-template-columns: 1fr 1fr; }
 }
@@ -9432,7 +9658,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 .mc-select-option--activa,
 .week-select-option--active { background: var(--mc-brand-suave); color: var(--mc-texto-titulo); font-weight: 800; }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .week-select { width: 100%; }
   .week-select-trigger { width: 100%; justify-content: flex-start; padding: 7px 12px; font-size: 12px; }
   .week-select-caret { margin-left: auto; }
@@ -9479,7 +9705,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 @keyframes mobileSheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 @keyframes mobileFadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .sidebar { display: none !important; }
   /* 140 y no 96 desde el 2026-09-09: la barra creció una fila (la búsqueda debajo de los tabs),
      de ~62px a ~104px de alto. Sin esto el último bloque de cada pantalla queda tapado. */
@@ -10379,7 +10605,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   vertical-align: middle;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .asistencia-toolbar-search { flex: 1 1 100%; }
   .asistencia-segmented { flex: 1 1 100%; }
   .asistencia-segmented-btn { flex: 1; text-align: center; padding: 8px 6px; }
@@ -10534,6 +10760,10 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 .asistencia-calendario-celda--incompleto { background: var(--mc-badge-amarillo-bg); color: var(--mc-badge-amarillo-texto); }
 .asistencia-calendario-celda--falta { background: var(--mc-badge-rojo-bg); color: var(--mc-badge-rojo-texto); }
 .asistencia-calendario-celda--justificado { background: var(--mc-info-bg); color: var(--mc-info-texto); }
+/* Festivo del calendario o día ganado por un intercambio: mismo fondo que la píldora de
+   Vacaciones (.mc-status-pill--vacaciones) para que se lea como "descanso que no se descuenta",
+   distinto del azul genérico de Justificado. */
+.asistencia-calendario-celda--festivo { background: var(--mc-pill-vacaciones-bg); color: var(--mc-info-texto); }
 .asistencia-calendario-celda--descanso { background: transparent; color: var(--mc-texto-apagado); opacity: 0.6; }
 /* Día en curso: aún no es falta. Neutral y con borde punteado — "sin decidir todavía". */
 /* Periodo de prueba de la app: ni falta ni presente. Gris y en cursiva, para que se lea
@@ -11392,23 +11622,24 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 .asistencia-revision-main span { color: var(--mc-texto-secundario); font-size: 12.5px; }
 .asistencia-revision-acciones { display: flex; justify-content: flex-end; }
 
-/* --- Campana de notificaciones (global, fija arriba a la derecha) --- */
-/* top con safe-area: en iPhone con notch, `top: 16px` la metía bajo la barra de estado y no
-   se podía pulsar. env(safe-area-inset-top) la baja lo que mida esa barra. */
-.campana { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); right: 24px; z-index: 300; }
+/* --- Campana de notificaciones ---
+   Ya NO fija su propia posición: vive dentro de una barra (el header de escritorio o
+   .mobile-topbar del teléfono, ver Navegacion.jsx) que es quien decide dónde va. Aquí solo
+   necesita `position: relative` para que .campana-panel (absolute) cuelgue de ELLA y no de
+   algún ancestro más lejano. */
+.campana { position: relative; z-index: 60; }
 
 .campana-boton {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
   border: 1px solid var(--mc-borde-suave);
   background: var(--mc-superficie);
   color: var(--mc-texto-titulo);
-  box-shadow: var(--mc-sombra-card);
   cursor: pointer;
 }
 .campana-boton:hover { background: var(--mc-superficie-sutil); }
@@ -11431,7 +11662,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 
 .campana-panel {
   position: absolute;
-  top: 50px;
+  top: 48px;
   right: 0;
   width: 340px;
   max-width: calc(100vw - 32px);
@@ -12030,7 +12261,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 
 /* ============================================================================
    Calendario mensual: eventos DENTRO del día. Escritorio = chips con ícono+texto;
-   móvil (≤768px) = puntos de color + detalle al tocar. Festivo = celda resaltada.
+   móvil (≤1024px) = puntos de color + detalle al tocar. Festivo = celda resaltada.
    ============================================================================ */
 .cal-celda { justify-content: flex-start; align-items: stretch; padding: 4px; gap: 2px; overflow: hidden; }
 .cal-num { align-self: flex-start; }
@@ -12080,7 +12311,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 .cal-leyenda-item { display: inline-flex; align-items: center; gap: 5px; }
 .cal-leyenda-ico { display: inline-flex; align-items: center; }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   /* Celda chica: se ocultan los chips de texto y el nombre del festivo; mandan los puntos. */
   .cal-chips { display: none; }
   .cal-puntos { display: flex; }
@@ -12137,7 +12368,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 .cal-dia-evento-txt strong { color: var(--mc-texto-titulo); font-size: 14px; }
 .cal-dia-evento-txt span { color: var(--mc-texto-secundario); font-size: 12px; }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .cal-celda { min-height: 0; aspect-ratio: 1; }
   .cal-semana { grid-template-columns: repeat(7, minmax(120px, 1fr)); overflow-x: auto; }
   .cal-titulo { font-size: 14px; }
@@ -12232,7 +12463,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 .evento-modal-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 16px; }
 .evento-modal-actions-main { display: flex; gap: 10px; margin-left: auto; }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .agenda-mes-grid { grid-template-rows: none !important; }
   .agenda-celda { min-height: 84px; }
   .agenda-semana { overflow-x: auto; }
@@ -12361,9 +12592,9 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 .topnav-user-role { font-size: 11px; color: var(--mc-texto-secundario); text-transform: capitalize; }
 
 /* Botón permanente de Mensajes. Vive en la zona derecha del header, NO en la barra de enlaces:
-   esa se oculta entera por debajo de 1100 px, y Mensajes tiene que verse justo ahí, en el
-   celular, que es donde la plantilla lo usa. Mismo tamaño que la hamburguesa y que
-   .topnav-icon-btn para que los tres se alineen. */
+   es un acceso directo con su propio contador de no leídos, no una entrada más de navegación.
+   Mismo tamaño que .topnav-icon-btn para que se alineen. También lo reusa .mobile-topbar
+   (Navegacion.jsx) para el teléfono, sin su borde/fondo propios. */
 .topnav-mensajes { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: none; width: 38px; height: 38px; border: 1px solid var(--mc-borde-suave); border-radius: 9px; background: var(--mc-superficie); color: var(--mc-texto-secundario); cursor: pointer; }
 .topnav-mensajes:hover { background: var(--mc-superficie-sutil); color: var(--mc-texto-titulo); }
 .topnav-mensajes--activo { color: var(--mc-aqua); background: var(--mc-brand-suave); }
@@ -12381,77 +12612,32 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 .topnav-reuniones-punto { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: var(--mc-texto-secundario); border: 1.5px solid var(--mc-superficie); }
 .topnav-reuniones-punto--encurso { background: var(--mc-badge-rojo-texto, #d92d20); animation: chat-pulso 1.4s ease-in-out infinite; }
 
-/* Reuniones flotante del TELÉFONO — mismo patrón que .mensajes-flotante, un carril más a la
-   izquierda (24 de campana + 42+10 de mensajes + 42+10 de este). */
-.reuniones-flotante { display: none; }
-
-@media (max-width: 768px) {
-  .reuniones-flotante {
+/* Barra de arriba del TELÉFONO (Navegacion.jsx): Mensajes + Reuniones + Campana, juntos en UN
+   solo contenedor fijo — antes cada uno flotaba suelto con su propio position:fixed y un
+   "right" calculado a mano para no pisarse, y encima del contenido se veían como iconos sueltos
+   en vez de una barra. Los botones de adentro reusan las clases del header de escritorio
+   (.topnav-mensajes, .topnav-reuniones, .campana-boton) sin su borde/fondo propios — el borde y
+   el fondo los pone la barra, una sola vez, no cada botón por separado. */
+@media (max-width: 1024px) {
+  .mobile-topbar {
     position: fixed;
     top: calc(env(safe-area-inset-top, 0px) + 12px);
-    right: 128px;
+    right: 16px;
     z-index: 300;
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    justify-content: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
+    gap: 2px;
+    padding: 4px;
+    border-radius: 14px;
     border: 1px solid var(--mc-borde-suave);
     background: var(--mc-superficie);
-    color: var(--mc-texto-titulo);
     box-shadow: var(--mc-sombra-card);
-    cursor: pointer;
   }
-  .reuniones-flotante:active { transform: scale(0.94); }
-  /* Roles con checador central: Mensajes ya no flota (bajó al tab de la barra inferior), así que
-     Reuniones se acerca a la campana en vez de dejar el hueco de en medio vacío. */
-  .reuniones-flotante--cerca { right: 76px; }
-  .reuniones-flotante-punto { position: absolute; top: 3px; right: 3px; width: 9px; height: 9px; border-radius: 50%; background: var(--mc-texto-secundario); border: 1.5px solid var(--mc-superficie); }
-  .reuniones-flotante-punto--encurso { background: var(--mc-badge-rojo-texto, #d92d20); animation: chat-pulso 1.4s ease-in-out infinite; }
-}
-
-/* Mensajes flotante del TELÉFONO. En móvil no se pinta el header (Navegacion monta Sidebar), así
-   que el botón de arriba no existe ahí: este ocupa su lugar, a la izquierda de la campana y con
-   su mismo aspecto — los dos flotan juntos y cualquier diferencia se leería como un descuido.
-   Solo se muestra hasta 768px, el mismo punto donde Navegacion cambia de navegación; por encima
-   manda el botón del header y tener los dos sería duplicar el acceso. */
-.mensajes-flotante { display: none; }
-
-@media (max-width: 768px) {
-  .mensajes-flotante {
-    position: fixed;
-    /* Misma altura que .campana; a su izquierda: 24px de margen + 42px de la campana + 10 de aire. */
-    top: calc(env(safe-area-inset-top, 0px) + 12px);
-    right: 76px;
-    z-index: 300;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    border: 1px solid var(--mc-borde-suave);
-    background: var(--mc-superficie);
-    color: var(--mc-texto-titulo);
-    box-shadow: var(--mc-sombra-card);
-    cursor: pointer;
-  }
-  .mensajes-flotante:active { transform: scale(0.94); }
-  .mensajes-flotante-badge {
-    position: absolute;
-    top: -3px;
-    right: -3px;
-    min-width: 18px;
-    height: 18px;
-    padding: 0 5px;
-    border-radius: 9px;
-    background: var(--mc-rojo-apagado);
-    color: var(--mc-blanco);
-    font-size: 11px;
-    font-weight: 800;
-    line-height: 18px;
-    text-align: center;
+  .mobile-topbar .topnav-mensajes,
+  .mobile-topbar .topnav-reuniones,
+  .mobile-topbar .campana-boton {
+    border: none;
+    background: transparent;
   }
 }
 
@@ -12462,7 +12648,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
    ("queda más alcanzable", dueño). Antes era un botón redondo flotando arriba a la izquierda. */
 .buscador-movil-barra { display: none; }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .buscador-movil-barra {
     display: flex;
     align-items: center;
@@ -12546,46 +12732,21 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   }
 }
 
-.topnav-hamburguesa { display: none; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 38px; height: 38px; border: 1px solid var(--mc-borde-suave); border-radius: 9px; background: var(--mc-superficie); cursor: pointer; }
-.topnav-hamburguesa span { width: 18px; height: 2px; background: var(--mc-texto-titulo); border-radius: 2px; }
-
-.topnav-movil-overlay { position: fixed; inset: 60px 0 0 0; background: rgba(0,0,0,.4); z-index: 45; }
-.topnav-movil { background: var(--mc-superficie); max-height: calc(100dvh - 60px); overflow-y: auto; padding: 10px 12px 24px; }
-.topnav-movil-grupo { padding: 4px 0; border-bottom: 1px solid var(--mc-borde-suave); }
-.topnav-movil-grupo:last-child { border-bottom: none; }
+/* Título de grupo reusado por el desplegable "Más" de HeaderNav (dentro de .topnav-menu) y por
+   AdminPlusNav.jsx — el resto del panel móvil que vivía aquí (.topnav-hamburguesa, .topnav-movil)
+   se quitó: la fila de enlaces (.topnav-nav-row) ya no se esconde a ningún ancho de escritorio,
+   así que no hacía falta un menú aparte que la reemplazara. */
 .topnav-movil-titulo { font-size: 11px; text-transform: uppercase; letter-spacing: .03em; color: var(--mc-texto-secundario); padding: 8px 8px 4px; font-weight: 700; }
-.topnav-movil-item { display: flex; align-items: center; gap: 11px; width: 100%; padding: 11px 8px; border: none; background: none; color: var(--mc-texto); font-size: 15px; border-radius: 8px; cursor: pointer; text-align: left; font-family: inherit; }
-.topnav-movil-item:hover { background: var(--mc-superficie-sutil); }
-.topnav-movil-item--activo { color: var(--mc-aqua); background: var(--mc-brand-suave); }
-.topnav-movil-item--danger { color: var(--mc-badge-rojo-texto); }
 
-/* Debajo de 1100px: la fila de navegación completa fuera (no solo los enlaces — dejar la fila
-   vacía a 52px de alto se vería como un hueco raro), hamburguesa dentro. El nombre/rol del
-   usuario en topnav-top-right ya NO se esconde aquí: con el buscador oculto (regla de abajo)
-   sobra sitio de sobra en esa fila, a diferencia de cuando compartía una sola fila con los
-   enlaces. */
-@media (max-width: 1100px) {
-  .topnav-nav-row { display: none; }
-  .topnav-hamburguesa { display: inline-flex; }
-  /* AdminPlusNav reusa .topnav-nav-row pero NO tiene hamburguesa (sus 6 desplegables de rol
-     no son la lista variable de categorías de HeaderNav) — sin esta excepción, el bug real
-     que arregla esto: la fila entera desaparecía debajo de 1100px sin ningún reemplazo,
-     dejando a Admin+ sin forma de llegar a Usuario/Doctor/RH/Psicóloga/Admin/Módulos.
-     overflow-x descartado a propósito (ver comentario de .topnav-nav-row arriba: recorta los
-     .topnav-menu abiertos, que son position:absolute dentro de esta fila) — con 6 botones
-     fijos, envolver en más de una línea es más simple y no tiene ese problema. */
-  .topnav-nav-row--adminplus { display: flex; min-height: auto; }
-  .topnav-links--adminplus { flex-wrap: wrap; row-gap: 4px; padding: 8px 0; }
-}
+/* AdminPlusNav no mide ni manda lo que sobra a "Más" como HeaderNav (son 6 botones fijos de
+   rol, no una lista variable de categorías), así que sus botones envuelven en más de una línea
+   en vez de desbordar cuando la ventana se angosta. */
+.topnav-nav-row--adminplus { min-height: auto; }
+.topnav-links--adminplus { flex-wrap: wrap; row-gap: 4px; padding: 8px 0; }
 
 /* ============================================================================
-   Header: buscador global + campana integrada (ya no flotante).
+   Header: buscador global.
    ============================================================================ */
-/* Campana dentro del header: inline, con estilo de botón del header (no redondo flotante). */
-.topnav .campana { position: relative; top: auto; right: auto; z-index: 60; display: flex; }
-.topnav .campana-boton { width: 38px; height: 38px; border-radius: 9px; box-shadow: none; }
-.topnav .campana-panel { top: 48px; }
-
 /* Buscador global */
 /* .topnav-search-slot (no .buscador) es quien ocupa el sitio libre entre la marca y las
    acciones y centra — .buscador se queda del tamaño de su propio contenido (icono+input), NO
@@ -13420,7 +13581,7 @@ button.cuenta-switch.cuenta-switch--on { background: var(--mc-aqua); }
   background: var(--mc-superficie-sutil);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   /* En el móvil el texto largo y el contador no caben juntos con los dos botones. */
   .chat-grabando-texto { font-size: 13px; }
   .chat-grabando-tiempo small { display: none; }
@@ -13489,7 +13650,7 @@ button.cuenta-switch.cuenta-switch--on { background: var(--mc-aqua); }
   overflow: hidden;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .chat-enlace { max-width: 100%; }
 }
 
@@ -13767,7 +13928,7 @@ button.cuenta-switch.cuenta-switch--on { background: var(--mc-aqua); }
   font-size: 14px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .reunion-form-campos { grid-template-columns: 1fr; }
   .reunion-item-cabecera { flex-direction: column; align-items: stretch; }
   .reunion-item-respuesta { flex-wrap: wrap; }
@@ -14016,7 +14177,7 @@ button.cuenta-switch.cuenta-switch--on { background: var(--mc-aqua); }
   background: var(--mc-superficie-sutil);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .permisos-item {
     flex-wrap: wrap;
   }
