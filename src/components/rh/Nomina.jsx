@@ -22,6 +22,8 @@ import {
   ETIQUETA_ESTADO,
 } from "../../utils/asistencia";
 import { calcularNomina, money } from "../../utils/nomina";
+import { generarPdfAcuerdo } from "../../utils/acuerdoConformidadPdf";
+import { descargarBlob } from "../../utils/archivo";
 import AcuerdoConformidad from "./AcuerdoConformidad";
 import NominaSucursal from "./NominaSucursal";
 import ComentariosSucursalModal from "./ComentariosSucursalModal";
@@ -83,6 +85,7 @@ function FilaNomina({
   guardandoRetardoPersonal,
   onGuardarRetardoPersonal,
   onImprimir,
+  onDescargar,
 }) {
   return (
     <div className="nomina-fila">
@@ -168,13 +171,22 @@ function FilaNomina({
           {recibo.retardos} retardo{recibo.retardos === 1 ? "" : "s"} · {recibo.faltas} falta
           {recibo.faltas === 1 ? "" : "s"}
         </div>
-        <button
-          type="button"
-          className="mc-btn-outline mc-btn-with-icon nomina-btn-imprimir"
-          onClick={() => onImprimir(empleado, recibo)}
-        >
-          <Icon name="printer" size={14} /> Imprimir acuerdo
-        </button>
+        <div className="nomina-acuerdo-acciones">
+          <button
+            type="button"
+            className="mc-btn-outline mc-btn-with-icon nomina-btn-imprimir"
+            onClick={() => onImprimir(empleado, recibo)}
+          >
+            <Icon name="printer" size={14} /> Imprimir acuerdo
+          </button>
+          <button
+            type="button"
+            className="mc-btn-outline mc-btn-with-icon nomina-btn-imprimir"
+            onClick={() => onDescargar(empleado, recibo)}
+          >
+            <Icon name="fileDownload" size={14} /> Descargar acuerdo
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -473,6 +485,13 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
   }, [imprimirSucursal]);
 
   const imprimirUno = (empleado, recibo) => setAcuerdosImprimir([{ empleado, recibo }]);
+  // Mismo contenido que AcuerdoConformidad.jsx (misma función que arma el texto y los montos,
+  // ver utils/acuerdoConformidadPdf.js), solo que como archivo directo en vez de abrir el
+  // diálogo de impresión del navegador.
+  const descargarUno = (empleado, recibo) => {
+    const blob = generarPdfAcuerdo({ empleado, recibo, desde, hasta });
+    descargarBlob(blob, `Acuerdo de pago - ${empleado.name} - ${desde} a ${hasta}.pdf`);
+  };
   const imprimirTodos = () => {
     if (!recibos.length) return;
     setAcuerdosImprimir(recibos.map(({ empleado, recibo }) => ({ empleado, recibo })));
@@ -659,6 +678,7 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
                 guardandoRetardoPersonal={guardandoRetardoPersonal === empleado.id}
                 onGuardarRetardoPersonal={guardarRetardoPersonal}
                 onImprimir={imprimirUno}
+                onDescargar={descargarUno}
               />
             ))}
           </div>

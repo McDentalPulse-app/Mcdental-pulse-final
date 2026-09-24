@@ -74,3 +74,19 @@ export const etiquetaTipo = (nombre, mime) => {
   if (ext && ext.length <= 4 && ext !== nombre) return ext.toUpperCase();
   return (mime || "").split("/").pop().slice(0, 4).toUpperCase() || "ARCH";
 };
+
+/**
+ * Dispara la descarga de un Blob generado en el cliente (un PDF armado con jsPDF, por
+ * ejemplo) con el nombre que se le indique — el truco clásico del `<a download>` sintético,
+ * en vez de abrir una pestaña y dejar que la persona le dé "Guardar como" a mano.
+ */
+export const descargarBlob = (blob, nombreArchivo) => {
+  const url = URL.createObjectURL(blob);
+  const enlace = document.createElement("a");
+  enlace.href = url;
+  enlace.download = nombreArchivo;
+  document.body.appendChild(enlace);
+  enlace.click();
+  document.body.removeChild(enlace);
+  URL.revokeObjectURL(url);
+};

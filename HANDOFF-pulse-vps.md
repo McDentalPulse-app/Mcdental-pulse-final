@@ -46,6 +46,13 @@
 >    que ya estaba desactualizada antes de hoy, no algo que esta migración haya causado. Pendiente
 >    revisar qué migraciones le faltan a este Supabase local frente a `supabase/migrations/` — no
 >    se investigó más a fondo por no ser parte de lo pedido hoy.
+> 5. **Nuevo botón "Descargar acuerdo" en Nómina**, junto a "Imprimir acuerdo" (por persona).
+>    Mismo contenido y mismos montos que `AcuerdoConformidad.jsx` (la vista de `window.print()`),
+>    pero armado con `jsPDF` (`utils/acuerdoConformidadPdf.js`) y descargado directo con el
+>    helper nuevo `descargarBlob()` (`utils/archivo.js`, reutilizable para el próximo botón de
+>    descarga que haga falta) — sin pasar por el diálogo de impresión del navegador. Mismo
+>    patrón que ya usa `contratoPdf.js` (Generar contrato del expediente, commit `f5e579a`). 2
+>    tests nuevos.
 >
 > 1. **Festivos e intercambios ya se descuentan bien.** `clasificarDia()`/`construirDias()`
 >    (`utils/asistencia.js`) solo sabían de permisos y vacaciones aprobados: un festivo real del

@@ -11292,6 +11292,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 .nomina-sin-sueldo { color: var(--mc-ambar, #b45309); font-size: 0.85rem; }
 .nomina-total-detalle { font-size: 0.72rem; color: var(--mc-texto-apagado); margin-top: 3px; }
 
+.nomina-acuerdo-acciones { display: flex; flex-wrap: wrap; gap: 8px; }
 .nomina-btn-imprimir { margin-top: 8px; padding: 6px 10px; font-size: 0.78rem; }
 .nomina-btn-imprimir-todos { margin-left: auto; }
 
