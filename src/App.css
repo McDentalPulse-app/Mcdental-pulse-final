@@ -11292,16 +11292,20 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 .nomina-sin-sueldo { color: var(--mc-ambar, #b45309); font-size: 0.85rem; }
 .nomina-total-detalle { font-size: 0.72rem; color: var(--mc-texto-apagado); margin-top: 3px; }
 
-/* .nomina-totales alinea todo a la derecha (text-align: right); un botón <button> suelto lo
-   respeta solo, pero este div flex no — sin justify-content:flex-end quedaba pegado a la
-   izquierda, desalineado del resto de la columna (Descuentos, Pago final). */
-.nomina-acuerdo-acciones { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+/* Los dos botones EN COLUMNA, no en fila: uno al lado del otro ensanchaba `.nomina-totales`
+   más allá de lo que cabía junto a .nomina-persona/.nomina-semana/.nomina-sueldo en la misma
+   línea de `.nomina-fila` (flex-wrap), y toda la fila terminaba partiéndose en dos con un
+   hueco vacío en medio. Apilados, la columna sigue tan angosta como con un solo botón.
+   align-items:flex-end porque .nomina-totales alinea todo a la derecha (text-align: right) y
+   un div flex no lo hereda solo. */
+.nomina-acuerdo-acciones { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; margin-top: 8px; }
+.nomina-acuerdo-acciones .nomina-btn-imprimir { margin-top: 0; }
 .nomina-btn-imprimir { margin-top: 8px; padding: 6px 10px; font-size: 0.78rem; }
 .nomina-btn-imprimir-todos { margin-left: auto; }
 
 @media (max-width: 760px) {
   .nomina-totales { margin-left: 0; text-align: left; width: 100%; }
-  .nomina-acuerdo-acciones { justify-content: flex-start; }
+  .nomina-acuerdo-acciones { align-items: flex-start; }
   .nomina-semana { order: 3; width: 100%; justify-content: space-between; }
   .nomina-sueldo { order: 2; }
   .nomina-retardo-personal { order: 2; }
