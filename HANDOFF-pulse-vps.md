@@ -69,6 +69,19 @@
 >    (`construirDias` + `calcularNomina`) — no solo cambia la fecha del encabezado. Probado en
 >    vivo contra el dev local: al cambiar de "21–27 sep" a "7–13 sep" para la misma persona, las
 >    faltas mostradas pasaron de 3 a 6, confirmando que sí recalcula con datos reales.
+> 7. **Anticipación mínima para pedir vacaciones y "Cambiar festivo".** Pedido del dueño: 30 días
+>    para toda la plantilla, 15 para Oficina Administrativa (su cobertura es más simple de
+>    reacomodar). Nuevo `diasAnticipacionRequerida(sucursal)` en `utils/constants.js`;
+>    `validarSolicitud()` (`utils/vacaciones.js`) gana el parámetro `diasAnticipacionMinima` y un
+>    motivo `"anticipacion"`. En `IntercambioFestivoPanel.jsx` esto REEMPLAZA la ventana de "este
+>    mes y el siguiente" que había — incluida, a propósito, la excepción que dejaba ceder un
+>    festivo YA PASADO de este mes (confirmado con el dueño: la regla debía aplicar igual a las
+>    dos pantallas, no solo a vacaciones). Gestión (RH/psicóloga `autoAprobar`) queda exenta en
+>    Vacaciones, igual que ya lo estaba del saldo y los periodos — no se llama a `validarSolicitud`
+>    para ellos. Probado en vivo con un empleado real de McDental Palmas: pedir vacaciones para
+>    hoy (24 sep) mostró "la fecha más próxima que puedes solicitar es el 24 oct 2026", y el
+>    desplegable de "Cambiar festivo" dejó de ofrecer el 16 de septiembre (ya pasado) mostrando
+>    en su lugar festivos desde noviembre en adelante.
 >
 > 1. **Festivos e intercambios ya se descuentan bien.** `clasificarDia()`/`construirDias()`
 >    (`utils/asistencia.js`) solo sabían de permisos y vacaciones aprobados: un festivo real del
