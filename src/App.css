@@ -11450,6 +11450,12 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
    aparte), así que reusa el ancho de `.nomina-acuerdo` (720px) y su scroll si la hoja no cabe. */
 .mc-modal.nomina-acuerdo-semana-modal { width: min(820px, 96vw); }
 .nomina-acuerdo-semana-preview { max-height: 55vh; overflow-y: auto; margin: 18px 0; border-radius: 8px; }
+/* .mc-form-group es flex-column con align-items:stretch por defecto: sin esto, el <div>
+   .week-select (contenedor invisible del que cuelga el menú con right:0) se estiraba al ancho
+   completo del campo, dejando el botón angosto pegado a la izquierda pero el menú desplegado
+   pegado al borde DERECHO DEL MODAL — bien lejos del botón. Mismo arreglo que ya usa
+   .contrato-extraer-btn para el mismo problema en GenerarContratoModal. */
+.nomina-acuerdo-semana-modal .week-select { align-self: flex-start; }
 
 /* Generar contrato (GenerarContratoModal.jsx): mismo criterio que el paso de comentarios de
    arriba — los campos que faltan van en un bloque compacto, pero el documento de abajo
