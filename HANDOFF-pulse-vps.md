@@ -53,12 +53,15 @@
 >    descarga que haga falta) — sin pasar por el diálogo de impresión del navegador. Mismo
 >    patrón que ya usa `contratoPdf.js` (Generar contrato del expediente, commit `f5e579a`). 2
 >    tests nuevos.
-> 6. **"Imprimir acuerdo"/"Descargar acuerdo" ahora dejan elegir la semana.** Antes usaban
->    siempre la semana activa en el filtro de arriba de Nómina; pedido del dueño: poder imprimir
->    el acuerdo de una semana anterior también, con sus descuentos reales de esa semana (no los
->    de la semana que estaba viendo en pantalla). Nuevo `SeleccionarSemanaAcuerdoModal.jsx`: al
->    darle a cualquiera de los dos botones, abre un modal con un selector de semana (mismas 12
->    semanas de `WeekSelect`) y la vista previa en vivo del recibo — `AcuerdoConformidad.jsx`
+> 6. **Un solo botón "Abrir acuerdo" (por persona) que deja elegir la semana.** Antes eran dos
+>    botones separados, "Imprimir acuerdo" y "Descargar acuerdo", cada uno usando siempre la
+>    semana activa en el filtro de arriba de Nómina; pedido del dueño: poder imprimir el acuerdo
+>    de una semana anterior también, con sus descuentos reales de esa semana (no los de la
+>    semana que estaba viendo en pantalla). Nuevo `SeleccionarSemanaAcuerdoModal.jsx`: al darle a
+>    "Abrir acuerdo", abre un modal con un selector de semana (mismas 12 semanas de `WeekSelect`),
+>    la vista previa en vivo del recibo, y AHÍ DENTRO los botones "Imprimir" y "Descargar" — un
+>    solo punto de entrada en vez de dos botones sueltos en la fila, que además era información
+>    redundante en cuanto las dos acciones quedaron juntas en el modal. `AcuerdoConformidad.jsx`
 >    ahora acepta un prop `editable` que la monta sin el envoltorio `.nomina-imprimir-area`
 >    (display:none fuera de impresión), mismo criterio que `NominaSucursal.jsx` en modo
 >    `editable`. Cambiar la semana vuelve a pedir las checadas de esa persona con
