@@ -2596,6 +2596,19 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   height: 100%;
 }
 
+/* Tarjeta-filtro (StatCard con `onClick`, p. ej. "Retardos"/"Faltas" en Nómina): mismo criterio
+   visual que .solicitud-tipo-card--activa — borde y fondo de marca mientras el filtro que
+   representa está encendido, para no inventar un segundo lenguaje de "esto está activo". */
+.admin-stat-card--clicable {
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  border: 1px solid transparent;
+}
+.admin-stat-card--clicable:hover { border-color: rgba(var(--mc-aqua-rgb) / 0.35); }
+.admin-stat-card--activa.mc-card { border-color: var(--mc-aqua); background: var(--mc-brand-suave); }
+
 .admin-stat-icon-wrap {
   width: 40px;
   height: 40px;
@@ -11225,6 +11238,19 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 }
 .nomina-persona { flex: 1 1 180px; min-width: 0; }
 .nomina-persona-nombre { font-weight: 800; color: var(--mc-texto-titulo); }
+/* El nombre es un <button> (lleva a su calendario de asistencia): mismo tipo/color que el
+   texto plano de antes, sin chrome de botón, con el mismo affordance de enlace que ya usan
+   otros nombres clicables de la app (subrayado solo al pasar el mouse). */
+.nomina-persona-nombre--link {
+  display: block;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.nomina-persona-nombre--link:hover { text-decoration: underline; }
 .nomina-persona-sub { font-size: 0.78rem; color: var(--mc-texto-apagado); }
 
 /* La semana: una columna por día, con la letra arriba, el color del estado en medio y

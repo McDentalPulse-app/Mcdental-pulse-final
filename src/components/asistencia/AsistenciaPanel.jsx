@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import Select from "../common/Select";
 import PageHeader from "../common/PageHeader";
 import { useEscapeKey } from "../../hooks/useEscapeKey";
@@ -172,13 +173,19 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
   const { toast, prompt, confirm } = useNotification();
   const { nombresSucursales, sucursales = [], festivos = [], intercambios = [] } = useGlobal();
 
-  const [desde, setDesde] = useState(() => primerDiaDeMes(hoyClinica()));
+  // Se puede llegar aquí ya con una persona y un mes elegidos (p. ej. desde el nombre de
+  // alguien en Nómina — ver verAsistencia en Nomina.jsx): `location.state` los trae, y si no
+  // vienen se cae al comportamiento de siempre (mes actual, sin nadie preseleccionado).
+  const location = useLocation();
+  const mesInicial = location.state?.mes || hoyClinica();
+
+  const [desde, setDesde] = useState(() => primerDiaDeMes(mesInicial));
   const [hasta, setHasta] = useState(() => {
-    const fin = ultimoDiaDeMes(primerDiaDeMes(hoyClinica()));
+    const fin = ultimoDiaDeMes(primerDiaDeMes(mesInicial));
     const hoy = hoyClinica();
     return fin > hoy ? hoy : fin;
   });
-  const [empleadoId, setEmpleadoId] = useState("");
+  const [empleadoId, setEmpleadoId] = useState(() => location.state?.empleadoId || "");
   const [busqueda, setBusqueda] = useState("");
   const [filtroSucursal, setFiltroSucursal] = useState("Todas");
 

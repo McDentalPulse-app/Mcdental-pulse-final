@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import PageHeader from "../common/PageHeader";
 import Card from "../common/Card";
 import StatCard from "../common/StatCard";
@@ -13,6 +14,7 @@ import { getAsistencias } from "../../services/supabase/asistenciasService";
 import { getNominaConfig, setNominaConfig } from "../../services/supabase/nominaConfigService";
 import { updateUsuario } from "../../services/supabase/usuariosService";
 import { getISOWeek, isoWeekToMonday, normalizeSucursal } from "../../utils/constants";
+import { rutaBaseDe } from "../../config/navItems";
 import {
   construirDias,
   mapaZonas,
@@ -86,11 +88,19 @@ function FilaNomina({
   guardandoRetardoPersonal,
   onGuardarRetardoPersonal,
   onAbrirAcuerdo,
+  onVerAsistencia,
 }) {
   return (
     <div className="nomina-fila">
       <div className="nomina-persona">
-        <div className="nomina-persona-nombre">{empleado.name}</div>
+        <button
+          type="button"
+          className="nomina-persona-nombre nomina-persona-nombre--link"
+          onClick={() => onVerAsistencia(empleado)}
+          title={`Ver el calendario de asistencia de ${empleado.name}`}
+        >
+          {empleado.name}
+        </button>
         <div className="nomina-persona-sub">{normalizeSucursal(empleado.sucursal)}</div>
       </div>
 
@@ -200,11 +210,18 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
   const { sucursales = [], refreshUsuarios, festivos = [], intercambios = [] } = useGlobal();
   const { user } = useAuth();
   const { toast, confirm } = useNotification();
+  const navigate = useNavigate();
 
   const opcionesSemana = useMemo(() => semanasRecientes(12), []);
   const [semana, setSemana] = useState(() => opcionesSemana[0]?.value);
   const [filtroSucursal, setFiltroSucursal] = useState("");
   const [busquedaPersona, setBusquedaPersona] = useState("");
+  // Las tarjetas "Retardos"/"Faltas" son un atajo para ver solo a quien tiene uno: filtran el
+  // "Recibo por persona" de abajo, pero NO los totales de arriba (esos siguen siendo el total
+  // real de la sucursal/búsqueda elegida — filtrar la lista no debe achicar el número que la
+  // tarjeta misma muestra, sería circular).
+  const [filtroRetardos, setFiltroRetardos] = useState(false);
+  const [filtroFaltas, setFiltroFaltas] = useState(false);
 
   const [checadas, setChecadas] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -336,6 +353,16 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
       return { empleado: u, recibo, porDia };
     });
   }, [visibles, checadas, horarios, permisos, vacaciones, festivos, intercambios, desde, hasta, zonas, config]);
+
+  // Lo que de verdad se pinta en "Recibo por persona": `recibos` filtrado por las tarjetas de
+  // Retardos/Faltas, si están encendidas. Con las dos encendidas es "Y" (tiene retardos Y
+  // faltas) — es lo que se espera de dos filtros a la vez, no una fila más para cada uno.
+  const recibosMostrados = useMemo(
+    () => recibos.filter(({ recibo }) =>
+      (!filtroRetardos || recibo.retardos > 0) && (!filtroFaltas || recibo.faltas > 0)
+    ),
+    [recibos, filtroRetardos, filtroFaltas]
+  );
 
   // Solo para la hoja de sucursal (vista previa + impresión): el resto de la pantalla
   // (tabla principal, "Imprimir acuerdos", tarjetas de total) sigue usando `recibos` completo
@@ -535,6 +562,14 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
     setAcuerdosImprimir({ lista: recibos.map(({ empleado, recibo }) => ({ empleado, recibo })), desde, hasta });
   };
 
+  // Del nombre de alguien en "Recibo por persona" a su calendario de Asistencia, ya con esa
+  // persona y ese mes elegidos — para no obligar a buscarla de nuevo a mano en la otra pantalla.
+  // `rutaBaseDe` (mismo patrón que Sidebar.jsx/FichaEmpleado.jsx) resuelve la ruta correcta sin
+  // importar si esto se ve desde admin, RH o psicóloga: Nómina y Asistencia viven en los tres.
+  const verAsistencia = (empleado) => {
+    navigate(`/${rutaBaseDe(user?.role)}/asistencia`, { state: { empleadoId: empleado.id, mes: desde } });
+  };
+
   return (
     <div className="admin-page">
       {/* Mientras se imprime, el resto de la pantalla NO se monta (no solo se oculta con CSS):
@@ -686,8 +721,22 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
       <div className="admin-stat-grid">
         <StatCard iconName="dollar" value={money(totales.pago)} label="Total a pagar" valueClass="admin-stat-value--green" />
         <StatCard iconName="dollar" value={money(totales.descuento)} label="Total descontado" valueClass="admin-stat-value--amber" />
-        <StatCard iconName="clock" value={totales.retardos} label="Retardos" valueClass="admin-stat-value--amber" />
-        <StatCard iconName="alert" value={totales.faltas} label="Faltas" valueClass="admin-stat-value--red" />
+        <StatCard
+          iconName="clock"
+          value={totales.retardos}
+          label="Retardos"
+          valueClass="admin-stat-value--amber"
+          activa={filtroRetardos}
+          onClick={() => setFiltroRetardos((v) => !v)}
+        />
+        <StatCard
+          iconName="alert"
+          value={totales.faltas}
+          label="Faltas"
+          valueClass="admin-stat-value--red"
+          activa={filtroFaltas}
+          onClick={() => setFiltroFaltas((v) => !v)}
+        />
       </div>
 
       {totales.sinSueldo > 0 && (
@@ -711,11 +760,15 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
         <Card><p className="mc-empty">Cargando la semana…</p></Card>
       ) : recibos.length === 0 ? (
         <Card><EmptyState message="No hay personal que mostrar con este filtro." /></Card>
+      ) : recibosMostrados.length === 0 ? (
+        <Card>
+          <EmptyState message={`Nadie tiene ${filtroRetardos && filtroFaltas ? "retardos y faltas" : filtroRetardos ? "retardos" : "faltas"} esta semana con el filtro de arriba.`} />
+        </Card>
       ) : (
         <Card>
           <SectionTitle icon="users">Recibo por persona</SectionTitle>
           <div className="nomina-lista">
-            {recibos.map(({ empleado, recibo, porDia }) => (
+            {recibosMostrados.map(({ empleado, recibo, porDia }) => (
               <FilaNomina
                 key={empleado.id}
                 empleado={empleado}
@@ -727,6 +780,7 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
                 guardandoRetardoPersonal={guardandoRetardoPersonal === empleado.id}
                 onGuardarRetardoPersonal={guardarRetardoPersonal}
                 onAbrirAcuerdo={setAcuerdoEnSeleccion}
+                onVerAsistencia={verAsistencia}
               />
             ))}
           </div>

@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, cleanup, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 
 /**
  * El panel de Asistencia DE VERDAD, no un harness que imite su forma.
@@ -59,6 +60,10 @@ const USUARIOS = [
   { id: "u3", name: "PERLA CRUZ", sucursal: "McDental Tampico", role: "empleado", inactivo: false },
 ];
 
+// El componente usa useLocation() (mensajes 2026-09-24, para llegar aquí con una persona ya
+// elegida desde Nómina), así que necesita un Router alrededor incluso sin navegar a ningún lado.
+const renderPanel = (props) => render(<AsistenciaPanel {...props} />, { wrapper: MemoryRouter });
+
 /** Los nombres de la lista de empleados, en orden. */
 const nombresListados = () =>
   [...document.querySelectorAll(".asistencia-emp-item-nombre")].map((n) => n.textContent.trim());
@@ -102,7 +107,7 @@ afterEach(cleanup);
 
 describe("AsistenciaPanel · filtro de sucursal", () => {
   it("sin filtrar, lista a todo el mundo", async () => {
-    render(<AsistenciaPanel usuarios={USUARIOS} />);
+    renderPanel({ usuarios: USUARIOS });
     await esperarLista(3);
     expect(nombresListados()).toEqual(["JUANA GARAY", "PERLA CRUZ", "VALERIA ALCARAZ"]);
   });
@@ -111,7 +116,7 @@ describe("AsistenciaPanel · filtro de sucursal", () => {
     // El fallo del 6-ago: esto no hacía NADA. El panel de Filtros se cerraba en el `mousedown`
     // —porque la lista del Select vive en un portal a <body>, fuera del ref del panel— y el
     // `click` nunca llegaba a la opción. La lista seguía con las tres personas.
-    render(<AsistenciaPanel usuarios={USUARIOS} />);
+    renderPanel({ usuarios: USUARIOS });
     await esperarLista(3);
 
     await desplegarSucursal();
@@ -121,7 +126,7 @@ describe("AsistenciaPanel · filtro de sucursal", () => {
   });
 
   it("el contador de Filtros marca 1 cuando hay una sucursal elegida", async () => {
-    render(<AsistenciaPanel usuarios={USUARIOS} />);
+    renderPanel({ usuarios: USUARIOS });
     await esperarLista(3);
 
     expect(
@@ -137,7 +142,7 @@ describe("AsistenciaPanel · filtro de sucursal", () => {
   });
 
   it("volver a «Todas» devuelve a todo el mundo", async () => {
-    render(<AsistenciaPanel usuarios={USUARIOS} />);
+    renderPanel({ usuarios: USUARIOS });
     await esperarLista(3);
 
     await desplegarSucursal();
@@ -152,7 +157,7 @@ describe("AsistenciaPanel · filtro de sucursal", () => {
   });
 
   it("el buscador y el filtro de sucursal se combinan", async () => {
-    render(<AsistenciaPanel usuarios={USUARIOS} />);
+    renderPanel({ usuarios: USUARIOS });
     await esperarLista(3);
 
     await desplegarSucursal();
@@ -164,7 +169,7 @@ describe("AsistenciaPanel · filtro de sucursal", () => {
 
   it("un clic realmente fuera cierra el panel de Filtros", async () => {
     // La exclusión del portal no puede pasarse de lista.
-    render(<AsistenciaPanel usuarios={USUARIOS} />);
+    renderPanel({ usuarios: USUARIOS });
     await esperarLista(3);
 
     await userEvent.click(screen.getByRole("button", { name: /Filtros/ }));
