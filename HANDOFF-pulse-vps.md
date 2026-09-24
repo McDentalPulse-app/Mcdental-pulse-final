@@ -106,6 +106,18 @@
 >    seleccionado; clic en "Faltas" (32) deja solo a quien tiene faltas esa semana; con
 >    "Retardos" (0) también encendido muestra "Nadie tiene retardos y faltas esta semana";
 >    apagar los dos regresa a las 11 personas.
+> 9. **Organigrama: imagen fija en vez del mapa calculado de jefe/área.** Pedido del dueño: la
+>    estructura real de la empresa no coincidía con las relaciones jefe/área capturadas en
+>    `usuarios`, así que ya no vale la pena mantener ese cálculo. `Organigrama.jsx` ahora
+>    muestra `src/assets/organigrama/organigrama-mcdental.png` (la imagen que mandó) dentro de
+>    una tarjeta con fondo blanco propio — el diagrama trae texto oscuro sobre blanco, así que
+>    flotaría mal sobre el tema oscuro de la app sin ese fondo. "Responsabilidades por depto."
+>    (documentos por área, pantalla aparte con su propio toggle) no se tocó. Se borraron
+>    `MapaOrganigrama.jsx`, `PanelPersona.jsx` y `utils/organigrama/{arbol,layout}.js` con sus
+>    tests (17 tests) — quedaron sin ningún uso (confirmado con grep antes de borrar), y editar
+>    el jefe/área de alguien ya se hacía también desde Departamentos, no dependía solo de este
+>    panel. Probado en vivo: la imagen se ve completa y legible, y "Responsabilidades por
+>    depto." sigue funcionando igual que antes.
 >
 > 1. **Festivos e intercambios ya se descuentan bien.** `clasificarDia()`/`construirDias()`
 >    (`utils/asistencia.js`) solo sabían de permisos y vacaciones aprobados: un festivo real del
