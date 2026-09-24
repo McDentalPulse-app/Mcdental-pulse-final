@@ -53,6 +53,19 @@
 >    descarga que haga falta) — sin pasar por el diálogo de impresión del navegador. Mismo
 >    patrón que ya usa `contratoPdf.js` (Generar contrato del expediente, commit `f5e579a`). 2
 >    tests nuevos.
+> 6. **"Imprimir acuerdo"/"Descargar acuerdo" ahora dejan elegir la semana.** Antes usaban
+>    siempre la semana activa en el filtro de arriba de Nómina; pedido del dueño: poder imprimir
+>    el acuerdo de una semana anterior también, con sus descuentos reales de esa semana (no los
+>    de la semana que estaba viendo en pantalla). Nuevo `SeleccionarSemanaAcuerdoModal.jsx`: al
+>    darle a cualquiera de los dos botones, abre un modal con un selector de semana (mismas 12
+>    semanas de `WeekSelect`) y la vista previa en vivo del recibo — `AcuerdoConformidad.jsx`
+>    ahora acepta un prop `editable` que la monta sin el envoltorio `.nomina-imprimir-area`
+>    (display:none fuera de impresión), mismo criterio que `NominaSucursal.jsx` en modo
+>    `editable`. Cambiar la semana vuelve a pedir las checadas de esa persona con
+>    `getAsistencias({ desde, hasta, empleadoId })` y recalcula el recibo completo
+>    (`construirDias` + `calcularNomina`) — no solo cambia la fecha del encabezado. Probado en
+>    vivo contra el dev local: al cambiar de "21–27 sep" a "7–13 sep" para la misma persona, las
+>    faltas mostradas pasaron de 3 a 6, confirmando que sí recalcula con datos reales.
 >
 > 1. **Festivos e intercambios ya se descuentan bien.** `clasificarDia()`/`construirDias()`
 >    (`utils/asistencia.js`) solo sabían de permisos y vacaciones aprobados: un festivo real del
