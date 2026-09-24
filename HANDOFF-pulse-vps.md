@@ -82,6 +82,30 @@
 >    hoy (24 sep) mostró "la fecha más próxima que puedes solicitar es el 24 oct 2026", y el
 >    desplegable de "Cambiar festivo" dejó de ofrecer el 16 de septiembre (ya pasado) mostrando
 >    en su lugar festivos desde noviembre en adelante.
+> 8. **Nómina más práctica: las tarjetas de Retardos/Faltas filtran, el nombre lleva al
+>    calendario.** Pedido del dueño. Las tarjetas "Retardos" y "Faltas" (`StatCard`, ahora con
+>    `onClick`/`activa`) filtran "Recibo por persona" a quien tenga uno u otro — las dos
+>    encendidas es Y (retardos Y faltas), no una fila más para cada filtro. Los totales de
+>    arriba NO cambian con el filtro: siguen siendo el total real de la sucursal/búsqueda
+>    elegida, para no crear un número circular ("Faltas" mostraría solo las faltas de quien ya
+>    tiene retardos si dependiera del filtro de Retardos). `Card.jsx` ahora reenvía props extra
+>    (`onClick`, `role`, `aria-*`) al `<div>` — antes las ignoraba en silencio, así que cualquier
+>    intento anterior de pasarle un `onClick` a un `Card` no habría hecho nada; no había ningún
+>    caso así en el repo, se confirmó con grep antes de tocarlo.
+>    El nombre de cada persona en la lista ahora es un botón que manda a su calendario de
+>    Asistencia (misma persona Y mismo mes de la semana que se estaba viendo en Nómina), vía
+>    `navigate(`/${rutaBaseDe(user.role)}/asistencia`, { state: { empleadoId, mes } })` — mismo
+>    patrón que ya usan `Sidebar.jsx`/`FichaEmpleado.jsx` para no hardcodear `/admin`, `/rh` o
+>    `/psicologa` (Nómina vive en los tres). `AsistenciaPanel.jsx` ahora lee ese
+>    `empleadoId`/`mes` inicial de `location.state` si vienen — compatible: sin ellos se
+>    comporta exactamente igual que antes (mes actual, nadie preseleccionado). Esto obligó a
+>    envolver `AsistenciaPanel.dom.test.jsx` en un `MemoryRouter` (el componente ya usa
+>    `useLocation()`, que revienta sin un Router alrededor) — los 6 tests de ese archivo migraron
+>    a un helper `renderPanel()` en vez de tocar cada `render()` suelto.
+>    Probado en vivo: clic en "Admin de Prueba" abre su calendario de septiembre ya
+>    seleccionado; clic en "Faltas" (32) deja solo a quien tiene faltas esa semana; con
+>    "Retardos" (0) también encendido muestra "Nadie tiene retardos y faltas esta semana";
+>    apagar los dos regresa a las 11 personas.
 >
 > 1. **Festivos e intercambios ya se descuentan bien.** `clasificarDia()`/`construirDias()`
 >    (`utils/asistencia.js`) solo sabían de permisos y vacaciones aprobados: un festivo real del
