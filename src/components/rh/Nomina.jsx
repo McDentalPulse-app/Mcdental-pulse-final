@@ -85,8 +85,7 @@ function FilaNomina({
   onGuardarSueldo,
   guardandoRetardoPersonal,
   onGuardarRetardoPersonal,
-  onImprimir,
-  onDescargar,
+  onAbrirAcuerdo,
 }) {
   return (
     <div className="nomina-fila">
@@ -176,16 +175,9 @@ function FilaNomina({
           <button
             type="button"
             className="mc-btn-outline mc-btn-with-icon nomina-btn-imprimir"
-            onClick={() => onImprimir(empleado, recibo)}
+            onClick={() => onAbrirAcuerdo(empleado)}
           >
-            <Icon name="printer" size={14} /> Imprimir acuerdo
-          </button>
-          <button
-            type="button"
-            className="mc-btn-outline mc-btn-with-icon nomina-btn-imprimir"
-            onClick={() => onDescargar(empleado, recibo)}
-          >
-            <Icon name="fileDownload" size={14} /> Descargar acuerdo
+            <Icon name="file" size={14} /> Abrir acuerdo
           </button>
         </div>
       </div>
@@ -234,8 +226,8 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
   // SeleccionarSemanaAcuerdoModal puede ser de una semana anterior distinta.
   const [acuerdosImprimir, setAcuerdosImprimir] = useState(null); // { lista, desde, hasta } | null
 
-  // Persona para la que se está eligiendo la semana del acuerdo (botones "Imprimir acuerdo" /
-  // "Descargar acuerdo" de cada fila): null cuando el modal está cerrado.
+  // Persona para la que se está eligiendo la semana del acuerdo (botón "Abrir acuerdo" de cada
+  // fila, que da a elegir imprimir o descargar dentro del mismo modal): null cuando está cerrado.
   const [acuerdoEnSeleccion, setAcuerdoEnSeleccion] = useState(null);
 
   // Hoja de nómina de LA sucursal filtrada (NominaSucursal.jsx): a diferencia de acuerdosImprimir
@@ -734,8 +726,7 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
                 onGuardarSueldo={guardarSueldo}
                 guardandoRetardoPersonal={guardandoRetardoPersonal === empleado.id}
                 onGuardarRetardoPersonal={guardarRetardoPersonal}
-                onImprimir={(empleado) => setAcuerdoEnSeleccion(empleado)}
-                onDescargar={(empleado) => setAcuerdoEnSeleccion(empleado)}
+                onAbrirAcuerdo={setAcuerdoEnSeleccion}
               />
             ))}
           </div>
