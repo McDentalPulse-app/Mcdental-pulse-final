@@ -29,6 +29,22 @@ export const puedeVerOrganigrama = (row) =>
   row?.role === "admin_plus" || normalizeSucursal(row?.sucursal) === "Oficina Administrativa";
 
 /**
+ * Días de anticipación mínima para pedir vacaciones o el cambio de un festivo (pedido del
+ * dueño, 2026-09-24): 30 días para toda la plantilla, salvo Oficina Administrativa, a quien le
+ * basta con 15 — su cobertura es más simple de reacomodar que la de una clínica, así que
+ * necesita menos aviso previo. Se usa igual en las dos pantallas (utils/vacaciones.js para
+ * vacaciones, IntercambioFestivoPanel.jsx para "Cambiar festivo") para que la regla no se
+ * desalinee entre una y otra.
+ */
+export const DIAS_ANTICIPACION_GENERAL = 30;
+export const DIAS_ANTICIPACION_OFICINA_ADMINISTRATIVA = 15;
+
+export const diasAnticipacionRequerida = (sucursal) =>
+  normalizeSucursal(sucursal) === "Oficina Administrativa"
+    ? DIAS_ANTICIPACION_OFICINA_ADMINISTRATIVA
+    : DIAS_ANTICIPACION_GENERAL;
+
+/**
  * Cómo se nombra cada rol de cara al personal. Se usa para firmar los avisos ("Lic. Mario
  * Ruiz · Administración"): un empleado no tiene por qué saber qué significa "psicologa". Sin
  * `export`: solo lo usa `etiquetaRol`, que sí es la que se importa desde fuera.

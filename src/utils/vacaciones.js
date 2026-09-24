@@ -44,6 +44,19 @@ const diasInclusive = (desde, hasta) => Math.round((aUTC(hasta) - aUTC(desde)) /
 const sumarDias = (fechaISO, dias) => desdeUTC(aUTC(fechaISO) + dias * MS_DIA);
 
 /**
+ * Días de calendario entre `hoy` y `fecha` — negativo si `fecha` ya pasó. Sirve para exigir un
+ * mínimo de anticipación al pedir vacaciones o el cambio de un festivo (ver
+ * `diasAnticipacionRequerida` en utils/constants.js, que decide CUÁNTOS días hacen falta según
+ * la sucursal; esta función solo mide la distancia entre dos fechas).
+ */
+export const diasDeAnticipacion = (hoy, fecha) => {
+  const h = soloFecha(hoy);
+  const f = soloFecha(fecha);
+  if (!esFechaISO(h) || !esFechaISO(f)) return null;
+  return Math.round((aUTC(f) - aUTC(h)) / MS_DIA);
+};
+
+/**
  * Suma años a una fecha ISO.
  *
  * El 29 de febrero se RECORTA al 28 en los años no bisiestos. `new Date(2025, 1, 29)` desborda
@@ -151,17 +164,21 @@ export const saldoVacaciones = (fechaIngreso, vacacionesEmpleado = [], hoy) => {
 /**
  * ¿Cabe esta solicitud?
  *
- * Dos cosas distintas, y las dos hacen falta:
+ * Tres cosas distintas, y las tres hacen falta:
  *  1. Que HOY ya tenga el año cumplido. Si no, no puede pedir vacaciones — ni para hoy ni
  *     para el año que viene. Es lo mismo que le dice la pantalla, y así no hay un botón
  *     activo debajo de un aviso que dice que están bloqueadas.
- *  2. Que quepan en CADA periodo que toca el rango. Unas vacaciones a caballo del aniversario
+ *  2. Que se pida con la anticipación mínima que le toque (`diasAnticipacionMinima`, ver
+ *     `diasAnticipacionRequerida` en utils/constants.js — 30 días en general, 15 para Oficina
+ *     Administrativa). Pedido del dueño, 2026-09-24: da tiempo a que la clínica acomode la
+ *     cobertura antes de que la persona se vaya.
+ *  3. Que quepan en CADA periodo que toca el rango. Unas vacaciones a caballo del aniversario
  *     tienen que caber en los dos lados: 5 días en el que acaba y 3 en el que empieza.
  *
  * Devuelve `{ ok: true }` o el motivo con el periodo culpable, para que quien llame componga
  * el aviso con las fechas ya formateadas.
  */
-export const validarSolicitud = (fechaIngreso, vacacionesEmpleado = [], fechaInicio, fechaFin, hoy) => {
+export const validarSolicitud = (fechaIngreso, vacacionesEmpleado = [], fechaInicio, fechaFin, hoy, diasAnticipacionMinima = 0) => {
   const inicio = soloFecha(fechaInicio);
   const fin = soloFecha(fechaFin) || inicio;
   const ingreso = soloFecha(fechaIngreso);
@@ -184,6 +201,18 @@ export const validarSolicitud = (fechaIngreso, vacacionesEmpleado = [], fechaIni
       motivo: "bloqueado",
       proximoAniversario: sumarAnios(ingreso, ANIOS_ANTIGUEDAD_MINIMA),
     };
+  }
+
+  if (diasAnticipacionMinima > 0) {
+    const anticipacion = diasDeAnticipacion(hoy, inicio);
+    if (anticipacion !== null && anticipacion < diasAnticipacionMinima) {
+      return {
+        ok: false,
+        motivo: "anticipacion",
+        diasAnticipacionMinima,
+        primeraFechaPermitida: sumarDias(soloFecha(hoy), diasAnticipacionMinima),
+      };
+    }
   }
 
   const solicitud = { fechaInicio: inicio, fechaFin: fin };

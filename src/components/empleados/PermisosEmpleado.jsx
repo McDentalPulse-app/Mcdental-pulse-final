@@ -9,6 +9,7 @@ import DateRangePicker from "../common/DateRangePicker";
 import { useNotification } from "../../contexts/NotificationContext";
 import { CAUSAS_PERMISO, CAUSA_SALIDA_ANTICIPADA } from "../../utils/permisos";
 import { saldoVacaciones, validarSolicitud, DIAS_VACACIONES_POR_ANIO } from "../../utils/vacaciones";
+import { diasAnticipacionRequerida } from "../../utils/constants";
 import { formatFechaCorta } from "../../utils/helpers";
 
 // El util devuelve el motivo y el periodo culpable; la frase se compone aquí, que es donde
@@ -25,6 +26,8 @@ const avisoVacaciones = (v) => {
       return `Solo te quedan ${v.disponibles} ${v.disponibles === 1 ? "día" : "días"} en el periodo que termina el ${formatFechaCorta(v.periodo.fin)}, y ahí caen ${v.pide} de los que pides.`;
     case "rango":
       return "La fecha final debe ser igual o posterior a la fecha inicial.";
+    case "anticipacion":
+      return `Las vacaciones se piden con al menos ${v.diasAnticipacionMinima} días de anticipación. La fecha más próxima que puedes solicitar es el ${formatFechaCorta(v.primeraFechaPermitida)}.`;
     default:
       return "Selecciona las fechas de tus vacaciones.";
   }
@@ -99,6 +102,9 @@ export default function PermisosEmpleado({
 
   const vacacionesEmpleado = vacaciones.filter((v) => v.empleadoId === user?.id);
 
+  // 30 días de anticipación en general, 15 para Oficina Administrativa (utils/constants.js).
+  const diasAnticipacionMin = diasAnticipacionRequerida(user?.sucursal);
+
   // Gestión (RH/psicóloga) se auto-agenda y queda fuera de la regla: no se le mide antigüedad
   // ni se le descuentan días. Para el empleado, las vacaciones se desbloquean al año y son 8
   // por periodo aniversario (utils/vacaciones.js).
@@ -108,7 +114,7 @@ export default function PermisosEmpleado({
   // Se valida el rango ELEGIDO, no solo el saldo de hoy: unas vacaciones a caballo del
   // aniversario gastan de los dos periodos y tienen que caber en los dos.
   const validacion = saldo && pideVacaciones
-    ? validarSolicitud(user?.fechaIngreso, vacacionesEmpleado, fechaInicioPreview, fechaFinPreview, hoyClinica())
+    ? validarSolicitud(user?.fechaIngreso, vacacionesEmpleado, fechaInicioPreview, fechaFinPreview, hoyClinica(), diasAnticipacionMin)
     : { ok: true };
 
   // Los PERMISOS también, no solo las vacaciones: sin esto un permiso enviado desaparecía de la
@@ -164,7 +170,7 @@ export default function PermisosEmpleado({
       // El candado de verdad está en la base (migración 162); esto evita que se envíe una
       // solicitud que ya se sabe que no procede y que el empleado se entere días después.
       if (saldo) {
-        const veredicto = validarSolicitud(user?.fechaIngreso, vacacionesEmpleado, fechaInicio, fechaFin, hoyClinica());
+        const veredicto = validarSolicitud(user?.fechaIngreso, vacacionesEmpleado, fechaInicio, fechaFin, hoyClinica(), diasAnticipacionMin);
         if (!veredicto.ok) {
           toast.warning(avisoVacaciones(veredicto));
           return;
@@ -290,7 +296,8 @@ export default function PermisosEmpleado({
                   <Icon name="vacation" size={16} />
                   <span>
                     Te quedan <strong>{saldo.disponibles}</strong> de {saldo.total} días en tu
-                    periodo actual (hasta el {formatFechaCorta(saldo.periodo.fin)}).
+                    periodo actual (hasta el {formatFechaCorta(saldo.periodo.fin)}). Pídelas con
+                    al menos <strong>{diasAnticipacionMin}</strong> días de anticipación.
                   </span>
                 </div>
               )}

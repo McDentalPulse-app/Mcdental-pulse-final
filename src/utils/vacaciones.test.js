@@ -5,6 +5,7 @@ import {
   diasEnPeriodo,
   saldoVacaciones,
   validarSolicitud,
+  diasDeAnticipacion,
   DIAS_VACACIONES_POR_ANIO,
 } from "./vacaciones";
 
@@ -188,5 +189,38 @@ describe("validarSolicitud", () => {
   it("distingue agotado de excedido", () => {
     const llenas = [vacacion("2026-04-01", "2026-04-08", 8)];
     expect(validarSolicitud(INGRESO, llenas, "2026-10-01", "2026-10-01", HOY).motivo).toBe("agotado");
+  });
+
+  it("sin diasAnticipacionMinima no exige ningún aviso previo (compatibilidad)", () => {
+    expect(validarSolicitud(INGRESO, [], "2026-09-16", "2026-09-17", HOY)).toEqual({ ok: true });
+  });
+
+  it("rechaza por falta de anticipación cuando faltan menos días de los que exige", () => {
+    // HOY es 2026-09-15; pedir para el 2026-09-20 son 5 días de aviso, no los 30 exigidos.
+    const r = validarSolicitud(INGRESO, [], "2026-09-20", "2026-09-21", HOY, 30);
+    expect(r.ok).toBe(false);
+    expect(r.motivo).toBe("anticipacion");
+    expect(r.diasAnticipacionMinima).toBe(30);
+    expect(r.primeraFechaPermitida).toBe("2026-10-15");
+  });
+
+  it("acepta con la anticipación exacta que exige", () => {
+    // 2026-09-15 + 15 días = 2026-09-30.
+    expect(validarSolicitud(INGRESO, [], "2026-09-30", "2026-10-02", HOY, 15)).toEqual({ ok: true });
+  });
+});
+
+describe("diasDeAnticipacion", () => {
+  it("cuenta los días entre hoy y una fecha futura", () => {
+    expect(diasDeAnticipacion("2026-09-15", "2026-10-15")).toBe(30);
+  });
+
+  it("da negativo para una fecha que ya pasó", () => {
+    expect(diasDeAnticipacion("2026-09-15", "2026-09-10")).toBe(-5);
+  });
+
+  it("da null si alguna fecha no es ISO válida", () => {
+    expect(diasDeAnticipacion("2026-09-15", "")).toBeNull();
+    expect(diasDeAnticipacion("", "2026-09-15")).toBeNull();
   });
 });

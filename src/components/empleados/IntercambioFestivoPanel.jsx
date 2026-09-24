@@ -6,6 +6,8 @@ import Icon from "../ui/Icon";
 import CalendarioMensual from "../common/CalendarioMensual";
 import WeekSelect from "../common/WeekSelect";
 import DateRangePicker from "../common/DateRangePicker";
+import { diasDeAnticipacion } from "../../utils/vacaciones";
+import { diasAnticipacionRequerida } from "../../utils/constants";
 
 const hoyIso = () => new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD local
 const legible = (f) =>
@@ -36,37 +38,28 @@ const IntercambioFestivoPanel = ({ user, festivos, intercambios, destinosOcupado
   const esNoLaborable = (f) => f.tipo !== "conmemorativo";
 
   const hoy = hoyIso();
-  const mesActual = hoy.slice(0, 7); // "YYYY-MM"
 
-  // Un mes de anticipación: se pueden apartar los festivos de ESTE mes y los del SIGUIENTE.
-  //
-  // Son meses de calendario completos, NO una ventana de 30 días corridos. La diferencia no
-  // es cosmética: el 4 de agosto, 30 días caen el 3 de septiembre, así que el 16 de
-  // septiembre —el único festivo intercambiable del mes— quedaría fuera y en agosto no se
-  // podría apartar nada. Con meses completos, desde el 1 de agosto ya se ve.
-  const mesSiguiente = useMemo(() => {
-    const [anio, mes] = mesActual.split("-").map(Number);
-    // `mes` es 1-based y el constructor es 0-based, así que este Date YA es el mes siguiente.
-    // Pasar de diciembre a enero del año próximo lo resuelve él solo.
-    const d = new Date(anio, mes, 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-  }, [mesActual]);
+  // Anticipación mínima (pedido del dueño, 2026-09-24): 30 días para toda la plantilla, 15
+  // para Oficina Administrativa (utils/constants.js) — misma regla que las vacaciones.
+  // Reemplaza la ventana de "este mes y el siguiente" que había antes, incluida la excepción
+  // que dejaba ceder un festivo YA PASADO de este mes (para avisar que no se trabajó ese día):
+  // con la anticipación exigida por igual a vacaciones y a "Cambiar festivo", un festivo que ya
+  // pasó nunca puede cumplirla.
+  const diasAnticipacionMin = diasAnticipacionRequerida(user?.sucursal);
 
-  // Solo los días NO laborables se pueden ceder. El festivo del mes EN CURSO sigue eligible
-  // aunque ya haya pasado —se puede pedir durante el resto del mes, no solo con anticipación—;
-  // el del mes siguiente, por ser futuro, nunca necesita ese permiso. El servidor
-  // (api/solicitar-intercambio.js) es quien de verdad exige, para un festivo ya pasado, que haya
-  // checada de entrada ese día.
+  // Solo los días NO laborables se pueden ceder, y solo los que todavía cumplen la
+  // anticipación mínima desde hoy. Sin tope superior a propósito: la tabla de festivos ya es
+  // corta (un puñado de fechas oficiales al año), así que no hace falta acotarla a un par de
+  // meses como antes.
   //
-  // Aun con dos meses de ventana la lista puede quedar vacía —solo los festivos `oficial` son
-  // intercambiables, y hay tramos sin ninguno—, así que abajo se pinta un mensaje en lugar del
-  // formulario: un desplegable vacío sin explicación acaba reportado como una falla.
+  // La lista puede quedar vacía —solo los festivos `oficial` son intercambiables, y hay tramos
+  // sin ninguno cerca—, así que abajo se pinta un mensaje en lugar del formulario: un
+  // desplegable vacío sin explicación acaba reportado como una falla.
   const festivosDelMes = useMemo(
     () => festivos
-      .filter((f) => esNoLaborable(f)
-        && (f.fecha.startsWith(mesActual) || f.fecha.startsWith(mesSiguiente)))
+      .filter((f) => esNoLaborable(f) && diasDeAnticipacion(hoy, f.fecha) >= diasAnticipacionMin)
       .sort((a, b) => a.fecha.localeCompare(b.fecha)),
-    [festivos, mesActual, mesSiguiente],
+    [festivos, hoy, diasAnticipacionMin],
   );
 
   // <WeekSelect> no tiene opción vacía propia, así que el "sin elegir" va como primera opción.
@@ -164,8 +157,8 @@ const IntercambioFestivoPanel = ({ user, festivos, intercambios, destinosOcupado
         <SectionTitle icon="calendar">Intercambiar un día</SectionTitle>
         {festivosDelMes.length === 0 ? (
           <p className="rh-data-row-muted">
-            Ahora mismo no hay ningún festivo que puedas intercambiar. Se pueden apartar con
-            un mes de anticipación, así que vuelve a esta pantalla cuando se acerque el
+            Ahora mismo no hay ningún festivo que puedas intercambiar con al menos{" "}
+            {diasAnticipacionMin} días de anticipación. Vuelve a esta pantalla más cerca del
             festivo que te interese.
           </p>
         ) : (
@@ -173,9 +166,10 @@ const IntercambioFestivoPanel = ({ user, festivos, intercambios, destinosOcupado
         <p className="intercambio-hint">
           Elige el festivo y a cambio pide el día que prefieras libre — o, si solo quieres avisar
           que no vienes ese festivo sin cambiarlo por otro día, pide el mismo festivo como
-          destino. Solo aparecen los festivos de este mes y del siguiente, y el día que pidas a
-          cambio tiene que ser del mismo mes que el festivo. Cada día destino lo puede tomar una
-          sola persona de tu clínica — salvo que pidas el mismo festivo, que no tiene límite.
+          destino. Solo aparecen los festivos con al menos {diasAnticipacionMin} días de
+          anticipación, y el día que pidas a cambio tiene que ser del mismo mes que el festivo.
+          Cada día destino lo puede tomar una sola persona de tu clínica — salvo que pidas el
+          mismo festivo, que no tiene límite.
         </p>
 
         <div className="mc-form-grid">
