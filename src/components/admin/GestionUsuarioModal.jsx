@@ -198,6 +198,30 @@ const GestionUsuarioModal = ({
           </>
         )}
 
+        {/* Ubicación de sucursal (mig. 103): quien la tenga ve "Ubicación de mi clínica" en su
+            menú y puede fijar la geocerca de SU sucursal desde su teléfono, estando ahí. Sirve
+            sobre todo para clínicas nuevas o cuando se necesita volver a capturarla. Solo tiene
+            sentido al editar una cuenta que ya existe, igual que los demás permisos de aquí. */}
+        {usuarioEditando && (
+          <div className="mc-form-group">
+            <label className="mc-form-check" htmlFor="gu-ubicar-sucursal">
+              <input
+                id="gu-ubicar-sucursal"
+                type="checkbox"
+                checked={formData.puedeUbicarSucursal}
+                onChange={(e) => cambiarCampo("puedeUbicarSucursal", e.target.checked)}
+              />
+              <span>Puede fijar la ubicación de su clínica (recepción)</span>
+            </label>
+            <p className="mc-form-hint">
+              Le aparece "Ubicación de mi clínica" en el menú. Ahí, estando dentro de{" "}
+              {formData.sucursal || "su sucursal"}, puede tocar "Usar mi ubicación actual" para
+              fijar la geocerca — útil para una clínica recién dada de alta que todavía no tiene
+              ubicación configurada.
+            </p>
+          </div>
+        )}
+
         {/* Departamentos (mig. 133): a diferencia de inventario, no se limita a gestión —
             el jefe de un departamento puede ser cualquier rol (un doctor líder de área,
             por ejemplo). Solo tiene sentido al editar una cuenta que ya existe. */}

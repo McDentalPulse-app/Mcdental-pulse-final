@@ -1,12 +1,32 @@
 # HANDOFF — McDental Pulse en VPS propia
 
-> Para la próxima sesión de Claude. Última actualización: **2026-09-23**.
+> Para la próxima sesión de Claude. Última actualización: **2026-09-24**.
 > Este archivo vive en dos lados y hay que mantenerlos iguales: `/opt/pulse/HANDOFF.md`
 > (en la VPS) y `HANDOFF-pulse-vps.md` (en el repo del usuario). ⚠️ Pese a lo que decía esta
 > misma línea antes: **sí está versionado** (confirmado con `git log`, commit `0e3b7f9` en
 > adelante) — corregido el 2026-09-02, no repetir que no lo está.
 
-> ## 🔴 LEER PRIMERO — cambios del 2026-09-23
+> ## 🔴 LEER PRIMERO — cambios del 2026-09-24
+>
+> 1. **Nuevo permiso en Gestión de Personal: "Puede fijar la ubicación de su clínica
+>    (recepción)"** (`GestionUsuarios.jsx`/`GestionUsuarioModal.jsx`, campo `puedeUbicarSucursal`).
+>    Hasta hoy la columna `usuarios.puede_ubicar_sucursal` (mig. 103) existía en la base y el
+>    permiso ya funcionaba de punta a punta (RLS, RPC, la pantalla "Ubicación de mi clínica"),
+>    pero NINGUNA pantalla de gestión lo exponía — solo se podía activar a mano en la base. Salió
+>    de que se dio de alta la sucursal **Hotel Demar** (sin geocerca todavía) y no había forma de
+>    asignarle a alguien el permiso de ir a fijarla desde su teléfono. Mismo patrón exacto que ya
+>    usan `puedeGestionarInventario`/`puedeGestionarBodega` — sin cambios de backend, sin
+>    migración nueva, solo el checkbox que faltaba. Flujo: editar al empleado de esa sucursal →
+>    activar la casilla → esa persona ve "Ubicación de mi clínica" en su menú y, parada dentro de
+>    Hotel Demar, toca "Usar mi ubicación actual".
+> 2. **Pendiente sin resolver, detectado ayer y hoy otra vez:** el login local (Supabase Docker)
+>    con la contraseña temporal `emp123` deja la cuenta inutilizable después del primer intento.
+>    Los logs de `pulse_auth`/`supabase_auth` muestran un `user_updated_password` automático
+>    justo después del primer `login` exitoso — parece el blindaje de `AuthContext.jsx` que
+>    fuerza "Cambia tu contraseña" al detectar la contraseña temporal literal, disparándose sin
+>    que haya un humano completando ese modal. Pasó con `admin2` y con `empleado2` (los dos
+>    creados a mano por service role para pruebas en esta sesión). No se investigó a fondo — es
+>    del entorno local, no de producción, y no bloqueó ningún deploy.
 >
 > 1. **Festivos e intercambios ya se descuentan bien.** `clasificarDia()`/`construirDias()`
 >    (`utils/asistencia.js`) solo sabían de permisos y vacaciones aprobados: un festivo real del
