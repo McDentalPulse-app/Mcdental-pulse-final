@@ -27,6 +27,25 @@
 >    que haya un humano completando ese modal. Pasó con `admin2` y con `empleado2` (los dos
 >    creados a mano por service role para pruebas en esta sesión). No se investigó a fondo — es
 >    del entorno local, no de producción, y no bloqueó ningún deploy.
+> 3. **Migración 171: la ventana de "entrada libre" baja de 30 a 10 minutos.** Pedido del dueño:
+>    con el turno a las 10:00, `registrar_checada()` guardaba una hora aleatoria entre las 9:30 y
+>    las 10:00 (`floor(random() * 31)` minutos antes, mig. 137); ahora es `* 11` → entre las 9:50
+>    y las 10:00. Un solo número cambiado, nada más — antes de tocarlo se comparó
+>    `pg_get_functiondef` de la función VIVA en producción contra el archivo de la migración 165
+>    (la última que la tocó) para confirmar que coinciden byte a byte en contenido real, siguiendo
+>    el mismo cuidado que exige esa migración en su propio comentario. Verificado el rango del
+>    cálculo aislado (`floor(random()*11)` sobre 5000 muestras: min 0, max 10, 11 valores
+>    posibles) — el flujo completo (`registrar_checada` de punta a punta) NO se pudo probar en
+>    local por el hallazgo del punto 4.
+> 4. **El Supabase local de este checkout está desincronizado respecto al código del repo.**
+>    Al intentar probar la migración 171 en local, `sucursal_para_checada()` (una función
+>    auxiliar que `registrar_checada` llama) reventó con `column u.puede_marcar_en_cualquier_clinica
+>    does not exist` — esa columna es de una migración vieja (118) que en este Supabase local
+>    nunca se aplicó, aunque el código del repo ya la da por hecha. La migración 171 en sí se
+>    aplicó sin problema (`CREATE FUNCTION` limpio); el reventón es de una función DEPENDIENTE
+>    que ya estaba desactualizada antes de hoy, no algo que esta migración haya causado. Pendiente
+>    revisar qué migraciones le faltan a este Supabase local frente a `supabase/migrations/` — no
+>    se investigó más a fondo por no ser parte de lo pedido hoy.
 >
 > 1. **Festivos e intercambios ya se descuentan bien.** `clasificarDia()`/`construirDias()`
 >    (`utils/asistencia.js`) solo sabían de permisos y vacaciones aprobados: un festivo real del
