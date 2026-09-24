@@ -11448,6 +11448,13 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 .mc-modal.nomina-comentarios-modal { width: min(820px, 96vw); }
 .nomina-comentarios-preview { max-height: 60vh; overflow-y: auto; margin: 18px 0; border-radius: 8px; }
 
+/* Elegir semana antes de imprimir/descargar el acuerdo de UNA persona
+   (SeleccionarSemanaAcuerdoModal.jsx): mismo criterio que el paso de comentarios de arriba —
+   la vista previa es AcuerdoConformidad en modo `editable` (el mismo papel, no un resumen
+   aparte), así que reusa el ancho de `.nomina-acuerdo` (720px) y su scroll si la hoja no cabe. */
+.mc-modal.nomina-acuerdo-semana-modal { width: min(820px, 96vw); }
+.nomina-acuerdo-semana-preview { max-height: 55vh; overflow-y: auto; margin: 18px 0; border-radius: 8px; }
+
 /* Generar contrato (GenerarContratoModal.jsx): mismo criterio que el paso de comentarios de
    arriba — los campos que faltan van en un bloque compacto, pero el documento de abajo
    (ContratoLaboral.jsx) es EL MISMO texto que termina en el PDF, actualizado en vivo, no una

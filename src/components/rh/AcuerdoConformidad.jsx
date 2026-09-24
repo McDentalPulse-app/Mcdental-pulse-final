@@ -29,10 +29,14 @@ const formatFecha = (iso) => {
  * `window.print()`, vía `.nomina-imprimir-area` en App.css (el truco clásico de
  * visibility:hidden en todo excepto este contenedor). Colores fijos en negro sobre blanco a
  * propósito: es un papel que alguien firma a mano, no debe salir con el tema oscuro de la app.
+ *
+ * `editable`: se monta normal, en un modal (SeleccionarSemanaAcuerdoModal), sin el envoltorio
+ * `.nomina-imprimir-area` — mismo componente y mismas clases que el papel real, para que la
+ * vista previa de "qué semana imprimir" sea literalmente el mismo diseño y no un resumen aparte.
  */
-export default function AcuerdoConformidad({ acuerdos, desde, hasta }) {
-  return (
-    <div className="nomina-imprimir-area">
+export default function AcuerdoConformidad({ acuerdos, desde, hasta, editable = false }) {
+  const contenido = (
+    <>
       {acuerdos.map(({ empleado, recibo }) => {
         // Sumado del `detalle` (no recibo.retardos × config.montoRetardo): un becario paga $50
         // fijo por retardo en vez de la tasa general (ver esBecario() en utils/nomina.js), así
@@ -115,6 +119,9 @@ export default function AcuerdoConformidad({ acuerdos, desde, hasta }) {
           </div>
         );
       })}
-    </div>
+    </>
   );
+
+  if (editable) return contenido;
+  return <div className="nomina-imprimir-area">{contenido}</div>;
 }

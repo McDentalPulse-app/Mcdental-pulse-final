@@ -27,6 +27,7 @@ import { descargarBlob } from "../../utils/archivo";
 import AcuerdoConformidad from "./AcuerdoConformidad";
 import NominaSucursal from "./NominaSucursal";
 import ComentariosSucursalModal from "./ComentariosSucursalModal";
+import SeleccionarSemanaAcuerdoModal from "./SeleccionarSemanaAcuerdoModal";
 import logoMcDental from "../../assets/logos/mcdental-logo.png";
 
 // ISO: 1=lunes … 7=domingo. La misma numeración que horarios.dia_semana.
@@ -227,7 +228,15 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
   // que imprimir. `useEffect` de abajo dispara window.print() cuando esto deja de ser null, y
   // `afterprint` lo limpia — así el contenedor imprimible (AcuerdoConformidad) solo vive en el
   // DOM mientras hace falta, en vez de calcular el recibo de todos en cada render.
-  const [acuerdosImprimir, setAcuerdosImprimir] = useState(null);
+  //
+  // Trae su propio desde/hasta (no siempre los de la semana activa en pantalla): "Imprimir
+  // acuerdos" de toda la lista usa la semana activa, pero un acuerdo individual elegido desde
+  // SeleccionarSemanaAcuerdoModal puede ser de una semana anterior distinta.
+  const [acuerdosImprimir, setAcuerdosImprimir] = useState(null); // { lista, desde, hasta } | null
+
+  // Persona para la que se está eligiendo la semana del acuerdo (botones "Imprimir acuerdo" /
+  // "Descargar acuerdo" de cada fila): null cuando el modal está cerrado.
+  const [acuerdoEnSeleccion, setAcuerdoEnSeleccion] = useState(null);
 
   // Hoja de nómina de LA sucursal filtrada (NominaSucursal.jsx): a diferencia de acuerdosImprimir
   // (un recibo por persona), esta es una sola hoja con todos los de la oficina — solo tiene
@@ -484,17 +493,54 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
     };
   }, [imprimirSucursal]);
 
-  const imprimirUno = (empleado, recibo) => setAcuerdosImprimir([{ empleado, recibo }]);
+  // Recibo de UN empleado para UNA semana cualquiera, no necesariamente la activa en pantalla —
+  // usado por SeleccionarSemanaAcuerdoModal cuando eligen una semana anterior. Mismo cálculo que
+  // el useMemo `recibos` de arriba (misma construirDias + calcularNomina), solo que para una
+  // sola persona y pidiendo sus checadas de esa semana en concreto: horarios/permisos/
+  // vacaciones/festivos/intercambios ya son las colecciones completas (no acotadas por semana,
+  // a diferencia de `checadas`), así que no hace falta volver a pedirlas.
+  const calcularReciboSemana = useCallback(async (empleado, semanaValor) => {
+    const lunesSemana = isoWeekToMonday(semanaValor);
+    const d = aISO(lunesSemana);
+    const h = aISO(sumarDias(lunesSemana, 6));
+    const checadasSemana = await getAsistencias({ desde: d, hasta: h, empleadoId: empleado.id });
+    const dias = construirDias({
+      desde: d,
+      hasta: h,
+      checadas: checadasSemana,
+      horarios: horarios.filter((x) => x.empleadoId === empleado.id),
+      permisos: permisos.filter((x) => x.empleadoId === empleado.id),
+      vacaciones: vacaciones.filter((x) => x.empleadoId === empleado.id),
+      festivos,
+      intercambios: intercambios.filter((x) => x.empleadoId === empleado.id),
+      fechaIngreso: empleado.fechaIngreso,
+      tz: zonaDe(zonas, empleado.sucursal),
+    });
+    const recibo = calcularNomina({
+      dias,
+      sueldoSemanal: empleado.sueldoSemanal,
+      config,
+      puesto: empleado.puesto,
+      montoRetardoPersonal: empleado.montoRetardoPersonal,
+    });
+    return { recibo, desde: d, hasta: h };
+  }, [horarios, permisos, vacaciones, festivos, intercambios, zonas, config]);
+
+  const imprimirDesdeModal = (empleado, recibo, desdeAcuerdo, hastaAcuerdo) => {
+    setAcuerdoEnSeleccion(null);
+    setAcuerdosImprimir({ lista: [{ empleado, recibo }], desde: desdeAcuerdo, hasta: hastaAcuerdo });
+  };
   // Mismo contenido que AcuerdoConformidad.jsx (misma función que arma el texto y los montos,
   // ver utils/acuerdoConformidadPdf.js), solo que como archivo directo en vez de abrir el
   // diálogo de impresión del navegador.
-  const descargarUno = (empleado, recibo) => {
-    const blob = generarPdfAcuerdo({ empleado, recibo, desde, hasta });
-    descargarBlob(blob, `Acuerdo de pago - ${empleado.name} - ${desde} a ${hasta}.pdf`);
+  const descargarDesdeModal = (empleado, recibo, desdeAcuerdo, hastaAcuerdo) => {
+    setAcuerdoEnSeleccion(null);
+    const blob = generarPdfAcuerdo({ empleado, recibo, desde: desdeAcuerdo, hasta: hastaAcuerdo });
+    descargarBlob(blob, `Acuerdo de pago - ${empleado.name} - ${desdeAcuerdo} a ${hastaAcuerdo}.pdf`);
   };
   const imprimirTodos = () => {
     if (!recibos.length) return;
-    setAcuerdosImprimir(recibos.map(({ empleado, recibo }) => ({ empleado, recibo })));
+    setAcuerdosImprimir({ lista: recibos.map(({ empleado, recibo }) => ({ empleado, recibo })), desde, hasta });
   };
 
   return (
@@ -505,11 +551,22 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
           último acuerdo real — el documento impreso mide tanto como la lista escondida, no
           como lo que de verdad se ve. Sin la lista en el DOM, no hay espacio que medir. */}
       {acuerdosImprimir ? (
-        <AcuerdoConformidad acuerdos={acuerdosImprimir} desde={desde} hasta={hasta} />
+        <AcuerdoConformidad acuerdos={acuerdosImprimir.lista} desde={acuerdosImprimir.desde} hasta={acuerdosImprimir.hasta} />
       ) : imprimirSucursal ? (
         <NominaSucursal sucursal={filtroSucursal} recibos={recibosImpresionSucursal} desde={desde} hasta={hasta} comentarios={comentariosSucursal} />
       ) : (
         <>
+      {acuerdoEnSeleccion && (
+        <SeleccionarSemanaAcuerdoModal
+          empleado={acuerdoEnSeleccion}
+          opcionesSemana={opcionesSemana}
+          semanaInicial={semana}
+          onCalcular={calcularReciboSemana}
+          onImprimir={imprimirDesdeModal}
+          onDescargar={descargarDesdeModal}
+          onCerrar={() => setAcuerdoEnSeleccion(null)}
+        />
+      )}
       {mostrarComentariosSucursal && (
         <ComentariosSucursalModal
           sucursal={filtroSucursal}
@@ -677,8 +734,8 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
                 onGuardarSueldo={guardarSueldo}
                 guardandoRetardoPersonal={guardandoRetardoPersonal === empleado.id}
                 onGuardarRetardoPersonal={guardarRetardoPersonal}
-                onImprimir={imprimirUno}
-                onDescargar={descargarUno}
+                onImprimir={(empleado) => setAcuerdoEnSeleccion(empleado)}
+                onDescargar={(empleado) => setAcuerdoEnSeleccion(empleado)}
               />
             ))}
           </div>
