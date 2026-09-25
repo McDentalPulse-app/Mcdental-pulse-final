@@ -129,7 +129,13 @@ const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustifi
         // por eso no lleva el `!anulable &&` que sí lleva justificableFalta (una falta nunca
         // tiene checada, nunca compite con anular). handleRetardoDia() resuelve cuál de las
         // dos toca según qué permisos tenga quien mira la pantalla.
-        const justificableRetardo = puedeJustificar && c.estado === ESTADOS_DIA.RETARDO;
+        //
+        // Se mira `esRetardo`, no `estado === RETARDO`: ese campo ya está puesto en cuanto hay
+        // ENTRADA tarde, sin esperar a que la persona registre su salida (estado INCOMPLETO
+        // mientras tanto). Antes RH tenía que esperar a que "cerrara el día" para poder
+        // justificar un retardo que ya conocía desde la mañana. JUSTIFICADO se excluye porque
+        // ese retardo ya tiene su permiso aprobado — no hay nada más que justificar.
+        const justificableRetardo = puedeJustificar && c.esRetardo && c.estado !== ESTADOS_DIA.JUSTIFICADO;
         const accionable = anulable || justificableFalta || justificableRetardo;
         const accion = justificableFalta
           ? () => onJustificarDia(c)

@@ -268,6 +268,23 @@ describe("clasificarDia", () => {
     expect(d.minutosTrabajados).toBeNull();
   });
 
+  it("entrada tarde sin salida => incompleto, pero YA se ve y se puede justificar el retardo", () => {
+    // El caso que motivó `esRetardo`: a media mañana, antes de que la persona registre su
+    // salida, RH tiene que poder justificar el retardo sin esperar a que "cierre el día".
+    const e = checada("entrada", "2026-07-13T15:11:00Z"); // 09:11, 1 min tarde de tolerancia
+    const d = clasificarDia({ fecha: "2026-07-13", checadas: [e], horario: horarioNormal });
+    expect(d.estado).toBe(ESTADOS_DIA.INCOMPLETO);
+    expect(d.esRetardo).toBe(true);
+    expect(d.minutosRetardo).toBe(11);
+  });
+
+  it("entrada dentro de tolerancia sin salida => incompleto y NO es retardo", () => {
+    const e = checada("entrada", "2026-07-13T15:05:00Z"); // 09:05, dentro de los 10 min de gracia
+    const d = clasificarDia({ fecha: "2026-07-13", checadas: [e], horario: horarioNormal });
+    expect(d.estado).toBe(ESTADOS_DIA.INCOMPLETO);
+    expect(d.esRetardo).toBe(false);
+  });
+
   it("sin checadas y sin justificante => falta (día ya cerrado)", () => {
     const d = clasificarDia({ fecha: "2026-08-03", checadas: [], horario: horarioNormal, hoy: "2026-08-07" });
     expect(d.estado).toBe(ESTADOS_DIA.FALTA);

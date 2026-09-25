@@ -396,6 +396,17 @@ export const clasificarDia = ({
 
   const esFestivo = esFestivoEfectivo(fecha, festivos, intercambios);
 
+  // Se calcula en cuanto hay ENTRADA, sin esperar a la salida: un retardo es un hecho de
+  // la hora en que llegó, no de si ya se fue. Antes esto vivía más abajo, después del
+  // `if (!salida)`, y por eso un retardo de la mañana no era justificable hasta la noche
+  // (cuando por fin había salida y el día pasaba a RETARDO) — RH tenía que esperar a que
+  // "cerrara el día" para hacer algo que ya sabía desde las 9:11.
+  const retardo = horario ? minutosRetardo(entrada, horario, tz) : 0;
+  const tolerancia = horario && Number.isFinite(horario.toleranciaMin) ? horario.toleranciaMin : 0;
+  // Estrictamente mayor: entrar en el minuto exacto del límite de tolerancia NO es
+  // retardo. Con 9:00 y 10 min de gracia, las 9:10 llegan a tiempo; las 9:11, no.
+  const esRetardo = !!entrada && retardo > tolerancia;
+
   const base = {
     fecha,
     entrada,
@@ -404,6 +415,9 @@ export const clasificarDia = ({
     justificacion,
     minutosTrabajados: minutosTrabajados(entrada, salida),
     minutosRetardo: 0,
+    // Disponible sea o no INCOMPLETO el día: es lo que deja justificar un retardo el
+    // mismo día, antes de que la persona registre su salida.
+    esRetardo,
   };
 
   if (!horario) {
@@ -433,16 +447,11 @@ export const clasificarDia = ({
 
   if (!salida) {
     // Entró y no cerró el día: se le olvidó checar la salida, o sigue dentro. En
-    // cualquier caso no se puede calcular la jornada, y RH tiene que mirarlo.
-    return { ...base, estado: ESTADOS_DIA.INCOMPLETO, minutosRetardo: minutosRetardo(entrada, horario, tz) };
+    // cualquier caso no se puede calcular la jornada, y RH tiene que mirarlo. Pero eso
+    // no significa que el retardo (si lo hay) sea invisible mientras tanto: `esRetardo`
+    // y `minutosRetardo` ya están puestos arriba, con tolerancia y todo.
+    return { ...base, estado: ESTADOS_DIA.INCOMPLETO, minutosRetardo: retardo };
   }
-
-  const retardo = minutosRetardo(entrada, horario, tz);
-  const tolerancia = Number.isFinite(horario.toleranciaMin) ? horario.toleranciaMin : 0;
-
-  // Estrictamente mayor: entrar en el minuto exacto del límite de tolerancia NO es
-  // retardo. Con 9:00 y 10 min de gracia, las 9:10 llegan a tiempo; las 9:11, no.
-  const esRetardo = retardo > tolerancia;
 
   // Un retardo con permiso/vacación aprobados de por medio queda JUSTIFICADO — a
   // diferencia de PRESENTE (arriba), aquí SÍ hay algo que perdonar. No aplica a llegar a
