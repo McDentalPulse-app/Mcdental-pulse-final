@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import PageHeader from "../common/PageHeader";
 import Card from "../common/Card";
 import StatCard from "../common/StatCard";
@@ -258,7 +258,9 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
   const opcionesSemana = useMemo(() => semanasRecientes(12), []);
   const [semana, setSemana] = useState(() => opcionesSemana[0]?.value);
   const [filtroSucursal, setFiltroSucursal] = useState("");
-  const [busquedaPersona, setBusquedaPersona] = useState("");
+  // "Ver nómina" desde el calendario de Asistencia llega con el nombre de la persona.
+  const location = useLocation();
+  const [busquedaPersona, setBusquedaPersona] = useState(() => location.state?.persona || "");
   // Las tarjetas "Retardos"/"Faltas" son un atajo para ver solo a quien tiene uno: filtran el
   // "Recibo por persona" de abajo, pero NO los totales de arriba (esos siguen siendo el total
   // real de la sucursal/búsqueda elegida — filtrar la lista no debe achicar el número que la

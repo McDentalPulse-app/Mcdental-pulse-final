@@ -10881,6 +10881,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   flex-wrap: wrap;
 }
 .asistencia-cal-title { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.asistencia-cal-nomina { margin-left: 10px; padding: 3px 10px; font-size: 11px; vertical-align: middle; }
 .asistencia-cal-emp {
   font-size: 12px;
   font-weight: 700;

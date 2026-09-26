@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Select from "../common/Select";
 import PageHeader from "../common/PageHeader";
 import { useEscapeKey } from "../../hooks/useEscapeKey";
@@ -198,6 +198,10 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
   // alguien en Nómina — ver verAsistencia en Nomina.jsx): `location.state` los trae, y si no
   // vienen se cae al comportamiento de siempre (mes actual, sin nadie preseleccionado).
   const location = useLocation();
+  const navigate = useNavigate();
+  // "/admin/asistencia" -> "/admin/nomina": Asistencia y Nómina viven bajo la misma base en
+  // admin, RH y psicóloga, así que la ruta sale de la URL actual sin mirar el rol.
+  const rutaNomina = `/${location.pathname.split("/")[1]}/nomina`;
   const mesInicial = location.state?.mes || hoyClinica();
 
   const [desde, setDesde] = useState(() => primerDiaDeMes(mesInicial));
@@ -663,7 +667,19 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
                       <span className="agenda-badge-dia">{hoy.getDate()}</span>
                     </div>
                     <div>
-                      <div className="asistencia-cal-emp">{seleccionado.empleado.name}</div>
+                      <div className="asistencia-cal-emp">
+                        {seleccionado.empleado.name}
+                        {/* Camino de vuelta al "nombre → asistencia" de Nómina: abre la nómina de
+                            la semana en curso ya filtrada a esta persona. */}
+                        <button
+                          type="button"
+                          className="mc-btn-outline mc-btn-with-icon asistencia-cal-nomina"
+                          onClick={() => navigate(rutaNomina, { state: { persona: seleccionado.empleado.name } })}
+                          title={`Ver la nómina de ${seleccionado.empleado.name}`}
+                        >
+                          <Icon name="dollar" size={13} /> Ver nómina
+                        </button>
+                      </div>
                       <strong className="asistencia-cal-mes">{nombreMes(desde)}</strong>
                     </div>
                   </div>
