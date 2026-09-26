@@ -341,16 +341,16 @@ export const minutosRetardo = (entrada, horario, tz = TZ_CLINICA) => {
 };
 
 /**
- * Salida anticipada (decisión del dueño, 2026-09-26): irse más de SALIDA_TOLERANCIA_MIN minutos
- * antes de la hora de salida de SU turno de ese día. Con salida a las 19:00, las 18:50 todavía
- * cuentan como a tiempo; las 18:49, no. Se mide contra el turno de cada quien y no contra un
+ * Salida anticipada (decisión del dueño, 2026-09-26): irse SALIDA_TOLERANCIA_MIN minutos o más
+ * antes de la hora de salida de SU turno de ese día. Con salida a las 19:00, las 18:55 ya se
+ * cobran; las 18:56, no (se cuenta por minuto: 18:55:59 sigue siendo 18:55). Se mide contra el turno de cada quien y no contra un
  * 18:50 fijo porque el sábado la gente sale a las 14:00 o a las 18:00, y un corte fijo le
  * habría cobrado el sábado a casi toda la plantilla.
  *
  * Solo cuenta desde FECHA_INICIO_SALIDA_ANTICIPADA: el lunes de la semana en que se decidió
  * (el dueño pidió que cubriera toda esa semana). Las semanas anteriores no cambian.
  */
-export const SALIDA_TOLERANCIA_MIN = 10;
+export const SALIDA_TOLERANCIA_MIN = 5;
 export const FECHA_INICIO_SALIDA_ANTICIPADA = "2026-09-21";
 
 /** Minutos que se fue antes de su hora de salida (0 si salió a su hora o después). */
@@ -441,7 +441,7 @@ export const clasificarDia = ({
   const aplicaSalida = !!horario && !!entrada && !justificacion && fecha >= FECHA_INICIO_SALIDA_ANTICIPADA;
   const sinMarcarSalida = aplicaSalida && (salida ? salida.origen === "sistema" : fecha < hoy);
   const salidaAntes = horario ? minutosSalidaAnticipada(salida, horario, tz) : 0;
-  const esSalidaAnticipada = sinMarcarSalida || (aplicaSalida && salidaAntes > SALIDA_TOLERANCIA_MIN);
+  const esSalidaAnticipada = sinMarcarSalida || (aplicaSalida && salidaAntes >= SALIDA_TOLERANCIA_MIN);
 
   const base = {
     fecha,
