@@ -1,10 +1,21 @@
 # HANDOFF — McDental Pulse en VPS propia
 
-> Para la próxima sesión de Claude. Última actualización: **2026-09-24**.
+> Para la próxima sesión de Claude. Última actualización: **2026-09-26**.
 > Este archivo vive en dos lados y hay que mantenerlos iguales: `/opt/pulse/HANDOFF.md`
 > (en la VPS) y `HANDOFF-pulse-vps.md` (en el repo del usuario). ⚠️ Pese a lo que decía esta
 > misma línea antes: **sí está versionado** (confirmado con `git log`, commit `0e3b7f9` en
 > adelante) — corregido el 2026-09-02, no repetir que no lo está.
+
+> ## 🔴 LEER PRIMERO — cambios del 2026-09-26
+>
+> **Descuento de $100 por salida anticipada** (commit 508d4bf, desplegado). Salir más de 10 min
+> antes de la hora de salida de SU turno ese día (19:00 → antes de 18:50; sábado 14:00 → antes de
+> 13:50). Decisiones del dueño: permiso/vacación aprobados la perdonan; retardo + salida el mismo
+> día = UN solo descuento, el más alto; solo desde el 2026-09-26 (no retroactivo). Vive en
+> `clasificarDia` (`esSalidaAnticipada`, no cambia el estado del día) y `calcularNomina`
+> (`MONTO_SALIDA_ANTICIPADA`, `montoSalidas`). Nómina tiene tarjeta "Salidas antes" con filtro; el
+> acuerdo de conformidad (pantalla + PDF) tiene su renglón. Medido antes de activarlo: 5–9
+> personas por día salían así en las dos semanas previas.
 
 > ## 🔴 LEER PRIMERO — cambios del 2026-09-24
 >
