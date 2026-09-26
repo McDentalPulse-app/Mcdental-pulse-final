@@ -248,21 +248,23 @@ export const useAppActions = () => {
   // tipo "retardo": mismo mecanismo (un permiso ya aprobado), pero clasificarDia() solo lo
   // toma en cuenta para un día que SÍ quedó RETARDO — un retardo justificado pasa a
   // JUSTIFICADO y deja de descontarse en nómina, igual que una falta justificada.
+  // tipo "salida": el permiso se guarda con causa "salida_anticipada", que clasificarDia() usa
+  // para perdonar SOLO la salida de ese día y dejar en pie su retardo, si lo hubo.
   const justificarFalta = async ({ empleadoId, fecha, motivo, tipo = "falta" }) => {
-    const etiqueta = tipo === "retardo" ? "el retardo" : "la falta";
+    const etiqueta = { retardo: "el retardo", salida: "la salida anticipada" }[tipo] || "la falta";
     try {
       const nuevo = await addPermiso({
         empleadoId,
         fecha,
         fechaFin: null,
-        causa: "otro",
-        motivo: tipo === "retardo" ? "Corrección de retardo" : "Corrección de falta",
+        causa: tipo === "salida" ? "salida_anticipada" : "otro",
+        motivo: { retardo: "Corrección de retardo", salida: "Corrección de salida anticipada" }[tipo] || "Corrección de falta",
         comentario: motivo,
         origen: "rh",
         estado: "aprobado",
       });
       setPermisos((prev) => [nuevo, ...prev]);
-      notify.toast.success(tipo === "retardo" ? "Retardo justificado." : "Falta justificada.");
+      notify.toast.success({ retardo: "Retardo justificado.", salida: "Salida anticipada justificada." }[tipo] || "Falta justificada.");
     } catch (error) {
       console.error(`Error justificando ${tipo}:`, error);
       notify.toast.error(error.message || `No se pudo justificar ${etiqueta}.`);

@@ -86,14 +86,17 @@ const tituloCeldaCalendario = (d, tz = TZ_CLINICA) => {
     ? ` · ${d.entrada ? horaCorta(d.entrada.marcadaEn, tz) : "—"} → ${d.salida ? horaCorta(d.salida.marcadaEn, tz) : "—"}`
     : "";
   const retardo = d.minutosRetardo > 0 ? ` (+${d.minutosRetardo} min tarde)` : "";
-  return `${d.fecha} · ${estado}${horas}${retardo}`;
+  const salida = d.sinMarcarSalida
+    ? " · no marcó salida"
+    : d.esSalidaAnticipada ? ` · salió ${d.minutosSalidaAnticipada} min antes` : "";
+  return `${d.fecha} · ${estado}${horas}${retardo}${salida}`;
 };
 
 /** Un mes completo en cuadrícula (7 columnas, Lun-Dom). Cada celda se colorea por el estado del
  * día; clic en un día con checada lo anula (o, si es retardo, pregunta anular vs justificar),
  * clic en una falta la justifica. Muestra la hora de entrada/salida cuando la hay, y un punto
  * si esa checada quedó marcada para revisión. */
-const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustificar, puedeMarcarRetardo, onJustificarDia, onRetardoDia, revisarIds, tz = TZ_CLINICA }) => {
+const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustificar, puedeMarcarRetardo, onJustificarDia, onRetardoDia, onSalidaDia, revisarIds, tz = TZ_CLINICA }) => {
   const [anio, mes] = mesInicio.split("-").map(Number);
   const diasEnMes = new Date(Date.UTC(anio, mes, 0)).getUTCDate();
   const columnaInicial = diaISO(mesInicio); // 1=lunes … 7=domingo
@@ -136,16 +139,23 @@ const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustifi
         // justificar un retardo que ya conocía desde la mañana. JUSTIFICADO se excluye porque
         // ese retardo ya tiene su permiso aprobado — no hay nada más que justificar.
         const justificableRetardo = puedeJustificar && c.esRetardo && c.estado !== ESTADOS_DIA.JUSTIFICADO;
-        const accionable = anulable || justificableFalta || justificableRetardo;
+        // Salida anticipada (o no marcó salida): se justifica igual que un retardo. Si ese día
+        // también hay retardo, handleSalidaDia() pregunta cuál de los dos se justifica.
+        const justificableSalida = puedeJustificar && c.esSalidaAnticipada;
+        const accionable = anulable || justificableFalta || justificableRetardo || justificableSalida;
         const accion = justificableFalta
           ? () => onJustificarDia(c)
-          : justificableRetardo
-            ? () => onRetardoDia(c)
-            : anulable
-              ? () => onAnularDia(c)
-              : undefined;
+          : justificableSalida
+            ? () => onSalidaDia(c)
+            : justificableRetardo
+              ? () => onRetardoDia(c)
+              : anulable
+                ? () => onAnularDia(c)
+                : undefined;
         const pista = justificableFalta
           ? (puedeMarcarRetardo ? "clic para justificar o marcar retardo" : "clic para justificar")
+          : justificableSalida
+            ? "clic para justificar"
           : justificableRetardo
             ? (anulable ? "clic para justificar o anular" : "clic para justificar el retardo")
             : anulable
@@ -168,6 +178,11 @@ const CalendarioMes = ({ dias, mesInicio, puedeAnular, onAnularDia, puedeJustifi
               {porRevisar && <span className="asistencia-calendario-revisar" title="Requiere revisión" />}
             </span>
             {horaEntrada && <span className="asistencia-calendario-hora">{horaEntrada}</span>}
+            {c.esSalidaAnticipada && (
+              <span className="asistencia-calendario-hora asistencia-calendario-salida">
+                {c.sinMarcarSalida ? "sin salida" : "salió antes"}
+              </span>
+            )}
           </div>
         );
       })}
@@ -384,6 +399,42 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
     if (motivo === null) return;
     await onJustificarFalta?.({ empleadoId: dia.empleadoId, fecha: dia.fecha, motivo: motivo || "Sin especificar", tipo: "retardo" });
     cargar();
+  };
+
+  // Justifica una salida anticipada (o una salida no marcada). El permiso que se crea solo
+  // perdona la salida: el retardo de ese mismo día, si lo hubo, se sigue cobrando.
+  const handleJustificarSalidaDia = async (dia) => {
+    const que = dia.sinMarcarSalida ? "la salida no marcada" : "la salida anticipada";
+    const motivo = await prompt({
+      title: dia.sinMarcarSalida ? "Justificar salida no marcada" : "Justificar salida anticipada",
+      description: `¿Por qué se justifica ${que} del ${dia.fecha}?`,
+      confirmText: "Justificar",
+    });
+    if (motivo === null) return;
+    await onJustificarFalta?.({ empleadoId: dia.empleadoId, fecha: dia.fecha, motivo: motivo || "Sin especificar", tipo: "salida" });
+    cargar();
+  };
+
+  // Un día con salida anticipada puede tener además un retardo por justificar o una checada
+  // que anular. El diálogo tiene dos botones, así que se ofrece lo más probable: con retardo,
+  // salida vs retardo; sin él, salida vs anular.
+  const handleSalidaDia = async (dia) => {
+    const conRetardo = dia.esRetardo && dia.estado !== ESTADOS_DIA.JUSTIFICADO;
+    const anulable = puedeAnular && (dia.entrada || dia.salida);
+    if (!conRetardo && !anulable) {
+      await handleJustificarSalidaDia(dia);
+      return;
+    }
+    const salida = await confirm({
+      title: (conRetardo ? "Retardo y salida anticipada del " : "Salida anticipada del ") + dia.fecha,
+      description: "¿Qué se hace con este día?",
+      confirmText: "Justificar salida",
+      cancelText: conRetardo ? "Justificar retardo" : "Anular checada",
+    });
+    if (salida === null) return;
+    if (salida) await handleJustificarSalidaDia(dia);
+    else if (conRetardo) await handleJustificarRetardoDia(dia);
+    else await handleAnularDia(dia);
   };
 
   // Un retardo tiene checada, así que puede ser anulable Y justificable al mismo tiempo (a
@@ -663,6 +714,7 @@ export default function AsistenciaPanel({ usuarios = [], horarios = [], permisos
                   puedeMarcarRetardo={puedeMarcarRetardo}
                   onJustificarDia={(dia) => handleFaltaDia({ ...dia, empleadoId: seleccionado.empleado.id })}
                   onRetardoDia={(dia) => handleRetardoDia({ ...dia, empleadoId: seleccionado.empleado.id })}
+                  onSalidaDia={(dia) => handleSalidaDia({ ...dia, empleadoId: seleccionado.empleado.id })}
                   revisarIds={revisarIds}
                 />
               </Card>

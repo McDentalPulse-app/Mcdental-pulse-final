@@ -1072,6 +1072,15 @@ describe("salida anticipada (desde el 2026-09-21)", () => {
     expect(d.esSalidaAnticipada).toBe(false);
   });
 
+  it("un permiso de salida anticipada perdona la salida pero NO el retardo", () => {
+    const tarde = checada("entrada", "2026-09-28T15:30:00Z"); // 09:30
+    const s = checada("salida", "2026-09-28T22:00:00Z"); // 16:00
+    const permisos = [{ estado: "aprobado", fecha: "2026-09-28", fechaFin: null, causa: "salida_anticipada" }];
+    const d = clasificarDia({ fecha: "2026-09-28", checadas: [tarde, s], horario: turno19, permisos, hoy: "2026-09-30" });
+    expect(d.esSalidaAnticipada).toBe(false);
+    expect(d.estado).toBe(ESTADOS_DIA.RETARDO);
+  });
+
   it("la semana anterior al 2026-09-21 no se toca", () => {
     const e = checada("entrada", "2026-09-19T14:55:00Z");
     const s = checada("salida", "2026-09-19T22:00:00Z"); // 16:00

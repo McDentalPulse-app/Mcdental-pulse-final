@@ -23,6 +23,11 @@
 > salidas que pone RH se respetan. Permiso/vacación aprobados lo perdonan. Semana del 21: 43
 > días sin marcar + 7 salidas tempranas.
 >
+> **Justificar salidas anticipadas** desde el calendario de Asistencia (clic en el día, que ahora
+> dice "salió antes"/"sin salida"): crea un permiso aprobado con causa salida_anticipada. Esa causa
+> perdona SOLO la salida; el retardo del mismo día se sigue cobrando (justificacionRetardo en
+> clasificarDia). Un permiso de otra causa sigue perdonando todo el día.
+>
 > **Sueldo fijo por persona** (mig. 172, usuarios.sueldo_fijo): cobra el sueldo completo sin
 > descuentos por asistencia y aparece en Nómina aunque esté oculta. Solo Ana Salas (psicóloga,
 > no checa). Se activa a mano en la base; no hay casilla en pantalla. El dueño decidió que

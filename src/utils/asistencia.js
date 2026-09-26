@@ -412,10 +412,14 @@ export const clasificarDia = ({
 } = {}) => {
   const { entrada, salida, extras } = emparejarChecadas(checadas);
 
-  const justificacion =
-    permisos.find((p) => p?.estado === "aprobado" && cubreFecha(fecha, p.fecha, p.fechaFin)) ||
-    vacaciones.find((v) => v?.estado === "aprobado" && cubreFecha(fecha, v.fechaInicio, v.fechaFin)) ||
-    null;
+  const vacacion =
+    vacaciones.find((v) => v?.estado === "aprobado" && cubreFecha(fecha, v.fechaInicio, v.fechaFin)) || null;
+  const permisosDelDia = permisos.filter((p) => p?.estado === "aprobado" && cubreFecha(fecha, p.fecha, p.fechaFin));
+  const justificacion = permisosDelDia[0] || vacacion;
+  // Un permiso de SALIDA ANTICIPADA solo perdona la salida, no el retardo de la mañana: tener
+  // permiso para irse a las 16:00 no dice nada de llegar tarde. Así RH puede justificar la salida
+  // de un día sin borrar también su retardo (y al revés, ver justificarFalta en useAppActions).
+  const justificacionRetardo = permisosDelDia.find((p) => p.causa !== "salida_anticipada") || vacacion;
 
   const esFestivo = esFestivoEfectivo(fecha, festivos, intercambios);
 
@@ -496,7 +500,7 @@ export const clasificarDia = ({
   // Un retardo con permiso/vacación aprobados de por medio queda JUSTIFICADO — a
   // diferencia de PRESENTE (arriba), aquí SÍ hay algo que perdonar. No aplica a llegar a
   // tiempo: ese caso ya está resuelto como PRESENTE antes de llegar aquí.
-  if (esRetardo && justificacion) {
+  if (esRetardo && justificacionRetardo) {
     return { ...base, estado: ESTADOS_DIA.JUSTIFICADO, minutosRetardo: retardo };
   }
 
