@@ -11228,6 +11228,10 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
    en una fila flex junto a los WeekSelect, así que necesita su propio ancho o se estiraría a
    ocupar toda la barra y empujaría "104 personas" a la siguiente línea. */
 .nomina-filtro-buscar { width: 200px; max-width: 100%; }
+/* Tarjetas de Nómina: "$258,768.74" no cabe a 32px en una tarjeta de ~200px y se cortaba.
+   El número se escala con el ancho de SU tarjeta (container query), no con la pantalla. */
+.nomina-stats .admin-stat-card { container-type: inline-size; }
+.nomina-stats .admin-stat-value { font-size: clamp(18px, 14cqi, 32px); white-space: nowrap; }
 
 .nomina-lista { display: flex; flex-direction: column; gap: 10px; }
 .nomina-fila {

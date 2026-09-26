@@ -782,7 +782,7 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
         </div>
       </Card>
 
-      <div className="admin-stat-grid">
+      <div className="admin-stat-grid nomina-stats">
         <StatCard iconName="dollar" value={money(totales.pago)} label="Total a pagar" valueClass="admin-stat-value--green" />
         <StatCard iconName="dollar" value={money(totales.descuento)} label="Total descontado" valueClass="admin-stat-value--amber" />
         <StatCard
