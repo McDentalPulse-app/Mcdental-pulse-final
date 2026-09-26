@@ -748,6 +748,15 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
             onChange={(e) => setBusquedaPersona(e.target.value)}
             aria-label="Buscar persona por nombre"
           />
+          {busquedaPersona && (
+            <button
+              type="button"
+              className="mc-btn-outline mc-btn-with-icon nomina-filtro-limpiar"
+              onClick={() => setBusquedaPersona("")}
+            >
+              <Icon name="close" size={13} /> Limpiar nombre
+            </button>
+          )}
           <em>{visibles.length} {visibles.length === 1 ? "persona" : "personas"}</em>
           <button
             type="button"
