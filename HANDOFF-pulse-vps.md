@@ -22,6 +22,11 @@
 > sistema, o un día pasado sin salida, cuenta como salida anticipada (campo sinMarcarSalida). Las
 > salidas que pone RH se respetan. Permiso/vacación aprobados lo perdonan. Semana del 21: 43
 > días sin marcar + 7 salidas tempranas.
+>
+> **Sueldo fijo por persona** (mig. 172, usuarios.sueldo_fijo): cobra el sueldo completo sin
+> descuentos por asistencia y aparece en Nómina aunque esté oculta. Solo Ana Salas (psicóloga,
+> no checa). Se activa a mano en la base; no hay casilla en pantalla. El dueño decidió que
+> Maricruz (RH, tampoco checa) siga con descuentos normales, así que en Nómina le salen faltas.
 
 > ## 🔴 LEER PRIMERO — cambios del 2026-09-24
 >

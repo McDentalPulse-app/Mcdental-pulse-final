@@ -101,7 +101,10 @@ function FilaNomina({
         >
           {empleado.name}
         </button>
-        <div className="nomina-persona-sub">{normalizeSucursal(empleado.sucursal)}</div>
+        <div className="nomina-persona-sub">
+          {normalizeSucursal(empleado.sucursal)}
+          {empleado.sueldoFijo && " · Sueldo fijo, sin descuentos"}
+        </div>
       </div>
 
       <div className="nomina-semana">
@@ -311,7 +314,8 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
   // Toda la plantilla activa, no solo empleado/doctor: RH y la psicóloga también cobran.
   const empleados = useMemo(
     () => usuarios
-      .filter((u) => !u.inactivo && !u.archivado && !u.oculto)
+      // Una cuenta oculta no sale, salvo que tenga sueldo fijo (mig. 172): esa sí cobra.
+      .filter((u) => !u.inactivo && !u.archivado && (!u.oculto || u.sueldoFijo))
       .sort((a, b) => (a.name || "").localeCompare(b.name || "")),
     [usuarios]
   );
@@ -349,7 +353,8 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
         tz: zonaDe(zonas, u.sucursal),
       });
       const recibo = calcularNomina({
-        dias,
+        // Sueldo fijo (mig. 172): no checa, así que su asistencia no descuenta nada.
+        dias: u.sueldoFijo ? [] : dias,
         sueldoSemanal: u.sueldoSemanal,
         config,
         puesto: u.puesto,
@@ -548,7 +553,7 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
       tz: zonaDe(zonas, empleado.sucursal),
     });
     const recibo = calcularNomina({
-      dias,
+      dias: empleado.sueldoFijo ? [] : dias,
       sueldoSemanal: empleado.sueldoSemanal,
       config,
       puesto: empleado.puesto,

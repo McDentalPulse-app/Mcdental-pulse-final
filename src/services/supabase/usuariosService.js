@@ -20,6 +20,7 @@ const mapUsuario = (row) =>
     // Oculta a la persona de listas y reportes (mig. 170) sin tocar login ni checador —
     // distinto de inactivo/archivado, que sí los bloquean. Ver el comentario de la columna.
     oculto: !!row.oculto,
+    sueldoFijo: !!row.sueldo_fijo,
     debeCambiarPassword: row.debe_cambiar_password,
     avatarUrl: row.avatar_url,
     bannerUrl: row.banner_url,
