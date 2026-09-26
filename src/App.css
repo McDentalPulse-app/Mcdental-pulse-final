@@ -11252,6 +11252,11 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 }
 .nomina-persona-nombre--link:hover { text-decoration: underline; }
 .nomina-persona-sub { font-size: 0.78rem; color: var(--mc-texto-apagado); }
+/* Por qué se le descontó cada día, debajo del nombre. */
+.nomina-persona-motivos {
+  list-style: none; margin: 6px 0 0; padding: 0;
+  font-size: 0.74rem; line-height: 1.35; color: var(--mc-rojo, #b91c1c);
+}
 
 /* La semana: una columna por día, con la letra arriba, el color del estado en medio y
    lo que se le descuenta abajo. El color reusa las MISMAS clases que el calendario de

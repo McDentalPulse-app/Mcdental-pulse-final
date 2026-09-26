@@ -22,6 +22,7 @@ import {
   diaISO,
   ESTADOS_DIA,
   ETIQUETA_ESTADO,
+  nombreDiaSemana,
 } from "../../utils/asistencia";
 import { calcularNomina, money } from "../../utils/nomina";
 import { generarPdfAcuerdo } from "../../utils/acuerdoConformidadPdf";
@@ -72,6 +73,24 @@ const semanasRecientes = (n = 12) => {
 };
 
 /**
+ * Por qué se le descontó cada día: "Lunes: retardo, salida anticipada (−$200)".
+ *
+ * Sale del `detalle` que ya calculó calcularNomina(), no se vuelve a decidir nada aquí: solo se
+ * le pone nombre a lo que ya se cobró, para que RH pueda explicarle el descuento a la persona.
+ */
+const motivosDeDescuento = (detalle = []) =>
+  detalle
+    .filter((d) => d.descuento > 0)
+    .map((d) => {
+      const motivos = [];
+      if (d.estado === ESTADOS_DIA.RETARDO) motivos.push("retardo");
+      if (d.estado === ESTADOS_DIA.FALTA) motivos.push("falta");
+      if (d.sinMarcarSalida) motivos.push("no marcó salida");
+      else if (d.esSalidaAnticipada) motivos.push("salida anticipada");
+      return { fecha: d.fecha, texto: `${nombreDiaSemana(d.fecha)}: ${motivos.join(", ")} (−${money(d.descuento)})` };
+    });
+
+/**
  * Una persona en la semana: sus 6-7 días con su estado y su descuento, y el pago final.
  *
  * El sueldo se edita aquí mismo, sin control (defaultValue + onBlur): es un número que se teclea
@@ -105,6 +124,13 @@ function FilaNomina({
           {normalizeSucursal(empleado.sucursal)}
           {empleado.sueldoFijo && " · Sueldo fijo, sin descuentos"}
         </div>
+        {recibo.descuento > 0 && (
+          <ul className="nomina-persona-motivos">
+            {motivosDeDescuento(recibo.detalle).map((m) => (
+              <li key={m.fecha}>{m.texto}</li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div className="nomina-semana">
