@@ -1009,3 +1009,45 @@ describe("fichar sin señal NO cambia si algo es retardo (la gracia se retiró)"
     }
   });
 });
+
+describe("salida anticipada (desde el 2026-09-26)", () => {
+  const turno19 = { diaSemana: 1, horaEntrada: "09:00:00", horaSalida: "19:00:00", toleranciaMin: 10 };
+  const entrada = checada("entrada", "2026-09-28T14:55:00Z"); // 08:55, a tiempo
+
+  it("salir 10 minutos antes (18:50) NO es salida anticipada", () => {
+    const s = checada("salida", "2026-09-29T00:50:00Z", { fecha: "2026-09-28" });
+    const d = clasificarDia({ fecha: "2026-09-28", checadas: [entrada, s], horario: turno19, hoy: "2026-09-30" });
+    expect(d.esSalidaAnticipada).toBe(false);
+    expect(d.estado).toBe(ESTADOS_DIA.PRESENTE);
+  });
+
+  it("salir a las 18:49 SÍ lo es, y el día sigue siendo PRESENTE", () => {
+    const s = checada("salida", "2026-09-29T00:49:00Z", { fecha: "2026-09-28" });
+    const d = clasificarDia({ fecha: "2026-09-28", checadas: [entrada, s], horario: turno19, hoy: "2026-09-30" });
+    expect(d.esSalidaAnticipada).toBe(true);
+    expect(d.minutosSalidaAnticipada).toBe(11);
+    expect(d.estado).toBe(ESTADOS_DIA.PRESENTE);
+  });
+
+  it("se mide contra SU turno: sábado de 14:00, salir 13:55 no cuenta", () => {
+    const sabado = { diaSemana: 6, horaEntrada: "09:00:00", horaSalida: "14:00:00", toleranciaMin: 10 };
+    const e = checada("entrada", "2026-10-03T14:55:00Z");
+    const s = checada("salida", "2026-10-03T19:55:00Z"); // 13:55
+    const d = clasificarDia({ fecha: "2026-10-03", checadas: [e, s], horario: sabado, hoy: "2026-10-05" });
+    expect(d.esSalidaAnticipada).toBe(false);
+  });
+
+  it("un permiso aprobado la perdona", () => {
+    const s = checada("salida", "2026-09-28T22:00:00Z"); // 16:00
+    const permisos = [{ estado: "aprobado", fecha: "2026-09-28", fechaFin: null }];
+    const d = clasificarDia({ fecha: "2026-09-28", checadas: [entrada, s], horario: turno19, permisos, hoy: "2026-09-30" });
+    expect(d.esSalidaAnticipada).toBe(false);
+  });
+
+  it("antes del 2026-09-26 no se aplica (no es retroactivo)", () => {
+    const e = checada("entrada", "2026-09-25T14:55:00Z");
+    const s = checada("salida", "2026-09-25T22:00:00Z"); // 16:00
+    const d = clasificarDia({ fecha: "2026-09-25", checadas: [e, s], horario: turno19, hoy: "2026-09-30" });
+    expect(d.esSalidaAnticipada).toBe(false);
+  });
+});

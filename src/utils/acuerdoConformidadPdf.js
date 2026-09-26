@@ -1,6 +1,5 @@
 import { jsPDF } from "jspdf";
 import { money } from "./nomina";
-import { ESTADOS_DIA } from "./asistencia";
 
 const MARGEN = 20;
 const ANCHO_HOJA = 216; // carta, mm
@@ -57,12 +56,9 @@ export const generarPdfAcuerdo = ({ empleado, recibo, desde, hasta }) => {
   fila("Sucursal", empleado.sucursal || "—");
   y += 5;
 
-  // Mismo desglose que AcuerdoConformidad.jsx: los montos de retardos/faltas se sacan del
-  // `detalle` ya calculado (no se recalculan aquí), para no poder decir un número distinto.
-  const montoRetardos = recibo.detalle
-    .filter((d) => d.estado === ESTADOS_DIA.RETARDO)
-    .reduce((suma, d) => suma + d.descuento, 0);
-  const montoFaltas = recibo.descuento - montoRetardos;
+  // Mismo desglose que AcuerdoConformidad.jsx: los montos por concepto vienen ya sumados
+  // por calcularNomina() (no se recalculan aquí), para no poder decir un número distinto.
+  const { montoRetardos, montoFaltas, montoSalidas } = recibo;
 
   doc.setDrawColor(150);
   doc.line(MARGEN, y, ANCHO_HOJA - MARGEN, y);
@@ -79,6 +75,10 @@ export const generarPdfAcuerdo = ({ empleado, recibo, desde, hasta }) => {
   filaMonto("Sueldo semanal", recibo.sinSueldo ? "Sin capturar" : money(recibo.sueldo));
   filaMonto(`Descuento por retardos (${recibo.retardos})`, montoRetardos > 0 ? `− ${money(montoRetardos)}` : money(0));
   filaMonto(`Descuento por faltas (${recibo.faltas})`, montoFaltas > 0 ? `− ${money(montoFaltas)}` : money(0));
+  filaMonto(
+    `Descuento por salidas anticipadas (${recibo.salidasAnticipadas})`,
+    montoSalidas > 0 ? `− ${money(montoSalidas)}` : money(0),
+  );
   doc.line(MARGEN, y - 2, ANCHO_HOJA - MARGEN, y - 2);
   filaMonto("Pago neto", recibo.sinSueldo ? "Sin capturar" : money(recibo.pagoFinal), { negrita: true });
 

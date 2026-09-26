@@ -341,6 +341,28 @@ export const minutosRetardo = (entrada, horario, tz = TZ_CLINICA) => {
 };
 
 /**
+ * Salida anticipada (decisión del dueño, 2026-09-26): irse más de SALIDA_TOLERANCIA_MIN minutos
+ * antes de la hora de salida de SU turno de ese día. Con salida a las 19:00, las 18:50 todavía
+ * cuentan como a tiempo; las 18:49, no. Se mide contra el turno de cada quien y no contra un
+ * 18:50 fijo porque el sábado la gente sale a las 14:00 o a las 18:00, y un corte fijo le
+ * habría cobrado el sábado a casi toda la plantilla.
+ *
+ * Solo cuenta desde FECHA_INICIO_SALIDA_ANTICIPADA: la regla se anunció ese día y no se aplica
+ * hacia atrás (las nóminas ya firmadas no cambian).
+ */
+export const SALIDA_TOLERANCIA_MIN = 10;
+export const FECHA_INICIO_SALIDA_ANTICIPADA = "2026-09-26";
+
+/** Minutos que se fue antes de su hora de salida (0 si salió a su hora o después). */
+export const minutosSalidaAnticipada = (salida, horario, tz = TZ_CLINICA) => {
+  if (!salida?.marcadaEn || !horario?.horaSalida) return 0;
+  const salio = minutosLocales(salida.marcadaEn, tz);
+  const esperada = horaAMinutos(horario.horaSalida);
+  if (salio == null || esperada == null) return 0;
+  return Math.max(0, esperada - salio);
+};
+
+/**
  * NO HAY GRACIA POR FICHAR SIN SEÑAL, y la ausencia es deliberada. Se implementó una de 15
  * minutos el 2026-09-17 y se retiró el mismo día, porque no protegía a nadie:
  *
@@ -407,6 +429,12 @@ export const clasificarDia = ({
   // retardo. Con 9:00 y 10 min de gracia, las 9:10 llegan a tiempo; las 9:11, no.
   const esRetardo = !!entrada && retardo > tolerancia;
 
+  // Un permiso o vacación aprobados la perdonan, igual que al retardo. No cambia el estado del
+  // día (sigue siendo PRESENTE/RETARDO): es un dato aparte que la nómina cobra.
+  const salidaAntes = horario ? minutosSalidaAnticipada(salida, horario, tz) : 0;
+  const esSalidaAnticipada =
+    !!entrada && !justificacion && fecha >= FECHA_INICIO_SALIDA_ANTICIPADA && salidaAntes > SALIDA_TOLERANCIA_MIN;
+
   const base = {
     fecha,
     entrada,
@@ -418,6 +446,8 @@ export const clasificarDia = ({
     // Disponible sea o no INCOMPLETO el día: es lo que deja justificar un retardo el
     // mismo día, antes de que la persona registre su salida.
     esRetardo,
+    esSalidaAnticipada,
+    minutosSalidaAnticipada: esSalidaAnticipada ? salidaAntes : 0,
   };
 
   if (!horario) {

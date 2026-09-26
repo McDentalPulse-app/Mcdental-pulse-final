@@ -64,6 +64,12 @@ const pesos = (n) => Math.round((Number(n) || 0) * 100) / 100;
 const MONTO_RETARDO_BECARIO = 50;
 
 /**
+ * Salida anticipada (decisión del dueño, 2026-09-26): $100 fijos, para todos, becarios
+ * incluidos. Qué cuenta como salida anticipada lo decide clasificarDia() en utils/asistencia.js.
+ */
+export const MONTO_SALIDA_ANTICIPADA = 100;
+
+/**
  * Alguien es becario si su PUESTO lo dice ("Becario Sistemas", "Becaria marketing"…).
  *
  * Por puesto y no por nombre, a propósito: este mismo proyecto ya tuvo datos personales
@@ -113,11 +119,32 @@ export const calcularNomina = ({
   montoRetardoPersonal = null,
 } = {}) => {
   const opciones = { config, sueldoSemanal, puesto, montoRetardoPersonal };
-  const detalle = dias.map((d) => ({ ...d, descuento: descuentoDelDia(d.estado, opciones) }));
+  const detalle = dias.map((d) => {
+    const delEstado = descuentoDelDia(d.estado, opciones);
+    // Un solo descuento por día, el más alto (decisión del dueño, 2026-09-26): llegar tarde
+    // y además irse antes no cobra las dos cosas. Si gana la salida, el día se cobra como
+    // salida anticipada y el retardo no suma nada más.
+    const cobraSalida = !!d.esSalidaAnticipada && MONTO_SALIDA_ANTICIPADA > delEstado;
+    return {
+      ...d,
+      descuento: cobraSalida ? MONTO_SALIDA_ANTICIPADA : delEstado,
+      descuentoSalida: cobraSalida ? MONTO_SALIDA_ANTICIPADA : 0,
+    };
+  });
 
   const retardos = detalle.filter((d) => d.estado === ESTADOS_DIA.RETARDO).length;
   const faltas = detalle.filter((d) => d.estado === ESTADOS_DIA.FALTA).length;
+  const salidasAnticipadas = detalle.filter((d) => d.esSalidaAnticipada).length;
   const descuento = pesos(detalle.reduce((suma, d) => suma + d.descuento, 0));
+  // Desglose por concepto para el acuerdo de conformidad: se suma aquí, una vez, para que el
+  // papel y la pantalla no puedan decir números distintos.
+  const montoSalidas = pesos(detalle.reduce((suma, d) => suma + d.descuentoSalida, 0));
+  const montoRetardos = pesos(
+    detalle
+      .filter((d) => d.estado === ESTADOS_DIA.RETARDO)
+      .reduce((suma, d) => suma + d.descuento - d.descuentoSalida, 0),
+  );
+  const montoFaltas = pesos(descuento - montoSalidas - montoRetardos);
 
   const bruto = typeof sueldoSemanal === "number" ? sueldoSemanal : Number(sueldoSemanal);
   const sinSueldo = !Number.isFinite(bruto) || bruto <= 0;
@@ -127,8 +154,12 @@ export const calcularNomina = ({
     detalle,
     retardos,
     faltas,
+    salidasAnticipadas,
     sueldo,
     descuento,
+    montoRetardos,
+    montoFaltas,
+    montoSalidas,
     // Nunca negativo: si los descuentos se comen el sueldo, el pago es cero. Un "pago final" en
     // rojo no significa que la persona le deba dinero a la empresa, y presentarlo así invitaría
     // a arrastrar esa cifra a la semana siguiente, que no es lo que nadie acordó.

@@ -1,5 +1,4 @@
 import { money } from "../../utils/nomina";
-import { ESTADOS_DIA } from "../../utils/asistencia";
 
 const TEXTO_CONFORMIDAD =
   'Por medio del presente declaro haber recibido de conformidad la cantidad señalada, por ' +
@@ -38,17 +37,10 @@ export default function AcuerdoConformidad({ acuerdos, desde, hasta, editable = 
   const contenido = (
     <>
       {acuerdos.map(({ empleado, recibo }) => {
-        // Sumado del `detalle` (no recibo.retardos × config.montoRetardo): un becario paga $50
-        // fijo por retardo en vez de la tasa general (ver esBecario() en utils/nomina.js), así
-        // que multiplicar por el monto de config daría un número equivocado para ellos. Sumar
-        // lo que YA calculó calcularNomina() día por día es correcto sea cual sea la tasa.
-        const montoRetardos = recibo.detalle
-          .filter((d) => d.estado === ESTADOS_DIA.RETARDO)
-          .reduce((suma, d) => suma + d.descuento, 0);
-        // La falta tampoco es un monto fijo: es el sueldo diario de CADA quien (sueldoSemanal/7
-        // — ver utils/nomina.js). Se obtiene restándole los retardos al descuento total en vez
-        // de recalcular la fórmula aquí, para que nunca pueda desalinearse de calcularNomina().
-        const montoFaltas = recibo.descuento - montoRetardos;
+        // Montos por concepto ya sumados por calcularNomina() (utils/nomina.js): la tasa de
+        // retardo cambia por persona y la falta es el sueldo diario de cada quien, así que
+        // recalcularlos aquí sería la forma de que el papel y la pantalla discrepen.
+        const { montoRetardos, montoFaltas, montoSalidas } = recibo;
 
         return (
           <div key={empleado.id} className="nomina-acuerdo">
@@ -96,6 +88,10 @@ export default function AcuerdoConformidad({ acuerdos, desde, hasta, editable = 
                 <tr>
                   <td>Descuento por faltas ({recibo.faltas})</td>
                   <td>{montoFaltas > 0 ? `− ${money(montoFaltas)}` : money(0)}</td>
+                </tr>
+                <tr>
+                  <td>Descuento por salidas anticipadas ({recibo.salidasAnticipadas})</td>
+                  <td>{montoSalidas > 0 ? `− ${money(montoSalidas)}` : money(0)}</td>
                 </tr>
                 <tr className="nomina-acuerdo-total">
                   <td>Pago neto</td>

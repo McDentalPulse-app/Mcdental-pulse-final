@@ -112,6 +112,8 @@ function FilaNomina({
           const titulo = dia
             ? `${d.nombre} ${dia.fecha} · ${ETIQUETA_ESTADO[estado] || estado}${
                 dia.minutosRetardo > 0 ? ` (+${dia.minutosRetardo} min tarde)` : ""
+              }${
+                dia.esSalidaAnticipada ? ` · salió ${dia.minutosSalidaAnticipada} min antes` : ""
               }${descuento > 0 ? ` · −${money(descuento)}` : ""}`
             : `${d.nombre} · sin turno`;
 
@@ -180,6 +182,8 @@ function FilaNomina({
         <div className="nomina-total-detalle">
           {recibo.retardos} retardo{recibo.retardos === 1 ? "" : "s"} · {recibo.faltas} falta
           {recibo.faltas === 1 ? "" : "s"}
+          {recibo.salidasAnticipadas > 0 &&
+            ` · ${recibo.salidasAnticipadas} salida${recibo.salidasAnticipadas === 1 ? "" : "s"} antes`}
         </div>
         <div className="nomina-acuerdo-acciones">
           <button
@@ -222,6 +226,7 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
   // tarjeta misma muestra, sería circular).
   const [filtroRetardos, setFiltroRetardos] = useState(false);
   const [filtroFaltas, setFiltroFaltas] = useState(false);
+  const [filtroSalidas, setFiltroSalidas] = useState(false);
 
   const [checadas, setChecadas] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -359,9 +364,11 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
   // faltas) — es lo que se espera de dos filtros a la vez, no una fila más para cada uno.
   const recibosMostrados = useMemo(
     () => recibos.filter(({ recibo }) =>
-      (!filtroRetardos || recibo.retardos > 0) && (!filtroFaltas || recibo.faltas > 0)
+      (!filtroRetardos || recibo.retardos > 0) &&
+      (!filtroFaltas || recibo.faltas > 0) &&
+      (!filtroSalidas || recibo.salidasAnticipadas > 0)
     ),
-    [recibos, filtroRetardos, filtroFaltas]
+    [recibos, filtroRetardos, filtroFaltas, filtroSalidas]
   );
 
   // Solo para la hoja de sucursal (vista previa + impresión): el resto de la pantalla
@@ -387,9 +394,10 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
         descuento: acc.descuento + recibo.descuento,
         retardos: acc.retardos + recibo.retardos,
         faltas: acc.faltas + recibo.faltas,
+        salidas: acc.salidas + recibo.salidasAnticipadas,
         sinSueldo: acc.sinSueldo + (recibo.sinSueldo ? 1 : 0),
       }),
-      { pago: 0, descuento: 0, retardos: 0, faltas: 0, sinSueldo: 0 }
+      { pago: 0, descuento: 0, retardos: 0, faltas: 0, salidas: 0, sinSueldo: 0 }
     ),
     [recibos]
   );
@@ -737,6 +745,14 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
           activa={filtroFaltas}
           onClick={() => setFiltroFaltas((v) => !v)}
         />
+        <StatCard
+          iconName="clock"
+          value={totales.salidas}
+          label="Salidas antes"
+          valueClass="admin-stat-value--amber"
+          activa={filtroSalidas}
+          onClick={() => setFiltroSalidas((v) => !v)}
+        />
       </div>
 
       {totales.sinSueldo > 0 && (
@@ -762,7 +778,13 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
         <Card><EmptyState message="No hay personal que mostrar con este filtro." /></Card>
       ) : recibosMostrados.length === 0 ? (
         <Card>
-          <EmptyState message={`Nadie tiene ${filtroRetardos && filtroFaltas ? "retardos y faltas" : filtroRetardos ? "retardos" : "faltas"} esta semana con el filtro de arriba.`} />
+          <EmptyState
+            message={`Nadie tiene ${[
+              filtroRetardos && "retardos",
+              filtroFaltas && "faltas",
+              filtroSalidas && "salidas antes de hora",
+            ].filter(Boolean).join(" y ")} esta semana con el filtro de arriba.`}
+          />
         </Card>
       ) : (
         <Card>
