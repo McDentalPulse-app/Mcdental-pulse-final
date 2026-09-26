@@ -16,7 +16,7 @@ import {
   construirDias, mapaZonas, zonaDe, emparejarChecadas, diaISO, hoyEnClinica,
   ETIQUETA_ESTADO, ESTADOS_DIA,
 } from "../../utils/asistencia";
-import { calcularNomina, money } from "../../utils/nomina";
+import { calcularNomina, inicioConArrastre, money } from "../../utils/nomina";
 import { getAsistencias } from "../../services/supabase/asistenciasService";
 import { getNominaConfig } from "../../services/supabase/nominaConfigService";
 import { formatFechaCorta } from "../../utils/helpers";
@@ -128,7 +128,7 @@ const InicioEmpleado = ({
     if (!desde || !hasta || !userId) return undefined;
     let vivo = true;
     Promise.all([
-      getAsistencias({ desde, hasta, empleadoId: userId }),
+      getAsistencias({ desde: inicioConArrastre(desde), hasta, empleadoId: userId }),
       getNominaConfig(),
     ])
       .then(([filas, cfg]) => {
@@ -143,7 +143,7 @@ const InicioEmpleado = ({
   const recibo = useMemo(() => {
     if (!desde || !hasta) return null;
     const dias = construirDias({
-      desde,
+      desde: inicioConArrastre(desde),
       hasta,
       checadas: checadasSemana,
       horarios: misHorarios,
@@ -156,6 +156,7 @@ const InicioEmpleado = ({
     });
     return calcularNomina({
       dias,
+      desde,
       sueldoSemanal: userSueldoSemanal,
       config,
       puesto: userPuesto,
@@ -249,13 +250,14 @@ const InicioEmpleado = ({
             <p className="empleado-semana-resumen">{resumenSemana}</p>
 
             <div className="empleado-semana-dias">
-              {recibo.detalle.map((dia) => (
+              {/* El fin de semana anterior solo aparece si trae una salida que se cobra aquí. */}
+              {recibo.detalle.filter((dia) => !dia.arrastre || dia.descuento > 0).map((dia) => (
                 <div key={dia.fecha} className="empleado-semana-dia-row">
                   <span className="empleado-semana-dia-fecha">
                     {DIA_CORTO[diaISO(dia.fecha)]} {Number(dia.fecha.slice(8, 10))}
                   </span>
                   <span className={`empleado-semana-dia-estado asistencia-calendario-celda--${dia.estado}`}>
-                    {etiquetaEstadoDia(dia)}
+                    {dia.arrastre ? "Salida de la semana pasada" : etiquetaEstadoDia(dia)}
                   </span>
                   <span className={`empleado-semana-dia-monto${dia.descuento > 0 ? " empleado-semana-dia-monto--cobra" : ""}`}>
                     {dia.descuento > 0 ? `−${money(dia.descuento)}` : "—"}

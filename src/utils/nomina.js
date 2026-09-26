@@ -1,4 +1,4 @@
-import { ESTADOS_DIA } from "./asistencia";
+import { ESTADOS_DIA, diaISO } from "./asistencia";
 
 /**
  * Nómina: qué se le paga a alguien una semana, después de sus retardos y sus faltas.
@@ -46,6 +46,27 @@ import { ESTADOS_DIA } from "./asistencia";
  */
 export const cobraRetardo = (d) =>
   d?.estado === ESTADOS_DIA.RETARDO || (d?.estado === ESTADOS_DIA.INCOMPLETO && !!d?.retardoCobrable);
+
+/**
+ * La salida del FIN DE SEMANA se cobra la semana siguiente (decisión del dueño, 2026-09-26).
+ *
+ * La nómina se paga el sábado, antes de que la gente marque salida: una salida anticipada (o no
+ * marcada) del sábado todavía no existe cuando se paga, y cobrarla en esa misma semana era
+ * apuntarla en un recibo ya pagado. Así que la de sábado/domingo no se cobra en su semana, sino
+ * en la del lunes siguiente, como renglón aparte.
+ *
+ * Para eso quien arma el recibo pide los días desde el SÁBADO ANTERIOR (`inicioConArrastre`) y le
+ * pasa a calcularNomina() el `desde` real de la semana: lo anterior a `desde` es arrastre.
+ */
+const esFinDeSemana = (fecha) => diaISO(fecha) >= 6;
+
+/** "YYYY-MM-DD" dos días antes del lunes `desde`: el sábado de la semana anterior. */
+export const inicioConArrastre = (desde) => {
+  if (!desde) return desde;
+  const d = new Date(`${desde}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - 2);
+  return d.toISOString().slice(0, 10);
+};
 
 /** Montos cuando todavía no se ha configurado nada: no descontar. */
 export const DESCUENTOS_DEFECTO = { montoRetardo: 0 };
@@ -122,6 +143,7 @@ export const descuentoDelDia = (
  */
 export const calcularNomina = ({
   dias = [],
+  desde = null,
   sueldoSemanal = null,
   config = DESCUENTOS_DEFECTO,
   puesto = null,
@@ -129,25 +151,35 @@ export const calcularNomina = ({
 } = {}) => {
   const opciones = { config, sueldoSemanal, puesto, montoRetardoPersonal };
   const detalle = dias.map((d) => {
+    // Día de la semana anterior (su fin de semana): de él solo se cobra aquí la salida; su
+    // retardo o su falta ya se cobraron en su propia semana.
+    const arrastre = !!desde && d.fecha < desde;
+    const finDeSemana = esFinDeSemana(d.fecha);
     // La salida anticipada se SUMA a lo del día (decisión del dueño, 2026-09-26): llegar
-    // tarde y además irse antes cobra las dos cosas.
-    const descuentoSalida = d.esSalidaAnticipada ? MONTO_SALIDA_ANTICIPADA : 0;
+    // tarde y además irse antes cobra las dos cosas. La del fin de semana, una semana después.
+    const cobraSalida = !!d.esSalidaAnticipada && (arrastre ? finDeSemana : !finDeSemana);
+    const descuentoSalida = cobraSalida ? MONTO_SALIDA_ANTICIPADA : 0;
+    const delEstado = arrastre ? 0 : descuentoDelDia(cobraRetardo(d) ? ESTADOS_DIA.RETARDO : d.estado, opciones);
     return {
       ...d,
-      descuento: pesos(descuentoDelDia(cobraRetardo(d) ? ESTADOS_DIA.RETARDO : d.estado, opciones) + descuentoSalida),
+      arrastre,
+      salidaDiferida: !arrastre && finDeSemana && !!d.esSalidaAnticipada,
+      descuento: pesos(delEstado + descuentoSalida),
       descuentoSalida,
     };
   });
 
-  const retardos = detalle.filter(cobraRetardo).length;
-  const faltas = detalle.filter((d) => d.estado === ESTADOS_DIA.FALTA).length;
-  const salidasAnticipadas = detalle.filter((d) => d.esSalidaAnticipada).length;
+  const deLaSemana = detalle.filter((d) => !d.arrastre);
+  const retardos = deLaSemana.filter(cobraRetardo).length;
+  const faltas = deLaSemana.filter((d) => d.estado === ESTADOS_DIA.FALTA).length;
+  // Las que se COBRAN en este recibo: las de entre semana y las del fin de semana anterior.
+  const salidasAnticipadas = detalle.filter((d) => d.descuentoSalida > 0).length;
   const descuento = pesos(detalle.reduce((suma, d) => suma + d.descuento, 0));
   // Desglose por concepto para el acuerdo de conformidad: se suma aquí, una vez, para que el
   // papel y la pantalla no puedan decir números distintos.
   const montoSalidas = pesos(detalle.reduce((suma, d) => suma + d.descuentoSalida, 0));
   const montoRetardos = pesos(
-    detalle
+    deLaSemana
       .filter(cobraRetardo)
       .reduce((suma, d) => suma + d.descuento - d.descuentoSalida, 0),
   );

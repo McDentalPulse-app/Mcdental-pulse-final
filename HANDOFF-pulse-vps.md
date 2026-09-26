@@ -31,8 +31,9 @@
 > **Retardo del sábado en la nómina del sábado**: la nómina se paga el sábado, antes de que la
 > gente marque salida, y un retardo en día INCOMPLETO no se cobraba. Ahora se cobra en cuanto la
 > entrada es tarde (retardoCobrable en clasificarDia, cobraRetardo en nomina.js). La salida
-> anticipada / no marcó salida del sábado sigue sin poder saberse al pagar: cae en esa misma
-> semana después del pago (pendiente de decidir con el dueño si se pasa a la siguiente).
+> anticipada / no marcó salida del SÁBADO (y domingo) se cobra en la nómina de la semana
+> SIGUIENTE, con renglón "(semana pasada)": calcularNomina recibe los días desde el sábado anterior
+> (inicioConArrastre) y el desde real; lo previo a desde es arrastre y solo cobra su salida.
 >
 > **Sueldo fijo por persona** (mig. 172, usuarios.sueldo_fijo): cobra el sueldo completo sin
 > descuentos por asistencia y aparece en Nómina aunque esté oculta. Solo Ana Salas (psicóloga,

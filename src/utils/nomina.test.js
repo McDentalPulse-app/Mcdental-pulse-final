@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calcularNomina, descuentoDelDia, DESCUENTOS_DEFECTO, money } from "./nomina";
+import { calcularNomina, descuentoDelDia, DESCUENTOS_DEFECTO, inicioConArrastre, money } from "./nomina";
 import { ESTADOS_DIA } from "./asistencia";
 
 const CONFIG = { montoRetardo: 50 };
@@ -265,5 +265,41 @@ describe("retardo en un día todavía sin salida (sábado de pago)", () => {
     const r = calcularNomina({ dias: [d], sueldoSemanal: 2000, config: CONFIG });
     expect(r.retardos).toBe(0);
     expect(r.descuento).toBe(0);
+  });
+});
+
+describe("salida del fin de semana: se cobra la semana siguiente", () => {
+  // Semana del lunes 2026-09-28. El sábado 26 y domingo 27 son de la semana anterior.
+  const salida = (fecha, estado = ESTADOS_DIA.PRESENTE) => ({ ...dia(fecha, estado), esSalidaAnticipada: true });
+
+  it("la salida del sábado no se cobra en su semana", () => {
+    const r = calcularNomina({ dias: [salida("2026-10-03")], desde: "2026-09-28", sueldoSemanal: 2000, config: CONFIG });
+    expect(r.descuento).toBe(0);
+    expect(r.salidasAnticipadas).toBe(0);
+    expect(r.detalle[0].salidaDiferida).toBe(true);
+  });
+
+  it("se cobra en la semana siguiente, sin volver a cobrar su retardo", () => {
+    const r = calcularNomina({
+      dias: [salida("2026-09-26", ESTADOS_DIA.RETARDO), dia("2026-09-28", ESTADOS_DIA.PRESENTE)],
+      desde: "2026-09-28",
+      sueldoSemanal: 2000,
+      config: CONFIG,
+    });
+    expect(r.descuento).toBe(100);
+    expect(r.montoSalidas).toBe(100);
+    expect(r.retardos).toBe(0);
+    expect(r.salidasAnticipadas).toBe(1);
+    expect(r.detalle[0].arrastre).toBe(true);
+  });
+
+  it("la salida de entre semana se cobra en su semana, como siempre", () => {
+    const r = calcularNomina({ dias: [salida("2026-09-30")], desde: "2026-09-28", sueldoSemanal: 2000, config: CONFIG });
+    expect(r.descuento).toBe(100);
+  });
+
+  it("inicioConArrastre: el sábado anterior al lunes", () => {
+    expect(inicioConArrastre("2026-09-28")).toBe("2026-09-26");
+    expect(inicioConArrastre("2026-10-05")).toBe("2026-10-03");
   });
 });

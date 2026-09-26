@@ -24,7 +24,7 @@ import {
   ETIQUETA_ESTADO,
   nombreDiaSemana,
 } from "../../utils/asistencia";
-import { calcularNomina, cobraRetardo, money } from "../../utils/nomina";
+import { calcularNomina, cobraRetardo, inicioConArrastre, money } from "../../utils/nomina";
 import { generarPdfAcuerdo } from "../../utils/acuerdoConformidadPdf";
 import { descargarBlob } from "../../utils/archivo";
 import AcuerdoConformidad from "./AcuerdoConformidad";
@@ -80,14 +80,20 @@ const semanasRecientes = (n = 12) => {
  */
 const motivosDeDescuento = (detalle = []) =>
   detalle
-    .filter((d) => d.descuento > 0)
+    .filter((d) => d.descuento > 0 || d.salidaDiferida)
     .map((d) => {
+      const salida = d.sinMarcarSalida ? "no marcó salida" : "salida anticipada";
+      // Salida del fin de semana ANTERIOR, que se cobra en este recibo (ver nomina.js).
+      if (d.arrastre) {
+        return { fecha: d.fecha, texto: `${nombreDiaSemana(d.fecha)} ${Number(d.fecha.slice(-2))} (semana pasada): ${salida} (−${money(d.descuento)})` };
+      }
       const motivos = [];
       if (cobraRetardo(d)) motivos.push("retardo");
       if (d.estado === ESTADOS_DIA.FALTA) motivos.push("falta");
-      if (d.sinMarcarSalida) motivos.push("no marcó salida");
-      else if (d.esSalidaAnticipada) motivos.push("salida anticipada");
-      return { fecha: d.fecha, texto: `${nombreDiaSemana(d.fecha)}: ${motivos.join(", ")} (−${money(d.descuento)})` };
+      if (d.esSalidaAnticipada && !d.salidaDiferida) motivos.push(salida);
+      const cobrado = d.descuento > 0 ? `${motivos.join(", ")} (−${money(d.descuento)})` : "";
+      const diferida = d.salidaDiferida ? `${salida}, se cobra la próxima semana` : "";
+      return { fecha: d.fecha, texto: `${nombreDiaSemana(d.fecha)}: ${[cobrado, diferida].filter(Boolean).join("; ")}` };
     });
 
 /**
@@ -124,7 +130,7 @@ function FilaNomina({
           {normalizeSucursal(empleado.sucursal)}
           {empleado.sueldoFijo && " · Sueldo fijo, sin descuentos"}
         </div>
-        {recibo.descuento > 0 && (
+        {recibo.detalle.some((d) => d.descuento > 0 || d.salidaDiferida) && (
           <ul className="nomina-persona-motivos">
             {motivosDeDescuento(recibo.detalle).map((m) => (
               <li key={m.fecha}>{m.texto}</li>
@@ -324,7 +330,8 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
   const cargar = useCallback(() => {
     if (!desde || !hasta) return undefined;
     let cancelado = false;
-    getAsistencias({ desde, hasta })
+    // Desde el sábado anterior: su salida se cobra en esta semana (ver inicioConArrastre).
+    getAsistencias({ desde: inicioConArrastre(desde), hasta })
       .then((rows) => { if (!cancelado) { setChecadas(rows); setError(null); } })
       .catch((e) => {
         if (cancelado) return;
@@ -367,7 +374,7 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
     if (!desde || !hasta) return [];
     return visibles.map((u) => {
       const dias = construirDias({
-        desde,
+        desde: inicioConArrastre(desde),
         hasta,
         checadas: checadas.filter((c) => c.empleadoId === u.id),
         horarios: horarios.filter((h) => h.empleadoId === u.id),
@@ -381,6 +388,7 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
       const recibo = calcularNomina({
         // Sueldo fijo (mig. 172): no checa, así que su asistencia no descuenta nada.
         dias: u.sueldoFijo ? [] : dias,
+        desde,
         sueldoSemanal: u.sueldoSemanal,
         config,
         puesto: u.puesto,
@@ -389,7 +397,8 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
       // Indexado por día ISO para poder pintar cada uno bajo su letra. construirDias() puede
       // devolver menos de 7 días (alguien que entró a mitad de semana): los que falten quedan
       // sin celda, que es exactamente lo que pasó.
-      const porDia = new Map(recibo.detalle.map((d) => [diaISO(d.fecha), d]));
+      // Sin el arrastre: el sábado de la semana pasada pisaría la celda de este sábado.
+      const porDia = new Map(recibo.detalle.filter((d) => !d.arrastre).map((d) => [diaISO(d.fecha), d]));
       return { empleado: u, recibo, porDia };
     });
   }, [visibles, checadas, horarios, permisos, vacaciones, festivos, intercambios, desde, hasta, zonas, config]);
@@ -565,9 +574,9 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
     const lunesSemana = isoWeekToMonday(semanaValor);
     const d = aISO(lunesSemana);
     const h = aISO(sumarDias(lunesSemana, 6));
-    const checadasSemana = await getAsistencias({ desde: d, hasta: h, empleadoId: empleado.id });
+    const checadasSemana = await getAsistencias({ desde: inicioConArrastre(d), hasta: h, empleadoId: empleado.id });
     const dias = construirDias({
-      desde: d,
+      desde: inicioConArrastre(d),
       hasta: h,
       checadas: checadasSemana,
       horarios: horarios.filter((x) => x.empleadoId === empleado.id),
@@ -580,6 +589,7 @@ export default function Nomina({ usuarios = [], horarios = [], permisos = [], va
     });
     const recibo = calcularNomina({
       dias: empleado.sueldoFijo ? [] : dias,
+      desde: d,
       sueldoSemanal: empleado.sueldoSemanal,
       config,
       puesto: empleado.puesto,
