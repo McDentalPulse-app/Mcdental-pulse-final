@@ -32,10 +32,10 @@ import { ESTADOS_DIA } from "./asistencia";
  *    el día es descanso, no falta).
  *  · PENDIENTE — el día en curso todavía no ha terminado; la persona aún puede llegar.
  *  · PRUEBA — la app no estaba en uso todavía (ver FIN_PERIODO_PRUEBA).
- *  · INCOMPLETO ("sin salida") — entró y no cerró el día. Es un caso que RH tiene que MIRAR,
- *    no un descuento automático: casi siempre es un olvido al checar, y cobrarle a alguien por
- *    un fallo de registro es la forma más rápida de que la plantilla deje de confiar en el
- *    checador. Si además llegó tarde, ese día ya cuenta como retardo por su cuenta.
+ *  · INCOMPLETO ("sin salida") — el ESTADO no descuenta nada por sí mismo. Pero desde el
+ *    2026-09-21 no marcar salida sí cuesta $100 como salida anticipada (decisión del dueño,
+ *    2026-09-26: se usaba para irse temprano sin marcar). Eso lo marca clasificarDia() en
+ *    `esSalidaAnticipada`/`sinMarcarSalida`, no este estado.
  */
 
 /** Montos cuando todavía no se ha configurado nada: no descontar. */

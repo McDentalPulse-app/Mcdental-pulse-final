@@ -113,7 +113,11 @@ function FilaNomina({
             ? `${d.nombre} ${dia.fecha} · ${ETIQUETA_ESTADO[estado] || estado}${
                 dia.minutosRetardo > 0 ? ` (+${dia.minutosRetardo} min tarde)` : ""
               }${
-                dia.esSalidaAnticipada ? ` · salió ${dia.minutosSalidaAnticipada} min antes` : ""
+                dia.sinMarcarSalida
+                  ? " · no marcó salida"
+                  : dia.esSalidaAnticipada
+                    ? ` · salió ${dia.minutosSalidaAnticipada} min antes`
+                    : ""
               }${descuento > 0 ? ` · −${money(descuento)}` : ""}`
             : `${d.nombre} · sin turno`;
 

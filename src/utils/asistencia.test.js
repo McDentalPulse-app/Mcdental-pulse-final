@@ -1044,6 +1044,34 @@ describe("salida anticipada (desde el 2026-09-21)", () => {
     expect(d.esSalidaAnticipada).toBe(false);
   });
 
+  it("una salida automática del sistema (no marcó) se cobra aunque sea a las 19:00", () => {
+    const s = checada("salida", "2026-09-29T01:00:00Z", { fecha: "2026-09-28", origen: "sistema" });
+    const d = clasificarDia({ fecha: "2026-09-28", checadas: [entrada, s], horario: turno19, hoy: "2026-09-30" });
+    expect(d.esSalidaAnticipada).toBe(true);
+    expect(d.sinMarcarSalida).toBe(true);
+  });
+
+  it("una salida que puso RH se respeta como real", () => {
+    const s = checada("salida", "2026-09-29T01:00:00Z", { fecha: "2026-09-28", origen: "rh" });
+    const d = clasificarDia({ fecha: "2026-09-28", checadas: [entrada, s], horario: turno19, hoy: "2026-09-30" });
+    expect(d.esSalidaAnticipada).toBe(false);
+  });
+
+  it("día pasado sin ninguna salida se cobra; el día en curso todavía no", () => {
+    const ayer = clasificarDia({ fecha: "2026-09-28", checadas: [entrada], horario: turno19, hoy: "2026-09-29" });
+    expect(ayer.estado).toBe(ESTADOS_DIA.INCOMPLETO);
+    expect(ayer.esSalidaAnticipada).toBe(true);
+    const hoy = clasificarDia({ fecha: "2026-09-28", checadas: [entrada], horario: turno19, hoy: "2026-09-28" });
+    expect(hoy.esSalidaAnticipada).toBe(false);
+  });
+
+  it("no marcar salida con permiso aprobado no se cobra", () => {
+    const s = checada("salida", "2026-09-29T01:00:00Z", { fecha: "2026-09-28", origen: "sistema" });
+    const permisos = [{ estado: "aprobado", fecha: "2026-09-28", fechaFin: null }];
+    const d = clasificarDia({ fecha: "2026-09-28", checadas: [entrada, s], horario: turno19, permisos, hoy: "2026-09-30" });
+    expect(d.esSalidaAnticipada).toBe(false);
+  });
+
   it("la semana anterior al 2026-09-21 no se toca", () => {
     const e = checada("entrada", "2026-09-19T14:55:00Z");
     const s = checada("salida", "2026-09-19T22:00:00Z"); // 16:00

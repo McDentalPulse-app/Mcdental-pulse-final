@@ -431,9 +431,17 @@ export const clasificarDia = ({
 
   // Un permiso o vacación aprobados la perdonan, igual que al retardo. No cambia el estado del
   // día (sigue siendo PRESENTE/RETARDO): es un dato aparte que la nómina cobra.
+  //
+  // No marcar salida también se cobra (decisión del dueño, 2026-09-26): la salida que pone el
+  // job de medianoche (`origen: "sistema"`, api/tareas-programadas.js) cae justo a la hora del
+  // turno, así que quien se iba temprano sin marcar quedaba mejor que quien marcaba honesto —
+  // en grabaciones se vio gente de Hermosillo saliendo antes con salida "a las 19:00". Un día
+  // ya pasado sin ninguna salida (el job no corrió) cuenta igual. Una salida que corrigió RH
+  // (`origen: "rh"`) se respeta como real.
+  const aplicaSalida = !!horario && !!entrada && !justificacion && fecha >= FECHA_INICIO_SALIDA_ANTICIPADA;
+  const sinMarcarSalida = aplicaSalida && (salida ? salida.origen === "sistema" : fecha < hoy);
   const salidaAntes = horario ? minutosSalidaAnticipada(salida, horario, tz) : 0;
-  const esSalidaAnticipada =
-    !!entrada && !justificacion && fecha >= FECHA_INICIO_SALIDA_ANTICIPADA && salidaAntes > SALIDA_TOLERANCIA_MIN;
+  const esSalidaAnticipada = sinMarcarSalida || (aplicaSalida && salidaAntes > SALIDA_TOLERANCIA_MIN);
 
   const base = {
     fecha,
@@ -447,6 +455,7 @@ export const clasificarDia = ({
     // mismo día, antes de que la persona registre su salida.
     esRetardo,
     esSalidaAnticipada,
+    sinMarcarSalida,
     minutosSalidaAnticipada: esSalidaAnticipada ? salidaAntes : 0,
   };
 

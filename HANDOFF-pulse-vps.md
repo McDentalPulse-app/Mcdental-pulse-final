@@ -16,6 +16,12 @@
 > (`MONTO_SALIDA_ANTICIPADA`, `montoSalidas`). Nómina tiene tarjeta "Salidas antes" con filtro; el
 > acuerdo de conformidad (pantalla + PDF) tiene su renglón. Medido antes de activarlo: 5–9
 > personas por día salían así en las dos semanas previas.
+> **No marcar salida también cuesta $100** (mismo día, a pedido del dueño): la salida que pone el
+> job de medianoche (origen sistema, api/tareas-programadas.js) caía justo a la hora del turno y
+> tapaba a quien se iba temprano sin marcar (visto en grabaciones, Hermosillo). Ahora origen
+> sistema, o un día pasado sin salida, cuenta como salida anticipada (campo sinMarcarSalida). Las
+> salidas que pone RH se respetan. Permiso/vacación aprobados lo perdonan. Semana del 21: 43
+> días sin marcar + 7 salidas tempranas.
 
 > ## 🔴 LEER PRIMERO — cambios del 2026-09-24
 >
