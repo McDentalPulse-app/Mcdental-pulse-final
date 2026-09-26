@@ -1010,7 +1010,7 @@ describe("fichar sin señal NO cambia si algo es retardo (la gracia se retiró)"
   });
 });
 
-describe("salida anticipada (desde el 2026-09-26)", () => {
+describe("salida anticipada (desde el 2026-09-21)", () => {
   const turno19 = { diaSemana: 1, horaEntrada: "09:00:00", horaSalida: "19:00:00", toleranciaMin: 10 };
   const entrada = checada("entrada", "2026-09-28T14:55:00Z"); // 08:55, a tiempo
 
@@ -1044,10 +1044,10 @@ describe("salida anticipada (desde el 2026-09-26)", () => {
     expect(d.esSalidaAnticipada).toBe(false);
   });
 
-  it("antes del 2026-09-26 no se aplica (no es retroactivo)", () => {
-    const e = checada("entrada", "2026-09-25T14:55:00Z");
-    const s = checada("salida", "2026-09-25T22:00:00Z"); // 16:00
-    const d = clasificarDia({ fecha: "2026-09-25", checadas: [e, s], horario: turno19, hoy: "2026-09-30" });
+  it("la semana anterior al 2026-09-21 no se toca", () => {
+    const e = checada("entrada", "2026-09-19T14:55:00Z");
+    const s = checada("salida", "2026-09-19T22:00:00Z"); // 16:00
+    const d = clasificarDia({ fecha: "2026-09-19", checadas: [e, s], horario: turno19, hoy: "2026-09-30" });
     expect(d.esSalidaAnticipada).toBe(false);
   });
 });

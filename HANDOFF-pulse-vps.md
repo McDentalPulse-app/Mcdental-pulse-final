@@ -11,7 +11,7 @@
 > **Descuento de $100 por salida anticipada** (commit 508d4bf, desplegado). Salir más de 10 min
 > antes de la hora de salida de SU turno ese día (19:00 → antes de 18:50; sábado 14:00 → antes de
 > 13:50). Decisiones del dueño: permiso/vacación aprobados la perdonan; retardo + salida el mismo
-> día = se cobran LOS DOS (corregido por el dueño el mismo día; antes era solo el más alto); solo desde el 2026-09-26 (no retroactivo). Vive en
+> día = se cobran LOS DOS (corregido por el dueño el mismo día; antes era solo el más alto); cuenta desde el lunes 2026-09-21 (el dueño pidió toda esa semana; al principio era desde el 26). Vive en
 > `clasificarDia` (`esSalidaAnticipada`, no cambia el estado del día) y `calcularNomina`
 > (`MONTO_SALIDA_ANTICIPADA`, `montoSalidas`). Nómina tiene tarjeta "Salidas antes" con filtro; el
 > acuerdo de conformidad (pantalla + PDF) tiene su renglón. Medido antes de activarlo: 5–9

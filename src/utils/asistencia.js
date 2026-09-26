@@ -347,11 +347,11 @@ export const minutosRetardo = (entrada, horario, tz = TZ_CLINICA) => {
  * 18:50 fijo porque el sábado la gente sale a las 14:00 o a las 18:00, y un corte fijo le
  * habría cobrado el sábado a casi toda la plantilla.
  *
- * Solo cuenta desde FECHA_INICIO_SALIDA_ANTICIPADA: la regla se anunció ese día y no se aplica
- * hacia atrás (las nóminas ya firmadas no cambian).
+ * Solo cuenta desde FECHA_INICIO_SALIDA_ANTICIPADA: el lunes de la semana en que se decidió
+ * (el dueño pidió que cubriera toda esa semana). Las semanas anteriores no cambian.
  */
 export const SALIDA_TOLERANCIA_MIN = 10;
-export const FECHA_INICIO_SALIDA_ANTICIPADA = "2026-09-26";
+export const FECHA_INICIO_SALIDA_ANTICIPADA = "2026-09-21";
 
 /** Minutos que se fue antes de su hora de salida (0 si salió a su hora o después). */
 export const minutosSalidaAnticipada = (salida, horario, tz = TZ_CLINICA) => {
