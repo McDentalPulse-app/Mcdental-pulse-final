@@ -226,25 +226,14 @@ describe("salida anticipada en la nómina", () => {
     expect(r.pagoFinal).toBe(1900);
   });
 
-  it("retardo + salida el mismo día: un solo descuento, el más alto", () => {
-    // Retardo de $50 (CONFIG) contra salida de $100: gana la salida, no se suman.
+  it("retardo + salida el mismo día: se cobran los dos", () => {
+    // Retardo de $50 (CONFIG) + salida de $100.
     const r = calcularNomina({ dias: [salida("2026-09-28", ESTADOS_DIA.RETARDO)], sueldoSemanal: 2000, config: CONFIG });
-    expect(r.descuento).toBe(100);
-    expect(r.montoSalidas).toBe(100);
-    expect(r.montoRetardos).toBe(0);
-    expect(r.retardos).toBe(1);
-  });
-
-  it("si el retardo personal es más alto, se cobra el retardo", () => {
-    const r = calcularNomina({
-      dias: [salida("2026-09-28", ESTADOS_DIA.RETARDO)],
-      sueldoSemanal: 2000,
-      config: CONFIG,
-      montoRetardoPersonal: 150,
-    });
     expect(r.descuento).toBe(150);
-    expect(r.montoRetardos).toBe(150);
-    expect(r.montoSalidas).toBe(0);
+    expect(r.montoSalidas).toBe(100);
+    expect(r.montoRetardos).toBe(50);
+    expect(r.retardos).toBe(1);
+    expect(r.salidasAnticipadas).toBe(1);
   });
 
   it("los montos por concepto suman el descuento total", () => {

@@ -120,15 +120,13 @@ export const calcularNomina = ({
 } = {}) => {
   const opciones = { config, sueldoSemanal, puesto, montoRetardoPersonal };
   const detalle = dias.map((d) => {
-    const delEstado = descuentoDelDia(d.estado, opciones);
-    // Un solo descuento por día, el más alto (decisión del dueño, 2026-09-26): llegar tarde
-    // y además irse antes no cobra las dos cosas. Si gana la salida, el día se cobra como
-    // salida anticipada y el retardo no suma nada más.
-    const cobraSalida = !!d.esSalidaAnticipada && MONTO_SALIDA_ANTICIPADA > delEstado;
+    // La salida anticipada se SUMA a lo del día (decisión del dueño, 2026-09-26): llegar
+    // tarde y además irse antes cobra las dos cosas.
+    const descuentoSalida = d.esSalidaAnticipada ? MONTO_SALIDA_ANTICIPADA : 0;
     return {
       ...d,
-      descuento: cobraSalida ? MONTO_SALIDA_ANTICIPADA : delEstado,
-      descuentoSalida: cobraSalida ? MONTO_SALIDA_ANTICIPADA : 0,
+      descuento: pesos(descuentoDelDia(d.estado, opciones) + descuentoSalida),
+      descuentoSalida,
     };
   });
 
