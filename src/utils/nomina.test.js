@@ -250,3 +250,20 @@ describe("salida anticipada en la nómina", () => {
     expect(r.montoFaltas).toBe(300);
   });
 });
+
+describe("retardo en un día todavía sin salida (sábado de pago)", () => {
+  it("se cobra si entró tarde, aunque no haya marcado salida", () => {
+    const d = { ...dia("2026-09-26", ESTADOS_DIA.INCOMPLETO), retardoCobrable: true };
+    const r = calcularNomina({ dias: [d], sueldoSemanal: 2000, config: CONFIG });
+    expect(r.retardos).toBe(1);
+    expect(r.descuento).toBe(50);
+    expect(r.montoRetardos).toBe(50);
+  });
+
+  it("no se cobra si llegó a tiempo o el retardo está justificado", () => {
+    const d = { ...dia("2026-09-26", ESTADOS_DIA.INCOMPLETO), retardoCobrable: false };
+    const r = calcularNomina({ dias: [d], sueldoSemanal: 2000, config: CONFIG });
+    expect(r.retardos).toBe(0);
+    expect(r.descuento).toBe(0);
+  });
+});

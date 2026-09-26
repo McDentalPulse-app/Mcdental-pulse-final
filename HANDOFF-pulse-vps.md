@@ -28,6 +28,12 @@
 > perdona SOLO la salida; el retardo del mismo día se sigue cobrando (justificacionRetardo en
 > clasificarDia). Un permiso de otra causa sigue perdonando todo el día.
 >
+> **Retardo del sábado en la nómina del sábado**: la nómina se paga el sábado, antes de que la
+> gente marque salida, y un retardo en día INCOMPLETO no se cobraba. Ahora se cobra en cuanto la
+> entrada es tarde (retardoCobrable en clasificarDia, cobraRetardo en nomina.js). La salida
+> anticipada / no marcó salida del sábado sigue sin poder saberse al pagar: cae en esa misma
+> semana después del pago (pendiente de decidir con el dueño si se pasa a la siguiente).
+>
 > **Sueldo fijo por persona** (mig. 172, usuarios.sueldo_fijo): cobra el sueldo completo sin
 > descuentos por asistencia y aparece en Nómina aunque esté oculta. Solo Ana Salas (psicóloga,
 > no checa). Se activa a mano en la base; no hay casilla en pantalla. El dueño decidió que

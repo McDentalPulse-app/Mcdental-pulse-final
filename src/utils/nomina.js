@@ -32,11 +32,20 @@ import { ESTADOS_DIA } from "./asistencia";
  *    el día es descanso, no falta).
  *  · PENDIENTE — el día en curso todavía no ha terminado; la persona aún puede llegar.
  *  · PRUEBA — la app no estaba en uso todavía (ver FIN_PERIODO_PRUEBA).
- *  · INCOMPLETO ("sin salida") — el ESTADO no descuenta nada por sí mismo. Pero desde el
+ *  · INCOMPLETO ("sin salida") — el ESTADO no descuenta nada por sí mismo, salvo el retardo:
+ *    si entró tarde se cobra ya, sin esperar la salida (ver `cobraRetardo`). Pero desde el
  *    2026-09-21 no marcar salida sí cuesta $100 como salida anticipada (decisión del dueño,
  *    2026-09-26: se usaba para irse temprano sin marcar). Eso lo marca clasificarDia() en
  *    `esSalidaAnticipada`/`sinMarcarSalida`, no este estado.
  */
+
+/**
+ * ¿Este día se cobra como retardo? Un RETARDO cerrado, o un día todavía sin salida en el que ya
+ * entró tarde (`retardoCobrable`, de clasificarDia). Lo segundo es lo que mete el retardo del
+ * sábado en la nómina que se paga ese mismo sábado.
+ */
+export const cobraRetardo = (d) =>
+  d?.estado === ESTADOS_DIA.RETARDO || (d?.estado === ESTADOS_DIA.INCOMPLETO && !!d?.retardoCobrable);
 
 /** Montos cuando todavía no se ha configurado nada: no descontar. */
 export const DESCUENTOS_DEFECTO = { montoRetardo: 0 };
@@ -125,12 +134,12 @@ export const calcularNomina = ({
     const descuentoSalida = d.esSalidaAnticipada ? MONTO_SALIDA_ANTICIPADA : 0;
     return {
       ...d,
-      descuento: pesos(descuentoDelDia(d.estado, opciones) + descuentoSalida),
+      descuento: pesos(descuentoDelDia(cobraRetardo(d) ? ESTADOS_DIA.RETARDO : d.estado, opciones) + descuentoSalida),
       descuentoSalida,
     };
   });
 
-  const retardos = detalle.filter((d) => d.estado === ESTADOS_DIA.RETARDO).length;
+  const retardos = detalle.filter(cobraRetardo).length;
   const faltas = detalle.filter((d) => d.estado === ESTADOS_DIA.FALTA).length;
   const salidasAnticipadas = detalle.filter((d) => d.esSalidaAnticipada).length;
   const descuento = pesos(detalle.reduce((suma, d) => suma + d.descuento, 0));
@@ -139,7 +148,7 @@ export const calcularNomina = ({
   const montoSalidas = pesos(detalle.reduce((suma, d) => suma + d.descuentoSalida, 0));
   const montoRetardos = pesos(
     detalle
-      .filter((d) => d.estado === ESTADOS_DIA.RETARDO)
+      .filter(cobraRetardo)
       .reduce((suma, d) => suma + d.descuento - d.descuentoSalida, 0),
   );
   const montoFaltas = pesos(descuento - montoSalidas - montoRetardos);

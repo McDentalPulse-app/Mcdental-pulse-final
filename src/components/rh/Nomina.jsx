@@ -24,7 +24,7 @@ import {
   ETIQUETA_ESTADO,
   nombreDiaSemana,
 } from "../../utils/asistencia";
-import { calcularNomina, money } from "../../utils/nomina";
+import { calcularNomina, cobraRetardo, money } from "../../utils/nomina";
 import { generarPdfAcuerdo } from "../../utils/acuerdoConformidadPdf";
 import { descargarBlob } from "../../utils/archivo";
 import AcuerdoConformidad from "./AcuerdoConformidad";
@@ -83,7 +83,7 @@ const motivosDeDescuento = (detalle = []) =>
     .filter((d) => d.descuento > 0)
     .map((d) => {
       const motivos = [];
-      if (d.estado === ESTADOS_DIA.RETARDO) motivos.push("retardo");
+      if (cobraRetardo(d)) motivos.push("retardo");
       if (d.estado === ESTADOS_DIA.FALTA) motivos.push("falta");
       if (d.sinMarcarSalida) motivos.push("no marcó salida");
       else if (d.esSalidaAnticipada) motivos.push("salida anticipada");

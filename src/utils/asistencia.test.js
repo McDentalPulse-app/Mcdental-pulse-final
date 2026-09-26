@@ -1081,6 +1081,16 @@ describe("salida anticipada (desde el 2026-09-21)", () => {
     expect(d.estado).toBe(ESTADOS_DIA.RETARDO);
   });
 
+  it("el retardo del día en curso ya es cobrable antes de marcar salida", () => {
+    const tarde = checada("entrada", "2026-09-28T15:30:00Z"); // 09:30
+    const d = clasificarDia({ fecha: "2026-09-28", checadas: [tarde], horario: turno19, hoy: "2026-09-28" });
+    expect(d.estado).toBe(ESTADOS_DIA.INCOMPLETO);
+    expect(d.retardoCobrable).toBe(true);
+    const permisos = [{ estado: "aprobado", fecha: "2026-09-28", fechaFin: null, causa: "otro" }];
+    const j = clasificarDia({ fecha: "2026-09-28", checadas: [tarde], horario: turno19, permisos, hoy: "2026-09-28" });
+    expect(j.retardoCobrable).toBe(false);
+  });
+
   it("la semana anterior al 2026-09-21 no se toca", () => {
     const e = checada("entrada", "2026-09-19T14:55:00Z");
     const s = checada("salida", "2026-09-19T22:00:00Z"); // 16:00

@@ -459,6 +459,10 @@ export const clasificarDia = ({
     // Disponible sea o no INCOMPLETO el día: es lo que deja justificar un retardo el
     // mismo día, antes de que la persona registre su salida.
     esRetardo,
+    // Lo que la nómina cobra como retardo aunque el día siga INCOMPLETO (sin salida todavía):
+    // el sábado se paga antes de que la gente marque salida, y esperar a la salida dejaba el
+    // retardo del sábado fuera de la nómina de esa semana (pedido del dueño, 2026-09-26).
+    retardoCobrable: esRetardo && !justificacionRetardo,
     esSalidaAnticipada,
     sinMarcarSalida,
     minutosSalidaAnticipada: esSalidaAnticipada ? salidaAntes : 0,
