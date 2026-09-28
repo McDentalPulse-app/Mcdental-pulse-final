@@ -57,7 +57,12 @@ const IntercambioFestivoPanel = ({ user, festivos, intercambios, destinosOcupado
   // desplegable vacío sin explicación acaba reportado como una falla.
   const festivosDelMes = useMemo(
     () => festivos
-      .filter((f) => esNoLaborable(f) && diasDeAnticipacion(hoy, f.fecha) >= diasAnticipacionMin)
+      .filter((f) => esNoLaborable(f) && (
+        diasDeAnticipacion(hoy, f.fecha) >= diasAnticipacionMin
+        // Pedido del dueño (2026-09-28): un festivo YA PASADO de este mes vuelve a aparecer
+        // hasta que acabe el mes, para avisar que no se trabajó (el 16 de septiembre).
+        || (f.fecha < hoy && f.fecha.slice(0, 7) === hoy.slice(0, 7))
+      ))
       .sort((a, b) => a.fecha.localeCompare(b.fecha)),
     [festivos, hoy, diasAnticipacionMin],
   );
