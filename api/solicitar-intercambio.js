@@ -115,8 +115,9 @@ export default async function handler(req, res) {
   if (mesDe(fechaDestino) !== mesFestivo) {
     return res.status(400).json({ error: "El día que pides a cambio tiene que ser del mismo mes que el festivo." });
   }
-  if (fechaDestino <= hoy) {
-    return res.status(400).json({ error: "El día que pides a cambio tiene que ser posterior a hoy." });
+  // Hoy mismo sí se puede pedir (dueño, 2026-09-28); solo un día ya pasado no.
+  if (fechaDestino < hoy) {
+    return res.status(400).json({ error: "El día que pides a cambio no puede ser un día que ya pasó." });
   }
   // Un conmemorativo SÍ vale como día a cambio (se trabaja), igual que en la pantalla. Y pedir
   // el MISMO festivo como destino también vale — no es un canje, es avisar que no vienes ese

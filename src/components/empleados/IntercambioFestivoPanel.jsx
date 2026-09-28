@@ -128,7 +128,7 @@ const IntercambioFestivoPanel = ({ user, festivos, intercambios, destinosOcupado
   // todos, no hay nada que ganar cambiándolo por otro festivo).
   const destinoEsFestivo = destino && destino !== festivoSel
     && festivos.some((f) => f.fecha === destino && esNoLaborable(f));
-  const puedeEnviar = festivoSel && destino && !ocupado && !destinoEsFestivo && destino > hoy && !enviando;
+  const puedeEnviar = festivoSel && destino && !ocupado && !destinoEsFestivo && destino >= hoy && !enviando;
 
   const enviar = async () => {
     if (!puedeEnviar) return;
