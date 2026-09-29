@@ -25,8 +25,22 @@
 > `scripts/paridad-asistencia.test.mjs`— y, si da diferencias, portad el cambio a una migración
 > nueva. Criterio: cero diferencias.
 >
+> **4. LO DESPLEGADO TIENE QUE ESTAR EN `prod/main`.** Los dos cambios de festivos del 2026-09-28
+> (`9ad08c8`, `e079c1f`) se commitearon y desplegaron desde `/opt/pulse/app` (rama `vps-docker`)
+> pero nunca se empujaron: desplegar `prod/main` los habría quitado de producción. Ya están en
+> `main` (merge `c535467`). Después de commitear en la VPS: `git push prod HEAD:main`.
+>
 > ---
 >
+> ## 🔴 LEER PRIMERO — cambio del 2026-09-28
+>
+> **«Cambiar festivo» vuelve a ofrecer los festivos YA PASADOS del mes en curso** hasta que acabe
+> el mes (pedido del dueño, por el 16 de septiembre). Es una excepción a la anticipación mínima
+> del punto 7 del 2026-09-24, en `IntercambioFestivoPanel.jsx` (filtro `festivosDelMes`). Commit
+> `9ad08c8` en `vps-docker`, desplegado.
+> Mismo día: **el día a cambio ya puede ser HOY** (antes solo desde mañana; el calendario dejaba
+> elegir hoy y el botón quedaba apagado sin aviso). Front (`puedeEnviar`) + `api/solicitar-intercambio.js`.
+
 > ## 🔴 LEER PRIMERO — cambios del 2026-09-26
 >
 > **Descuento de $100 por salida anticipada** (commit 508d4bf, desplegado). Salir 10 min o más
