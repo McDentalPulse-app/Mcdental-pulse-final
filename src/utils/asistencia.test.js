@@ -1014,18 +1014,25 @@ describe("salida anticipada (desde el 2026-09-21)", () => {
   const turno19 = { diaSemana: 1, horaEntrada: "09:00:00", horaSalida: "19:00:00", toleranciaMin: 10 };
   const entrada = checada("entrada", "2026-09-28T14:55:00Z"); // 08:55, a tiempo
 
-  it("salir a las 18:51 NO es salida anticipada", () => {
-    const s = checada("salida", "2026-09-29T00:51:00Z", { fecha: "2026-09-28" });
+  it("salir a las 18:50 (justo 10 min antes) NO es salida anticipada", () => {
+    const s = checada("salida", "2026-09-29T00:50:00Z", { fecha: "2026-09-28" });
     const d = clasificarDia({ fecha: "2026-09-28", checadas: [entrada, s], horario: turno19, hoy: "2026-09-30" });
     expect(d.esSalidaAnticipada).toBe(false);
+    expect(d.minutosSalidaAnticipada).toBe(0);
     expect(d.estado).toBe(ESTADOS_DIA.PRESENTE);
   });
 
-  it("salir a las 18:50 (y hasta 18:50:59) SÍ lo es, y el día sigue siendo PRESENTE", () => {
-    const s = checada("salida", "2026-09-29T00:50:59Z", { fecha: "2026-09-28" });
+  it("salir a las 18:52 tampoco lo es", () => {
+    const s = checada("salida", "2026-09-29T00:52:00Z", { fecha: "2026-09-28" });
+    const d = clasificarDia({ fecha: "2026-09-28", checadas: [entrada, s], horario: turno19, hoy: "2026-09-30" });
+    expect(d.esSalidaAnticipada).toBe(false);
+  });
+
+  it("salir a las 18:49 (y hasta 18:49:59) SÍ lo es, y el día sigue siendo PRESENTE", () => {
+    const s = checada("salida", "2026-09-29T00:49:59Z", { fecha: "2026-09-28" });
     const d = clasificarDia({ fecha: "2026-09-28", checadas: [entrada, s], horario: turno19, hoy: "2026-09-30" });
     expect(d.esSalidaAnticipada).toBe(true);
-    expect(d.minutosSalidaAnticipada).toBe(10);
+    expect(d.minutosSalidaAnticipada).toBe(11);
     expect(d.estado).toBe(ESTADOS_DIA.PRESENTE);
   });
 
