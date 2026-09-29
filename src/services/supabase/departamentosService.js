@@ -1,6 +1,20 @@
 import { supabase } from "../../config/supabase";
 import { fetchAll } from "./fetchAll";
 
+// Nombres y fotos salen de `usuarios_directorio` (mig. 030/164), NO de un join a `usuarios`:
+// la RLS de `usuarios` solo deja a un empleado leer SU PROPIA fila, así que el join devolvía
+// null para todos los demás. Un miembro raso veía el feed y las tareas sin un solo nombre, y
+// un jefe con rol empleado no encontraba a nadie a quién agregar. El directorio es la vista
+// sin datos sensibles que existe justo para esto: legible por cualquier autenticado.
+const getPersonas = async (ids) => {
+  const unicos = [...new Set(ids.filter(Boolean))];
+  if (unicos.length === 0) return new Map();
+  const rows = await fetchAll(() =>
+    supabase.from("usuarios_directorio").select("id, name, puesto, avatar_url").in("id", unicos)
+  );
+  return new Map(rows.map((r) => [r.id, { nombre: r.name, puesto: r.puesto, avatarUrl: r.avatar_url }]));
+};
+
 const mapDepartamento = (row) => ({
   id: row.id,
   nombre: row.nombre,
@@ -10,24 +24,25 @@ const mapDepartamento = (row) => ({
   createdAt: row.created_at,
 });
 
-const mapMiembro = (row) => ({
+const mapMiembro = (row, personas) => ({
   usuarioId: row.usuario_id,
-  nombre: row.usuarios?.name,
-  puesto: row.usuarios?.puesto,
-  avatarUrl: row.usuarios?.avatar_url,
+  nombre: personas.get(row.usuario_id)?.nombre,
+  puesto: personas.get(row.usuario_id)?.puesto,
+  avatarUrl: personas.get(row.usuario_id)?.avatarUrl,
 });
 
-const mapPublicacion = (row) => ({
+const mapPublicacion = (row, personas = new Map()) => ({
   id: row.id,
   departamentoId: row.departamento_id,
   autorId: row.autor_id,
-  autor: row.usuarios?.name,
+  autor: personas.get(row.autor_id)?.nombre,
+  autorAvatarUrl: personas.get(row.autor_id)?.avatarUrl,
   tipo: row.tipo,
   texto: row.texto,
   createdAt: row.created_at,
 });
 
-const mapTarea = (row) => ({
+const mapTarea = (row, personas) => ({
   id: row.id,
   departamentoId: row.departamento_id,
   titulo: row.titulo,
@@ -37,7 +52,8 @@ const mapTarea = (row) => ({
   createdAt: row.created_at,
   asignados: (row.departamento_tarea_asignados || []).map((a) => ({
     usuarioId: a.usuario_id,
-    nombre: a.usuarios?.name,
+    nombre: personas.get(a.usuario_id)?.nombre,
+    avatarUrl: personas.get(a.usuario_id)?.avatarUrl,
     completada: a.completada,
     completadaEn: a.completada_en,
   })),
@@ -47,6 +63,29 @@ const mapTarea = (row) => ({
 export const getMisDepartamentos = async () => {
   const rows = await fetchAll(() => supabase.from("departamentos").select("*").order("created_at"));
   return rows.map(mapDepartamento);
+};
+
+// Lo que las tarjetas de la lista enseñan sin entrar: quién está (para la fila de caras) y
+// cuántas tareas siguen abiertas. Dos consultas para todos los departamentos, no dos por
+// tarjeta; RLS ya las acota a los departamentos de la persona (migración 134).
+export const getResumenDepartamentos = async (usuarioId) => {
+  const [miembros, tareas] = await Promise.all([
+    fetchAll(() => supabase.from("departamento_miembros").select("departamento_id, usuario_id")),
+    fetchAll(() => supabase.from("departamento_tareas").select("id, departamento_id, departamento_tarea_asignados(usuario_id, completada)")),
+  ]);
+  const personas = await getPersonas(miembros.map((m) => m.usuario_id));
+  const resumen = {};
+  const de = (id) => (resumen[id] ||= { miembros: [], tareasAbiertas: 0, misPendientes: 0 });
+  for (const m of miembros) {
+    const p = personas.get(m.usuario_id);
+    de(m.departamento_id).miembros.push({ usuarioId: m.usuario_id, nombre: p?.nombre, avatarUrl: p?.avatarUrl });
+  }
+  for (const t of tareas) {
+    const asignados = t.departamento_tarea_asignados || [];
+    if (asignados.some((a) => !a.completada)) de(t.departamento_id).tareasAbiertas += 1;
+    if (asignados.some((a) => a.usuario_id === usuarioId && !a.completada)) de(t.departamento_id).misPendientes += 1;
+  }
+  return resumen;
 };
 
 // Crear el departamento y sumarse como miembro son dos pasos separados (no hay RPC): la
@@ -88,21 +127,28 @@ export const getMiembros = async (departamentoId) => {
   const rows = await fetchAll(() =>
     supabase
       .from("departamento_miembros")
-      .select("usuario_id, usuarios(name, puesto, avatar_url)")
+      .select("usuario_id")
       .eq("departamento_id", departamentoId)
   );
-  return rows.map(mapMiembro);
+  const personas = await getPersonas(rows.map((r) => r.usuario_id));
+  return rows.map((r) => mapMiembro(r, personas));
 };
 
 // Activos que todavía NO están en este departamento — para el selector del jefe al
 // agregar gente. Cruza toda la empresa (un departamento no es cosa de un solo rol).
+//
+// La lista sale del directorio porque el jefe puede tener rol empleado (el permiso es
+// puede_crear_departamento, no el rol). `oculto` no viaja en el directorio: se filtra con lo
+// que la RLS de `usuarios` deja ver — todo para admin/RH/psicóloga, solo la propia fila para
+// los demás. Es el mismo alcance que ya tenía: `oculto` es un filtro de pantalla (mig. 170).
 export const getUsuariosParaAgregar = async (departamentoId) => {
-  const [usuarios, miembros] = await Promise.all([
-    fetchAll(() => supabase.from("usuarios").select("id, name, puesto, oculto").eq("inactivo", false)),
+  const [directorio, visibles, miembros] = await Promise.all([
+    fetchAll(() => supabase.from("usuarios_directorio").select("id, name, puesto, avatar_url").eq("inactivo", false).order("name")),
+    fetchAll(() => supabase.from("usuarios").select("id, oculto").eq("oculto", true)),
     fetchAll(() => supabase.from("departamento_miembros").select("usuario_id").eq("departamento_id", departamentoId)),
   ]);
-  const yaDentro = new Set(miembros.map((m) => m.usuario_id));
-  return usuarios.filter((u) => !yaDentro.has(u.id) && !u.oculto).map((u) => ({ id: u.id, nombre: u.name, puesto: u.puesto }));
+  const fuera = new Set([...miembros.map((m) => m.usuario_id), ...visibles.map((u) => u.id)]);
+  return directorio.filter((u) => !fuera.has(u.id)).map((u) => ({ id: u.id, nombre: u.name, puesto: u.puesto, avatarUrl: u.avatar_url }));
 };
 
 export const agregarMiembro = async (departamentoId, usuarioId) => {
@@ -131,24 +177,25 @@ export const getPublicaciones = async (departamentoId) => {
   const rows = await fetchAll(() =>
     supabase
       .from("departamento_publicaciones")
-      .select("*, usuarios(name)")
+      .select("*")
       .eq("departamento_id", departamentoId)
       .order("created_at", { ascending: false })
   );
-  return rows.map(mapPublicacion);
+  const personas = await getPersonas(rows.map((r) => r.autor_id));
+  return rows.map((r) => mapPublicacion(r, personas));
 };
 
 export const publicar = async (departamentoId, { tipo, texto }) => {
   const { data, error } = await supabase
     .from("departamento_publicaciones")
     .insert({ departamento_id: departamentoId, tipo, texto })
-    .select("*, usuarios(name)")
+    .select("*")
     .single();
   if (error) {
     console.error("Error publicando en el departamento:", error);
     throw new Error(tipo === "aviso" ? "No se pudo publicar el aviso." : "No se pudo enviar el mensaje.");
   }
-  return mapPublicacion(data);
+  return mapPublicacion(data, await getPersonas([data.autor_id]));
 };
 
 export const subscribePublicaciones = (departamentoId, onInsert) => {
@@ -167,11 +214,12 @@ export const getTareas = async (departamentoId) => {
   const rows = await fetchAll(() =>
     supabase
       .from("departamento_tareas")
-      .select("*, departamento_tarea_asignados(usuario_id, completada, completada_en, usuarios(name))")
+      .select("*, departamento_tarea_asignados(usuario_id, completada, completada_en)")
       .eq("departamento_id", departamentoId)
       .order("created_at", { ascending: false })
   );
-  return rows.map(mapTarea);
+  const personas = await getPersonas(rows.flatMap((r) => (r.departamento_tarea_asignados || []).map((a) => a.usuario_id)));
+  return rows.map((r) => mapTarea(r, personas));
 };
 
 export const crearTarea = async ({ departamentoId, titulo, descripcion, fechaLimite, asignados }) => {

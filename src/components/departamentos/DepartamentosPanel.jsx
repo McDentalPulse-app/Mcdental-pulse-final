@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import PageHeader from "../common/PageHeader";
 import EmptyState from "../common/EmptyState";
 import Icon from "../ui/Icon";
 import { notify } from "../../utils/notify";
-import { getMisDepartamentos, crearDepartamento } from "../../services/supabase/departamentosService";
+import { getMisDepartamentos, crearDepartamento, getResumenDepartamentos } from "../../services/supabase/departamentosService";
 import DepartamentoDetalle from "./DepartamentoDetalle";
+import PilaAvatares from "./PilaAvatares";
 
 // Misma paleta que los eventos del calendario (EventoModal.jsx) — mismo lenguaje visual,
 // sin inventar tokens de color nuevos.
@@ -18,6 +20,7 @@ const COLORES_DEPARTAMENTO = ["azul", "morado", "rosa", "ambar", "verde", "aqua"
  */
 export default function DepartamentosPanel({ user }) {
   const [departamentos, setDepartamentos] = useState([]);
+  const [resumen, setResumen] = useState({});
   const [cargando, setCargando] = useState(true);
   const [abiertoId, setAbiertoId] = useState(null);
   const [modalCrear, setModalCrear] = useState(false);
@@ -31,6 +34,8 @@ export default function DepartamentosPanel({ user }) {
       .then(setDepartamentos)
       .catch(() => notify.toast.error("No se pudieron cargar los departamentos."))
       .finally(() => setCargando(false));
+    // El resumen es adorno: si falla, las tarjetas salen igual, solo sin caras ni contadores.
+    getResumenDepartamentos(user?.id).then(setResumen).catch(() => {});
   };
 
   useEffect(() => { cargar(); }, []);
@@ -62,7 +67,7 @@ export default function DepartamentosPanel({ user }) {
       <DepartamentoDetalle
         user={user}
         departamento={abierto}
-        onVolver={() => setAbiertoId(null)}
+        onVolver={() => { setAbiertoId(null); cargar(); }}
         onEliminado={() => { setAbiertoId(null); cargar(); }}
       />
     );
@@ -92,21 +97,58 @@ export default function DepartamentosPanel({ user }) {
         />
       ) : (
         <div className="departamentos-grid">
-          {departamentos.map((d) => (
-            <button key={d.id} type="button" className={`departamento-card departamento-card--${d.color}`} onClick={() => setAbiertoId(d.id)}>
-              <span className="departamento-card-icono"><Icon name="users" size={22} /></span>
-              <span className="departamento-card-nombre">{d.nombre}</span>
-              {d.jefeId === user?.id && <span className="departamento-card-jefe">Jefe</span>}
-              {d.descripcion && <span className="departamento-card-desc">{d.descripcion}</span>}
-            </button>
-          ))}
+          {departamentos.map((d) => {
+            const r = resumen[d.id];
+            const miembros = r?.miembros || [];
+            return (
+              <button key={d.id} type="button" className={`departamento-card departamento-color--${d.color}`} onClick={() => setAbiertoId(d.id)}>
+                <span className="departamento-card-banda">
+                  <span className="departamento-card-icono"><Icon name="users" size={22} /></span>
+                  {d.jefeId === user?.id && <span className="departamento-pill departamento-pill--jefe">Jefe</span>}
+                </span>
+                <span className="departamento-card-cuerpo">
+                  <span className="departamento-card-nombre">{d.nombre}</span>
+                  <span className={`departamento-card-desc${d.descripcion ? "" : " departamento-card-desc--vacia"}`}>
+                    {d.descripcion || "Sin descripción"}
+                  </span>
+                </span>
+                <span className="departamento-card-pie">
+                  {miembros.length > 0 ? <PilaAvatares personas={miembros} max={4} size={26} /> : <span />}
+                  <span className="departamento-card-meta">
+                    {r && (
+                      <span className="departamento-card-dato">
+                        <Icon name="users" size={13} /> {miembros.length}
+                      </span>
+                    )}
+                    {r?.misPendientes > 0 ? (
+                      <span className="departamento-pill departamento-pill--pendiente">
+                        {r.misPendientes} {r.misPendientes === 1 ? "pendiente" : "pendientes"}
+                      </span>
+                    ) : r?.tareasAbiertas > 0 ? (
+                      <span className="departamento-card-dato">
+                        <Icon name="clipboardCheck" size={13} /> {r.tareasAbiertas} {r.tareasAbiertas === 1 ? "abierta" : "abiertas"}
+                      </span>
+                    ) : null}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
 
-      {modalCrear && (
+      {modalCrear && createPortal(
         <div className="mc-modal-overlay" onClick={() => !guardando && setModalCrear(false)} role="presentation">
-          <div className="mc-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-            <h2 className="mc-modal-title">Nuevo departamento</h2>
+          <div className="mc-modal departamento-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+            <div className="departamento-modal-head">
+              <div>
+                <h2 className="mc-modal-title">Nuevo departamento</h2>
+                <p className="departamento-modal-sub">Tú quedas como jefe. Después agregas a tu equipo.</p>
+              </div>
+              <button type="button" className="departamento-icon-btn" onClick={() => !guardando && setModalCrear(false)} aria-label="Cerrar">
+                <Icon name="close" size={18} />
+              </button>
+            </div>
             <form onSubmit={crear} className="mc-form-grid">
               <div className="mc-form-group">
                 <label className="mc-form-label" htmlFor="dep-nombre">Nombre</label>
@@ -150,7 +192,8 @@ export default function DepartamentosPanel({ user }) {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
