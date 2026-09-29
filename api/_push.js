@@ -1,5 +1,6 @@
 import webpush from "web-push";
 import { admin } from "./_auth.js";
+import { enviarFcm, fcmDisponible } from "./_fcm.js";
 
 /**
  * El emisor de notificaciones push. Una sola función: enviar(empleadoId, aviso).
@@ -33,8 +34,14 @@ const asegurarConfig = () => {
   return true;
 };
 
-/** ¿Está el push configurado en este entorno? Los endpoints lo consultan para no intentar en vano. */
-export const pushDisponible = () => asegurarConfig();
+/**
+ * ¿Hay ALGÚN push configurado en este entorno (web o app nativa)? Los endpoints lo consultan para
+ * no intentar en vano.
+ */
+export const pushDisponible = () => asegurarConfig() || fcmDisponible();
+
+/** Solo el Web Push del navegador: lo que necesita el diagnóstico de suscripción de la PWA. */
+export const webPushDisponible = () => asegurarConfig();
 
 /**
  * Avisa a todo el equipo de gestión (RH, admin y psicóloga) a la vez.
@@ -50,7 +57,7 @@ export const pushDisponible = () => asegurarConfig();
  * sirve a los tres a la vez.
  */
 export const enviarARH = async ({ titulo, cuerpo, url }) => {
-  if (!asegurarConfig()) return;
+  if (!pushDisponible()) return;
 
   const { data: rh } = await admin()
     .from("usuarios")
@@ -81,7 +88,18 @@ export const enviarARH = async ({ titulo, cuerpo, url }) => {
  * desinstaló, el permiso se revocó) y se BORRA. Sin esto, la tabla se llena de teléfonos
  * fantasma y cada envío se hace más lento arrastrando direcciones que no van a ninguna parte.
  */
-export const enviar = async (empleadoId, { titulo, cuerpo, url = "/" }) => {
+export const enviar = async (empleadoId, aviso) => {
+  // POR LOS DOS CAMINOS A LA VEZ (2026-09-29): Web Push para la PWA y Firebase para la app nativa
+  // (`_fcm.js`). Cada uno funciona sin el otro: sin claves VAPID sigue llegando a la app, y sin
+  // cuenta de Firebase sigue llegando a la web.
+  const [web, nativo] = await Promise.all([
+    enviarWeb(empleadoId, aviso).catch(() => ({ enviados: 0, limpiados: 0 })),
+    enviarFcm(empleadoId, aviso),
+  ]);
+  return { enviados: web.enviados + nativo.enviados, limpiados: web.limpiados + nativo.limpiados };
+};
+
+const enviarWeb = async (empleadoId, { titulo, cuerpo, url = "/" }) => {
   if (!asegurarConfig() || !empleadoId) return { enviados: 0, limpiados: 0 };
 
   const supabase = admin();

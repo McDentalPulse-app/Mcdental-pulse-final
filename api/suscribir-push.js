@@ -1,5 +1,5 @@
 import { configOk, admin, quienLlama } from "./_auth.js";
-import { enviar, pushDisponible } from "./_push.js";
+import { enviar, pushDisponible, webPushDisponible } from "./_push.js";
 
 /** Mismo hash corto (djb2) que src/services/pushService.js, para comparar claves VAPID sin
  * exponer la clave entera. Debe dar el MISMO resultado que el cliente o el diagnóstico miente. */
@@ -73,7 +73,7 @@ export default async function handler(req, res) {
       .select("id", { count: "exact", head: true })
       .eq("empleado_id", quien.id);
     return res.status(200).json({
-      configurado: pushDisponible(),
+      configurado: webPushDisponible(),
       servidorPublicaFp: publica ? huellaClave(publica) : null,
       suscripcionesDeEsteUsuario: count || 0,
     });
