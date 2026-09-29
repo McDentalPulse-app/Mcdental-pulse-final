@@ -1,11 +1,32 @@
 # HANDOFF — McDental Pulse en VPS propia
 
-> Para la próxima sesión de Claude. Última actualización: **2026-09-26**.
+> Para la próxima sesión de Claude. Última actualización: **2026-09-29**.
 > Este archivo vive en dos lados y hay que mantenerlos iguales: `/opt/pulse/HANDOFF.md`
 > (en la VPS) y `HANDOFF-pulse-vps.md` (en el repo del usuario). ⚠️ Pese a lo que decía esta
 > misma línea antes: **sí está versionado** (confirmado con `git log`, commit `0e3b7f9` en
 > adelante) — corregido el 2026-09-02, no repetir que no lo está.
 
+> ## 🔴 LEER PRIMERO — cambios del 2026-09-29 (sesión de la app nativa)
+>
+> **1. Migraciones 173-177: el siguiente número libre es la 178.** Cuatro migraciones de la app
+> nativa estaban aplicadas en producción pero nunca se commitearon, y chocaban de número con
+> vuestras 171/172. Entran renumeradas (rama `feat/descuento-semana-app`): 173
+> `descuentos_select_own`, 174 `resumen_asistencia_semana`, 175 `recibo_semana`, 176
+> `cumpleanos_de_mi_clinica`. Verificado contra la base que son exactamente lo que corre.
+>
+> **2. La 177 YA ESTÁ APLICADA en producción** (2026-09-29): `resumen_asistencia_semana` y
+> `recibo_semana` al día con vuestras reglas de nómina del 23-26 (festivos, salida anticipada y su
+> arrastre al lunes, sueldo fijo, fecha de ingreso). Las usa «Tu semana» de la app nativa.
+>
+> **3. SI TOCÁIS `src/utils/asistencia.js` o `src/utils/nomina.js`, la app se separa de la
+> nómina** sin que nada falle: la base tiene una copia de esas reglas en SQL. Pasó ya una vez
+> (entre el 23 y el 29 la app enseñaba hasta $18,600 por semana de descuentos que la nómina no
+> cobraba). Después de cambiar una regla, corred la paridad —cabecera de
+> `scripts/paridad-asistencia.test.mjs`— y, si da diferencias, portad el cambio a una migración
+> nueva. Criterio: cero diferencias.
+>
+> ---
+>
 > ## 🔴 LEER PRIMERO — cambios del 2026-09-26
 >
 > **Descuento de $100 por salida anticipada** (commit 508d4bf, desplegado). Salir 10 min o más
