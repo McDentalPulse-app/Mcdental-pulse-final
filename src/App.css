@@ -2830,7 +2830,10 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 
 .mc-form-row-2 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* minmax(0,…) por lo mismo que .mc-form-grid: con `1fr` a secas un <Select> de texto
+     largo ("Equipo / Hardware (computadora, impresora…)" en Soporte) estiraba la columna
+     y el campo se salía de la tarjeta en iPhone. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 14px;
 }
 
@@ -3932,6 +3935,15 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   flex: 1;
   min-width: 200px;
   margin: 0;
+}
+
+/* ≤900px la pareja "Agrupar por / Semana" (.mc-form-row-2) se apila en dos pisos; si comparte
+   fila con "¿Qué reporte?", esta queda sola abajo (align-items: flex-end) y deja un hueco arriba
+   a la izquierda — visto en iPad vertical. Con fila propia, los tres campos quedan en orden. */
+@media (max-width: 900px) {
+  .reportes-periodo-panel > .mc-form-row-2 {
+    flex: 1 1 100%;
+  }
 }
 
 .reportes-export-grid {
@@ -7302,7 +7314,9 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   .rh-calendar-row,
   .psico-emp-grid,
   .emp-grid {
-    grid-template-columns: 1fr;
+    /* minmax(0,1fr), no 1fr: una sola columna `1fr` tampoco se encoge por debajo de su
+       contenido más ancho (ver .mc-form-grid). */
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .rh-report-scroll-list {
@@ -8079,7 +8093,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
   }
 
   .gestion-personal-modal .mc-form-row-2 {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .expediente-filters {
@@ -8526,7 +8540,10 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
      pantalla, y a partir de ahí cada caja reparte con flex. `min-height: 0` en cada eslabón es
      imprescindible: sin él, un hijo flexible se niega a encogerse por debajo de su contenido y
      el scroll se escapa hacia arriba otra vez. */
-  body.mc-en-chat .app-main {
+  /* Solo con una conversación ABIERTA (-detalle), no en la lista: ahí el bloqueo no hace falta
+     y estorbaba — con los avisos de ubicación/notificaciones arriba la lista quedaba aplastada,
+     la página no se podía desplazar y la barra de abajo nunca se escondía. */
+  body.mc-en-chat-detalle .app-main {
     overflow: hidden;
     padding-bottom: 0;
     /* FLEX y no `height: 100%` en el hijo: en el armazón móvil `.app-main` queda con
@@ -8537,7 +8554,7 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
     flex-direction: column;
   }
 
-  body.mc-en-chat .app-main-inner {
+  body.mc-en-chat-detalle .app-main-inner {
     flex: 1 1 auto;
     min-height: 0;
     display: flex;
@@ -8556,6 +8573,17 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
     height: auto;
     min-height: 0;
     flex: 1 1 auto;
+  }
+
+  /* En la LISTA (sin conversación abierta) la página scrollea normal, así que la tarjeta mide lo
+     que su contenido: con `height: 100%` se estiraba a una pantalla entera casi vacía debajo de
+     dos o tres conversaciones. */
+  body:not(.mc-en-chat-detalle) .mensajes-page,
+  body:not(.mc-en-chat-detalle) .mensajes-layout {
+    /* También el layout: el bloque de ≤430px le fija `calc(100dvh - 152px)`, que solo tiene
+       sentido con el scroll bloqueado de la conversación abierta. Este selector pesa más, así
+       que gana aunque vaya antes en el archivo. */
+    height: auto;
   }
 
   /* Con la conversación abierta, el chat se queda la pantalla entera: fuera la cabecera de
@@ -12251,10 +12279,13 @@ body.app-entrando .admin-page > *:nth-child(n+4) { animation-delay: 180ms; }
 .mc-status-pill--valida { background: var(--mc-badge-verde-bg); color: var(--mc-badge-verde-texto); }
 .mc-status-pill--invalida { background: var(--mc-badge-rojo-bg); color: var(--mc-badge-rojo-texto); }
 
+/* Bloque normal, no flex: con flex cada trozo de texto ("Anota", <strong>hoy</strong>, "en el
+   recibo: …") era una columna aparte y en teléfono la frase se partía en tres. */
 .comision-fecha-hint {
-  display: flex; align-items: center; gap: 6px;
+  display: block;
   color: var(--mc-texto-secundario); font-size: 14px; margin: 4px 0 14px;
 }
+.comision-fecha-hint svg { vertical-align: -2px; margin-right: 6px; }
 .comision-file-input { display: block; width: 100%; margin-bottom: 12px; color: var(--mc-texto-secundario); }
 .comision-file-input + .mc-form-textarea { margin-bottom: 12px; }
 
@@ -14490,6 +14521,10 @@ button.cuenta-switch.cuenta-switch--on { background: var(--mc-aqua); }
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  /* Mismo alto que el editor (min-height: 78vh): sin esto la columna medía solo su contenido
+     y, en pantallas altas como el iPad vertical, quedaba una cajita corta junto a un editor
+     que llegaba hasta abajo. El max-height sigue igual: el árbol scrollea por dentro. */
+  min-height: 78vh;
   max-height: 78vh;
   border-color: var(--mc-borde-suave);
   box-shadow: none;
@@ -14768,7 +14803,7 @@ button.cuenta-switch.cuenta-switch--on { background: var(--mc-aqua); }
 
 @media (max-width: 900px) {
   .notas-layout { grid-template-columns: 1fr; }
-  .notas-sidebar-card { max-height: 260px; }
+  .notas-sidebar-card { min-height: 0; max-height: 260px; }
   .notas-editor-card { min-height: unset; }
 }
 

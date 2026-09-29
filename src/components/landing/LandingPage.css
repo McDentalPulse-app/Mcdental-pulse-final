@@ -245,6 +245,16 @@
   transition: visibility 0s linear 0.4s;
 }
 .gw-card-face--back { transform: rotateY(180deg); visibility: hidden; }
+/* La celda mide lo que la cara más alta (la del formulario). Sin esto la cara frontal dejaba
+   todo el sobrante en blanco DEBAJO del pie; así el cuerpo lo absorbe centrado y el pie queda
+   abajo, en su lugar. */
+.gw-card-face--front { display: flex; flex-direction: column; }
+.gw-card-face--front > .gw-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
 .gw-card-inner.is-flipped .gw-card-face--front { visibility: hidden; }
 .gw-card-inner.is-flipped .gw-card-face--back { visibility: visible; }
 
@@ -299,6 +309,9 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  /* La tarjeta centra su texto; sin esto la hora quedaba centrada sobre la fecha (más
+     ancha) y no alineada con ella junto al ícono. */
+  text-align: left;
 }
 .gw-clock svg { color: var(--mc-aqua); }
 .gw-clock-time {
