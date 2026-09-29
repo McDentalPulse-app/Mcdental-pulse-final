@@ -6,6 +6,19 @@
 > misma línea antes: **sí está versionado** (confirmado con `git log`, commit `0e3b7f9` en
 > adelante) — corregido el 2026-09-02, no repetir que no lo está.
 
+> ## 🔴 LEER PRIMERO — cambios del 2026-09-29 (tarde: salida anticipada y Departamentos)
+>
+> **Salida anticipada: ahora es MÁS de 10 minutos.** Pedido del dueño: con salida a las 19:00,
+> las **18:50 ya son salida normal**; desde las 18:49 se cobra (sábado 14:00 → 13:49). Cambió en
+> `src/utils/asistencia.js` (`salidaAntes > SALIDA_TOLERANCIA_MIN`) **y** en la migración **180**
+> (`resumen_asistencia_semana`, `> 10`). Aplicar la 180 en producción ANTES de desplegar la web:
+> si no, `verificar-paridad` detiene el despliegue. Se evalúa al calcular, así que también
+> cambia semanas pasadas desde el 2026-09-21 (una salida justo a los 10 min deja de descontarse).
+>
+> **Migración 179 (Departamentos):** los miembros pueden VER quién más está asignado a cada tarea
+> de su departamento (solo SELECT; siguen marcando solo la suya). Sin ella, la tarjeta de la
+> tarea no puede mostrar «También: …». Siguiente número libre: **181**.
+>
 > ## 🔴 LEER PRIMERO — cambios del 2026-09-29 (sesión de la app nativa)
 >
 > **1. Migraciones 173-177: el siguiente número libre es la 178.** Cuatro migraciones de la app
