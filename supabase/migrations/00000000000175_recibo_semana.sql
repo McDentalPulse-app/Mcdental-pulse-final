@@ -4,8 +4,8 @@
 -- NÚMERO CAMBIADO AL GUARDARLA EN EL REPO (2026-09-29). Se escribió y se aplicó en producción
 -- como la 173 (hacia el 2026-09-21, desde la sesión de la app nativa), pero nunca se commiteó, y
 -- mientras tanto prod/main usó 171 y 172 para otras dos. No hay registro de migraciones
--- aplicadas, así que el número solo ordena el repo. Que este SQL sea EXACTAMENTE el que corre en
--- producción se comprueba contra la base (pg_get_functiondef) antes de dar nada por bueno.
+-- aplicadas, así que el número solo ordena el repo. COMPROBADO el 2026-09-29 contra la base: el
+-- cuerpo que corre en producción es exactamente este (salvo el número de migración en los textos).
 --
 -- La 174 devuelve el detalle día por día. Esta devuelve la CUENTA: lo que gana, lo que se le
 -- descuenta y lo que le queda. Es el equivalente de `calcularNomina()` en src/utils/nomina.js.

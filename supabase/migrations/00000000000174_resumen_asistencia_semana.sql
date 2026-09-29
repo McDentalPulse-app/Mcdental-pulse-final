@@ -4,8 +4,8 @@
 -- NÚMERO CAMBIADO AL GUARDARLA EN EL REPO (2026-09-29). Se escribió y se aplicó en producción
 -- como la 172 (hacia el 2026-09-21, desde la sesión de la app nativa), pero nunca se commiteó, y
 -- mientras tanto prod/main usó 171 y 172 para otras dos. No hay registro de migraciones
--- aplicadas, así que el número solo ordena el repo. Que este SQL sea EXACTAMENTE el que corre en
--- producción se comprueba contra la base (pg_get_functiondef) antes de dar nada por bueno.
+-- aplicadas, así que el número solo ordena el repo. COMPROBADO el 2026-09-29 contra la base: el
+-- cuerpo que corre en producción es exactamente este (salvo el número de migración en los textos).
 --
 -- POR QUÉ EXISTE. El estado de un día (presente, retardo, falta…) y lo que se descuenta por él
 -- NO se guardan en ninguna tabla: se recalculan cada vez que alguien abre la nómina en la web,

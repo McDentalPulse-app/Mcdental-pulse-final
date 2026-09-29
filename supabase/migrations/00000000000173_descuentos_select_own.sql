@@ -4,8 +4,8 @@
 -- NÚMERO CAMBIADO AL GUARDARLA EN EL REPO (2026-09-29). Se escribió y se aplicó en producción
 -- como la 171 (hacia el 2026-09-21, desde la sesión de la app nativa), pero nunca se commiteó, y
 -- mientras tanto prod/main usó 171 y 172 para otras dos. No hay registro de migraciones
--- aplicadas, así que el número solo ordena el repo. Que este SQL sea EXACTAMENTE el que corre en
--- producción se comprueba contra la base (pg_get_functiondef) antes de dar nada por bueno.
+-- aplicadas, así que el número solo ordena el repo. COMPROBADO el 2026-09-29 contra la base: la
+-- política que hay en producción es exactamente esta.
 --
 -- Hasta hoy `descuentos` solo la leían admin, RH y psicóloga (política
 -- `descuentos_select_admin_rh_psicologa`, migraciones 016 y 028). Un empleado preguntando por
