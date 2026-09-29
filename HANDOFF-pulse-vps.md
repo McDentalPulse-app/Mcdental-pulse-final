@@ -18,12 +18,13 @@
 > `recibo_semana` al día con vuestras reglas de nómina del 23-26 (festivos, salida anticipada y su
 > arrastre al lunes, sueldo fijo, fecha de ingreso). Las usa «Tu semana» de la app nativa.
 >
-> **3. SI TOCÁIS `src/utils/asistencia.js` o `src/utils/nomina.js`, la app se separa de la
-> nómina** sin que nada falle: la base tiene una copia de esas reglas en SQL. Pasó ya una vez
-> (entre el 23 y el 29 la app enseñaba hasta $18,600 por semana de descuentos que la nómina no
-> cobraba). Después de cambiar una regla, corred la paridad —cabecera de
-> `scripts/paridad-asistencia.test.mjs`— y, si da diferencias, portad el cambio a una migración
-> nueva. Criterio: cero diferencias.
+> **3. `build-frontend.sh` AHORA COMPARA LA NÓMINA CON LA APP antes de desplegar**
+> (`scripts/verificar-paridad.mjs`). Las reglas de `src/utils/asistencia.js` y `nomina.js` tienen
+> una copia en SQL que usa la app nativa; entre el 23 y el 29 se separaron y la app enseñaba hasta
+> $18,600 por semana de descuentos que la nómina no cobraba. Si cambiáis una regla, el despliegue
+> se para y enseña las diferencias: portad el cambio a una migración nueva (ver la 177), aplicadla
+> y volved a desplegar. Escape para un arreglo urgente que no toca nómina: `PARIDAD=0`. Si dice
+> que no pudo consultar la base, es infraestructura, no vuestro código.
 >
 > **4. LO DESPLEGADO TIENE QUE ESTAR EN `prod/main`.** Los dos cambios de festivos del 2026-09-28
 > (`9ad08c8`, `e079c1f`) se commitearon y desplegaron desde `/opt/pulse/app` (rama `vps-docker`)
