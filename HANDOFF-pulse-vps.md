@@ -25,13 +25,13 @@
 > en `public.dias_vacaciones_por_anios()` + el trigger `vacaciones_respeta_antiguedad()` (tope
 > real al insertar). Siguiente número libre: **182**.
 >
-> ⚠️ **HALLAZGO 2026-09-29: la 162 NUNCA se aplicó en producción.** En `pulse-db` no existen
-> `anios_cumplidos()`, `vacaciones_respeta_antiguedad()` ni el trigger `trg_vacaciones_antiguedad`:
-> hoy el tope de vacaciones (año mínimo, días por periodo) lo pone SOLO la pantalla web; la app
-> nativa o un insert directo por PostgREST no tienen candado. La web con la tabla nueva ya está
-> desplegada (`86043c2`). Para activar el candado en la base hay que aplicar **162 y luego 181**
-> (la 181 reemplaza la función de la 162 pero NO crea el trigger ni `anios_cumplidos`). Pendiente
-> de que el dueño lo autorice: cambia el comportamiento para la app nativa.
+> ✅ **162 + 181 APLICADAS en producción (2026-09-29, autorizado por el dueño).** Hallazgo previo:
+> la 162 nunca se había aplicado — en `pulse-db` no existían `anios_cumplidos()`,
+> `vacaciones_respeta_antiguedad()` ni `trg_vacaciones_antiguedad`, y el tope de vacaciones
+> solo lo ponía la web. Se aplicaron las dos en UNA transacción (162 y enseguida 181, sin
+> ventana con el tope viejo de 8). Ahora el candado rige también para la app nativa y PostgREST;
+> gestión (admin/rh/psicóloga) sigue exenta. Antes de aplicar: los 100 empleados/doctores
+> activos tenían `fecha_ingreso`.
 >
 > ## 🔴 LEER PRIMERO — cambios del 2026-09-29 (sesión de la app nativa)
 >
