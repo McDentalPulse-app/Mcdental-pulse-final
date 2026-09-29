@@ -23,8 +23,15 @@
 > MENOS 4 por escalón → 1 año 8, 2 → 10, 3 → 12, 4 → 14, 5 → 16, 6-10 → 18, 11-15 → 20…
 > Vive en `diasVacacionesPorAnios()` (src/utils/vacaciones.js: saldo, validación, finiquito) y
 > en `public.dias_vacaciones_por_anios()` + el trigger `vacaciones_respeta_antiguedad()` (tope
-> real al insertar). Aplicar la 181 junto con la web: si solo sube la web, la pantalla deja
-> pedir 10 días y la base los rechaza con el tope viejo de 8. Siguiente número libre: **182**.
+> real al insertar). Siguiente número libre: **182**.
+>
+> ⚠️ **HALLAZGO 2026-09-29: la 162 NUNCA se aplicó en producción.** En `pulse-db` no existen
+> `anios_cumplidos()`, `vacaciones_respeta_antiguedad()` ni el trigger `trg_vacaciones_antiguedad`:
+> hoy el tope de vacaciones (año mínimo, días por periodo) lo pone SOLO la pantalla web; la app
+> nativa o un insert directo por PostgREST no tienen candado. La web con la tabla nueva ya está
+> desplegada (`86043c2`). Para activar el candado en la base hay que aplicar **162 y luego 181**
+> (la 181 reemplaza la función de la 162 pero NO crea el trigger ni `anios_cumplidos`). Pendiente
+> de que el dueño lo autorice: cambia el comportamiento para la app nativa.
 >
 > ## 🔴 LEER PRIMERO — cambios del 2026-09-29 (sesión de la app nativa)
 >
