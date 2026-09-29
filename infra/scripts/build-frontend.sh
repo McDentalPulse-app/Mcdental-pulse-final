@@ -15,6 +15,22 @@ ANON=$(grep '^VITE_SUPABASE_ANON_KEY=' /opt/pulse/frontend.env | cut -d= -f2-)
 
 cd /opt/pulse/app
 
+# PREFLIGHT: que la base siga cobrando lo mismo que la web (2026-09-29).
+#
+# Las reglas de asistencia y nomina viven en src/utils/*.js Y en SQL (resumen_asistencia_semana,
+# recibo_semana), que es lo que la app nativa ensena en "Tu semana". Entre el 23 y el 26 de
+# septiembre la web cambio como se cobra y la base no, y la app le ensenaba a la gente descuentos
+# que la nomina no cobraba. Si este codigo cambia una regla que la base no tiene, el despliegue
+# no empieza: hay que portar el cambio a una migracion (ver la 177) y aplicarla.
+#
+# Va ANTES de construir: con `set -e`, un fallo aborta sin haber tocado la imagen ni el contenedor.
+# Escape para un arreglo urgente que no toca reglas de nomina:  PARIDAD=0 sh infra/scripts/build-frontend.sh
+if [ "${PARIDAD:-1}" = "1" ]; then
+  node scripts/verificar-paridad.mjs
+else
+  echo "AVISO: comparacion nomina <-> app SALTADA (PARIDAD=0)."
+fi
+
 # La imagen que sirve ahora pasa a ser el punto de retorno antes de tocar nada.
 docker tag pulse-frontend:latest pulse-frontend:previa 2>/dev/null || true
 
