@@ -61,8 +61,8 @@ describe("calcularAguinaldo", () => {
 
 describe("calcularFiniquito", () => {
   it("suma días pendientes + vacaciones + prima vacacional + aguinaldo proporcional", () => {
-    // Entró hace años, año completo trabajado, sin vacaciones tomadas en el periodo vigente
-    // (8 días disponibles, la política de la clínica — ver vacaciones.js).
+    // Entró el 2020-03-10: al salir lleva 6 años cumplidos, así que su periodo vigente trae
+    // 18 días (tabla de la clínica, ver diasVacacionesPorAnios) y no ha tomado ninguno.
     const r = calcularFiniquito({
       sueldoSemanal: 2100,
       fechaIngreso: "2020-03-10",
@@ -72,9 +72,9 @@ describe("calcularFiniquito", () => {
     });
     expect(r.salarioDiario).toBe(300);
     expect(r.montoDiasPendientes).toBe(3 * 300); // 900
-    expect(r.diasVacacionesPendientes).toBe(8); // saldoVacaciones: 8 días/año, ninguno tomado
-    expect(r.montoVacaciones).toBe(8 * 300); // 2400
-    expect(r.montoPrimaVacacional).toBe(2400 * 0.25); // 600
+    expect(r.diasVacacionesPendientes).toBe(18); // 6 años cumplidos → 18 días, ninguno tomado
+    expect(r.montoVacaciones).toBe(18 * 300); // 5400
+    expect(r.montoPrimaVacacional).toBe(5400 * 0.25); // 1350
     expect(r.total).toBe(r.montoDiasPendientes + r.montoVacaciones + r.montoPrimaVacacional + r.montoAguinaldo);
   });
 
@@ -86,7 +86,7 @@ describe("calcularFiniquito", () => {
       fechaSalida: "2026-09-21",
       vacacionesEmpleado,
     });
-    expect(r.diasVacacionesPendientes).toBe(5); // 8 - 3 ya tomados
+    expect(r.diasVacacionesPendientes).toBe(15); // 18 - 3 ya tomados
   });
 
   it("suma otras percepciones pactadas (comisiones, bonos) al total", () => {

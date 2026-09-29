@@ -8,7 +8,7 @@ import Icon from "../ui/Icon";
 import DateRangePicker from "../common/DateRangePicker";
 import { useNotification } from "../../contexts/NotificationContext";
 import { CAUSAS_PERMISO, CAUSA_SALIDA_ANTICIPADA } from "../../utils/permisos";
-import { saldoVacaciones, validarSolicitud, DIAS_VACACIONES_POR_ANIO } from "../../utils/vacaciones";
+import { saldoVacaciones, validarSolicitud } from "../../utils/vacaciones";
 import { diasAnticipacionRequerida } from "../../utils/constants";
 import { formatFechaCorta } from "../../utils/helpers";
 
@@ -21,7 +21,7 @@ const avisoVacaciones = (v) => {
     case "bloqueado":
       return `Tus vacaciones se desbloquean el ${formatFechaCorta(v.proximoAniversario)}, al cumplir tu primer año. Mientras tanto puedes solicitar un permiso.`;
     case "agotado":
-      return `Ya usaste tus ${DIAS_VACACIONES_POR_ANIO} días del periodo que termina el ${formatFechaCorta(v.periodo.fin)}.`;
+      return `Ya usaste tus ${v.total} días del periodo que termina el ${formatFechaCorta(v.periodo.fin)}.`;
     case "excede":
       return `Solo te quedan ${v.disponibles} ${v.disponibles === 1 ? "día" : "días"} en el periodo que termina el ${formatFechaCorta(v.periodo.fin)}, y ahí caen ${v.pide} de los que pides.`;
     case "rango":

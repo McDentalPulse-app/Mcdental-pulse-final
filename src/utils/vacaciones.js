@@ -1,12 +1,13 @@
 /**
  * Derecho a vacaciones por antigüedad.
  *
- * Regla de la clínica: las vacaciones se DESBLOQUEAN al cumplir el primer año, y son 8 días
- * por cada año de servicio. El saldo se REINICIA en cada aniversario: lo que no se tomó en
- * su periodo se pierde, no se acumula.
+ * Regla de la clínica: las vacaciones se DESBLOQUEAN al cumplir el primer año, y los días de
+ * cada periodo CRECEN CON LA ANTIGÜEDAD (ver diasVacacionesPorAnios: 8 el primer año, 10 el
+ * segundo…). El saldo se REINICIA en cada aniversario: lo que no se tomó en su periodo se
+ * pierde, no se acumula.
  *
  * El "año de vacaciones" NO es el año natural: va de aniversario a aniversario. Alguien que
- * entró un 10 de marzo estrena sus 8 días cada 10 de marzo, no cada 1 de enero.
+ * entró un 10 de marzo estrena sus días cada 10 de marzo, no cada 1 de enero.
  *
  * LOS DÍAS SE REPARTEN POR DONDE CAEN, no por donde empieza la solicitud. Unas vacaciones
  * del 5 al 12 de marzo con aniversario el día 10 gastan 5 días del periodo que acaba y 3 del
@@ -18,11 +19,29 @@
  * cae el día ANTERIOR — el mismo tropiezo que ya documenta formatFechaCorta en helpers.js.
  */
 
-export const DIAS_VACACIONES_POR_ANIO = 8;
 export const ANIOS_ANTIGUEDAD_MINIMA = 1;
 
+/**
+ * Días de vacaciones del periodo que empieza al cumplir `anios` años de servicio.
+ *
+ * Decisión del dueño (2026-09-29): la tabla del Art. 76 de la LFT (reforma 2023) MENOS 4 días
+ * en cada escalón. La ley da 12, 14, 16, 18 y 20 los primeros cinco años y luego +2 cada cinco
+ * (22 de 6 a 10, 24 de 11 a 15…); aquí queda:
+ *
+ *   1 → 8 · 2 → 10 · 3 → 12 · 4 → 14 · 5 → 16 · 6-10 → 18 · 11-15 → 20 · 16-20 → 22 …
+ *
+ * La misma tabla vive en SQL (public.dias_vacaciones_por_anios, migración 181), que es la que
+ * pone el tope de verdad al insertar. Si cambia una, cambia la otra.
+ */
+export const diasVacacionesPorAnios = (anios) => {
+  const n = Math.floor(Number(anios));
+  if (!Number.isFinite(n) || n < ANIOS_ANTIGUEDAD_MINIMA) return 0;
+  if (n <= 5) return 6 + 2 * n;
+  return 16 + 2 * Math.ceil((n - 5) / 5);
+};
+
 /** Estados que ya consumen saldo. Una solicitud pendiente cuenta: si no, se podrían pedir
- *  los mismos 8 días tres veces mientras RH no responde. Las rechazadas no consumen nada. */
+ *  los mismos días tres veces mientras RH no responde. Las rechazadas no consumen nada. */
 const ESTADOS_QUE_CONSUMEN = new Set(["pendiente", "aprobado", "aprobada"]);
 
 const MS_DIA = 24 * 60 * 60 * 1000;
@@ -149,14 +168,15 @@ export const saldoVacaciones = (fechaIngreso, vacacionesEmpleado = [], hoy) => {
   }
 
   const usados = diasUsadosEnPeriodo(vacacionesEmpleado, periodo);
+  const total = diasVacacionesPorAnios(periodo.anios);
 
   return {
     desbloqueado: true,
     anios: periodo.anios,
     periodo,
-    total: DIAS_VACACIONES_POR_ANIO,
+    total,
     usados,
-    disponibles: Math.max(0, DIAS_VACACIONES_POR_ANIO - usados),
+    disponibles: Math.max(0, total - usados),
     proximoAniversario: periodo.fin,
   };
 };
@@ -225,8 +245,11 @@ export const validarSolicitud = (fechaIngreso, vacacionesEmpleado = [], fechaIni
     const pide = diasEnPeriodo(solicitud, periodo);
     if (pide === 0) continue;
 
+    // Cada periodo con SUS días: unas vacaciones sobre el aniversario tocan dos periodos, y el
+    // que empieza ya trae los días del año de antigüedad siguiente.
+    const total = diasVacacionesPorAnios(periodo.anios);
     const usados = diasUsadosEnPeriodo(vacacionesEmpleado, periodo);
-    const disponibles = Math.max(0, DIAS_VACACIONES_POR_ANIO - usados);
+    const disponibles = Math.max(0, total - usados);
 
     if (pide > disponibles) {
       return {
@@ -235,6 +258,7 @@ export const validarSolicitud = (fechaIngreso, vacacionesEmpleado = [], fechaIni
         periodo,
         pide,
         disponibles,
+        total,
       };
     }
   }

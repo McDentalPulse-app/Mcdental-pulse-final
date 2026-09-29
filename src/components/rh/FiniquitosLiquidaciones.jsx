@@ -30,7 +30,7 @@ const numero = (v) => { const n = Number(v); return Number.isFinite(n) ? n : 0; 
  *
  * Las fórmulas (utils/finiquito.js) son de la LFT, no de esta empresa — a diferencia de
  * nomina.js, aquí no hay una regla propia que aplicar. Lo que SÍ es de la empresa es el saldo
- * de vacaciones (8 días/año, ver vacaciones.js), y por eso el cálculo lo reutiliza en vez de
+ * de vacaciones (días según antigüedad, ver diasVacacionesPorAnios en vacaciones.js), y por eso el cálculo lo reutiliza en vez de
  * traer la tabla progresiva genérica que usan las calculadoras de internet.
  */
 export default function FiniquitosLiquidaciones({ usuarios = [], vacaciones = [] }) {

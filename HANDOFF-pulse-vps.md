@@ -17,7 +17,14 @@
 >
 > **Migración 179 (Departamentos):** los miembros pueden VER quién más está asignado a cada tarea
 > de su departamento (solo SELECT; siguen marcando solo la suya). Sin ella, la tarjeta de la
-> tarea no puede mostrar «También: …». Siguiente número libre: **181**.
+> tarea no puede mostrar «Asignada a: …».
+>
+> **Migración 181 — vacaciones según antigüedad** (pedido del dueño): tabla del Art. 76 LFT
+> MENOS 4 por escalón → 1 año 8, 2 → 10, 3 → 12, 4 → 14, 5 → 16, 6-10 → 18, 11-15 → 20…
+> Vive en `diasVacacionesPorAnios()` (src/utils/vacaciones.js: saldo, validación, finiquito) y
+> en `public.dias_vacaciones_por_anios()` + el trigger `vacaciones_respeta_antiguedad()` (tope
+> real al insertar). Aplicar la 181 junto con la web: si solo sube la web, la pantalla deja
+> pedir 10 días y la base los rechaza con el tope viejo de 8. Siguiente número libre: **182**.
 >
 > ## 🔴 LEER PRIMERO — cambios del 2026-09-29 (sesión de la app nativa)
 >

@@ -9,9 +9,10 @@ import { saldoVacaciones, aniosCumplidos } from "./vacaciones";
  * inventar: son los artículos 48, 50, 76-80, 87 y 162 de la LFT.
  *
  * Reutiliza saldoVacaciones()/aniosCumplidos() de vacaciones.js en vez de recalcular la
- * antigüedad o el saldo de vacaciones por su cuenta: la clínica da 8 días por año (no la
- * tabla progresiva de la reforma 2023, ver vacaciones.js), y esa es la cifra real que hay
- * que pagar — no la que dirían las calculadoras genéricas de internet.
+ * antigüedad o el saldo de vacaciones por su cuenta: la clínica da la tabla de la reforma
+ * 2023 MENOS 4 días por escalón (8 el primer año, 10 el segundo…; ver diasVacacionesPorAnios
+ * en vacaciones.js), y esa es la cifra real que hay que pagar — no la que dirían las
+ * calculadoras genéricas de internet.
  *
  * "Salario diario" aquí es el NOMINAL (sueldoSemanal / 7, la misma fórmula que ya usa
  * nomina.js para la falta) — no el Salario Diario Integrado (SDI). El SDI sumaría el
