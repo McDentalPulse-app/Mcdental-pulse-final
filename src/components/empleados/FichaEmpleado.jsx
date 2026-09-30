@@ -10,12 +10,14 @@ import Badge from "../common/Badge";
 import SectionTitle from "../common/SectionTitle";
 import Avatar from "../ui/Avatar";
 import PulseScoreBadge from "../common/PulseScoreBadge";
-import { normalizeSucursal, formatSemanaDisplay } from "../../utils/constants";
+import { normalizeSucursal, formatSemanaDisplay, tienePlazoParaPedirVacaciones, MESES_PARA_PEDIR_VACACIONES } from "../../utils/constants";
+import { TZ_CLINICA } from "../../utils/asistencia";
+import { saldoVacaciones } from "../../utils/vacaciones";
 import { calcPulseScore, calcRiesgos, getEmployeeAverageScore } from "../../utils/pulseScore";
 import { nivelColor } from "../../config/theme";
 import LineChart from "../common/LineChart";
 import RiskBar from "../common/RiskBar";
-import { formatAntiguedadEmpleado, formatEmpleadoIdForDisplay, formatFechaSolicitud } from "../../utils/helpers";
+import { formatAntiguedadEmpleado, formatEmpleadoIdForDisplay, formatFechaSolicitud, formatFechaCorta } from "../../utils/helpers";
 import Icon from "../ui/Icon";
 import DatosBancariosFicha from "./DatosBancariosFicha";
 import { ETIQUETA_CAUSA } from "../../utils/permisos";
@@ -96,6 +98,12 @@ export default function FichaEmpleado({
     const porSolicitudDesc = (a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
     const vacacionesEmp = vacaciones.filter(v => v.empleadoId === empleado.id).sort(porSolicitudDesc);
     const permisosEmp = permisos.filter(p => p.empleadoId === empleado.id).sort(porSolicitudDesc);
+    // Saldo de vacaciones: la misma cuenta que ve el empleado al pedirlas (antigüedad, sin
+    // domingos, pendientes incluidas y, en clínica, el plazo de 6 meses para pedirlas).
+    const saldoVac = empleado.fechaIngreso
+      ? saldoVacaciones(empleado.fechaIngreso, vacacionesEmp, new Intl.DateTimeFormat("en-CA", { timeZone: TZ_CLINICA }).format(new Date()),
+          { mesesParaPedir: tienePlazoParaPedirVacaciones(empleado.sucursal) ? MESES_PARA_PEDIR_VACACIONES : 0 })
+      : null;
     const descuentosEmp = descuentos.filter(d => d.empleadoId === empleado.id);
     const reconocimientosEmp = reconocimientos.filter(r =>
   r.empleadoId === empleado.id ||
@@ -192,6 +200,24 @@ export default function FichaEmpleado({
               <div className="detail-stat-box">
                 <div className="detail-stat-label">Estado</div>
                 <div className="detail-stat-value detail-stat-value--sm">Activo</div>
+              </div>
+              <div className="detail-stat-box">
+                <div className="detail-stat-label">Vacaciones</div>
+                {!saldoVac ? (
+                  <div className="detail-stat-value detail-stat-value--sm">Sin fecha de ingreso</div>
+                ) : !saldoVac.desbloqueado ? (
+                  <div className="detail-stat-value detail-stat-value--sm" title={`Cumple su primer año el ${formatFechaCorta(saldoVac.proximoAniversario)}`}>
+                    Desde el {formatFechaCorta(saldoVac.proximoAniversario)}
+                  </div>
+                ) : (
+                  <div
+                    className="detail-stat-value detail-stat-value--sm"
+                    title={`Periodo hasta el ${formatFechaCorta(saldoVac.periodo.fin)}${saldoVac.pedirHasta ? ` · puede pedirlas hasta el ${formatFechaCorta(saldoVac.pedirHasta)}` : ""}`}
+                  >
+                    {saldoVac.disponibles} de {saldoVac.total} días
+                    {saldoVac.plazoVencido && <span className="detail-stat-nota"> · plazo vencido</span>}
+                  </div>
+                )}
               </div>
             </div>
 

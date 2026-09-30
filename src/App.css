@@ -15489,3 +15489,26 @@ button.cuenta-switch.cuenta-switch--on { background: var(--mc-aqua); }
   .visor-tipo { display: none; }
   .adjuntos-lista { grid-template-columns: 1fr; }
 }
+
+/* ── Registrar vacaciones desde RH (RegistrarVacacionesModal.jsx) ───────── */
+.rh-vac-modal.mc-modal { width: min(520px, 100%); }
+.rh-vac-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.rh-vac-modal-head .mc-modal-title { margin: 0; }
+.rh-vac-modal-sub { margin: 4px 0 0; font-size: 13px; color: var(--mc-texto-secundario); }
+.rh-vac-cerrar {
+  width: 34px; height: 34px; flex-shrink: 0; border-radius: 8px; border: 1px solid var(--mc-card-borde);
+  background: var(--mc-card-bg); color: var(--mc-texto-secundario); display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.rh-vac-elegido { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; background: var(--mc-superficie-sutil); }
+.rh-vac-elegido-info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; text-align: left; }
+.rh-vac-elegido-nombre { font-size: 14px; font-weight: 600; color: var(--mc-texto-titulo); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rh-vac-elegido-meta { font-size: 12px; color: var(--mc-texto-secundario); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rh-vac-candidatos { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; max-height: 260px; overflow-y: auto; }
+.rh-vac-candidato {
+  display: flex; align-items: center; gap: 10px; padding: 7px 8px; border: none; border-radius: 8px;
+  background: transparent; font: inherit; cursor: pointer;
+}
+.rh-vac-candidato:hover { background: var(--mc-superficie-sutil); }
+.rh-vac-excede { border-color: var(--mc-badge-amarillo-texto); background: var(--mc-badge-amarillo-bg); color: var(--mc-badge-amarillo-texto); }
+.rh-vac-origen { color: var(--mc-icono-accion); font-weight: 600; }
+.detail-stat-nota { font-size: 11.5px; font-weight: 600; color: var(--mc-badge-amarillo-texto); }

@@ -241,6 +241,28 @@ export const useAppActions = () => {
     }
   };
 
+  // RH / psicóloga registran vacaciones A NOMBRE de cualquier persona (pedido del dueño,
+  // 2026-09-30): quedan aprobadas en el acto, con origen 'rh'. Gastan saldo como cualquier
+  // vacación (saldoVacaciones cuenta las aprobadas) y la nómina las toma igual: los días
+  // cubiertos por una vacación aprobada salen justificados, sin descuento (construirDias).
+  // El candado de la base no aplica a gestión (mig. 162), así que RH puede hacer excepciones.
+  const registrarVacacionRH = async ({ empleadoId, fechaInicio, fechaFin, dias, motivo, comentario }) => {
+    try {
+      const nueva = await addVacacion({
+        empleadoId, fechaInicio, fechaFin, dias, motivo,
+        comentario: comentario || "",
+        origen: "rh",
+        estado: "aprobado",
+      });
+      setVacaciones((prev) => [nueva, ...prev]);
+      return true;
+    } catch (error) {
+      console.error("Error registrando vacaciones:", error);
+      notify.toast.error(mensajeDeFallo("No se pudieron registrar las vacaciones.", error));
+      return false;
+    }
+  };
+
   // Justifica una falta directamente (admin/rh/psicologa), sin pasar por el flujo normal
   // de solicitud+aprobación de permisos: se crea ya 'aprobado'. Reusa la misma justificación
   // que clasificarDia() ya busca (permiso aprobado que cubre la fecha) — cero lógica nueva
@@ -597,6 +619,7 @@ export const useAppActions = () => {
     updatePermisoEstado,
     addSolicitudEmpleadoRH,
     agendarPropio,
+    registrarVacacionRH,
     updateDescuentoEstado,
     addDescuento,
     crearComision,

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Card from "../common/Card";
 import StatCard from "../common/StatCard";
 import SectionTitle from "../common/SectionTitle";
@@ -6,9 +7,11 @@ import Icon from "../ui/Icon";
 import { normalizeSucursal } from "../../utils/constants";
 import { formatRangoFechas } from "../../utils/helpers";
 import { useNotification } from "../../contexts/NotificationContext";
+import RegistrarVacacionesModal from "./RegistrarVacacionesModal";
 
-const VacacionesRH = ({ vacaciones, onUpdateEstado }) => {
+const VacacionesRH = ({ vacaciones, usuarios = [], onUpdateEstado, onRegistrar }) => {
   const { prompt } = useNotification();
+  const [registrando, setRegistrando] = useState(false);
 
   const pendientes = vacaciones.filter(v => v.estado === "pendiente").length;
   const aprobadas = vacaciones.filter(v => v.estado === "aprobado").length;
@@ -31,7 +34,22 @@ const VacacionesRH = ({ vacaciones, onUpdateEstado }) => {
         icon="vacation"
         title="Vacaciones"
         subtitle="Gestión de solicitudes, aprobación y seguimiento de vacaciones del personal."
-      />
+      >
+        {onRegistrar && (
+          <button type="button" className="mc-btn-primary" onClick={() => setRegistrando(true)}>
+            <Icon name="plus" size={16} /> Registrar vacaciones
+          </button>
+        )}
+      </PageHeader>
+
+      {registrando && (
+        <RegistrarVacacionesModal
+          usuarios={usuarios}
+          vacaciones={vacaciones}
+          onRegistrar={onRegistrar}
+          onCerrar={() => setRegistrando(false)}
+        />
+      )}
 
       <div className="admin-stat-grid">
         <StatCard iconName="clock" value={pendientes} label="Pendientes" valueClass="admin-stat-value--amber" />
@@ -49,7 +67,10 @@ const VacacionesRH = ({ vacaciones, onUpdateEstado }) => {
               <div className="rh-data-row-main">
                 <div className="rh-data-row-title">{v.empleado}</div>
                 <div className="rh-data-row-sub">{normalizeSucursal(v.sucursal)} · {v.puesto}</div>
-                <div className="rh-data-row-note">Motivo: {v.motivo}</div>
+                <div className="rh-data-row-note">
+                  Motivo: {v.motivo}
+                  {v.origen === "rh" && <span className="rh-vac-origen"> · Registrada por RH</span>}
+                </div>
                 {/* Se guarda al aprobar o rechazar, pero no se enseñaba en ningun sitio: quien
                     escribia el motivo del rechazo no volvia a verlo nunca. */}
                 {v.comentarioRH && (

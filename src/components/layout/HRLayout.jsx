@@ -46,7 +46,7 @@ export default function HRLayout({ user, globals, actions }) {
   const { usuarios: USERS, encuestaPreguntas } = useGlobal();
 
   const { vacaciones, permisos, descuentos, comisiones, intercambios, festivos, eventosCalendario, reconocimientos, encuestas, mensajes, notas, reportesConfidenciales, archivosExpediente, horarios, setHorarios, avisos, checadasHoy } = globals;
-  const { updateVacacionEstado, sendMensaje, marcarMensajesLeidos, updatePermisoEstado, updateDescuentoEstado, addDescuento, revisarComision, resolverIntercambio, addFestivo, deleteFestivo, addEvento, updateEvento, deleteEvento, agendarPropio, addReconocimiento, subirArchivoExpediente, eliminarArchivoExpediente, addAviso, updateAviso, deleteAviso, justificarFalta, registrarChecada } = actions;
+  const { updateVacacionEstado, sendMensaje, marcarMensajesLeidos, updatePermisoEstado, updateDescuentoEstado, addDescuento, revisarComision, resolverIntercambio, addFestivo, deleteFestivo, addEvento, updateEvento, deleteEvento, agendarPropio, registrarVacacionRH, addReconocimiento, subirArchivoExpediente, eliminarArchivoExpediente, addAviso, updateAviso, deleteAviso, justificarFalta, registrarChecada } = actions;
 
   // Un solo handler para el calendario: sin id = crear, con id = actualizar.
   const guardarEvento = (id, form) => (id ? updateEvento(id, form) : addEvento(form));
@@ -74,7 +74,7 @@ export default function HRLayout({ user, globals, actions }) {
             <Route path="horarios" element={<GestionHorarios usuarios={USERS} horarios={horarios} setHorarios={setHorarios} />} />
             <Route path="calibracion" element={<Calibracion usuarios={USERS} />} />
             <Route path="rostros" element={<EnrolarRostros usuarios={USERS} />} />
-            <Route path="vacaciones" element={<VacacionesRH vacaciones={vacaciones} onUpdateEstado={updateVacacionEstado} />} />
+            <Route path="vacaciones" element={<VacacionesRH vacaciones={vacaciones} usuarios={USERS} onUpdateEstado={updateVacacionEstado} onRegistrar={registrarVacacionRH} />} />
             <Route path="permisos" element={<PermisosRH permisos={permisos} onUpdateEstado={updatePermisoEstado} horarios={horarios} />} />
             <Route path="mispermisos" element={<PermisosEmpleado user={user} vacaciones={vacaciones} permisos={permisos} horarios={horarios} onEnviarSolicitudEmpleado={agendarPropio} autoAprobar />} />
             {/* Nómina (mig. 156): el pago de la semana con retardos y faltas descontados.
