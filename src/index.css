@@ -109,6 +109,17 @@
   --mc-evento-rojo: #ef4444;
   --mc-evento-gris: #6b7280;
 
+  /* Visor de archivos (VisorArchivo.jsx): FIJOS a propósito, iguales en claro y oscuro. La hoja
+     de un documento es blanca siempre, sobre un fondo oscuro, como en cualquier visor de PDF. */
+  --mc-visor-fondo: rgba(14, 16, 20, 0.96);
+  --mc-visor-papel: #FFFFFF;
+  --mc-visor-tinta: #1F2937;
+  --mc-visor-tinta-2: #4B5563;
+  --mc-visor-tinta-3: #6B7280;
+  --mc-visor-linea: #E5E7EB;
+  --mc-visor-cabecera: #F3F4F6;
+  --mc-visor-fila-hover: #F9FAFB;
+
   /* Acento del calendario de agenda (morado estilo Untitled UI: hoy, botón +, línea de ahora). */
   --mc-cal-acento: #7c3aed;
   --mc-cal-acento-fuerte: #6d28d9;

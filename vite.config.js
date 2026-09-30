@@ -161,9 +161,11 @@ export default defineConfig(({ mode }) => ({
         // Fuera del precache lo que solo usa una minoría, y solo a veces:
         //   - MediaPipe (~740 KB): el detector de rostro del checador.
         //   - exceljs (~930 KB): solo lo toca un admin, y solo el día que importa horarios.
+        //   - pdf.js (~1.8 MB con su worker) y docx-preview (~170 KB): solo al abrir un PDF o un
+        //     Word en el visor de adjuntos (VisorArchivo.jsx). exceljs también lo usa ese visor.
         // Meterlos aquí sería cobrarle a la psicóloga —que no va a checar ni a importar nada—
         // 1,7 MB al instalar la app. Se descargan bajo demanda y el navegador los cachea.
-        globIgnores: ['**/mediapipe/**', '**/exceljs*', '**/opencv*'],
+        globIgnores: ['**/mediapipe/**', '**/exceljs*', '**/opencv*', '**/pdf-*.js', '**/pdf.worker*', '**/docx-preview*'],
       },
       devOptions: {
         enabled: false,

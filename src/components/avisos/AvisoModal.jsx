@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Icon from "../ui/Icon";
 import HtmlSeguro from "../common/HtmlSeguro";
+import AdjuntosAviso from "./AdjuntosAviso";
 import { etiquetaRol, sucursalMatches } from "../../utils/constants";
 import { getAjustes, AVISOS_SEGUNDOS_DEFECTO } from "../../services/supabase/ajustesService";
 
@@ -48,6 +49,8 @@ const ContenidoAviso = ({ aviso, segundosEspera, onAceptar }) => {
         // gaste datos móviles solo sería de más.
         <video controls src={aviso.videoUrl} className="aviso-video aviso-modal-video" />
       )}
+      {/* Se abren en el visor de la app, sin descargarlos (mig. 184). */}
+      <AdjuntosAviso adjuntos={aviso.adjuntos} />
       {aviso.autor && (
         <p className="aviso-modal-autor">
           <span>— {aviso.autor}{rol ? ` · ${rol}` : ""}</span>

@@ -16,7 +16,8 @@ import {
   AVISOS_SEGUNDOS_DEFECTO,
   AVISOS_SEGUNDOS_MAX,
 } from "../../services/supabase/ajustesService";
-import { subirVideoAviso, borrarVideoStorage } from "../../services/supabase/avisosService";
+import { subirVideoAviso, borrarVideoStorage, subirAdjuntoAviso, borrarAdjuntosAviso, EXTENSIONES_ADJUNTO_AVISO } from "../../services/supabase/avisosService";
+import AdjuntosAviso from "./AdjuntosAviso";
 
 // El editor enriquecido (TipTap) se carga solo al abrir el panel de avisos (gestión), no en el
 // bundle de empleados/doctores que solo LEEN los avisos.
@@ -147,6 +148,39 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
   const [subiendoVideo, setSubiendoVideo] = useState(false);
   const [progresoVideo, setProgresoVideo] = useState(0);
 
+  // Archivos adjuntos (mig. 184): mismo ciclo que el video. Se suben al elegirlos y el aviso
+  // guarda la lista al publicar. `adjuntosNuevos` son las rutas subidas en ESTA sesión: si se
+  // cancela, se borran para no dejar huérfanos; si se publica, quedan ligadas al aviso.
+  const [adjuntos, setAdjuntos] = useState([]);
+  const [adjuntosNuevos, setAdjuntosNuevos] = useState([]);
+  const [subiendoAdjuntos, setSubiendoAdjuntos] = useState(0);
+
+  const elegirAdjuntos = async (lista) => {
+    const archivos = [...(lista || [])];
+    if (!archivos.length) return;
+    setSubiendoAdjuntos((n) => n + archivos.length);
+    for (const archivo of archivos) {
+      try {
+        const adj = await subirAdjuntoAviso(archivo, user?.id);
+        setAdjuntos((prev) => [...prev, adj]);
+        setAdjuntosNuevos((prev) => [...prev, adj.ruta]);
+      } catch (error) {
+        toast.error(error?.message || "No se pudo subir el archivo.");
+      } finally {
+        setSubiendoAdjuntos((n) => n - 1);
+      }
+    }
+  };
+
+  const quitarAdjunto = (adj) => {
+    // Uno recién subido se borra ya; uno de un aviso guardado se deja de referenciar al guardar.
+    if (adjuntosNuevos.includes(adj.ruta)) {
+      borrarAdjuntosAviso([adj.ruta]).catch(() => {});
+      setAdjuntosNuevos((prev) => prev.filter((r) => r !== adj.ruta));
+    }
+    setAdjuntos((prev) => prev.filter((a) => a.ruta !== adj.ruta));
+  };
+
   const elegirVideo = async (archivo) => {
     if (!archivo) return;
     setSubiendoVideo(true);
@@ -184,6 +218,9 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
   // nunca publicado sí se limpia, para no dejar basura huérfana por cada intento abandonado.
   const cerrarPanel = ({ mantenerVideo = false } = {}) => {
     if (!mantenerVideo && videoPath) borrarVideoStorage(videoPath).catch(() => {});
+    if (!mantenerVideo && adjuntosNuevos.length) borrarAdjuntosAviso(adjuntosNuevos).catch(() => {});
+    setAdjuntos([]);
+    setAdjuntosNuevos([]);
     setAbierto(false);
     setTitulo("");
     setCuerpo("");
@@ -206,6 +243,8 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
     setEditandoId(null);
     setVideoUrl(null);
     setVideoPath(null);
+    setAdjuntos([]);
+    setAdjuntosNuevos([]);
     setAbierto(true);
   };
 
@@ -217,6 +256,8 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
     setEditandoId(aviso.id);
     setVideoUrl(aviso.videoUrl || null);
     setVideoPath(null); // ya estaba guardado de antes, no de esta sesión — ver nota arriba
+    setAdjuntos(aviso.adjuntos || []);
+    setAdjuntosNuevos([]);
     setAbierto(true);
   };
 
@@ -229,6 +270,10 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
       toast.warning("No seleccionaste ninguna sucursal, elige al menos una para poder enviar el aviso.");
       return;
     }
+    if (subiendoAdjuntos > 0) {
+      toast.warning("Espera a que terminen de subirse los archivos.");
+      return;
+    }
     if (subiendoVideo) {
       toast.warning("Esperá a que termine de subirse el video.");
       return;
@@ -237,7 +282,7 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
     setEnviando(true);
     // El video (si eligieron uno) ya está subido de antes — esto solo guarda su URL junto
     // con el resto, en la misma llamada. Nada que esperar aparte.
-    const datos = { titulo: titulo.trim(), cuerpo: cuerpo.trim(), sucursales: sucursalesSel, videoUrl };
+    const datos = { titulo: titulo.trim(), cuerpo: cuerpo.trim(), sucursales: sucursalesSel, videoUrl, adjuntos };
     const resultado = editandoId ? await onUpdate(editandoId, datos) : await onAdd(datos);
     const ok = editandoId ? resultado : !!resultado;
     setEnviando(false);
@@ -302,6 +347,22 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
                 <Suspense fallback={<div className="editor-cargando">Cargando editor…</div>}>
                   <EditorTexto value={cuerpo} onChange={setCuerpo} placeholder="Escribe el comunicado completo." />
                 </Suspense>
+              </div>
+
+              <div className="mc-form-group">
+                <label className="mc-form-label" htmlFor="aviso-adjuntos">Archivos adjuntos (opcional)</label>
+                <p className="mc-hint">PDF, Word, Excel, imágenes o texto, máx. 20 MB cada uno. Quien reciba el aviso los ve dentro de la app, sin descargarlos.</p>
+                <AdjuntosAviso adjuntos={adjuntos} onQuitar={enviando ? undefined : quitarAdjunto} />
+                {subiendoAdjuntos > 0 && <p className="mc-hint">Subiendo {subiendoAdjuntos === 1 ? "1 archivo" : `${subiendoAdjuntos} archivos`}…</p>}
+                <input
+                  id="aviso-adjuntos"
+                  className="mc-form-input"
+                  type="file"
+                  multiple
+                  accept={EXTENSIONES_ADJUNTO_AVISO.join(",")}
+                  disabled={enviando}
+                  onChange={(e) => { elegirAdjuntos(e.target.files); e.target.value = ""; }}
+                />
               </div>
 
               <div className="mc-form-group">
@@ -371,9 +432,9 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
               </div>
 
               <div className="mc-form-row-2">
-                <button type="button" className="mc-btn-primary mc-btn-with-icon" disabled={enviando || subiendoVideo} onClick={enviar}>
+                <button type="button" className="mc-btn-primary mc-btn-with-icon" disabled={enviando || subiendoVideo || subiendoAdjuntos > 0} onClick={enviar}>
                   <Icon name={editandoId ? "check" : "bell"} size={16} />
-                  {enviando ? "Guardando…" : subiendoVideo ? "Subiendo video…" : editandoId ? "Guardar cambios" : "Publicar aviso"}
+                  {enviando ? "Guardando…" : subiendoVideo ? "Subiendo video…" : subiendoAdjuntos > 0 ? "Subiendo archivos…" : editandoId ? "Guardar cambios" : "Publicar aviso"}
                 </button>
                 <button type="button" className="mc-btn-outline" disabled={enviando} onClick={() => cerrarPanel()}>
                   Cancelar
@@ -447,6 +508,8 @@ const AvisosPanel = ({ user, avisos = [], onAdd, onUpdate, onDelete }) => {
                 <HtmlSeguro className="aviso-card-cuerpo aviso-html" html={a.cuerpo} />
 
                 {a.videoUrl && <video controls src={a.videoUrl} className="aviso-video" />}
+
+                <AdjuntosAviso adjuntos={a.adjuntos} />
 
                 {a.sucursales?.length > 0 && (
                   <div className="aviso-row-sucursales">

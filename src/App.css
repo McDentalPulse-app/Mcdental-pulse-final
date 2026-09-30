@@ -15365,3 +15365,127 @@ button.cuenta-switch.cuenta-switch--on { background: var(--mc-aqua); }
   font-size: 12px;
   color: var(--mc-texto-apagado);
 }
+
+/* ============================================================
+   Adjuntos de los Avisos (migración 184) y visor de archivos (VisorArchivo.jsx).
+   El visor ocupa la pantalla entera sobre un fondo oscuro fijo —igual en claro y oscuro—
+   porque un documento blanco se lee mejor sobre oscuro, como en cualquier visor de PDF.
+   ============================================================ */
+.adjuntos-lista { margin: 10px 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+
+.adjunto-card {
+  --tipo-bg: var(--mc-badge-neutro-bg); --tipo-fg: var(--mc-badge-neutro-texto);
+  position: relative; display: flex; align-items: center; gap: 10px;
+  border: 1px solid var(--mc-card-borde); border-radius: 10px; background: var(--mc-card-bg);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.adjunto-card:hover { border-color: var(--tipo-fg); box-shadow: var(--mc-sombra-card); }
+.adjunto-card--pdf { --tipo-bg: var(--mc-badge-rojo-bg); --tipo-fg: var(--mc-badge-rojo-texto); }
+.adjunto-card--word { --tipo-bg: var(--mc-badge-azul-bg); --tipo-fg: var(--mc-badge-azul-texto); }
+.adjunto-card--excel { --tipo-bg: var(--mc-badge-verde-bg); --tipo-fg: var(--mc-badge-verde-texto); }
+.adjunto-card--imagen { --tipo-bg: color-mix(in srgb, var(--mc-evento-morado) 16%, transparent); --tipo-fg: var(--mc-evento-morado); }
+.adjunto-card--subiendo { padding: 10px 12px; color: var(--mc-texto-secundario); }
+.adjunto-card-abrir {
+  flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 10px;
+  padding: 8px 34px 8px 8px; border: none; background: none; font: inherit; text-align: left; cursor: pointer;
+}
+.adjunto-card-tipo {
+  flex-shrink: 0; width: 42px; height: 42px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--tipo-bg); color: var(--tipo-fg); font-size: 10.5px; font-weight: 800; letter-spacing: 0.03em;
+}
+.adjunto-card-info { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.adjunto-card-nombre { font-size: 13px; font-weight: 600; color: var(--mc-texto-titulo); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.adjunto-card-peso { font-size: 11.5px; color: var(--mc-texto-secundario); }
+.adjunto-card-quitar {
+  position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+  width: 26px; height: 26px; border-radius: 6px; border: none; background: transparent;
+  display: flex; align-items: center; justify-content: center; color: var(--mc-texto-secundario); cursor: pointer;
+}
+.adjunto-card-quitar:hover { background: var(--mc-badge-rojo-bg); color: var(--mc-badge-rojo-texto); }
+
+/* ── Visor ─────────────────────────────────────────────────────────────── */
+.visor-archivo {
+  position: fixed; inset: 0; z-index: 1300; /* por encima del aviso obligatorio (1050-1200): se abre desde él */
+  display: flex; flex-direction: column;
+  background: var(--mc-visor-fondo);
+  color: rgba(255, 255, 255, 0.92);
+}
+.visor-barra {
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+  padding: 10px 14px; padding-top: max(10px, env(safe-area-inset-top));
+  background: rgba(255, 255, 255, 0.05); border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.visor-tipo {
+  flex-shrink: 0; padding: 4px 7px; border-radius: 6px;
+  background: var(--mc-verde); color: var(--mc-blanco); font-size: 11px; font-weight: 800; letter-spacing: 0.04em;
+}
+.visor-titulo { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.visor-nombre { font-size: 14.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.visor-meta { font-size: 12px; opacity: 0.65; }
+.visor-acciones { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.visor-zoom { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border-radius: 9px; background: rgba(255, 255, 255, 0.08); }
+.visor-zoom span { min-width: 44px; text-align: center; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.visor-zoom button, .visor-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 34px; min-width: 34px; padding: 0 10px; border-radius: 8px; border: none;
+  background: transparent; color: inherit; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.visor-zoom button { padding: 0; }
+.visor-btn { background: rgba(255, 255, 255, 0.1); }
+.visor-zoom button:hover:not(:disabled), .visor-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.18); }
+.visor-zoom button:disabled, .visor-btn:disabled { opacity: 0.35; cursor: default; }
+.visor-btn--cerrar { padding: 0; width: 38px; }
+
+.visor-hojas { display: flex; gap: 4px; padding: 8px 14px 0; overflow-x: auto; flex-shrink: 0; }
+.visor-hoja {
+  padding: 7px 14px; border: none; border-radius: 8px 8px 0 0; white-space: nowrap;
+  background: rgba(255, 255, 255, 0.06); color: inherit; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; opacity: 0.7;
+}
+.visor-hoja--activa { background: var(--mc-visor-papel); color: var(--mc-visor-tinta); opacity: 1; }
+
+.visor-cuerpo { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 16px; -webkit-overflow-scrolling: touch; }
+.visor-estado {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  min-height: 60%; text-align: center; font-size: 14px; opacity: 0.85; max-width: 440px; margin: 0 auto;
+}
+.visor-estado p { margin: 0; line-height: 1.5; }
+.visor-spinner {
+  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+  border: 2.5px solid currentColor; border-right-color: transparent;
+  animation: visorGirar 0.8s linear infinite; opacity: 0.7;
+}
+@keyframes visorGirar { to { transform: rotate(360deg); } }
+
+.visor-lienzo--pdf { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.visor-pdf-pagina { background: var(--mc-visor-papel); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45); border-radius: 2px; }
+/* docx-preview trae su propio fondo gris y sombras; se alinean con el visor. */
+.visor-lienzo--docx .docx-wrapper { background: transparent !important; padding: 0 !important; align-items: center; }
+.visor-lienzo--docx .docx-wrapper > section.docx { box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45); margin-bottom: 14px !important; }
+
+.visor-imagen { min-height: 100%; display: flex; align-items: center; justify-content: center; }
+.visor-imagen img { max-width: 100%; max-height: calc(100dvh - 120px); object-fit: contain; transform-origin: center; transition: transform 0.15s ease; border-radius: 4px; }
+
+.visor-texto {
+  max-width: 900px; margin: 0 auto; padding: 24px; border-radius: 6px;
+  background: var(--mc-visor-papel); color: var(--mc-visor-tinta); white-space: pre-wrap; overflow-wrap: anywhere;
+  font: 13.5px/1.6 var(--font-mono, ui-monospace, monospace);
+}
+
+.visor-tabla-wrap { background: var(--mc-visor-papel); border-radius: 6px; overflow: auto; max-height: 100%; }
+.visor-tabla { border-collapse: separate; border-spacing: 0; font-size: 12.5px; color: var(--mc-visor-tinta); }
+.visor-tabla th, .visor-tabla td { border-right: 1px solid var(--mc-visor-linea); border-bottom: 1px solid var(--mc-visor-linea); padding: 5px 9px; white-space: nowrap; max-width: 320px; overflow: hidden; text-overflow: ellipsis; }
+.visor-tabla thead th { position: sticky; top: 0; z-index: 2; background: var(--mc-visor-cabecera); font-weight: 600; color: var(--mc-visor-tinta-2); text-align: center; }
+.visor-tabla tbody th { position: sticky; left: 0; z-index: 1; background: var(--mc-visor-cabecera); font-weight: 500; color: var(--mc-visor-tinta-3); text-align: right; min-width: 38px; }
+.visor-tabla .visor-tabla-esquina { left: 0; z-index: 3; }
+.visor-tabla tbody tr:hover td { background: var(--mc-visor-fila-hover); }
+.visor-aviso-recorte { margin: 0; padding: 10px 14px; font-size: 12.5px; color: var(--mc-visor-tinta-3); background: var(--mc-visor-fila-hover); }
+
+@media (max-width: 700px) {
+  .visor-btn-texto { display: none; }
+  .visor-btn { padding: 0; width: 38px; }
+  .visor-cuerpo { padding: 10px; }
+  .visor-barra { gap: 8px; padding: 8px 10px; }
+  .visor-tipo { display: none; }
+  .adjuntos-lista { grid-template-columns: 1fr; }
+}

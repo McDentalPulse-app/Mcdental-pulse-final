@@ -528,9 +528,9 @@ export const useAppActions = () => {
   // elegir el archivo, no al publicar — así que solo hace falta guardar la URL junto con el
   // resto. Devuelve el aviso creado (no solo true/false) porque el formulario lo necesita
   // para poder abrirlo de nuevo en modo edición sin recargar.
-  const addAviso = async ({ titulo, cuerpo, sucursales, videoUrl }) => {
+  const addAviso = async ({ titulo, cuerpo, sucursales, videoUrl, adjuntos }) => {
     try {
-      const nuevo = await addAvisoDb({ titulo, cuerpo, creadoPor: user?.id, sucursales, videoUrl });
+      const nuevo = await addAvisoDb({ titulo, cuerpo, creadoPor: user?.id, sucursales, videoUrl, adjuntos });
       setAvisos(prev => [nuevo, ...prev]);
       // La notificación a la plantilla (fila en la campana de cada quien) la dispara un trigger
       // de BD al insertarse el aviso (migración 065), no el cliente.
@@ -542,12 +542,12 @@ export const useAppActions = () => {
     }
   };
 
-  const updateAviso = async (id, { titulo, cuerpo, sucursales, videoUrl }) => {
+  const updateAviso = async (id, { titulo, cuerpo, sucursales, videoUrl, adjuntos }) => {
     const previo = avisos.find(a => a.id === id);
-    setAvisos(prev => prev.map(a => a.id === id ? { ...a, titulo, cuerpo, sucursales, videoUrl } : a));
+    setAvisos(prev => prev.map(a => a.id === id ? { ...a, titulo, cuerpo, sucursales, videoUrl, adjuntos } : a));
 
     try {
-      await updateAvisoDb({ id, titulo, cuerpo, sucursales, videoUrl });
+      await updateAvisoDb({ id, titulo, cuerpo, sucursales, videoUrl, adjuntos });
       return true;
     } catch (error) {
       console.error("Error actualizando aviso:", error);

@@ -1,5 +1,6 @@
 import { supabase } from "../../config/supabase";
 import { fetchAll } from "./fetchAll";
+import { rutaSegura, mimeDeArchivo } from "../../utils/archivo";
 
 const BUCKET_VIDEOS = "avisos-videos";
 const VIDEO_TAM_MAX = 209715200; // 200 MB, mismo tope que el bucket (migraciones 129/130)
@@ -20,6 +21,7 @@ const mapAviso = (row) => ({
   autorRol: row.autor_rol,
   sucursales: row.sucursales || [],
   videoUrl: row.video_url,
+  adjuntos: Array.isArray(row.adjuntos) ? row.adjuntos : [],
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -69,10 +71,10 @@ export const subscribeAvisos = (onInsert) => {
   return () => supabase.removeChannel(channel);
 };
 
-export const addAviso = async ({ titulo, cuerpo, creadoPor, sucursales, videoUrl }) => {
+export const addAviso = async ({ titulo, cuerpo, creadoPor, sucursales, videoUrl, adjuntos = [] }) => {
   const { data, error } = await supabase
     .from("avisos")
-    .insert({ titulo, cuerpo, creado_por: creadoPor, sucursales, video_url: videoUrl || null })
+    .insert({ titulo, cuerpo, creado_por: creadoPor, sucursales, video_url: videoUrl || null, adjuntos })
     .select(SELECT_AVISO)
     .single();
 
@@ -83,10 +85,10 @@ export const addAviso = async ({ titulo, cuerpo, creadoPor, sucursales, videoUrl
   return mapAviso(data);
 };
 
-export const updateAviso = async ({ id, titulo, cuerpo, sucursales, videoUrl }) => {
+export const updateAviso = async ({ id, titulo, cuerpo, sucursales, videoUrl, adjuntos = [] }) => {
   const { data, error } = await supabase
     .from("avisos")
-    .update({ titulo, cuerpo, sucursales, video_url: videoUrl || null })
+    .update({ titulo, cuerpo, sucursales, video_url: videoUrl || null, adjuntos })
     .eq("id", id)
     .select(SELECT_AVISO)
     .single();
@@ -200,4 +202,43 @@ export const marcarAvisoLeido = async (avisoId, usuarioId) => {
     throw new Error("No se pudo marcar el aviso como leído.");
   }
   return { id: null, avisoId, usuarioId, leidoEn: new Date().toISOString() };
+};
+
+// ── Archivos adjuntos (migración 184) ───────────────────────────────────────
+// Bucket privado: lo abre quien puede ver el aviso. Se suben antes de guardar el aviso, como
+// el video, y el aviso guarda la lista [{nombre, ruta, mime, bytes}].
+const BUCKET_ADJUNTOS = "avisos-adjuntos";
+const ADJUNTO_TAM_MAX = 20 * 1024 * 1024;
+export const EXTENSIONES_ADJUNTO_AVISO = [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".csv", ".txt", ".jpg", ".jpeg", ".png", ".webp", ".heic"];
+const MIMES_ADJUNTO = new Set([
+  "application/pdf", "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "text/csv", "text/plain", "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif",
+]);
+
+export const subirAdjuntoAviso = async (archivo, usuarioId) => {
+  if (archivo.size > ADJUNTO_TAM_MAX) throw new Error(`"${archivo.name}" pesa más de 20 MB.`);
+  const mime = mimeDeArchivo(archivo);
+  if (!MIMES_ADJUNTO.has(mime)) throw new Error(`"${archivo.name}" no es un tipo permitido. Sube PDF, Word, Excel, imágenes o texto.`);
+  const ruta = `${usuarioId || "gestion"}/${Date.now()}-${rutaSegura(archivo.name)}`;
+  const { error } = await supabase.storage.from(BUCKET_ADJUNTOS).upload(ruta, archivo, { upsert: false, contentType: mime });
+  if (error) {
+    console.error("Error subiendo adjunto de aviso:", error);
+    throw new Error(`No se pudo subir "${archivo.name}".`);
+  }
+  return { nombre: archivo.name, ruta, mime, bytes: archivo.size };
+};
+
+export const borrarAdjuntosAviso = async (rutas) => {
+  if (rutas?.length) await supabase.storage.from(BUCKET_ADJUNTOS).remove(rutas);
+};
+
+export const descargarAdjuntoAviso = async (ruta) => {
+  const { data, error } = await supabase.storage.from(BUCKET_ADJUNTOS).download(ruta);
+  if (error || !data) {
+    console.error("Error descargando adjunto de aviso:", error);
+    throw new Error("No se pudo abrir el archivo.");
+  }
+  return data;
 };

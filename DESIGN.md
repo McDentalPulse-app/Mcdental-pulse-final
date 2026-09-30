@@ -160,6 +160,7 @@ recortan**, empezando por `.mc-card`. Su posición se calcula en coordenadas de 
 | **Popovers** | **`10100`** | `.mc-select-menu`, `.mc-daterange-pop` — **por encima de TODO** |
 | Overlays altos | `9999`–`10010` | Editor y detalle de encuesta, detalle de psicología |
 | Bloqueo de notificaciones | `5000` | Modal obligatorio de activación |
+| Visor de archivos | `1300` | `.visor-archivo` (VisorArchivo.jsx): se abre desde el aviso obligatorio, tiene que quedar encima |
 | Avisos y diálogos | `1050`–`1200` | Confirmar/preguntar, toasts, detalle de sucursal |
 | Modales | `1000` | `.mc-modal-overlay` |
 | Barra flotante del teléfono | `200` | `.mobile-tabbar` |

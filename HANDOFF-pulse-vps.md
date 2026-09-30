@@ -6,6 +6,34 @@
 > misma línea antes: **sí está versionado** (confirmado con `git log`, commit `0e3b7f9` en
 > adelante) — corregido el 2026-09-02, no repetir que no lo está.
 
+> ## 🔴 LEER PRIMERO — cambios del 2026-09-30 (adjuntos en Avisos con visor)
+>
+> **Migración 184 — `avisos.adjuntos` (jsonb) + bucket privado `avisos-adjuntos`** (20 MB; PDF,
+> Word, Excel, CSV, texto, imágenes). Lo abre quien puede ver el aviso (la policy del bucket
+> busca el aviso que contiene la ruta, pasando por la RLS de sucursal); suben/borran solo
+> admin/rh/psicóloga. El visor (`src/components/common/VisorArchivo.jsx`, capa z-index 1300,
+> encima del aviso obligatorio) dibuja en el cliente: PDF con **pdfjs-dist** (legacy build), Word
+> con **docx-preview**, Excel con exceljs. **Dependencias nuevas en package.json** (el build de
+> Docker las instala con `npm ci`); fuera del precache del PWA. .doc/.xls antiguos: solo descarga.
+> Siguiente número libre: **185**.
+>
+> ## 🔴 LEER PRIMERO — cambios del 2026-09-30 (el domingo no gasta vacaciones)
+>
+> **Migración 182 + `diasVacacionHabiles()`** (src/utils/vacaciones.js): los días de vacaciones se
+> cuentan SIN domingos — viernes a lunes = 3, no 4 (pedido del dueño). El trigger
+> `vacaciones_respeta_antiguedad()` ahora FIJA `dias` desde las fechas en toda inserción (ya no
+> rechaza un `dias` distinto: la app nativa puede mandar días de calendario) y rechaza una
+> solicitud de solo domingos. La 182 recalcula el `dias` de las solicitudes existentes.
+> Aplicar la 182 junto con la web.
+>
+> **Migración 183 — plazo de 6 meses para PEDIR vacaciones en clínica** (todo el que no es
+> Oficina Administrativa). Las vacaciones de un periodo solo se solicitan en sus primeros 6
+> meses desde el aniversario (1 ene → hasta el 30 jun); las FECHAS pueden caer en cualquier día
+> del periodo. Web: `mesesParaPedir` en `saldoVacaciones()`/`validarSolicitud()` y
+> `MESES_PARA_PEDIR_VACACIONES` en constants.js. Base: el trigger `vacaciones_respeta_antiguedad()`.
+> Gestión sigue exenta. El finiquito NO se tocó: sigue pagando los días que queden aunque su plazo
+> para pedirlos haya vencido. Aplicar 182 y 183 junto con la web.
+>
 > ## 🔴 LEER PRIMERO — cambios del 2026-09-29 (tarde: salida anticipada y Departamentos)
 >
 > **Salida anticipada: ahora es MÁS de 10 minutos.** Pedido del dueño: con salida a las 19:00,
@@ -23,7 +51,7 @@
 > MENOS 4 por escalón → 1 año 8, 2 → 10, 3 → 12, 4 → 14, 5 → 16, 6-10 → 18, 11-15 → 20…
 > Vive en `diasVacacionesPorAnios()` (src/utils/vacaciones.js: saldo, validación, finiquito) y
 > en `public.dias_vacaciones_por_anios()` + el trigger `vacaciones_respeta_antiguedad()` (tope
-> real al insertar). Siguiente número libre: **182**.
+> real al insertar).
 >
 > ✅ **162 + 181 APLICADAS en producción (2026-09-29, autorizado por el dueño).** Hallazgo previo:
 > la 162 nunca se había aplicado — en `pulse-db` no existían `anios_cumplidos()`,

@@ -28,6 +28,7 @@ const MIME_POR_EXTENSION = {
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   xls: "application/vnd.ms-excel",
   xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  csv: "text/csv",
   txt: "text/plain",
   jpg: "image/jpeg",
   jpeg: "image/jpeg",
