@@ -9,6 +9,11 @@
  * El "año de vacaciones" NO es el año natural: va de aniversario a aniversario. Alguien que
  * entró un 10 de marzo estrena sus días cada 10 de marzo, no cada 1 de enero.
  *
+ * EL DOMINGO NO GASTA VACACIONES (decisión del dueño, 2026-09-30): nadie trabaja el domingo,
+ * así que unas vacaciones de viernes a lunes son 3 días, no 4. Todo conteo de días de
+ * vacaciones pasa por diasVacacionHabiles(); la base hace la misma cuenta
+ * (public.dias_vacacion_habiles, migración 182).
+ *
  * LOS DÍAS SE REPARTEN POR DONDE CAEN, no por donde empieza la solicitud. Unas vacaciones
  * del 5 al 12 de marzo con aniversario el día 10 gastan 5 días del periodo que acaba y 3 del
  * que empieza. Contarlas enteras en el primero regalaba esos 3 días: el periodo nuevo
@@ -57,8 +62,23 @@ const aUTC = (fechaISO) => {
 
 const desdeUTC = (ms) => new Date(ms).toISOString().slice(0, 10);
 
-/** Días de calendario entre dos fechas ISO, ambas incluidas. */
-const diasInclusive = (desde, hasta) => Math.round((aUTC(hasta) - aUTC(desde)) / MS_DIA) + 1;
+/**
+ * Días de vacaciones entre dos fechas ISO, ambas incluidas: los de calendario MENOS los
+ * domingos. Cuenta semanas completas (6 días cada una) y luego el resto día por día, así que no
+ * depende de lo largo del rango.
+ */
+export const diasVacacionHabiles = (desde, hasta) => {
+  const d = soloFecha(desde);
+  const h = soloFecha(hasta) || d;
+  if (!esFechaISO(d) || !esFechaISO(h) || h < d) return 0;
+  const total = Math.round((aUTC(h) - aUTC(d)) / MS_DIA) + 1;
+  let habiles = Math.floor(total / 7) * 6;
+  const inicioResto = aUTC(d) + Math.floor(total / 7) * 7 * MS_DIA;
+  for (let i = 0; i < total % 7; i++) {
+    if (new Date(inicioResto + i * MS_DIA).getUTCDay() !== 0) habiles += 1;
+  }
+  return habiles;
+};
 
 const sumarDias = (fechaISO, dias) => desdeUTC(aUTC(fechaISO) + dias * MS_DIA);
 
@@ -90,6 +110,33 @@ const sumarAnios = (fechaISO, anios) => {
   const mm = String(fecha.getMonth() + 1).padStart(2, "0");
   const dd = String(fecha.getDate()).padStart(2, "0");
   return `${fecha.getFullYear()}-${mm}-${dd}`;
+};
+
+/**
+ * Suma meses a una fecha ISO, recortando al último día del mes si no existe (31 de agosto + 6
+ * meses = 28/29 de febrero). Es lo que hace Postgres con `fecha + interval 'n months'`, que es
+ * como la base calcula el plazo para pedir vacaciones: si cada lado recortara distinto, la
+ * pantalla y la base dirían fechas límite diferentes.
+ */
+const sumarMeses = (fechaISO, meses) => {
+  const [y, m, d] = fechaISO.split("-").map(Number);
+  const total = (m - 1) + meses;
+  const anio = y + Math.floor(total / 12);
+  const mes = ((total % 12) + 12) % 12;
+  const ultimo = new Date(Date.UTC(anio, mes + 1, 0)).getUTCDate();
+  const dia = Math.min(d, ultimo);
+  return `${anio}-${String(mes + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+};
+
+/**
+ * Hasta cuándo se pueden PEDIR las vacaciones de un periodo cuando hay plazo (clínicas, ver
+ * MESES_PARA_PEDIR_VACACIONES en constants.js): `limite` es el primer día en que ya NO se puede
+ * (exclusivo) y `ultimoDia` el último en que todavía sí.
+ */
+export const plazoParaPedir = (periodo, meses) => {
+  if (!periodo) return null;
+  const limite = sumarMeses(periodo.inicio, meses);
+  return { limite, ultimoDia: sumarDias(limite, -1) };
 };
 
 /** Años de servicio CUMPLIDOS en una fecha dada. 0 si aún no llega al primer aniversario. */
@@ -133,7 +180,7 @@ export const diasEnPeriodo = (solicitud, periodo) => {
   const fin = finDeSolicitud(solicitud);
   const hasta = fin < ultimoDelPeriodo ? fin : ultimoDelPeriodo;
 
-  return hasta < desde ? 0 : diasInclusive(desde, hasta);
+  return hasta < desde ? 0 : diasVacacionHabiles(desde, hasta);
 };
 
 const consume = (solicitud) =>
@@ -151,7 +198,7 @@ export const diasUsadosEnPeriodo = (vacacionesEmpleado = [], periodo) =>
  * `desbloqueado: false` significa "todavía no cumple el año", y entonces `disponibles` es 0:
  * no es que se le hayan acabado, es que aún no las tiene.
  */
-export const saldoVacaciones = (fechaIngreso, vacacionesEmpleado = [], hoy) => {
+export const saldoVacaciones = (fechaIngreso, vacacionesEmpleado = [], hoy, { mesesParaPedir = 0 } = {}) => {
   const periodo = periodoVacaciones(fechaIngreso, hoy);
   const ingreso = soloFecha(fechaIngreso);
 
@@ -170,6 +217,10 @@ export const saldoVacaciones = (fechaIngreso, vacacionesEmpleado = [], hoy) => {
   const usados = diasUsadosEnPeriodo(vacacionesEmpleado, periodo);
   const total = diasVacacionesPorAnios(periodo.anios);
 
+  // Con plazo (clínicas): pasado el plazo, lo que quedó ya no se puede pedir.
+  const plazo = mesesParaPedir > 0 ? plazoParaPedir(periodo, mesesParaPedir) : null;
+  const plazoVencido = !!plazo && soloFecha(hoy) >= plazo.limite;
+
   return {
     desbloqueado: true,
     anios: periodo.anios,
@@ -178,13 +229,15 @@ export const saldoVacaciones = (fechaIngreso, vacacionesEmpleado = [], hoy) => {
     usados,
     disponibles: Math.max(0, total - usados),
     proximoAniversario: periodo.fin,
+    pedirHasta: plazo ? plazo.ultimoDia : null,
+    plazoVencido,
   };
 };
 
 /**
  * ¿Cabe esta solicitud?
  *
- * Tres cosas distintas, y las tres hacen falta:
+ * Cuatro cosas distintas (la cuarta solo en clínicas, con `mesesParaPedir`):
  *  1. Que HOY ya tenga el año cumplido. Si no, no puede pedir vacaciones — ni para hoy ni
  *     para el año que viene. Es lo mismo que le dice la pantalla, y así no hay un botón
  *     activo debajo de un aviso que dice que están bloqueadas.
@@ -198,7 +251,7 @@ export const saldoVacaciones = (fechaIngreso, vacacionesEmpleado = [], hoy) => {
  * Devuelve `{ ok: true }` o el motivo con el periodo culpable, para que quien llame componga
  * el aviso con las fechas ya formateadas.
  */
-export const validarSolicitud = (fechaIngreso, vacacionesEmpleado = [], fechaInicio, fechaFin, hoy, diasAnticipacionMinima = 0) => {
+export const validarSolicitud = (fechaIngreso, vacacionesEmpleado = [], fechaInicio, fechaFin, hoy, diasAnticipacionMinima = 0, { mesesParaPedir = 0 } = {}) => {
   const inicio = soloFecha(fechaInicio);
   const fin = soloFecha(fechaFin) || inicio;
   const ingreso = soloFecha(fechaIngreso);
@@ -208,6 +261,10 @@ export const validarSolicitud = (fechaIngreso, vacacionesEmpleado = [], fechaIni
   }
   if (esFechaISO(fin) && fin < inicio) {
     return { ok: false, motivo: "rango" };
+  }
+  // Pedir solo un domingo no gasta nada, así que no es una solicitud de vacaciones.
+  if (diasVacacionHabiles(inicio, fin) === 0) {
+    return { ok: false, motivo: "solo_domingo" };
   }
   if (!esFechaISO(ingreso)) {
     return { ok: false, motivo: "sin_ingreso" };
@@ -244,6 +301,15 @@ export const validarSolicitud = (fechaIngreso, vacacionesEmpleado = [], fechaIni
   ) {
     const pide = diasEnPeriodo(solicitud, periodo);
     if (pide === 0) continue;
+
+    // 4. En clínica, las vacaciones de este periodo solo se piden en sus primeros meses. Se mide
+    //    con la fecha de HOY (cuándo se pide), no con las fechas de las vacaciones.
+    if (mesesParaPedir > 0) {
+      const plazo = plazoParaPedir(periodo, mesesParaPedir);
+      if (soloFecha(hoy) >= plazo.limite) {
+        return { ok: false, motivo: "plazo_vencido", periodo, pedirHasta: plazo.ultimoDia, mesesParaPedir };
+      }
+    }
 
     // Cada periodo con SUS días: unas vacaciones sobre el aniversario tocan dos periodos, y el
     // que empieza ya trae los días del año de antigüedad siguiente.

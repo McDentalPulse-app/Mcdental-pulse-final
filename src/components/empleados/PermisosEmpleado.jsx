@@ -8,8 +8,8 @@ import Icon from "../ui/Icon";
 import DateRangePicker from "../common/DateRangePicker";
 import { useNotification } from "../../contexts/NotificationContext";
 import { CAUSAS_PERMISO, CAUSA_SALIDA_ANTICIPADA } from "../../utils/permisos";
-import { saldoVacaciones, validarSolicitud } from "../../utils/vacaciones";
-import { diasAnticipacionRequerida } from "../../utils/constants";
+import { saldoVacaciones, validarSolicitud, diasVacacionHabiles } from "../../utils/vacaciones";
+import { diasAnticipacionRequerida, tienePlazoParaPedirVacaciones, MESES_PARA_PEDIR_VACACIONES } from "../../utils/constants";
 import { formatFechaCorta } from "../../utils/helpers";
 
 // El util devuelve el motivo y el periodo culpable; la frase se compone aquí, que es donde
@@ -26,6 +26,10 @@ const avisoVacaciones = (v) => {
       return `Solo te quedan ${v.disponibles} ${v.disponibles === 1 ? "día" : "días"} en el periodo que termina el ${formatFechaCorta(v.periodo.fin)}, y ahí caen ${v.pide} de los que pides.`;
     case "rango":
       return "La fecha final debe ser igual o posterior a la fecha inicial.";
+    case "plazo_vencido":
+      return `Las vacaciones del periodo que empezó el ${formatFechaCorta(v.periodo.inicio)} se podían pedir hasta el ${formatFechaCorta(v.pedirHasta)} (en clínica hay ${v.mesesParaPedir} meses para pedirlas). Ya no se pueden solicitar; tus próximas vacaciones se desbloquean el ${formatFechaCorta(v.periodo.fin)}.`;
+    case "solo_domingo":
+      return "El domingo no se trabaja, así que no gasta vacaciones. Elige al menos un día que trabajes.";
     case "anticipacion":
       return `Las vacaciones se piden con al menos ${v.diasAnticipacionMinima} días de anticipación. La fecha más próxima que puedes solicitar es el ${formatFechaCorta(v.primeraFechaPermitida)}.`;
     default:
@@ -94,6 +98,12 @@ export default function PermisosEmpleado({
     return Math.floor((fechaFin - fechaInicio) / (1000 * 60 * 60 * 24)) + 1;
   };
   const diasPreview = fechaInicioPreview ? Math.max(0, calcularDias(fechaInicioPreview, fechaFinPreview)) : 0;
+  // En vacaciones el domingo no cuenta (ver vacaciones.js): se enseña lo que de verdad se gasta
+  // y, si el rango incluye domingos, se dice, para que "viernes a lunes = 3" no parezca un error.
+  const esVacaciones = tipoSeleccionado === "Vacaciones";
+  const diasVacacionPreview = esVacaciones && fechaInicioPreview ? diasVacacionHabiles(fechaInicioPreview, fechaFinPreview) : 0;
+  const domingosPreview = esVacaciones ? diasPreview - diasVacacionPreview : 0;
+  const diasMostrados = esVacaciones ? diasVacacionPreview : diasPreview;
 
   const elegirTipo = (tipo) => {
     setTipoSeleccionado(tipo);
@@ -104,17 +114,19 @@ export default function PermisosEmpleado({
 
   // 30 días de anticipación en general, 15 para Oficina Administrativa (utils/constants.js).
   const diasAnticipacionMin = diasAnticipacionRequerida(user?.sucursal);
+  // En clínica, las vacaciones de cada periodo solo se piden en sus primeros meses.
+  const opcionesPlazo = { mesesParaPedir: tienePlazoParaPedirVacaciones(user?.sucursal) ? MESES_PARA_PEDIR_VACACIONES : 0 };
 
   // Gestión (RH/psicóloga) se auto-agenda y queda fuera de la regla: no se le mide antigüedad
   // ni se le descuentan días. Para el empleado, las vacaciones se desbloquean al año y son 8
   // por periodo aniversario (utils/vacaciones.js).
-  const saldo = autoAprobar ? null : saldoVacaciones(user?.fechaIngreso, vacacionesEmpleado, hoyClinica());
+  const saldo = autoAprobar ? null : saldoVacaciones(user?.fechaIngreso, vacacionesEmpleado, hoyClinica(), opcionesPlazo);
   const pideVacaciones = tipoSeleccionado === "Vacaciones";
 
   // Se valida el rango ELEGIDO, no solo el saldo de hoy: unas vacaciones a caballo del
   // aniversario gastan de los dos periodos y tienen que caber en los dos.
   const validacion = saldo && pideVacaciones
-    ? validarSolicitud(user?.fechaIngreso, vacacionesEmpleado, fechaInicioPreview, fechaFinPreview, hoyClinica(), diasAnticipacionMin)
+    ? validarSolicitud(user?.fechaIngreso, vacacionesEmpleado, fechaInicioPreview, fechaFinPreview, hoyClinica(), diasAnticipacionMin, opcionesPlazo)
     : { ok: true };
 
   // Los PERMISOS también, no solo las vacaciones: sin esto un permiso enviado desaparecía de la
@@ -162,15 +174,20 @@ export default function PermisosEmpleado({
 
     let dias = 1;
     if (tipo === "Vacaciones") {
-      dias = calcularDias(fechaInicio, fechaFin);
-      if (dias <= 0) {
+      if (calcularDias(fechaInicio, fechaFin) <= 0) {
         toast.warning("La fecha final debe ser igual o posterior a la fecha inicial.");
+        return;
+      }
+      // Lo que se guarda es lo que se gasta: sin domingos. La base lo recalcula igual (mig. 182).
+      dias = diasVacacionHabiles(fechaInicio, fechaFin);
+      if (dias === 0) {
+        toast.warning(avisoVacaciones({ motivo: "solo_domingo" }));
         return;
       }
       // El candado de verdad está en la base (migración 162); esto evita que se envíe una
       // solicitud que ya se sabe que no procede y que el empleado se entere días después.
       if (saldo) {
-        const veredicto = validarSolicitud(user?.fechaIngreso, vacacionesEmpleado, fechaInicio, fechaFin, hoyClinica(), diasAnticipacionMin);
+        const veredicto = validarSolicitud(user?.fechaIngreso, vacacionesEmpleado, fechaInicio, fechaFin, hoyClinica(), diasAnticipacionMin, opcionesPlazo);
         if (!veredicto.ok) {
           toast.warning(avisoVacaciones(veredicto));
           return;
@@ -291,13 +308,27 @@ export default function PermisosEmpleado({
               que no tenía derecho era enviar la solicitud y esperar a que RH la rechazara. */}
           {saldo && pideVacaciones && (
             <>
-              {saldo.desbloqueado && (
+              {saldo.desbloqueado && !saldo.plazoVencido && (
                 <div className="admin-info-box empleado-days-hint">
                   <Icon name="vacation" size={16} />
                   <span>
                     Te quedan <strong>{saldo.disponibles}</strong> de {saldo.total} días en tu
-                    periodo actual (hasta el {formatFechaCorta(saldo.periodo.fin)}). Pídelas con
-                    al menos <strong>{diasAnticipacionMin}</strong> días de anticipación.
+                    periodo actual (hasta el {formatFechaCorta(saldo.periodo.fin)}).
+                    {saldo.pedirHasta && (
+                      <> Puedes pedirlas <strong>hasta el {formatFechaCorta(saldo.pedirHasta)}</strong>.</>
+                    )}{" "}
+                    Pídelas con al menos <strong>{diasAnticipacionMin}</strong> días de anticipación.
+                  </span>
+                </div>
+              )}
+              {saldo.desbloqueado && saldo.plazoVencido && (
+                <div className="admin-info-box empleado-days-hint">
+                  <Icon name="vacation" size={16} />
+                  <span>
+                    El plazo para pedir las vacaciones de este periodo terminó el{" "}
+                    <strong>{formatFechaCorta(saldo.pedirHasta)}</strong> (en clínica hay{" "}
+                    {MESES_PARA_PEDIR_VACACIONES} meses desde tu aniversario). Tus próximas vacaciones
+                    se desbloquean el <strong>{formatFechaCorta(saldo.periodo.fin)}</strong>.
                   </span>
                 </div>
               )}
@@ -382,8 +413,12 @@ export default function PermisosEmpleado({
                 <div className="admin-info-box empleado-days-hint">
                   <Icon name="calendar" size={14} />
                   <span>
-                    {rangoCorto(fechaInicioPreview, fechaFinPreview)} · <strong>{diasPreview}</strong>{" "}
-                    {diasPreview === 1 ? "día" : "días"}
+                    {rangoCorto(fechaInicioPreview, fechaFinPreview)} · <strong>{diasMostrados}</strong>{" "}
+                    {diasMostrados === 1 ? "día" : "días"}
+                    {esVacaciones ? " de vacaciones" : ""}
+                    {domingosPreview > 0 && (
+                      <> · {domingosPreview === 1 ? "el domingo no cuenta" : `los ${domingosPreview} domingos no cuentan`}</>
+                    )}
                   </span>
                 </div>
               )}

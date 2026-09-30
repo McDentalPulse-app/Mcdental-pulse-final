@@ -39,6 +39,17 @@ export const puedeVerOrganigrama = (row) =>
 export const DIAS_ANTICIPACION_GENERAL = 30;
 export const DIAS_ANTICIPACION_OFICINA_ADMINISTRATIVA = 15;
 
+/**
+ * Plazo para PEDIR las vacaciones de cada periodo (decisión del dueño, 2026-09-30): en las
+ * clínicas —todo el que no es Oficina Administrativa— las vacaciones de un periodo solo se
+ * pueden solicitar durante sus primeros MESES_PARA_PEDIR_VACACIONES meses, contados desde el
+ * aniversario. Las FECHAS pueden caer en cualquier día del periodo; lo que vence es la
+ * posibilidad de pedirlas. Oficina no tiene plazo. La base aplica lo mismo (migración 183).
+ */
+export const MESES_PARA_PEDIR_VACACIONES = 6;
+export const tienePlazoParaPedirVacaciones = (sucursal) =>
+  normalizeSucursal(sucursal) !== "Oficina Administrativa";
+
 export const diasAnticipacionRequerida = (sucursal) =>
   normalizeSucursal(sucursal) === "Oficina Administrativa"
     ? DIAS_ANTICIPACION_OFICINA_ADMINISTRATIVA
